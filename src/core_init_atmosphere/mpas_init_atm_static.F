@@ -1644,6 +1644,8 @@ else
     integer :: iCell
     integer :: ierr
     integer :: nans_1, nans_2, nans_3
+
+    ierr = mgr % init(trim(geog_data_path))
     if (ierr /= 0) then
         call mpas_log_write("Error occurred initializing interpolation for "//trim(geog_data_path), messageType=MPAS_LOG_CRIT)
         return ! Program execution should not reach this statement since the preceding message is a critical error
