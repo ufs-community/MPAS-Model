@@ -913,7 +913,7 @@
                 DTH(K),T(K),T(K+1),THE(K),THE(K+1),Q(K),Q(K+1), &
                 U(K),U(K+1),V(K),V(K+1),Z(K),Z(K+2), &
                 CWM(K),CWM(K+1),ELOCP,P608 
-            #IF (AUBR<= 0.0) AUBR = 1.0E-12
+            !IF (AUBR<= 0.0) AUBR = 1.0E-12
             BUBR= BUBM*GML+BUBH*GHL
 
             !if (AUBR == 0.0) then
