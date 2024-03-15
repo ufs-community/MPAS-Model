@@ -57,7 +57,7 @@
  if(allocated(tcg_racg) ) deallocate(tcg_racg ) 
  if(allocated(tmr_racg) ) deallocate(tmr_racg )
  if(allocated(tcr_gacr) ) deallocate(tcr_gacr )
- if(allocated(tmg_gacr) ) deallocate(tmg_gacr )
+! if(allocated(tmg_gacr) ) deallocate(tmg_gacr )
  if(allocated(tnr_racg) ) deallocate(tnr_racg )
  if(allocated(tnr_gacr) ) deallocate(tnr_gacr )
  if(allocated(tcs_racs1)) deallocate(tcs_racs1)

@@ -47,11 +47,11 @@
     call print_parallel_mesg('MP_THOMPSON_QRacrQG_DATA.DBL')
     return
  end if
- call qr_acr_qg
+ call qr_acr_qg(1)
  write(mp_unit) tcg_racg
  write(mp_unit) tmr_racg
  write(mp_unit) tcr_gacr
- write(mp_unit) tmg_gacr
+! write(mp_unit) tmg_gacr
  write(mp_unit) tnr_racg
  write(mp_unit) tnr_gacr
  close(unit=mp_unit)

@@ -19,6 +19,8 @@ OBJS = \
 	module_cu_ntiedtke.o           \
 	module_cu_kfeta.o              \
 	module_mp_kessler.o            \
+	module_mp_thompson_params.o    \
+	module_mp_thompson_main.o      \
 	module_mp_thompson.o           \
 	module_mp_thompson_cldfra3.o   \
 	module_mp_wsm6.o               \
@@ -46,6 +48,10 @@ physics_wrf: $(OBJS)
 	ar -ru ./../libphys.a $(OBJS)
 
 # DEPENDENCIES:
+module_mp_thompson.o: \
+	module_mp_thompson_params.o \
+	module_mp_thompson_main.o
+
 module_bl_mynn.o: \
 	module_cam_error_function.o
 

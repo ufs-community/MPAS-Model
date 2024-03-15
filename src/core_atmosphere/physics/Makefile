@@ -53,7 +53,7 @@ core_physics_mmm: core_physics_init
 	(cd physics_mmm; $(MAKE) all)
 
 core_physics_wrf: core_physics_init core_physics_mmm
-	(cd physics_wrf; $(MAKE) all COREDEF="$(COREDEF)")
+	(cd physics_wrf; cp ./GSL_cloud_physics/* .; $(MAKE) all COREDEF="$(COREDEF)")
 
 core_physics_init: $(OBJS_init)
 	ar -ru libphys.a $(OBJS_init)
