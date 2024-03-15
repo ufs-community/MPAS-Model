@@ -1483,6 +1483,14 @@
                         <var name="nr" array_group="number" units="nb kg^{-1}"
                              description="Rain number concentration"
                              packages="mp_thompson_in"/>
+			
+			<var name="nwfa" array_group="passive" units="nb kg^{-1}"
+                             description="Number of water-friendly aerosols for microphysics"
+                             packages="mp_thompson_in"/>
+
+			<var name="nifa" array_group="passive" units="nb kg^{-1}"
+                             description="Number of ice-friendly aerosols for microphysics"
+                             packages="mp_thompson_in"/>
                 </var_array>
 #endif
 
@@ -1804,6 +1812,14 @@
 
                         <var name="tend_nr" name_in_code="nr" array_group="number" units="nb m^{-3} s^{-1}" 
                              description="Tendency of rain number concentration multiplied by dry air density divided by d(zeta)/dz"
+                             packages="mp_thompson_in"/>
+
+			<var name="tend_nwfa" name_in_code="nwfa" array_group="passive" units="nb m^{-3} s^{-1}" 
+                             description="Tendency of water-friendly aerosols multiplied by dry air density divided by d(zeta)/dz"
+                             packages="mp_thompson_in"/>
+
+			<var name="tend_nifa" name_in_code="nifa" array_group="passive" units="nb m^{-3} s^{-1}" 
+                             description="Tendency of ice-friendly aerosols multiplied by dry air density divided by d(zeta)/dz"
                              packages="mp_thompson_in"/>
                 </var_array>
 #endif
