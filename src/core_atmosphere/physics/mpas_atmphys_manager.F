@@ -231,7 +231,7 @@
     if(mpas_is_alarm_ringing(clock,greenAlarmID,ierr=ierr)) then
        call mpas_reset_clock_alarm(clock,greenAlarmID,ierr=ierr)
        call mpas_log_write('--- time to update background surface albedo, greeness fraction.')
-       call physics_update_surface(timeStamp,config_sfc_albedo,mesh,sfc_input)
+       call physics_update_surface(timeStamp,config_sfc_albedo,mesh,sfc_input,diag_physics)
     endif
 
     !update surface boundary conditions with input sea-surface temperatures and fractional
@@ -406,7 +406,7 @@
  integer,pointer:: cam_dim1
  integer,pointer:: nMonths
  integer,pointer:: nAerosols,nAerLevels,nOznLevels
- integer,pointer:: nCellsSolve,nSoilLevels,nVertLevels
+ integer,pointer:: nCellsSolve,nSoilLevels,nVertLevels,nlcat,nscat
 
  real(kind=RKIND),pointer:: config_dt
 
@@ -448,7 +448,8 @@
  call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
  call mpas_pool_get_dimension(mesh,'nSoilLevels',nSoilLevels)
  call mpas_pool_get_dimension(mesh,'nVertLevels',nVertLevels)
-
+ call mpas_pool_get_dimension(mesh,'nlcat'      ,nlcat      )
+ call mpas_pool_get_dimension(mesh,'nscat'      , nscat     )
  call mpas_pool_get_dimension(state,'num_aerosols',nAerosols)
 
 !initialization of gmt, julian day, and alarms:
@@ -673,6 +674,8 @@
 !initialization local physics variables:
  num_months = nMonths
  num_soils  = nSoilLevels
+ num_landcat = nlcat
+ num_soilcat = nscat
 
  if(trim(config_lsm_scheme) .eq. "sf_noah") sf_surface_physics = 2
 
@@ -687,6 +690,12 @@
     n_microp  = max(nint(dt_dyn/dt_microp),1)
     dt_microp = dt_dyn / n_microp
     if(dt_dyn <= dt_microp) dt_microp = dt_dyn
+ endif
+if( trim(config_microp_scheme)=='mp_nssl2m' ) then
+    IF ( dt_dyn > 1.25001*60._RKIND) THEN ! max 75s dt
+      n_microp  = max(nint(dt_dyn/60._RKIND),2)
+      dt_microp = dt_dyn / n_microp
+    ENDIF
  endif
  call mpas_log_write('--- specifics on cloud microphysics option microp_scheme = '//trim(config_microp_scheme))
  call mpas_log_write('--- dt_microp = $r', realArgs=(/dt_microp/))
@@ -744,7 +753,7 @@
  has_reqs = 0
  if(config_microp_re) then
     if(trim(config_microp_scheme)=='mp_thompson' .or. &
-       trim(config_microp_scheme)=='mp_wsm6') then
+       trim(config_microp_scheme)=='mp_wsm6' .or. trim(config_microp_scheme)=='mp_nssl2m') then
        if(trim(config_radt_lw_scheme)=='rrtmg_lw' .and. trim(config_radt_sw_scheme)=='rrtmg_sw') then
           has_reqc = 1
           has_reqi = 1

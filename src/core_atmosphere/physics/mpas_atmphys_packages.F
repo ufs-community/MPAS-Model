@@ -34,11 +34,14 @@
 
 !local variables:
  character(len=StrKIND),pointer:: config_microp_scheme
+ character(len=StrKIND),pointer:: config_nssl_moments
  character(len=StrKIND),pointer:: config_convection_scheme
  character(len=StrKIND),pointer:: config_pbl_scheme
- logical,pointer:: mp_kessler_in,mp_thompson_in,mp_wsm6_in
+ character(len=StrKIND),pointer:: config_lsm_scheme
+ logical,pointer:: mp_kessler_in,mp_thompson_in,mp_wsm6_in,mp_nssl2m_in,nssl3m_in
  logical,pointer:: cu_grell_freitas_in,cu_kain_fritsch_in,cu_tiedtke_in
- logical,pointer:: bl_mynn_in,bl_ysu_in
+ logical,pointer:: bl_mynn_in,bl_ysu_in,bl_myj_in
+ logical,pointer:: lsm_noah_in,lsm_ruc_in
 
  integer :: ierr
 
@@ -55,6 +58,8 @@
 
  call mpas_pool_get_config(configs,'config_microp_scheme',config_microp_scheme)
 
+ call mpas_pool_get_config(configs,'config_nssl_moments',config_nssl_moments)
+
  nullify(mp_kessler_in)
  call mpas_pool_get_package(packages,'mp_kessler_inActive',mp_kessler_in)
 
@@ -64,8 +69,15 @@
  nullify(mp_wsm6_in)
  call mpas_pool_get_package(packages,'mp_wsm6_inActive',mp_wsm6_in)
 
+ nullify(mp_nssl2m_in)
+ call mpas_pool_get_package(packages,'mp_nssl2m_inActive',mp_nssl2m_in)
+
+ nullify(nssl3m_in)
+ call mpas_pool_get_package(packages,'nssl3m_inActive',nssl3m_in)
+
  if(.not.associated(mp_kessler_in)  .or. &
     .not.associated(mp_thompson_in) .or. &
+    .not.associated(mp_nssl2m_in) .or. &
     .not.associated(mp_wsm6_in)) then
     call mpas_log_write('====================================================================================',messageType=MPAS_LOG_ERR)
     call mpas_log_write('* Error while setting up packages for cloud microphysics options in atmosphere core.',messageType=MPAS_LOG_ERR)
@@ -77,6 +89,8 @@
  mp_kessler_in           = .false.
  mp_thompson_in          = .false.
  mp_wsm6_in              = .false.
+ mp_nssl2m_in            = .false.
+ nssl3m_in               = .false.
 
  if(config_microp_scheme == 'mp_kessler') then
     mp_kessler_in = .true.
@@ -84,11 +98,18 @@
     mp_thompson_in = .true.
  elseif(config_microp_scheme == 'mp_wsm6') then
     mp_wsm6_in = .true.
+ elseif(config_microp_scheme == 'mp_nssl2m') then
+    mp_nssl2m_in = .true.
+    IF ( config_nssl_moments == 'nssl3m' ) THEN
+      nssl3m_in = .true.
+    ENDIF
  endif
 
  call mpas_log_write('    mp_kessler_in           = $l', logicArgs=(/mp_kessler_in/))
  call mpas_log_write('    mp_thompson_in          = $l', logicArgs=(/mp_thompson_in/))
  call mpas_log_write('    mp_wsm6_in              = $l', logicArgs=(/mp_wsm6_in/))
+ call mpas_log_write('    mp_nssl2m_in            = $l', logicArgs=(/mp_nssl2m_in/))
+ call mpas_log_write('    nssl3m_in               = $l', logicArgs=(/nssl3m_in/))
 
 !--- initialization of all packages for parameterizations of convection:
 
@@ -140,8 +161,12 @@
  nullify(bl_ysu_in)
  call mpas_pool_get_package(packages,'bl_ysu_inActive',bl_ysu_in)
 
+ nullify(bl_myj_in)
+ call mpas_pool_get_package(packages,'bl_myj_inActive',bl_myj_in)
+
  if(.not.associated(bl_mynn_in) .or. &
-    .not.associated(bl_ysu_in)) then
+    .not.associated(bl_ysu_in) .or. &
+    .not.associated(bl_myj_in)) then
     call mpas_log_write('====================================================================================',messageType=MPAS_LOG_ERR)
     call mpas_log_write('* Error while setting up packages for planetary layer  options in atmosphere core.',  messageType=MPAS_LOG_ERR)
     call mpas_log_write('====================================================================================',messageType=MPAS_LOG_ERR)
@@ -151,15 +176,50 @@
 
  bl_mynn_in = .false.
  bl_ysu_in  = .false.
-
+ bl_myj_in = .false.
  if(config_pbl_scheme=='bl_mynn') then
     bl_mynn_in = .true.
  elseif(config_pbl_scheme == 'bl_ysu') then
     bl_ysu_in = .true.
+ elseif(config_pbl_scheme == 'bl_myj') then
+    bl_myj_in = .true.
  endif
 
  call mpas_log_write('    bl_mynn_in              = $l', logicArgs=(/bl_mynn_in/))
  call mpas_log_write('    bl_ysu_in               = $l', logicArgs=(/bl_ysu_in/))
+ call mpas_log_write('    bl_myj_in               = $l', logicArgs=(/bl_myj_in/))
+ call mpas_log_write('')
+
+!--- initialization of all packages for parameterizations of the land surface:
+
+  call mpas_pool_get_config(configs,'config_lsm_scheme', config_lsm_scheme)
+  
+  nullify(lsm_noah_in)
+  call mpas_pool_get_package(packages,'lsm_noah_inActive', lsm_noah_in)
+
+  nullify(lsm_ruc_in)
+  call mpas_pool_get_package(packages,'lsm_ruc_inActive', lsm_ruc_in)
+
+ if(.not.associated(lsm_noah_in) .or. &
+    .not.associated(lsm_ruc_in)) then
+    call mpas_log_write('================================================================================',messageType=MPAS_LOG_ERR)
+    call mpas_log_write('* Error while setting up packages for land surface options in atmosphere core.',  messageType=MPAS_LOG_ERR)
+    call mpas_log_write('================================================================================',messageType=MPAS_LOG_ERR)
+    ierr = 1
+    return
+ endif
+
+ lsm_noah_in = .false.
+ lsm_ruc_in = .false.
+ 
+ if(config_lsm_scheme=='sf_noah') then
+   lsm_noah_in = .true.
+ elseif(config_lsm_scheme=='sf_ruc') then
+   lsm_ruc_in = .true.
+ endif
+
+ call mpas_log_write('    lsm_noah_in              = $l', logicArgs=(/lsm_noah_in/))
+ call mpas_log_write('    lsm_ruc_in               = $l', logicArgs=(/lsm_ruc_in/))
  call mpas_log_write('')
 
  end function atmphys_setup_packages

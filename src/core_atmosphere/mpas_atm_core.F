@@ -657,7 +657,7 @@ module atm_core
       end if
       call mpas_timer_start('diagnostic_fields')
       call mpas_atm_diag_reset()
-      call mpas_atm_diag_update()
+      call mpas_atm_diag_update(domain % blocklist % configs, domain % streamManager,dt)
       call mpas_atm_diag_compute()
       call mpas_timer_stop('diagnostic_fields')
 
@@ -819,7 +819,7 @@ module atm_core
          end if
 
          call mpas_timer_start('diagnostic_fields')
-         call mpas_atm_diag_update()
+         call mpas_atm_diag_update(domain % blocklist % configs, domain % streamManager,dt)
          call mpas_atm_diag_compute()
          call mpas_timer_stop('diagnostic_fields')
          call mpas_dmpar_get_time(diag_stop_time)

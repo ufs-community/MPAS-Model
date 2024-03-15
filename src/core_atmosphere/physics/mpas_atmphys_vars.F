@@ -191,12 +191,16 @@
     qr_p,             &!rain mixing ratio                                                   [kg/kg]
     qi_p,             &!cloud ice mixing ratio                                              [kg/kg]
     qs_p,             &!snow mixing ratio                                                   [kg/kg]
-    qg_p               !graupel mixing ratio                                                [kg/kg]
+    qg_p,             &!graupel mixing ratio                                                [kg/kg]
+    qh_p               !hail mixing ratio                                                   [kg/kg]
 
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
     nc_p,             &!
     ni_p,             &!
-    nr_p               !
+    nr_p,             &!
+    ns_p, ng_p, nh_p, nccn_p, &
+    volg_p, volh_p,   &
+    zrw_p, zgw_p, zhw_p
 
 !... arrays located at w (vertical velocity) points, or at interface between layers:
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
@@ -244,7 +248,8 @@
     f_qr = .true.,    &!
     f_qi = .true.,    &!
     f_qs = .true.,    &!
-    f_qg = .true.      !
+    f_qg = .true.,    &!
+    f_qh = .true.
 
  logical,parameter:: &
     f_qnc = .true.,   &!
@@ -279,7 +284,8 @@
     reice_p,          &!
     resnow_p,         &!
     refl10cm_p         !
-
+ real(kind=RKIND),dimension(:,:),allocatable:: &
+    refl10cm_1km_p
 !=================================================================================================================
 !... variables and arrays related to parameterization of convection:
 !=================================================================================================================
@@ -419,6 +425,10 @@
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
     rniblten_p         !
 
+!... MYJ PBL scheme (module_bl_myjpbl.F):
+ real(kind=RKIND),dimension(:,:),allocatable:: &
+    chlowq_p,         &!
+    mixht_p            !
 !=================================================================================================================
 !... variables and arrays related to parameterization of gravity wave drag over orography:
 !=================================================================================================================
@@ -527,6 +537,34 @@
     sh3d_p,           &!stability function for heat                                                            [-]
     elpbl_p            !length scale from PBL                                                                  [m]
 
+!... arrays only in myj surface layer scheme (module_sf_myjsfc.F):
+ real(kind=RKIND),dimension(:,:),allocatable:: &
+    thz0_p,           &!potential temperature at roughness length                                              [K]
+    uz0_p,            &!u at roughness length                                                                [m/s]
+    vz0_p,            &!v at roughness length                                                                [m/s]
+    akhs_p,           &!surface exchange coefficient for heat                                                  [-]
+    akms_p,           &!surface exchange coefficient for moisture                                              [-]
+    ct_p,             &!countergradient term                                                                   [-]
+    tshltr_p,         &!shelter potential temperature                                                          [K]
+    qshltr_p,         &!shelter specific humidity                                                              [-]
+    pshltr_p,         &!shelter pressure                                                                      [Pa]
+    th10_p,           &!potential temperature at 10 m                                                          [K]
+    q10_p,            &!specific humidity at 10 m                                                              [-]
+    thz0_sea,         &!potential temperature at roughness length (ice)                                        [K]
+    qz0_sea,          &!specific humidity at roughness length (ice)                                            [-]
+    uz0_sea,          &!u at roughness length (ice)                                                          [m/s]
+    vz0_sea,          &!v at roughness length (ice)                                                          [m/s]
+    akhs_sea,         &!surface exchange coefficient for heat (ice)                                            [-]
+    akms_sea,         &!surface exchange coefficient for moisture (ice)                                        [-]
+    ct_sea,           &!countergradient term (ice)                                                             [-]
+    tshltr_sea,       &!shelter potential temperature (ice)                                                    [K]
+    qshltr_sea,       &!shelter specific humidity (ice)                                                        [-]
+    pshltr_sea,       &!shelter pressure (ice)                                                                [Pa]
+    th10_sea,         &!potential temperature at 10 m (ice)                                                    [K]
+    q10_sea            !specific humidity at 10 m (ice)                                                        [-]
+
+ integer,dimension(:,:),allocatable:: &
+  lowlyr_p            !index of lowest model layer above ground                                                [-]
 !=================================================================================================================
 !... variables and arrays related to parameterization of seaice:
 !... the options set for seaice_albedo_opt, seaice_thickness_opt, and seaicesnowdepth_opt must not be changed
@@ -708,14 +746,18 @@
                        !albedos as functions of the land surface scheme.
 
  integer,public:: &
-    num_soils          !number of soil layers                                                                  [-]
+    num_soils,        &!number of soil layers                                                                  [-]
+    num_landcat,      &!number of landuse categories                                                           [-]
+    num_soilcat        !number of soil categories                                                              [-]
     
  integer,dimension(:,:),allocatable:: &
     isltyp_p,         &!dominant soil type category                                                            [-]
     ivgtyp_p           !dominant vegetation category                                                           [-]
 
  real(kind=RKIND),dimension(:),allocatable:: &
-    dzs_p              !thickness of soil layers                                                               [m]
+    dzs_p,            &!thickness of soil layers                                                               [m]
+    zs_p               !depth of soil layer bottom                                                             [m]
+
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
     smcrel_p,         &!soil moisture threshold below which transpiration starts to stress                     [-]
     sh2o_p,           &!unfrozen soil moisture content                                       [volumetric fraction]
@@ -769,6 +811,27 @@
  real(kind=RKIND),dimension(:,:),allocatable:: &
     frc_urb_p,        &!urban fraction                                                                         [-]
     ust_urb_p          !urban u* in similarity theory                                                        [m/s]
+
+!-- arrays needed to run RUC LSM
+ real(kind=RKIND), dimension(:,:), allocatable:: &
+    rhosnf_p,           &!density of snowfall                                                             [kg m-3]
+    precipfr_p,         &!water equivalent of frozen precipitation                                            [mm]
+    qsg_p,              &!saturated mixing ratio at the surface                                          [kg kg-1]
+    cqs_p,              &!cqs at the first model layer used in 2-m diagnostics 
+    qvg_p,              &!water vapor mixing ratio at the surface                                        [kg kg-1]
+    dew_p,              &!dew                                                                             [kg m-2]
+    soilt1_p,           &!snow temperature at 7.5cm depth                                                      [K]
+    tsnav_p,            &!average temperature of snowpack                                                      [C]
+    acrunoff_p,         &!run total accumulated runoff                                                    [kg m-2]
+    snowfallac_p,       &!run total accumulated snowfall taking in to account melting                         [mm] 
+    sfcexc_p,           &!Surface exhcange coefficient for heat                                            [m s-1]
+    sfcevp_p             !total evaporation                                                               [kg m-2]
+
+ real(kind=RKIND), dimension(:,:,:), allocatable:: &
+    smfr3d_p ,          &!fraction of frozen soil moisture                                                     [-]
+    landusef_p,         &!fraction of each landuse category                                                    [-]
+    soilf_p,            &!fraction of each soil category                                                       [-]
+    keepfr3d_p           !flag to keep frozen soil moisture information
 
 !=================================================================================================================
 !.. variables and arrays related to surface characteristics:

@@ -73,16 +73,21 @@ module mpas_atm_diagnostics_manager
     !>  MPAS_atm_diag_update.
     !
     !-----------------------------------------------------------------------
-    subroutine mpas_atm_diag_update()
+    subroutine mpas_atm_diag_update(configs, stream_mgr, dt)
 
+        use mpas_derived_types, only : MPAS_streamManager_type, MPAS_pool_type
+        use mpas_kind_types, only : RKIND
         use mpas_diagnostic_template, only : diagnostic_template_update
         use mpas_convective_diagnostics, only : convective_diagnostics_update
 
         implicit none
 
+        type (MPAS_pool_type), intent(in) :: configs
+        type (MPAS_streamManager_type), target, intent(inout) :: stream_mgr
+        real (kind=RKIND), pointer, intent(inout) :: dt
 
         call diagnostic_template_update()
-        call convective_diagnostics_update()
+        call convective_diagnostics_update(configs,stream_mgr,dt)
 
     end subroutine mpas_atm_diag_update
 

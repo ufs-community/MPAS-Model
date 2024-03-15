@@ -187,12 +187,12 @@
     call mpas_pool_get_dimension(block % dimensions, 'cellSolveThreadStart', cellSolveThreadStart)
     call mpas_pool_get_dimension(block % dimensions, 'cellSolveThreadEnd', cellSolveThreadEnd)
 
-    !allocate arrays shared by all physics parameterizations:
+    call mpas_log_write( 'allocate arrays shared by all physics parameterizations:')
     call allocate_forall_physics(block%configs)
 
     !physics prep step:
     time_lev = 1
-
+    call mpas_log_write( 'MPAS to physics' )
 !$OMP PARALLEL DO
     do thread=1,nThreads
        call MPAS_to_physics(block%configs,mesh,state,time_lev,diag,diag_physics, &
@@ -200,7 +200,7 @@
     end do
 !$OMP END PARALLEL DO
 
-    !call to cloud scheme:
+    call mpas_log_write( ' call to cloud scheme: ')
     if(l_radtlw .or. l_radtsw) then
        call allocate_cloudiness
 !$OMP PARALLEL DO
@@ -211,7 +211,7 @@
 !$OMP END PARALLEL DO
     endif
 
-    !call to short wave radiation scheme:
+    call mpas_log_write( ' call to short wave radiation scheme: ')
     if(l_radtsw) then
        time_lev = 1
        call allocate_radiation_sw(block%configs,xtime_s)
@@ -224,7 +224,7 @@
 !$OMP END PARALLEL DO
     endif
 
-    !call to long wave radiation scheme:
+    call mpas_log_write( ' call to long wave radiation scheme: ')
     if(l_radtlw) then
        time_lev = 1
        call allocate_radiation_lw(block%configs,xtime_s)
@@ -270,14 +270,14 @@
 
     !call to land-surface scheme:
     if(config_lsm_scheme .ne. 'off') then
-       call allocate_lsm(config_frac_seaice)
+       call allocate_lsm(config_frac_seaice,config_lsm_scheme)
 !$OMP PARALLEL DO
        do thread=1,nThreads
           call driver_lsm(itimestep,block%configs,mesh,diag_physics,sfc_input, &
                           cellSolveThreadStart(thread), cellSolveThreadEnd(thread))
        end do
 !$OMP END PARALLEL DO
-       call deallocate_lsm(config_frac_seaice)
+       call deallocate_lsm(config_frac_seaice,config_lsm_scheme)
     endif
 
     !call to pbl schemes:

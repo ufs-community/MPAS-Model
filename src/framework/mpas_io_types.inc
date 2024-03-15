@@ -160,6 +160,8 @@
    end type fieldlist_type
 
    type mpas_io_context_type
+      integer :: io_task_count = 0
+      integer :: io_task_stride = 0
       type (decomplist_type), pointer :: decomp_list => null()
 #ifdef MPAS_PIO_SUPPORT
       type (iosystem_desc_t), pointer :: pio_iosystem => null()

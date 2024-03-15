@@ -356,7 +356,7 @@
     call microphysics_init(dminfo,configs,mesh,sfc_input,diag_physics)
 
 !initialization of surface layer processes:
- if(config_sfclayer_scheme .ne. 'off') call init_sfclayer(configs)
+ if(config_sfclayer_scheme .ne. 'off') call init_sfclayer(configs,diag_physics,sfc_input)
 
 !initialization of land-surface model:
 !if(.not. config_do_restart) then
