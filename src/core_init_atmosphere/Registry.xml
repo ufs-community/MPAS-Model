@@ -976,6 +976,12 @@
 
                         <var name="qr" array_group="moist" units="kg kg^{-1}"
                              description="Rain water mixing ratio"/>
+
+			<var name="nwfa" array_group="passive" units="kg^{-1}"
+                             description="Number of water-friendly aerosols for microphysics"/>
+
+			<var name="nifa" array_group="passive" units="kg^{-1}"
+                             description="Number of ice-friendly aerosols for microphysics"/>
                 </var_array>
 
                 <!-- Climatology for ocean mixed-layer depth -->
