@@ -330,6 +330,8 @@ module init_atm_cases
                call init_atm_case_lbc(timeString, block_ptr, mesh, nCells, nEdges, nVertLevels, fg, state, &
                                       diag, lbc_state, block_ptr % dimensions, block_ptr % configs)
 
+               call init_microphysics_aerosols_lbc(mesh, state, diag, lbc_state, nCells, nVertLevels)
+               
                block_ptr => block_ptr % next
             end do
 
@@ -7274,5 +7276,148 @@ call mpas_log_write('Done with soil consistency check')
         end do
      enddo
    end subroutine init_microphysics_aerosols
+
+   !-----------------------------------------------------------------------
+   !  routine init_microphysics_aerosols_lbc
+   !
+   !> \brief Add water- and ice-friendly aerosols for microphysics to LBCs
+   !> \author Anders Jensen
+   !> \date   15 March 2024
+   !> \details
+   !>  This routine is similar to init_microphysics_aerosols, but adds
+   !>  aerosol information to the lateral boundary condition files. 
+   !>
+   !>  This is for testing purposes only. A better interpolation method should
+   !>  be implemented. This is also currently hard-coded for the February
+   !>  data. A time interpolation method should be implemented as well.
+   !
+   !-----------------------------------------------------------------------   
+   subroutine init_microphysics_aerosols_lbc(mesh, state, diag, lbc_state, nCells, nVertLevels)
+
+     use mpas_io_units, only : mpas_new_unit, mpas_release_unit
+     
+     implicit none
+
+     
+     integer, intent(in) :: nCells
+     integer, intent(in) :: nVertLevels
+      
+     type (mpas_pool_type), intent(in) :: mesh
+     type (mpas_pool_type), intent(in) :: diag
+     type (mpas_pool_type), intent(inout) :: state
+     type (mpas_pool_type), intent(inout) :: lbc_state
+     
+     integer, pointer :: index_nwfa
+     integer, pointer :: index_nifa
+!     integer, pointer :: nCells
+!     integer, pointer :: nVertLevels
+
+     integer :: k, m, iCell
+     integer :: aerosol_table_unit, istat
+     integer :: lat_index, lon_index, pressure_index, month_index
+     
+     real (kind=RKIND) :: tmp_lat, tmp_lon, tmp_prs
+     real (kind=RKIND), dimension(:,:), pointer :: ppb, pp
+     real (kind=RKIND), dimension(:), pointer :: latCell
+     real (kind=RKIND), dimension(:), pointer :: lonCell
+     real (kind=RKIND), dimension(:,:,:), pointer :: scalars
+
+     integer, parameter :: nlon = 288
+     integer, parameter :: nlat = 181
+     integer, parameter :: nprs = 30
+     integer, parameter :: nmon = 12 ! integer month for monthly climatology
+     real (kind=R4KIND), dimension(nlon) :: lon_aerosol_climo
+     real (kind=R4KIND), dimension(nlat) :: lat_aerosol_climo
+     real (kind=R4KIND), dimension(nlon, nlat, nprs, nmon) :: wfa_aerosol_climo
+     real (kind=R4KIND), dimension(nlon, nlat, nprs, nmon) :: ifa_aerosol_climo
+     real (kind=R4KIND), dimension(nlon, nlat, nprs, nmon) :: prs_aerosol_climo
+     
+     call mpas_log_write('====== Handling aerosol initialization 2 for microphysics ======')
+     
+!     call mpas_pool_get_dimension(mesh, 'nCells', nCells)
+!     call mpas_pool_get_dimension(mesh, 'nVertLevels', nVertLevels)
+     
+     call mpas_pool_get_dimension(state, 'index_nwfa', index_nwfa)
+     call mpas_pool_get_dimension(state, 'index_nifa', index_nifa)
+
+     call mpas_pool_get_array(lbc_state, 'lbc_scalars', scalars)
+!     call mpas_pool_get_array(state, 'scalars', scalars)
+     call mpas_pool_get_array(mesh, 'latCell', latCell)
+     call mpas_pool_get_array(mesh, 'lonCell', lonCell)
+
+     ! Needed for interpolation to pressure
+     call mpas_pool_get_array(diag, 'pressure_base', ppb)
+     call mpas_pool_get_array(diag, 'pressure_p', pp)
+
+     ! Read in tables
+     call mpas_new_unit(aerosol_table_unit)
+     open(unit=aerosol_table_unit, file="thompson_aerosol_lon.dat", form="unformatted", iostat=istat)
+     if(istat /= 0) call mpas_log_write("Error reading longitude table for aerosol initialization (microphysics)")
+     read(aerosol_table_unit) lon_aerosol_climo
+     close(unit=aerosol_table_unit)
+     
+     open(unit=aerosol_table_unit, file="thompson_aerosol_lat.dat", form="unformatted", iostat=istat)
+     if(istat /= 0) call mpas_log_write("Error reading latitude table for aerosol initialization (microphysics)")
+     read(aerosol_table_unit) lat_aerosol_climo
+     close(unit=aerosol_table_unit)
+
+     open(unit=aerosol_table_unit, file="thompson_aerosol_wfa.dat", form="unformatted", iostat=istat)
+     if(istat /= 0) call mpas_log_write("Error reading WFA table for aerosol initialization (microphysics)")
+     read(aerosol_table_unit) wfa_aerosol_climo
+     close(unit=aerosol_table_unit)
+
+     open(unit=aerosol_table_unit, file="thompson_aerosol_ifa.dat", form="unformatted", iostat=istat)
+     if(istat /= 0) call mpas_log_write("Error reading IFA table for aerosol initialization (microphysics)")
+     read(aerosol_table_unit) ifa_aerosol_climo
+     close(unit=aerosol_table_unit)
+
+     open(unit=aerosol_table_unit, file="thompson_aerosol_prs.dat", form="unformatted", iostat=istat)
+     if(istat /= 0) call mpas_log_write("Error reading pressure table for aerosol initialization (microphysics)")
+     read(aerosol_table_unit) prs_aerosol_climo
+     close(unit=aerosol_table_unit)
+     call mpas_release_unit(aerosol_table_unit)
+
+     do k = 1, nVertLevels
+        do iCell = 1, nCells
+           ! Lat and lon from model converted from radians to degrees
+           tmp_lat = 180.0 / pii * latCell(iCell)
+           tmp_lon = 180.0 / pii * lonCell(iCell) - 360.
+           tmp_prs = ppb(k, iCell) + pp(k, iCell)
+
+           lat_index = 1
+           lon_index = 1
+           pressure_index = 30 ! Pressure from monthly climatology is oriented with index=1 is top of atmosphere
+           month_index = 2 ! Hard-coded for February for testing
+           
+           ! Nearest point interpolation (for testing)
+           ! The climatology starts from -180 and goes to 180 (every 1.25 degrees)
+           do m = 1, nlon
+              if(lon_aerosol_climo(m) .gt. tmp_lon) then
+                 lon_index = m
+                 exit
+              endif
+           enddo
+           
+           ! The climatology starts from -90 and goes to 90 (every 1 degree)
+           do m = 1, nlat
+              if(lat_aerosol_climo(m) .gt. tmp_lat) then
+                 lat_index = m
+                 exit
+              endif
+           enddo
+
+           ! Lowest pressure is biggest index for climatology
+           do m = nprs, 1, -1
+              if(prs_aerosol_climo(lon_index,lat_index,m,month_index) .lt. tmp_prs) then
+                 pressure_index = m
+                 exit
+              endif
+           enddo
+
+           scalars(index_nwfa,k,iCell) = wfa_aerosol_climo(lon_index,lat_index,pressure_index,month_index)
+           scalars(index_nifa,k,iCell) = ifa_aerosol_climo(lon_index,lat_index,pressure_index,month_index)
+        end do
+     enddo
+   end subroutine init_microphysics_aerosols_lbc
      
 end module init_atm_cases

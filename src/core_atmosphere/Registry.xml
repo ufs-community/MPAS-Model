@@ -1879,6 +1879,12 @@
 
                         <var name="lbc_ni" name_in_code="ni" array_group="number" packages="bl_mynn_in;mp_thompson_in" units="m^{-3} s^{-1}"
                              description="Lateral boundary tendency of ice number concentration"/>
+
+                        <var name="lbc_nwfa" name_in_code="nwfa" array_group="passive" packages="mp_thompson_in" units="m^{-3} s^{-1}"
+                             description="Lateral boundary tendency of wfa"/>
+
+                        <var name="lbc_nifa" name_in_code="nifa" array_group="passive" packages="mp_thompson_in" units="m^{-3} s^{-1}"
+                             description="Lateral boundary tendency of ifa"/>
                 </var_array>
         </var_struct>
 
