@@ -7338,6 +7338,21 @@ call mpas_log_write('Done with soil consistency check')
      enddo
    end subroutine init_microphysics_aerosols
 
+   !-----------------------------------------------------------------------
+   !  routine init_microphysics_aerosols_lbc
+   !
+   !> \brief Add water- and ice-friendly aerosols for microphysics to LBCs
+   !> \author Anders Jensen
+   !> \date   15 March 2024
+   !> \details
+   !>  This routine is similar to init_microphysics_aerosols, but adds
+   !>  aerosol information to the lateral boundary condition files. 
+   !>
+   !>  This is for testing purposes only. A better interpolation method should
+   !>  be implemented. This is also currently hard-coded for the February
+   !>  data. A time interpolation method should be implemented as well.
+   !
+   !-----------------------------------------------------------------------   
    subroutine init_microphysics_aerosols_lbc(mesh, state, diag, lbc_state, nCells, nVertLevels)
 
      use mpas_io_units, only : mpas_new_unit, mpas_release_unit
@@ -7347,7 +7362,7 @@ call mpas_log_write('Done with soil consistency check')
      
      integer, intent(in) :: nCells
      integer, intent(in) :: nVertLevels
-     
+      
      type (mpas_pool_type), intent(in) :: mesh
      type (mpas_pool_type), intent(in) :: diag
      type (mpas_pool_type), intent(inout) :: state
@@ -7395,8 +7410,6 @@ call mpas_log_write('Done with soil consistency check')
      call mpas_pool_get_array(diag, 'pressure_base', ppb)
      call mpas_pool_get_array(diag, 'pressure_p', pp)
 
-     ! scalars(:,:,:) = 0.0_RKIND
-     
      ! Read in tables
      call mpas_new_unit(aerosol_table_unit)
      open(unit=aerosol_table_unit, file="thompson_aerosol_lon.dat", form="unformatted", iostat=istat)
@@ -7466,6 +7479,7 @@ call mpas_log_write('Done with soil consistency check')
            scalars(index_nifa,k,iCell) = ifa_aerosol_climo(lon_index,lat_index,pressure_index,month_index)
         end do
      enddo
+
    end subroutine init_microphysics_aerosols_lbc
      
 end module init_atm_cases
