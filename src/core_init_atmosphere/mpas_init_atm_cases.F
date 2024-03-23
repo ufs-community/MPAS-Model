@@ -243,7 +243,7 @@ module init_atm_cases
             call init_atm_case_gfs(block_ptr, mesh, nCells, nEdges, nVertLevels, fg, state, &
                                    diag, diag_physics, block_ptr % dimensions, block_ptr % configs)
 
-            call init_microphysics_aerosols(mesh, state, diag)
+            call init_microphysics_aerosols(mesh, state, diag, block_ptr % configs)
             
             if (config_met_interp) then
                call physics_initialize_real(mesh, fg, domain % dminfo, block_ptr % dimensions, block_ptr % configs)
@@ -330,7 +330,7 @@ module init_atm_cases
                call init_atm_case_lbc(timeString, block_ptr, mesh, nCells, nEdges, nVertLevels, fg, state, &
                                       diag, lbc_state, block_ptr % dimensions, block_ptr % configs)
 
-               call init_microphysics_aerosols_lbc(mesh, state, diag, lbc_state, nCells, nVertLevels)
+               call init_microphysics_aerosols_lbc(timeString, mesh, state, diag, lbc_state, nCells, nVertLevels)
                
                block_ptr => block_ptr % next
             end do
@@ -7143,7 +7143,7 @@ call mpas_log_write('Done with soil consistency check')
    !
    !> \brief Initialize water- and ice-friendly aerosols for microphysics
    !> \author Anders Jensen
-   !> \date   14 March 2024
+   !> \date   22 March 2024
    !> \details
    !>  This routine reads five unformatted tables that contain, latitude, longitude,
    !>  pressure, water- and ice-friendly monthly climatology data to use with the
@@ -7151,11 +7151,10 @@ call mpas_log_write('Done with soil consistency check')
    !>  using a nearest-grid point option for MPAS initial conditions.
    !>
    !>  This is for testing purposes only. A better interpolation method should
-   !>  be implemented. This is also currently hard-coded for the February
-   !>  data. A time interpolation method should be implemented as well.
+   !>  be implemented. 
    !
    !-----------------------------------------------------------------------   
-   subroutine init_microphysics_aerosols(mesh, state, diag)
+   subroutine init_microphysics_aerosols(mesh, state, diag, configs)
      
      use mpas_io_units, only : mpas_new_unit, mpas_release_unit
      
@@ -7164,6 +7163,7 @@ call mpas_log_write('Done with soil consistency check')
      type (mpas_pool_type), intent(in) :: mesh
      type (mpas_pool_type), intent(in) :: diag
      type (mpas_pool_type), intent(inout) :: state
+     type (mpas_pool_type), intent(inout):: configs
      
      integer, pointer :: index_nwfa
      integer, pointer :: index_nifa
@@ -7172,13 +7172,16 @@ call mpas_log_write('Done with soil consistency check')
 
      integer :: k, m, iCell
      integer :: aerosol_table_unit, istat
-     integer :: lat_index, lon_index, pressure_index, month_index
+     integer :: lat_index, lon_index, pressure_index, month_index, interp_month_index
+     integer :: sim_year, sim_month, sim_day, sim_hour
+     real (kind=RKIND) :: month_fraction, month_interp_weight
      
      real (kind=RKIND) :: tmp_lat, tmp_lon, tmp_prs
      real (kind=RKIND), dimension(:,:), pointer :: ppb, pp
      real (kind=RKIND), dimension(:), pointer :: latCell
      real (kind=RKIND), dimension(:), pointer :: lonCell
      real (kind=RKIND), dimension(:,:,:), pointer :: scalars
+     character (len=StrKIND), pointer :: config_start_time
 
      integer, parameter :: nlon = 288
      integer, parameter :: nlat = 181
@@ -7191,7 +7194,9 @@ call mpas_log_write('Done with soil consistency check')
      real (kind=R4KIND), dimension(nlon, nlat, nprs, nmon) :: prs_aerosol_climo
      
      call mpas_log_write('====== Handling aerosol initialization for microphysics ======')
-     
+
+     call mpas_pool_get_config(configs, 'config_start_time', config_start_time)
+
      call mpas_pool_get_dimension(mesh, 'nCells', nCells)
      call mpas_pool_get_dimension(mesh, 'nVertLevels', nVertLevels)
      
@@ -7234,6 +7239,58 @@ call mpas_log_write('Done with soil consistency check')
      close(unit=aerosol_table_unit)
      call mpas_release_unit(aerosol_table_unit)
 
+     read(config_start_time(1:13), fmt='(    I4)') sim_year
+     read(config_start_time(1:13), fmt='( 5X,I2)') sim_month
+     read(config_start_time(1:13), fmt='( 8X,I2)') sim_day
+     read(config_start_time(1:13), fmt='(11X,I2)') sim_hour
+
+     month_fraction = 0.0
+     
+     ! 86400 seconds in a day, 3600 seconds in an hour
+     if (sim_month == 1) then
+        month_fraction = (real(sim_day-1, kind=RKIND)*86400.0 + real(sim_hour, kind=RKIND)*3600.0) / (31.0 * 86400.0)
+     else if (sim_month == 2) then
+        if (sim_day > 28) sim_day = 28 ! Ignore leap years
+        month_fraction = (real(sim_day-1, kind=RKIND)*86400.0 + real(sim_hour, kind=RKIND)*3600.0) / (28.0 * 86400.0)
+     else if (sim_month == 3) then
+        month_fraction = (real(sim_day-1, kind=RKIND)*86400.0 + real(sim_hour, kind=RKIND)*3600.0) / (31.0 * 86400.0)
+     else if (sim_month == 4) then
+        month_fraction = (real(sim_day-1, kind=RKIND)*86400.0 + real(sim_hour, kind=RKIND)*3600.0) / (30.0 * 86400.0)
+     else if (sim_month == 5) then
+        month_fraction = (real(sim_day-1, kind=RKIND)*86400.0 + real(sim_hour, kind=RKIND)*3600.0) / (31.0 * 86400.0)
+     else if (sim_month == 6) then
+        month_fraction = (real(sim_day-1, kind=RKIND)*86400.0 + real(sim_hour, kind=RKIND)*3600.0) / (30.0 * 86400.0)
+     else if (sim_month == 7) then
+        month_fraction = (real(sim_day-1, kind=RKIND)*86400.0 + real(sim_hour, kind=RKIND)*3600.0) / (31.0 * 86400.0)
+     else if (sim_month == 8) then
+        month_fraction = (real(sim_day-1, kind=RKIND)*86400.0 + real(sim_hour, kind=RKIND)*3600.0) / (31.0 * 86400.0)
+     else if (sim_month == 9) then
+        month_fraction = (real(sim_day-1, kind=RKIND)*86400.0 + real(sim_hour, kind=RKIND)*3600.0) / (30.0 * 86400.0)
+     else if (sim_month == 10) then
+        month_fraction = (real(sim_day-1, kind=RKIND)*86400.0 + real(sim_hour, kind=RKIND)*3600.0) / (31.0 * 86400.0)
+     else if (sim_month == 11) then
+        month_fraction = (real(sim_day-1, kind=RKIND)*86400.0 + real(sim_hour, kind=RKIND)*3600.0) / (30.0 * 86400.0)
+     else if (sim_month == 12) then
+        month_fraction = (real(sim_day-1, kind=RKIND)*86400.0 + real(sim_hour, kind=RKIND)*3600.0) / (31.0 * 86400.0)
+     else
+        call mpas_log_write('Invalid month for microphysics aerosol interpolation')
+     endif
+
+     if (month_fraction > 1.0) month_fraction = 1.0
+
+     ! Interpolate to middle of each month
+     if (month_fraction >= 0.5) then
+        month_interp_weight = 1.5 - month_fraction
+        month_index = sim_month
+        interp_month_index = sim_month + 1
+        if (interp_month_index > 12) interp_month_index = 1
+     else
+        month_interp_weight = month_fraction + 0.5
+        month_index = sim_month
+        interp_month_index = sim_month - 1
+        if (interp_month_index < 1) interp_month_index = 12
+     endif
+     
      do k = 1, nVertLevels
         do iCell = 1, nCells
            ! Lat and lon from model converted from radians to degrees
@@ -7244,7 +7301,7 @@ call mpas_log_write('Done with soil consistency check')
            lat_index = 1
            lon_index = 1
            pressure_index = 30 ! Pressure from monthly climatology is oriented with index=1 is top of atmosphere
-           month_index = 2 ! Hard-coded for February for testing
+!           month_index = 2 ! Hard-coded for February for testing
            
            ! Nearest point interpolation (for testing)
            ! The climatology starts from -180 and goes to 180 (every 1.25 degrees)
@@ -7270,9 +7327,12 @@ call mpas_log_write('Done with soil consistency check')
                  exit
               endif
            enddo
+           
+           scalars(index_nwfa,k,iCell) = month_interp_weight*wfa_aerosol_climo(lon_index,lat_index,pressure_index,month_index) + &
+                (1.0 - month_interp_weight)*wfa_aerosol_climo(lon_index,lat_index,pressure_index,interp_month_index)
 
-           scalars(index_nwfa,k,iCell) = wfa_aerosol_climo(lon_index,lat_index,pressure_index,month_index)
-           scalars(index_nifa,k,iCell) = ifa_aerosol_climo(lon_index,lat_index,pressure_index,month_index)
+           scalars(index_nifa,k,iCell) = month_interp_weight*ifa_aerosol_climo(lon_index,lat_index,pressure_index,month_index) + &
+                (1.0 - month_interp_weight)*ifa_aerosol_climo(lon_index,lat_index,pressure_index,interp_month_index)
         end do
      enddo
    end subroutine init_microphysics_aerosols
@@ -7282,17 +7342,16 @@ call mpas_log_write('Done with soil consistency check')
    !
    !> \brief Add water- and ice-friendly aerosols for microphysics to LBCs
    !> \author Anders Jensen
-   !> \date   15 March 2024
+   !> \date   22 March 2024
    !> \details
    !>  This routine is similar to init_microphysics_aerosols, but adds
    !>  aerosol information to the lateral boundary condition files. 
    !>
    !>  This is for testing purposes only. A better interpolation method should
-   !>  be implemented. This is also currently hard-coded for the February
-   !>  data. A time interpolation method should be implemented as well.
+   !>  be implemented. 
    !
    !-----------------------------------------------------------------------   
-   subroutine init_microphysics_aerosols_lbc(mesh, state, diag, lbc_state, nCells, nVertLevels)
+   subroutine init_microphysics_aerosols_lbc(timestamp, mesh, state, diag, lbc_state, nCells, nVertLevels)
 
      use mpas_io_units, only : mpas_new_unit, mpas_release_unit
      
@@ -7301,7 +7360,8 @@ call mpas_log_write('Done with soil consistency check')
      
      integer, intent(in) :: nCells
      integer, intent(in) :: nVertLevels
-      
+     character(len=*), intent(in) :: timestamp
+     
      type (mpas_pool_type), intent(in) :: mesh
      type (mpas_pool_type), intent(in) :: diag
      type (mpas_pool_type), intent(inout) :: state
@@ -7314,8 +7374,10 @@ call mpas_log_write('Done with soil consistency check')
 
      integer :: k, m, iCell
      integer :: aerosol_table_unit, istat
-     integer :: lat_index, lon_index, pressure_index, month_index
-     
+     integer :: lat_index, lon_index, pressure_index, month_index, interp_month_index
+     integer :: sim_year, sim_month, sim_day, sim_hour
+     real (kind=RKIND) :: month_fraction, month_interp_weight
+          
      real (kind=RKIND) :: tmp_lat, tmp_lon, tmp_prs
      real (kind=RKIND), dimension(:,:), pointer :: ppb, pp
      real (kind=RKIND), dimension(:), pointer :: latCell
@@ -7332,7 +7394,7 @@ call mpas_log_write('Done with soil consistency check')
      real (kind=R4KIND), dimension(nlon, nlat, nprs, nmon) :: ifa_aerosol_climo
      real (kind=R4KIND), dimension(nlon, nlat, nprs, nmon) :: prs_aerosol_climo
      
-     call mpas_log_write('====== Handling aerosol initialization 2 for microphysics ======')
+     call mpas_log_write('====== Handling aerosol LBCs for microphysics ======')
      
 !     call mpas_pool_get_dimension(mesh, 'nCells', nCells)
 !     call mpas_pool_get_dimension(mesh, 'nVertLevels', nVertLevels)
@@ -7377,6 +7439,58 @@ call mpas_log_write('Done with soil consistency check')
      close(unit=aerosol_table_unit)
      call mpas_release_unit(aerosol_table_unit)
 
+     read(timestamp, fmt='(    I4)') sim_year
+     read(timestamp, fmt='( 5X,I2)') sim_month
+     read(timestamp, fmt='( 8X,I2)') sim_day
+     read(timestamp, fmt='(11X,I2)') sim_hour
+
+     month_fraction = 0.0
+     
+     ! 86400 seconds in a day, 3600 seconds in an hour
+     if (sim_month == 1) then
+        month_fraction = (real(sim_day-1, kind=RKIND)*86400.0 + real(sim_hour, kind=RKIND)*3600.0) / (31.0 * 86400.0)
+     else if (sim_month == 2) then
+        if (sim_day > 28) sim_day = 28 ! Ignore leap years
+        month_fraction = (real(sim_day-1, kind=RKIND)*86400.0 + real(sim_hour, kind=RKIND)*3600.0) / (28.0 * 86400.0)
+     else if (sim_month == 3) then
+        month_fraction = (real(sim_day-1, kind=RKIND)*86400.0 + real(sim_hour, kind=RKIND)*3600.0) / (31.0 * 86400.0)
+     else if (sim_month == 4) then
+        month_fraction = (real(sim_day-1, kind=RKIND)*86400.0 + real(sim_hour, kind=RKIND)*3600.0) / (30.0 * 86400.0)
+     else if (sim_month == 5) then
+        month_fraction = (real(sim_day-1, kind=RKIND)*86400.0 + real(sim_hour, kind=RKIND)*3600.0) / (31.0 * 86400.0)
+     else if (sim_month == 6) then
+        month_fraction = (real(sim_day-1, kind=RKIND)*86400.0 + real(sim_hour, kind=RKIND)*3600.0) / (30.0 * 86400.0)
+     else if (sim_month == 7) then
+        month_fraction = (real(sim_day-1, kind=RKIND)*86400.0 + real(sim_hour, kind=RKIND)*3600.0) / (31.0 * 86400.0)
+     else if (sim_month == 8) then
+        month_fraction = (real(sim_day-1, kind=RKIND)*86400.0 + real(sim_hour, kind=RKIND)*3600.0) / (31.0 * 86400.0)
+     else if (sim_month == 9) then
+        month_fraction = (real(sim_day-1, kind=RKIND)*86400.0 + real(sim_hour, kind=RKIND)*3600.0) / (30.0 * 86400.0)
+     else if (sim_month == 10) then
+        month_fraction = (real(sim_day-1, kind=RKIND)*86400.0 + real(sim_hour, kind=RKIND)*3600.0) / (31.0 * 86400.0)
+     else if (sim_month == 11) then
+        month_fraction = (real(sim_day-1, kind=RKIND)*86400.0 + real(sim_hour, kind=RKIND)*3600.0) / (30.0 * 86400.0)
+     else if (sim_month == 12) then
+        month_fraction = (real(sim_day-1, kind=RKIND)*86400.0 + real(sim_hour, kind=RKIND)*3600.0) / (31.0 * 86400.0)
+     else
+        call mpas_log_write('Invalid month for microphysics aerosol interpolation')
+     endif
+
+     if (month_fraction > 1.0) month_fraction = 1.0
+
+     ! Interpolate to middle of each month
+     if (month_fraction >= 0.5) then
+        month_interp_weight = 1.5 - month_fraction
+        month_index = sim_month
+        interp_month_index = sim_month + 1
+        if (interp_month_index > 12) interp_month_index = 1
+     else
+        month_interp_weight = month_fraction + 0.5
+        month_index = sim_month
+        interp_month_index = sim_month - 1
+        if (interp_month_index < 1) interp_month_index = 12
+     endif
+
      do k = 1, nVertLevels
         do iCell = 1, nCells
            ! Lat and lon from model converted from radians to degrees
@@ -7387,7 +7501,7 @@ call mpas_log_write('Done with soil consistency check')
            lat_index = 1
            lon_index = 1
            pressure_index = 30 ! Pressure from monthly climatology is oriented with index=1 is top of atmosphere
-           month_index = 2 ! Hard-coded for February for testing
+!           month_index = 2 ! Hard-coded for February for testing
            
            ! Nearest point interpolation (for testing)
            ! The climatology starts from -180 and goes to 180 (every 1.25 degrees)
@@ -7413,9 +7527,12 @@ call mpas_log_write('Done with soil consistency check')
                  exit
               endif
            enddo
+           
+           scalars(index_nwfa,k,iCell) = month_interp_weight*wfa_aerosol_climo(lon_index,lat_index,pressure_index,month_index) + &
+                (1.0 - month_interp_weight)*wfa_aerosol_climo(lon_index,lat_index,pressure_index,interp_month_index)
 
-           scalars(index_nwfa,k,iCell) = wfa_aerosol_climo(lon_index,lat_index,pressure_index,month_index)
-           scalars(index_nifa,k,iCell) = ifa_aerosol_climo(lon_index,lat_index,pressure_index,month_index)
+           scalars(index_nifa,k,iCell) = month_interp_weight*ifa_aerosol_climo(lon_index,lat_index,pressure_index,month_index) + &
+                (1.0 - month_interp_weight)*ifa_aerosol_climo(lon_index,lat_index,pressure_index,interp_month_index)
         end do
      enddo
    end subroutine init_microphysics_aerosols_lbc
