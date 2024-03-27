@@ -46,6 +46,7 @@ module init_atm_cases
 
       use mpas_stream_manager
       use mpas_init_atm_gwd, only : compute_gwd_fields
+      use mpas_init_atm_gwd_gsl, only : calc_gsl_oro_data
 
       implicit none
 
@@ -220,9 +221,10 @@ module init_atm_cases
                 end if
             end if
 
-            if (config_static_interp) then
-               call init_atm_static(mesh, block_ptr % dimensions, block_ptr % configs)
-            end if
+            ! Temporary changes
+            ! if (config_static_interp) then
+            !    call init_atm_static(mesh, block_ptr % dimensions, block_ptr % configs)
+            ! end if
 
             if (config_native_gwd_static) then
                call mpas_log_write(' ')
@@ -232,6 +234,19 @@ module init_atm_cases
                if (ierr /= 0) then
                   call mpas_log_write('****************************************************************', messageType=MPAS_LOG_ERR)
                   call mpas_log_write('Error while trying to compute sub-grid-scale orography',           messageType=MPAS_LOG_ERR)
+                  call mpas_log_write('statistics for use with the GWDO scheme.',                         messageType=MPAS_LOG_ERR)
+                  call mpas_log_write('****************************************************************', messageType=MPAS_LOG_CRIT)
+               end if
+            end if
+
+            if (config_native_gwd_gsl_static) then
+               call mpas_log_write(' ')
+               call mpas_log_write('Computing GWDO static fields for GSL orog drag on the native MPAS mesh')
+               call mpas_log_write(' ')
+               call calc_gsl_oro_data(domain,ierr)
+               if (ierr /= 0) then
+                  call mpas_log_write('****************************************************************', messageType=MPAS_LOG_ERR)
+                  call mpas_log_write('Error while trying to compute sub-grid-scale GSL orography',       messageType=MPAS_LOG_ERR)
                   call mpas_log_write('statistics for use with the GWDO scheme.',                         messageType=MPAS_LOG_ERR)
                   call mpas_log_write('****************************************************************', messageType=MPAS_LOG_CRIT)
                end if
