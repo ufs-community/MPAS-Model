@@ -1480,6 +1480,10 @@
                              description="Cloud ice number concentration"
                              packages="bl_mynn_in;mp_thompson_in"/>
 
+                        <var name="nc" array_group="number" units="nb kg^{-1}"
+                             description="Cloud number concentration"
+                             packages="mp_thompson_in"/>
+
                         <var name="nr" array_group="number" units="nb kg^{-1}"
                              description="Rain number concentration"
                              packages="mp_thompson_in"/>
@@ -1810,6 +1814,10 @@
                              description="Tendency of cloud ice number concentration multiplied by dry air density divided by d(zeta)/dz"
                              packages="bl_mynn_in;mp_thompson_in"/>
 
+			<var name="tend_nc" name_in_code="nc" array_group="number" units="nb m^{-3} s^{-1}" 
+                             description="Tendency of cloud number concentration multiplied by dry air density divided by d(zeta)/dz"
+                             packages="mp_thompson_in"/>
+			
                         <var name="tend_nr" name_in_code="nr" array_group="number" units="nb m^{-3} s^{-1}" 
                              description="Tendency of rain number concentration multiplied by dry air density divided by d(zeta)/dz"
                              packages="mp_thompson_in"/>
@@ -1874,6 +1882,9 @@
                         <var name="lbc_qg" name_in_code="qg" array_group="moist"  packages="mp_thompson_in;mp_wsm6_in" units="kg kg^{-1} s^{-1}"
                              description="Lateral boundary tendency of graupel mixing ratio"/>
 
+                        <var name="lbc_nc" name_in_code="nc" array_group="number" packages="mp_thompson_in" units="m^{-3} s^{-1}"
+                             description="Lateral boundary tendency of cloud number concentration"/>
+			
                         <var name="lbc_nr" name_in_code="nr" array_group="number" packages="mp_thompson_in" units="m^{-3} s^{-1}"
                              description="Lateral boundary tendency of rain number concentration"/>
 

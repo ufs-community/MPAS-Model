@@ -486,13 +486,13 @@
 !local pointers:
  character(len=StrKIND),pointer:: microp_scheme
  integer,pointer:: index_qv,index_qc,index_qr,index_qi,index_qs,index_qg
- integer,pointer:: index_ni,index_nr
+ integer,pointer:: index_ni,index_nc,index_nr
  real(kind=RKIND),dimension(:),pointer    :: nt_c,mu_c
  real(kind=RKIND),dimension(:,:),pointer  :: zgrid,w
  real(kind=RKIND),dimension(:,:),pointer  :: zz,exner,pressure_b
  real(kind=RKIND),dimension(:,:),pointer  :: rho_zz,theta_m,pressure_p
  real(kind=RKIND),dimension(:,:),pointer  :: qv,qc,qr,qi,qs,qg
- real(kind=RKIND),dimension(:,:),pointer  :: ni,nr
+ real(kind=RKIND),dimension(:,:),pointer  :: ni,nc,nr
  real(kind=RKIND),dimension(:,:),pointer  :: rainprod,evapprod
  real(kind=RKIND),dimension(:,:),pointer  :: re_cloud,re_ice,re_snow
  real(kind=RKIND),dimension(:,:,:),pointer:: scalars
@@ -530,6 +530,7 @@
  call mpas_pool_get_dimension(state,'index_qs'  ,index_qs  )
  call mpas_pool_get_dimension(state,'index_qg'  ,index_qg  )
  call mpas_pool_get_dimension(state,'index_ni'  ,index_ni  )
+ call mpas_pool_get_dimension(state,'index_nc'  ,index_nc  )
  call mpas_pool_get_dimension(state,'index_nr'  ,index_nr  )
 
  call mpas_pool_get_array(state,'scalars',scalars,time_lev)
@@ -583,6 +584,7 @@
 
        case("mp_thompson")
           ni   => scalars(index_ni,:,:)
+          nc   => scalars(index_nc,:,:)
           nr   => scalars(index_nr,:,:)
 
           do j = jts,jte
@@ -595,6 +597,7 @@
           do k = kts, kte
           do i = its, ite
              ni_p(i,k,j) = ni(k,i)
+             nc_p(i,k,j) = nc(k,i)
              nr_p(i,k,j) = nr(k,i)
              rainprod_p(i,k,j) = rainprod(k,i)
              evapprod_p(i,k,j) = evapprod(k,i)
@@ -632,7 +635,7 @@
 !local pointers:
  character(len=StrKIND),pointer:: microp_scheme
  integer,pointer:: index_qv,index_qc,index_qr,index_qi,index_qs,index_qg
- integer,pointer:: index_ni,index_nr
+ integer,pointer:: index_ni,index_nc,index_nr
  real(kind=RKIND),dimension(:),pointer    :: surface_pressure,tend_sfc_pressure
  real(kind=RKIND),dimension(:,:),pointer  :: zgrid
  real(kind=RKIND),dimension(:,:),pointer  :: zz,exner,exner_b,pressure_b,rtheta_p,rtheta_b
@@ -640,7 +643,7 @@
  real(kind=RKIND),dimension(:,:),pointer  :: rt_diabatic_tend
  real(kind=RKIND),dimension(:,:),pointer  :: dtheta_dt_mp
  real(kind=RKIND),dimension(:,:),pointer  :: qv,qc,qr,qi,qs,qg
- real(kind=RKIND),dimension(:,:),pointer  :: ni,nr
+ real(kind=RKIND),dimension(:,:),pointer  :: ni,nr,nc
  real(kind=RKIND),dimension(:,:),pointer  :: rainprod,evapprod
  real(kind=RKIND),dimension(:,:),pointer  :: re_cloud,re_ice,re_snow
  real(kind=RKIND),dimension(:,:,:),pointer:: scalars
@@ -684,6 +687,7 @@
  call mpas_pool_get_dimension(state,'index_qs'  ,index_qs  )
  call mpas_pool_get_dimension(state,'index_qg'  ,index_qg  )
  call mpas_pool_get_dimension(state,'index_ni'  ,index_ni  )
+ call mpas_pool_get_dimension(state,'index_nc'  ,index_nc  )
  call mpas_pool_get_dimension(state,'index_nr'  ,index_nr  )
 
  call mpas_pool_get_array(state,'scalars',scalars,time_lev)
@@ -770,12 +774,14 @@
 
        case("mp_thompson")
           ni   => scalars(index_ni,:,:)
+          nc   => scalars(index_nc,:,:)
           nr   => scalars(index_nr,:,:)
 
           do j = jts, jte
           do k = kts, kte
           do i = its, ite
              ni(k,i) = ni_p(i,k,j)
+             nc(k,i) = nc_p(i,k,j)
              nr(k,i) = nr_p(i,k,j)
              rainprod(k,i) = rainprod_p(i,k,j)
              evapprod(k,i) = evapprod_p(i,k,j)

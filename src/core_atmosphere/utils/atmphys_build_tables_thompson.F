@@ -8,6 +8,7 @@
 !=================================================================================================================
  module atmphys_build_tables_thompson
  use module_mp_thompson
+ use module_mp_thompson_params, only : NRHG
 
  implicit none
  private
@@ -47,7 +48,7 @@
     call print_parallel_mesg('MP_THOMPSON_QRacrQG_DATA.DBL')
     return
  end if
- call qr_acr_qg(1)
+ call qr_acr_qg(NRHG)
  write(mp_unit) tcg_racg
  write(mp_unit) tmr_racg
  write(mp_unit) tcr_gacr
