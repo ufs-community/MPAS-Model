@@ -288,6 +288,7 @@
 
  real(kind=RKIND),dimension(:,:),pointer:: dzs_fg,zs_fg
  real(kind=RKIND),dimension(:,:),pointer:: dzs,zs
+ real(kind=RKIND),dimension(:), allocatable:: zs2
 
 !-----------------------------------------------------------------------------------------------------------------
 !call mpas_log_write('')
@@ -304,20 +305,26 @@
 
  call mpas_pool_get_config(configs, 'config_nsoillevels', config_nsoillevels)
 
- if(config_nsoillevels .ne. 4) &
-    call physics_error_fatal('NOAH lsm uses 4 soil layers. Correct config_nsoillevels.')
+ !select case (config_nsoillevels)
+ !case( 'noah') 
+ !  if(config_nsoillevels .ne. 4) &
+ !     call physics_error_fatal('NOAH lsm uses 4 soil layers. Correct config_nsoillevels.')
+ !case('ruc')
+ !  if(config_nsoillevels .ne. 9) &
+ !     call physics_error_fatal('RUC lsm uses only 9 soil layers currently. Correct config_nsoillevels.')
+ !end select
 
- do iCell = 1, nCellsSolve
+ selectcase (config_nsoillevels)
+ case( 4 )
+   do iCell = 1, nCellsSolve
     iSoil = 1
     zs_fg(iSoil,iCell) = 0.5_RKIND * dzs_fg(iSoil,iCell)
     do iSoil = 2, nFGSoilLevels
        zs_fg(iSoil,iCell) = zs_fg(iSoil-1,iCell)        &
                           + 0.5_RKIND * dzs_fg(iSoil-1,iCell) &
                           + 0.5_RKIND * dzs_fg(iSoil,iCell)
-    enddo
- enddo
+   enddo
 
- do iCell = 1, nCellsSolve
     dzs(1,iCell) = 0.10_RKIND
     dzs(2,iCell) = 0.30_RKIND
     dzs(3,iCell) = 0.60_RKIND
@@ -330,8 +337,34 @@
                        + 0.5_RKIND * dzs(iSoil-1,iCell) &
                        + 0.5_RKIND * dzs(iSoil,iCell)
     enddo
+   enddo
 
- enddo
+ case(9)
+   if(.not.allocated(zs2)) allocate(zs2(nSoilLevels))
+   do iCell = 1, nCellsSolve
+     zs(1,iCell) =  0.00_RKIND
+     zs(2,iCell) =  0.01_RKIND
+     zs(3,iCell) =  0.04_RKIND
+     zs(4,iCell) =  0.10_RKIND
+     zs(5,iCell) =  0.30_RKIND
+     zs(6,iCell) =  0.60_RKIND
+     zs(7,iCell) =  1.00_RKIND
+     zs(8,iCell) =  1.60_RKIND
+     zs(9,iCell) =  3.00_RKIND
+
+     iSoil = 1
+     zs2(iSoil) = 0.00_RKIND
+     zs2(iSoil+1) = (zs(iSoil+1,iCell) + zs(iSoil,iCell) ) *0.5_RKIND
+     dzs(iSoil,iCell) = zs2(iSoil+1) - zs2(iSoil)
+     do iSoil = 2,nSoilLevels-1
+        zs2(iSoil) = (zs(iSoil+1,iCell) + zs(iSoil,iCell)) *0.5_RKIND
+        dzs(iSoil,iCell) = zs2(iSoil) - zs2(iSoil-1)
+     enddo
+     zs2(nSoilLevels) = zs(nSoilLevels,iCell)
+     dzs(nSoilLevels,iCell) = zs2(nSoilLevels) - zs2(nSoilLevels-1) 
+   enddo
+   deallocate(zs2)
+ end select
 
  end subroutine init_soil_layers_depth
 
@@ -358,12 +391,12 @@
  
  real(kind=RKIND),dimension(:,:),allocatable:: zhave,sm_input,st_input
 
- real(kind=RKIND),dimension(:),pointer  :: skintemp,tmn
+ real(kind=RKIND),dimension(:),pointer  :: skintemp,tmn,ter,soilz
  real(kind=RKIND),dimension(:,:),pointer:: dzs,zs,tslb,smois,sh2o,smcrel
  real(kind=RKIND),dimension(:,:),pointer:: sm_fg,st_fg,zs_fg
 
  integer, pointer :: config_nsoillevels
-
+ 
  character(len=StrKIND) :: errstring
 
 !-----------------------------------------------------------------------------------------------------------------
@@ -386,7 +419,8 @@
  call mpas_pool_get_array(fg, 'tslb', tslb)
  call mpas_pool_get_array(fg, 'skintemp', skintemp)
  call mpas_pool_get_array(fg, 'tmn', tmn)
-
+ call mpas_pool_get_array(mesh, 'ter', ter)
+ call mpas_pool_get_array(fg, 'soilz', soilz)
  call mpas_pool_get_config(configs, 'config_nsoillevels', config_nsoillevels)
 
  call mpas_log_write('nSoilLevels   = $i',intArgs=(/nSoilLevels/))
@@ -399,7 +433,9 @@
  num_st = 0
  do iCell = 1, nCellsSolve
     do ifgSoil = 1, nFGSoilLevels
-       if(st_fg(ifgSoil,iCell) .le. 0._RKIND) num_st = num_st + 1
+       if(st_fg(ifgSoil,iCell) .le. 0._RKIND) then
+           num_st = num_st + 1
+        endif
        if(sm_fg(ifgSoil,iCell) .lt. 0._RKIND) num_sm = num_sm + 1
     enddo
  enddo
@@ -409,13 +445,73 @@
     call mpas_log_write('Error in interpolation of sm_fg to MPAS grid: num_sm = $i', messageType=MPAS_LOG_CRIT, intArgs=(/num_sm/))
  endif 
 
- if(config_nsoillevels .ne. 4) &
-    call physics_error_fatal('NOAH lsm uses 4 soil layers. Correct config_nsoillevels.')
+ select case(config_nsoillevels) 
+ case ( 4 )
+  ! if(config_nsoillevels .ne. 4) &
+  !    call physics_error_fatal('NOAH lsm uses 4 soil layers. Correct config_nsoillevels.')
+   call init_soil_properties_noah(mesh, fg, dminfo, dims, configs)
+
+ case ( 9 )
+   !if(config_nsoillevels .ne. 9) &
+   !   call physics_error_fatal('RUC lsm uses 9 soil layers. Correct config_nsoillevels.')
+   call init_soil_properties_ruc(mesh, fg, dminfo, dims, configs)
+
+ end select
+end subroutine init_soil_layers_properties
+
+!=================================================================================================================
+ subroutine init_soil_properties_noah(mesh, fg, dminfo, dims, configs)
+!=================================================================================================================
+
+ use mpas_abort, only : mpas_dmpar_global_abort
+
+!input arguments:
+ type (mpas_pool_type), intent(in) :: mesh
+ type (dm_info), intent(in) :: dminfo
+ type (mpas_pool_type), intent(in) :: dims
+ type (mpas_pool_type), intent(in) :: configs
+
+!inout arguments:
+ type (mpas_pool_type), intent(inout) :: fg
+
+!local variables:
+ integer:: iCell,ifgSoil,iSoil
+ integer, pointer:: nCellsSolve,nFGSoilLevels,nSoilLevels
+ integer:: num_sm,num_st
+ integer,dimension(:),pointer:: landmask
+
+ real(kind=RKIND),dimension(:,:),allocatable:: zhave,sm_input,st_input
+
+ real(kind=RKIND),dimension(:),pointer  :: skintemp,tmn
+ real(kind=RKIND),dimension(:,:),pointer:: dzs,zs,tslb,smois,sh2o,smcrel
+ real(kind=RKIND),dimension(:,:),pointer:: sm_fg,st_fg,zs_fg
+
+ integer, pointer :: config_nsoillevels
+
+ character(len=StrKIND) :: errstring
+
+ call mpas_pool_get_dimension(dims, 'nCellsSolve', nCellsSolve)
+ call mpas_pool_get_dimension(dims, 'nSoilLevels', nSoilLevels)
+ call mpas_pool_get_dimension(dims, 'nFGSoilLevels', nFGSoilLevels)
+
+ call mpas_pool_get_array(mesh, 'landmask', landmask)
+ call mpas_pool_get_array(fg, 'zs_fg', zs_fg)
+ call mpas_pool_get_array(fg, 'st_fg', st_fg)
+ call mpas_pool_get_array(fg, 'sm_fg', sm_fg)
+ call mpas_pool_get_array(fg, 'zs', zs)
+ call mpas_pool_get_array(fg, 'dzs', dzs)
+ call mpas_pool_get_array(fg, 'sh2o', sh2o)
+ call mpas_pool_get_array(fg, 'smcrel', smcrel)
+ call mpas_pool_get_array(fg, 'smois', smois)
+ call mpas_pool_get_array(fg, 'tslb', tslb)
+ call mpas_pool_get_array(fg, 'skintemp', skintemp)
+ call mpas_pool_get_array(fg, 'tmn', tmn)
 
  if(.not.allocated(zhave)   ) allocate(zhave(nFGSoilLevels+2,nCellsSolve)   )
  if(.not.allocated(st_input)) allocate(st_input(nFGSoilLevels+2,nCellsSolve))
  if(.not.allocated(sm_input)) allocate(sm_input(nFGSoilLevels+2,nCellsSolve))
 
+!... 
  do iCell = 1, nCellsSolve
 
     ifgSoil = 1
@@ -424,14 +520,14 @@
     sm_input(ifgSoil,iCell) = sm_fg(ifgSoil+1,iCell)
 
     do ifgSoil = 1, nFGSoilLevels
-       zhave(ifgSoil+1,iCell) = zs_fg(ifgSoil,iCell) / 100._RKIND
-       st_input(ifgSoil+1,iCell) = st_fg(ifgSoil,iCell)
-       sm_input(ifgSoil+1,iCell) = sm_fg(ifgSoil,iCell)
+       zhave(ifgSoil+1,iCell) = zs_fg(ifgSoil,iCell) / 100._RKIND ! convert to meters
+       st_input(ifgSoil+1,iCell) = st_fg(ifgSoil,iCell)  !fill in stemp array
+       sm_input(ifgSoil+1,iCell) = sm_fg(ifgSoil,iCell)  !fill in smois array
     enddo
 
-    zhave(nFGSoilLevels+2,iCell) = 300._RKIND/100._RKIND
-    st_input(nFGSoilLevels+2,iCell) = tmn(iCell)
-    sm_input(nFGSoilLevels+2,iCell) = sm_input(nFGSoilLevels,iCell)
+    zhave(nFGSoilLevels+2,iCell) = 300._RKIND/100._RKIND ! Set depth of bottom of last layer to 3m
+    st_input(nFGSoilLevels+2,iCell) = tmn(iCell)         ! Set T at bottom interface to deep layer temp
+    sm_input(nFGSoilLevels+2,iCell) = sm_input(nFGSoilLevels,iCell) ! Set smois at bottom interface to value of lowest layer
 
     if(iCell .eq. 1) then
        do ifgSoil = 1,nFGSoilLevels+2
@@ -510,7 +606,236 @@
  if(allocated(st_input)) deallocate(st_input)
  if(allocated(sm_input)) deallocate(sm_input)
 
- end subroutine init_soil_layers_properties
+ end subroutine init_soil_properties_noah
+
+!=================================================================================================================
+ subroutine init_soil_properties_ruc(mesh, fg, dminfo, dims, configs)
+!=================================================================================================================
+
+ use mpas_abort, only : mpas_dmpar_global_abort
+
+!input arguments:
+ type (mpas_pool_type), intent(in) :: mesh
+ type (dm_info), intent(in) :: dminfo
+ type (mpas_pool_type), intent(in) :: dims
+ type (mpas_pool_type), intent(in) :: configs
+
+!inout arguments:
+ type (mpas_pool_type), intent(inout) :: fg
+
+!local variables:
+ integer:: iCell,ifgSoil,iSoil
+ integer:: lout, lin
+ integer, pointer:: nCellsSolve,nFGSoilLevels,nSoilLevels
+ integer:: num_sm,num_st
+ real(kind=RKIND):: temp
+
+ integer,dimension(:),pointer:: landmask
+
+ real(kind=RKIND),dimension(:,:),allocatable:: zhave,sm_input,st_input
+ real(kind=RKIND),dimension(:),allocatable:: smtotn,smtotr,factorsm
+
+ real(kind=RKIND),dimension(:),pointer  :: skintemp,tmn,sst
+ real(kind=RKIND),dimension(:,:),pointer:: dzs,zs,tslb,smois,sh2o,smcrel
+ real(kind=RKIND),dimension(:,:),pointer:: sm_fg,st_fg,zs_fg
+
+ logical, pointer :: config_input_sst
+
+
+ character(len=StrKIND) :: errstring
+
+ call mpas_pool_get_dimension(dims, 'nCellsSolve', nCellsSolve)
+ call mpas_pool_get_dimension(dims, 'nSoilLevels', nSoilLevels)
+ call mpas_pool_get_dimension(dims, 'nFGSoilLevels', nFGSoilLevels)
+ call mpas_pool_get_config(configs, 'config_input_sst', config_input_sst)
+
+ call mpas_pool_get_array(mesh, 'landmask', landmask)
+ call mpas_pool_get_array(fg, 'zs_fg', zs_fg)
+ call mpas_pool_get_array(fg, 'st_fg', st_fg)
+ call mpas_pool_get_array(fg, 'sm_fg', sm_fg)
+ call mpas_pool_get_array(fg, 'zs', zs)
+ call mpas_pool_get_array(fg, 'dzs', dzs)
+ call mpas_pool_get_array(fg, 'sh2o', sh2o)
+ call mpas_pool_get_array(fg, 'smcrel', smcrel)
+ call mpas_pool_get_array(fg, 'smois', smois)
+ call mpas_pool_get_array(fg, 'tslb', tslb)
+ call mpas_pool_get_array(fg, 'skintemp', skintemp)
+ call mpas_pool_get_array(fg, 'tmn', tmn)
+ call mpas_pool_get_array(fg, 'sst', sst)
+
+ if(.not.allocated(zhave)   ) allocate(zhave(nFGSoilLevels+2,nCellsSolve)   )
+
+!  Sort soil levels
+
+! DO iCell=1,nCellsSolve
+! outer : DO lout = 1,nFGSoilLevels-1 !lout = 1 , num_st_levels_input-1
+!    inner : DO lin = lout+1 , nFGSoilLevels !lin = lout+1 , num_st_levels_input
+!       
+!       IF ( zs_fg(lout,iCell) .GT. zs_fg(lin,iCell) ) THEN
+!          temp = zs_fg(lout,iCell)
+!          zs_fg(lout,iCell) = zs_fg(lin,iCell)
+!          zs_fg(lin,iCell) = temp
+!
+!          temp = st_fg(lout,iCell)
+!          st_input(lout,iCell) = st_fg(lin,iCell)
+!          st_input(lin,iCell) = temp
+!
+!          temp = sm_fg(lout,iCell)
+!          sm_input(lout,iCell) = sm_fg(lin,iCell)
+!          sm_input(lin,iCell) = temp
+!       END IF
+!    END DO inner
+! END DO outer
+! ENDDO
+
+ IF (nFGSoilLevels == 4) THEN  !( flag_soil_layers == 1 ) THEN    ! Just assume 4 soil levels 
+   if (.not. allocated(smtotn))  allocate(smtotn(nCellsSolve))     ! is Noah layers for now
+   if (.not. allocated(factorsm)) allocate(factorsm(nSoilLevels))
+   if (.not. allocated(smtotr))  allocate(smtotr(nCellsSolve))
+   if(.not.allocated(st_input)) allocate(st_input(nFGSoilLevels+2,nCellsSolve))
+   if(.not.allocated(sm_input)) allocate(sm_input(nFGSoilLevels+2,nCellsSolve))
+
+   DO iCell = 1,nCellsSolve 
+      ! FLAG_SOIL_LAYERS == 1
+      st_input(1,iCell) = skintemp(iCell)
+      do iSoil = 2,nFGSoilLevels+1
+        st_input(iSoil,iCell) = st_fg(iSoil-1,iCell)
+        sm_input(iSoil,iCell) = sm_fg(iSoil-1,iCell)
+      enddo
+      st_input(nFGSoilLevels+2,iCell) = tmn(iCell)
+
+      ! FLAG_SOIL_LEVELS != 1
+      smtotn(iCell)=sm_input(2,iCell)*0.1_RKIND + sm_input(3,iCell)*0.2_RKIND + sm_input(4,iCell)*0.7_RKIND + sm_input(5,iCell)*1.0_RKIND
+
+      ! FLAG_SOIL_LAYERS == 1
+      sm_input(1,iCell) = (sm_input(2,iCell)-sm_input(3,iCell))/   &
+                        (zs_fg(2,iCell)-zs_fg(1,iCell))*zs_fg(1,iCell)+ sm_input(2,iCell)
+      sm_input(nFGSoilLevels+2,iCell) = sm_input(nFGSoilLevels+1,iCell)
+
+     zhave(1,iCell) = 0.0_RKIND
+     DO iFGSoil = 1,nFGSoilLevels
+       zhave(iFGSoil+1,iCell) = zs_fg(iFGSoil,iCell) / 100.0_RKIND
+     ENDDO
+     zhave(nFGSoilLevels,iCell) = 300.0_RKIND / 100.0_RKIND
+
+     ruc1 : DO iSoil = 1 , nSoilLevels
+         input1 : DO iFGSoil = 1 , nFGSoilLevels +2
+            IF ( ( zs(iSoil,iCell) .GE. zhave(iFGSoil,iCell  ) ) .AND. &
+                 ( zs(iSoil,iCell) .LE. zhave(iFGSoil+1,iCell) ) ) THEN
+                   tslb(iSoil,iCell)= ( st_input(iFGSoil,iCell ) * ( zhave(iFGSoil+1,iCell) - zs(iSoil,iCell) ) + &
+                                        st_input(iFGSoil+1,iCell) * ( zs  (iSoil,iCell) - zhave(iFGSoil,iCell) ) ) / &
+                                                                ( zhave(iFGSoil+1,iCell) - zhave(iFGSoil,iCell) )
+                   smois(iSoil,iCell)= ( sm_input(iFGSoil,iCell ) * ( zhave(iFGSoil+1,iCell) - zs(iSoil,iCell) ) + &
+                                        sm_input(iFGSoil+1,iCell) * ( zs (iSoil,iCell) - zhave(iFGSoil,iCell) ) ) / &
+                                                                (zhave(iFGSoil+1,iCell) - zhave(iFGSoil,iCell) )
+               EXIT input1
+            END IF
+         END DO input1
+     END DO ruc1
+
+     smtotr(iCell)=0.0_RKIND
+     DO iSoil=1,nSoilLevels-1
+          smtotr(iCell)=smtotn(iCell) + smois(iSoil,iCell) *dzs(iSoil,iCell)
+     ENDDO
+   ENDDO
+   DO iCell = 1,nCellsSolve
+     IF ( landmask(iCell) > 0.5) THEN
+! land
+! initialize factor
+       DO iSoil=1,nSoilLevels
+          factorsm(iSoil)=1.
+       ENDDO
+! Correct RUC soil moisture to match Noah bucket
+       DO iSoil=1,nSoilLevels-1
+           temp = smois(iSoil,iCell)*smtotn(iCell)
+           temp = temp / (0.9_RKIND*smtotr(iCell))
+           smois(iSoil,iCell) = max(0.02_RKIND,temp)
+       ENDDO
+! Compute RUC bucket after correction
+       smtotr(iCell) = 0.0_RKIND
+       DO iSoil=1,nSoilLevels-1
+            smtotr(iCell)=smtotr(iCell) + smois(iSoil,iCell) *dzs(iSoil,iCell)
+       ENDDO
+       IF( smois(2,iCell) > smois(1,iCell) .and. smois(3,iCell) > smois(2,iCell)) then
+! typical for daytime, no recent precip
+          factorsm(1) = 0.75_RKIND
+          factorsm(2) = 0.8_RKIND
+          factorsm(3) = 0.85_RKIND
+          factorsm(4) = 0.9_RKIND
+          factorsm(5) = 0.95_RKIND
+       ENDIF
+       DO iSoil=1,nSoilLevels-1
+          smois(iSoil,iCell) = factorsm(iSoil) * smois(iSoil,iCell)
+       ENDDO
+
+       smtotr(iCell) = 0.
+       DO iSoil = 1,nSoilLevels-1
+          smtotr(iCell)=smtotr(iCell) + smois(iSoil,iCell) *dzs(iSoil,iCell)
+       ENDDO
+     ENDIF ! land
+  
+   END DO
+
+ ELSEIF (nFGSoilLevels == 9) THEN ! RUC SOIL LEVELS INPUT
+   DO iCell = 1,nCellsSolve
+     !DO iFGSoil = 1,nFGSoilLevels
+     !  zhave(iFGSoil,iCell) = zs_fg(iFGSoil,iCell)
+     !ENDDO
+
+     !ruc2 : DO iSoil = 1 , nSoilLevels
+     !    input2 : DO iFGSoil = 1 , nFGSoilLevels -1
+     !       IF ( ( zs(iSoil,iCell) .GE. zhave(iFGSoil,iCell  ) ) .AND. &
+     !            ( zs(iSoil,iCell) .LE. zhave(iFGSoil+1,iCell) ) ) THEN
+     !              tslb(iSoil,iCell)= ( st_fg(iFGSoil,iCell ) * ( zhave(iFGSoil+1,iCell) - zs(iSoil,iCell) ) + &
+     !                                   st_fg(iFGSoil+1,iCell) * ( zs (iSoil,iCell) - zhave(iFGSoil,iCell) ) ) / &
+     !                                                           ( zhave(iFGSoil+1,iCell) - zhave(iFGSoil,iCell) )
+     !              smois(iSoil,iCell)= ( sm_fg(iFGSoil,iCell ) * ( zhave(iFGSoil+1,iCell) - zs(iSoil,iCell) ) + &
+     !                                   sm_fg(iFGSoil+1,iCell) * ( zs (iSoil,iCell) - zhave(iFGSoil,iCell) ) ) / &
+     !                                                           (zhave(iFGSoil+1,iCell) - zhave(iFGSoil,iCell) )
+     !          EXIT input2
+     !       END IF
+     !    END DO input2
+     !END DO ruc2
+     DO iSoil = 1,nSoilLevels
+         tslb(iSoil,iCell) = st_fg(iSoil,iCell)
+         smois(iSoil,iCell) = sm_fg(iSoil,iCell)
+     ENDDO
+   ENDDO !iCell
+ END IF
+
+ !  Over water, put in reasonable values for soil temperature and moisture.
+ !  These won't be
+      !  used, but they will make a more continuous plot.
+
+ IF ( config_input_sst ) THEN
+   DO iCell = 1,nCellsSolve
+     IF ( landmask(iCell) .LT. 0.5 ) THEN
+        skintemp(iCell) = sst(iCell)
+        DO iSoil = 1 , nSoilLevels
+           tslb(iSoil,iCell) = sst(iCell)
+           smois(iSoil,iCell)= 1.0
+        END DO
+     END IF
+   ENDDO
+ ELSE
+   DO iCell = 1,nCellsSolve
+     IF ( landmask(iCell) .LT. 0.5 ) THEN
+        DO iSoil = 1, nSoilLevels
+           tslb(iSoil,iCell)= skintemp(iCell)
+           smois(iSoil,iCell)= 1.0
+        END DO
+     END IF
+   END DO
+ ENDIF
+
+ if(allocated(zhave)    ) deallocate(zhave )
+ if(allocated(st_input) ) deallocate(st_input)
+ if(allocated(sm_input) ) deallocate(sm_input)
+ if(allocated(smtotr)   ) deallocate(smtotr)
+ if(allocated(smtotn)   ) deallocate(smtotn)
+ if(allocated(factorsm) ) deallocate(factorsm)
+
+ end subroutine init_soil_properties_ruc
 
 !=================================================================================================================
  subroutine physics_init_sst(mesh, input, dims, configs)
