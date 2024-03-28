@@ -196,7 +196,9 @@
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
     nc_p,             &!
     ni_p,             &!
-    nr_p               !
+    nr_p,             &!
+    nwfa_p,           &!
+    nifa_p             !
 
 !... arrays located at w (vertical velocity) points, or at interface between layers:
  real(kind=RKIND),dimension(:,:,:),allocatable:: &

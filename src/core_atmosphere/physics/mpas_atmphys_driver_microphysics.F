@@ -156,6 +156,8 @@
           if(.not.allocated(ni_p) ) allocate(ni_p(ims:ime,kms:kme,jms:jme))
           if(.not.allocated(nc_p) ) allocate(nc_p(ims:ime,kms:kme,jms:jme))
           if(.not.allocated(nr_p) ) allocate(nr_p(ims:ime,kms:kme,jms:jme))
+          if(.not.allocated(nwfa_p) ) allocate(nwfa_p(ims:ime,kms:kme,jms:jme))
+          if(.not.allocated(nifa_p) ) allocate(nifa_p(ims:ime,kms:kme,jms:jme))
 
           if(.not.allocated(rainprod_p)) allocate(rainprod_p(ims:ime,kms:kme,jms:jme))
           if(.not.allocated(evapprod_p)) allocate(evapprod_p(ims:ime,kms:kme,jms:jme))
@@ -231,6 +233,8 @@
           if(allocated(ni_p) ) deallocate(ni_p )
           if(allocated(nc_p) ) deallocate(nc_p )
           if(allocated(nr_p) ) deallocate(nr_p )
+          if(allocated(nwfa_p) ) deallocate(nwfa_p )
+          if(allocated(nifa_p) ) deallocate(nifa_p )
 
           if(allocated(rainprod_p)) deallocate(rainprod_p)
           if(allocated(evapprod_p)) deallocate(evapprod_p)
@@ -368,7 +372,7 @@
                   th        = th_p        , qv         = qv_p         , qc         = qc_p         , &
                   qr        = qr_p        , qi         = qi_p         , qs         = qs_p         , &
                   qg        = qg_p        , ni         = ni_p         , nr         = nr_p         , &
-                  nc        = nc_p        ,                                                         &
+                  nc        = nc_p        , nwfa       = nwfa_p       , nifa       = nifa_p       , &
                   pii       = pi_p        , p          = pres_p       , dz         = dz_p         , &
                   w         = w_p         , dt_in      = dt_microp    , itimestep  = itimestep    , &
                   rainnc    = rainnc_p    , rainncv    = rainncv_p    , snownc     = snownc_p     , &
