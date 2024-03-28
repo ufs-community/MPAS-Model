@@ -1,179 +1,192 @@
-!WRF:MODEL_LAYER:PHYSICS
+!wrf:model_layer:physics
 !
-MODULE module_sf_sfcdiags_ruclsm
+module module_sf_sfcdiags_ruclsm
 
-CONTAINS
+contains
 
-   SUBROUTINE SFCDIAGS_RUCLSM(HFX,QFX,TSK,QSFC,CQS,CQS2,CHS,CHS2,T2,TH2,Q2,  &
-                     T3D,QV3D,RHO3D,P3D,PSFC2D,SNOW,                         &
-                     CP,R_d,ROVCP,                                           &
+   subroutine sfcdiags_ruclsm(hfx,qfx,tsk,qsfc,cqs,cqs2,chs,chs2,t2,th2,q2,  &
+                     t3d,qv3d,rho3d,p3d,psfc2d,snow,                         &
+                     cp,r_d,rovcp,                                           &
                      ids,ide, jds,jde, kds,kde,                              &
                      ims,ime, jms,jme, kms,kme,                              &        
                      its,ite, jts,jte, kts,kte                     )
 !-------------------------------------------------------------------
-      IMPLICIT NONE
+      implicit none
 !-------------------------------------------------------------------
-      INTEGER,  INTENT(IN )   ::        ids,ide, jds,jde, kds,kde, &
+      integer,  intent(in )   ::        ids,ide, jds,jde, kds,kde, &
                                         ims,ime, jms,jme, kms,kme, &
                                         its,ite, jts,jte, kts,kte
-      REAL,     DIMENSION( ims:ime, jms:jme )                    , &
-                INTENT(IN)                  ::                HFX, &
-                                                              QFX, &
-                                                             SNOW, &
-                                                              TSK, &
-                                                             QSFC
-      REAL,     DIMENSION( ims:ime, jms:jme )                    , &
-                INTENT(INOUT)               ::                 Q2, &
-                                                              TH2, &
-                                                               T2
-      REAL,     DIMENSION( ims:ime, jms:jme )                    , &
-                INTENT(IN)                  ::                     &
-                                                           PSFC2D, &
-                                                              CHS, &
-                                                              CQS, &
-                                                             CHS2, &
-                                                             CQS2
-      REAL,    DIMENSION( ims:ime, kms:kme, jms:jme )            , &
-               INTENT(IN   )    ::                           QV3D, &
-                                                              T3D, &
-                                                              P3D, &
-                                                            rho3D
+      real,     dimension( ims:ime, jms:jme )                    , &
+                intent(in)                  ::                hfx, &
+                                                              qfx, &
+                                                             snow, &
+                                                              tsk, &
+                                                             qsfc
+      real,     dimension( ims:ime, jms:jme )                    , &
+                intent(inout)               ::                 q2, &
+                                                              th2, &
+                                                               t2
+      real,     dimension( ims:ime, jms:jme )                    , &
+                intent(in)                  ::                     &
+                                                           psfc2d, &
+                                                              chs, &
+                                                              cqs, &
+                                                             chs2, &
+                                                             cqs2
+      real,    dimension( ims:ime, kms:kme, jms:jme )            , &
+               intent(in   )    ::                           qv3d, &
+                                                              t3d, &
+                                                              p3d, &
+                                                            rho3d
 
-      REAL,     INTENT(IN   )               ::       CP,R_d,ROVCP
-! LOCAL VARS
-      INTEGER ::  I,J
-      REAL    ::  RHO, x2m, qlev1, tempc, qsat, p2m, qsfcprox, qsfcmr, &
+      real,     intent(in   )               ::       cp,r_D,rovcp
+! local vars
+      integer ::  i,j
+      real    ::  rho, x2m, qlev1, tempc, qsat, p2m, qsfcprox, qsfcmr, &
                   psfc, dT, dQ, fh, fac, dz1
 
-      LOGICAL :: FLUX
+      logical :: flux
 
-      !flux = .true.
-      flux = .false.
+      !flux = .true. ! used in RAP and HRRR
+      flux = .false. ! used in UFS (RRFS)
 
-      DO J=jts,jte
-        DO I=its,ite
-          RHO = RHO3D(i,1,j)
-!          PSFC = P3D(I,kms,J)
-! Assume that 2-m pressure also equal to PSFC
-          PSFC = PSFC2D(I,J)
-!          P2m = PSFC2D(I,J)*EXP(-0.068283/t3d(i,1,j))
+      do j=jts,jte
+        do i=its,ite
+          rho = rho3d(i,1,j)
+          psfc = psfc2d(i,j)
 
-    if ( flux ) then
-!!! 2-m Temperature - T2 
-           if(CHS2(I,J).lt.1.E-5) then
-! may be to small treshold?
-!         if(CHS2(I,J).lt.3.E-3 .AND. HFX(I,J).lt.0.) then
-! when stable - let 2-m temperature be equal the first atm. level temp.
-!             TH2(I,J) = TSK(I,J)*(1.E5/PSFC(I,J))**ROVCP 
-             TH2(I,J) = t3d(i,1,j)*(1.E5/PSFC)**ROVCP 
+! 2-m Temperature - T2 
+          if ( flux ) then
+            if(chs2(I,J).lt.1.E-5) then
+            ! when stable - let 2-m temperature be equal the first atm. level temp.
+              th2(i,j) = t3d(i,1,j)*(1.E5/psfc)**rovcp 
+            else
+              th2(i,j) = tsk(i,j)*(1.E5/psfc)**rovcp - hfx(i,j)/(rho*cp*chs2(i,j))
+            endif
+            t2(I,J) = th2(I,J)*(1.E-5*psfc)**rovcp
           else
-             TH2(I,J) = TSK(I,J)*(1.E5/PSFC)**ROVCP - HFX(I,J)/(RHO*CP*CHS2(I,J))
-!             T2(I,J) = TSK(I,J) - HFX(I,J)/(RHO*CP*CHS2(I,J))
-          endif
-!             TH2(I,J) = T2(I,J)*(1.E5/PSFC(I,J))**ROVCP
-             T2(I,J) = TH2(I,J)*(1.E-5*PSFC)**ROVCP
-! check that T2 values lie in the range between TSK and T at the 1st level
-             x2m     = MAX(MIN(tsk(i,j),t3d(i,1,j)) , t2(i,j))
-             t2(i,j) = MIN(MAX(tsk(i,j),t3d(i,1,j)) , x2m)
-             TH2(I,J) = T2(I,J)*(1.E5/PSFC)**ROVCP
-    else
-             fac=(1.E5/PSFC)**ROVCP
-             TH2(I,J) = tsk(i,j)*fac - CHS(I,J)/CHS2(I,J)*(tsk(i,j) - t3d(i,1,j))*fac
-             T2(I,J) = TH2(I,J)*(1.E-5*PSFC)**ROVCP
-    endif ! flux method
+            t2(I,J) = tsk(i,j) - chs(I,J)/chs2(I,J)*(tsk(i,j) - t3d(i,1,j))
+          endif ! flux method
+          th2(i,j) = t2(i,j)*(1.E5/psfc)**rovcp
 
-
-!!! 2-m Water vapor mixing ratio - Q2
-             qlev1 = qv3d(i,1,j)
-! saturation check
-             tempc=t3d(i,1,j)-273.15
-           if (tempc .le. 0.0) then
-! over ice
+! 2-m Water vapor mixing ratio - Q2
+          qlev1 = qv3d(i,1,j)
+          ! saturation check
+          tempc=t3d(i,1,j)-273.15
+          if (tempc .le. 0.0) then
+          ! over ice
              qsat = rsif(p3d(i,1,j), t3d(i,1,j))
-           else
-             qsat = rslf(p3d(i,1,j), t3d(i,1,j))
-           endif
-!remove oversaturation at level 1
-             qlev1 = min(qsat, qlev1)
-
-! Compute QSFC proxy from QFX, qlev1 and CQS
-! Use of QSFCprox is more accurate diagnostics for densely vegetated areas,
-! like cropland in summer
-             qsfcprox=qlev1+QFX(I,J)/(RHO*CQS(I,J))
-             qsfcmr = qsfc(i,j)/(1.-qsfc(i,j))
-
-!  if(i.eq.426.and.j.eq.250) then
-!! RAP cropland point
-!    print *,'qsfc,qsfcmr,qsfcprox,qlev1',qsfc(i,j),qsfcmr,qsfcprox,qlev1
-!    print *,'(qsfcprox-qsfcmr)/qsfcmr =', (qsfcprox-qsfcmr)/qsfcmr
-!  endif
-
-    if ( flux ) then
-          if(CQS2(I,J).lt.1.E-5) then
-! - under very stable conditions use first level for 2-m mixing ratio
-             Q2(I,J)=qlev1
           else
-!             x2m = QSFCmr - QFX(I,J)/(RHO*CQS2(I,J))
-             x2m = QSFCprox - QFX(I,J)/(RHO*CQS2(I,J))
-             q2(i,j) = x2m
+             qsat = rslf(p3d(i,1,j), t3d(i,1,j))
           endif
-    else
-! QFX is not used
-            Q2(I,J) = qsfcmr - CQS(I,J)/CQS2(I,J)*(qsfcmr - qlev1)
-    endif  ! flux
+          !remove oversaturation at level 1
+          qlev1 = min(qsat, qlev1)
 
-! Check that Q2 values lie between QSFCmr and qlev1
-             x2m     = MAX(MIN(qsfcmr,qlev1) , q2(i,j))
-             q2(i,j) = MIN(MAX(qsfcmr,qlev1) , x2m)
+          ! Compute QSFC proxy from QFX, qlev1 and CQS
+          ! Use of QSFCprox is more accurate diagnostics for densely vegetated areas, like cropland in summer
+          qsfcprox = qlev1+qfx(I,J)/(rho*cqs(I,J))
+          qsfcmr = qsfc(i,j)/(1.-qsfc(i,j))
 
-! saturation check
-             tempc=t2(i,j)-273.15
-           if (tempc .le. 0.0) then
-! ice and supercooled water
-             qsat = rsif(psfc, t2(i,j))
-           else
-! water
-             qsat = rslf(psfc, t2(i,j))
-           endif
-            
-             q2(i,j) = min(qsat, q2(i,j))
-!  if(i.eq.426.and.j.eq.250) then
-!! cropland point
-!    print *,'FINAL - qsfc,qsfcmr,qsfcprox,q2(i,j),qlev1', &
-!                     qsfc(i,j),qsfcmr,qsfcprox,q2(i,j),qlev1
-!    print *,'(q2-qlev1)/qlev1 =', (q2(i,j)-qlev1)/qlev1
-!  endif
+          ! print *,'qsfc,qsfcmr,qsfcprox,qlev1',qsfc(i,j),qsfcmr,qsfcprox,qlev1
+          ! print *,'(qsfcprox-qsfcmr)/qsfcmr =', (qsfcprox-qsfcmr)/qsfcmr
 
-        ENDDO
-      ENDDO
+          if ( flux ) then
+            if(cqs2(I,J).lt.1.E-5) then
+            ! - under very stable conditions use first level for 2-m mixing ratio
+              q2(I,J)=qlev1
+            else
+              x2m = qsfcprox - qfx(i,j)/(rho*cqs2(i,j))
+              q2(i,j) = x2m
+            endif
+          else
+          ! QFX is not used
+            q2(I,J) = qsfcmr - cqs(I,J)/cqs2(i,j)*(qsfcmr - qlev1)
+          endif  ! flux
 
-  END SUBROUTINE SFCDIAGS_RUCLSM
+          !    print *,'FINAL - qsfc,qsfcmr,qsfcprox,q2(i,j),qlev1', &
+          !                     qsfc(i,j),qsfcmr,qsfcprox,q2(i,j),qlev1
+          !    print *,'(q2-qlev1)/qlev1 =', (q2(i,j)-qlev1)/qlev1
 
-!tgs - saturation functions are from Thompson microphysics scheme
-      REAL FUNCTION RSLF(P,T)
+! Alternative logarithmic diagnostics:
+          dt = t3d(i,1,j)-tsk(i,j)
+          dq = qlev1 - qsfcmr
+          dz1= 0.5*dz(i,1,j)
+          if (dt > 0.) then
+          ! stable stratification        
+             fh  = min(max(1.-dt/10.,0.01), 1.0)
+             !for now, set zt = 0.05
+             fac = log((2.  + .05)/(0.05 + fh))/ &
+                   log((dz1 + .05)/(0.05 + fh))
+             t2_alt(i,j) = tsk(i,j) + fac*(t3d(i,1,j) - tsk(i,j))
+             th2_alt(I,J) = t2_alt(I,J)*(1.E5/psfc)**rovcp
+          else
+             !no alternatives (yet) for unstable conditions
+             t2_alt(i,j) = t2(i,j)
+             th2_alt(i,j)= th2(i,j)
+          endif
+          if (dq > 0.) then
+             fh  = min(max(1.-dq/0.003,0.01), 1.0)
+             !for now, set zt = 0.05
+             fac = log((2.  + .05)/(0.05 + fh))/ &
+                   log((dz1 + .05)/(0.05 + fh))
+             q2_alt(i,j) = qsfcmr + fac*(qlev1 - qsfcmr)
+          else
+             !no alternatives (yet) for unstable conditions
+             q2_alt(i,j) = q2(i,j)
+          endif
 
-      IMPLICIT NONE
-      REAL, INTENT(IN):: P, T
-      REAL:: ESL,X
-      REAL, PARAMETER:: C0= .611583699E03
-      REAL, PARAMETER:: C1= .444606896E02
-      REAL, PARAMETER:: C2= .143177157E01
-      REAL, PARAMETER:: C3= .264224321E-1
-      REAL, PARAMETER:: C4= .299291081E-3
-      REAL, PARAMETER:: C5= .203154182E-5
-      REAL, PARAMETER:: C6= .702620698E-8
-      REAL, PARAMETER:: C7= .379534310E-11
-      REAL, PARAMETER:: C8=-.321582393E-13
+! Use alternative diagnostics for stable stratification
+          t2(i,j) = t2_alt(i,j)
+          q2(i,j) = q2_alt(i,j)
 
-      X=MAX(-80.,T-273.16)
+          ! check that T2 values lie in the range between TSK and T at the 1st level
+          x2m     = MAX(MIN(tsk(i,j),t3d(i,1,j)) , t2(i,j))
+          t2(i,j) = MIN(MAX(tsk(i,j),t3d(i,1,j)) , x2m)
+          th2(i,j) = t2(i,j)*(1.e5/psfc)**rovcp
 
-!      ESL=612.2*EXP(17.67*X/(T-29.65))
-      ESL=C0+X*(C1+X*(C2+X*(C3+X*(C4+X*(C5+X*(C6+X*(C7+X*C8)))))))
-      RSLF=.622*ESL/(P-ESL)
+          ! check that q2 values lie between qsfcmr and qlev1
+          x2m     = MAX(MIN(qsfcmr,qlev1) , q2(i,j))
+          q2(i,j) = MIN(MAX(qsfcmr,qlev1) , x2m)
+          ! saturation check
+          tempc = t2(i,j)-273.15
+          if (tempc .le. 0.0) then
+          ! ice and supercooled water
+            qsat = rsif(psfc, t2(i,j))
+          else
+          ! water
+            qsat = rslf(psfc, t2(i,j))
+          endif
+          q2(i,j) = min(qsat, q2(i,j))
 
-      END FUNCTION RSLF
+        enddo
+      enddo
+
+  end subroutine sfcdiags_ruclsm
+
+!- saturation functions are from Thompson microphysics scheme
+      real function rslf(p,t)
+
+      implicit none
+      real, intent(in):: p, t
+      real:: esl,x
+      real, parameter:: c0= .611583699E03
+      real, parameter:: c1= .444606896E02
+      real, parameter:: c2= .143177157E01
+      real, parameter:: c3= .264224321E-1
+      real, parameter:: c4= .299291081E-3
+      real, parameter:: c5= .203154182E-5
+      real, parameter:: c6= .702620698E-8
+      real, parameter:: c7= .379534310E-11
+      real, parameter:: c8=-.321582393E-13
+
+      x=max(-80.,t-273.16)
+
+      esl=c0+x*(c1+x*(c2+x*(c3+x*(c4+x*(c5+x*(c6+x*(c7+x*c8)))))))
+      rslf=.622*esl/(p-esl)
+
+      end function rslf
 !
-!    ALTERNATIVE
+!    Alternative
 !  ; Source: Murphy and Koop, Review of the vapour pressure of ice and
 !             supercooled water for atmospheric applications, Q. J. R.
 !             Meteorol. Soc (2005), 131, pp. 1539-1565.
@@ -182,28 +195,28 @@ CONTAINS
 !         / T - 9.44523 * ALOG(T) + 0.014025 * T))
 !
 !+---+-----------------------------------------------------------------+
-! THIS FUNCTION CALCULATES THE ICE SATURATION VAPOR MIXING RATIO AS A
-! FUNCTION OF TEMPERATURE AND PRESSURE
+! this function calculates the ice saturation vapor mixing ratio as a
+! function of temperature and pressure
 !
-      REAL FUNCTION RSIF(P,T)
+      real function rsif(p,t)
 
-      IMPLICIT NONE
-      REAL, INTENT(IN):: P, T
-      REAL:: ESI,X
-      REAL, PARAMETER:: C0= .609868993E03
-      REAL, PARAMETER:: C1= .499320233E02
-      REAL, PARAMETER:: C2= .184672631E01
-      REAL, PARAMETER:: C3= .402737184E-1
-      REAL, PARAMETER:: C4= .565392987E-3
-      REAL, PARAMETER:: C5= .521693933E-5
-      REAL, PARAMETER:: C6= .307839583E-7
-      REAL, PARAMETER:: C7= .105785160E-9
-      REAL, PARAMETER:: C8= .161444444E-12
+      implicit none
+      real, intent(in):: p, t
+      real:: esi,x
+      real, parameter:: c0= .609868993E03
+      real, parameter:: c1= .499320233E02
+      real, parameter:: c2= .184672631E01
+      real, parameter:: c3= .402737184E-1
+      real, parameter:: c4= .565392987E-3
+      real, parameter:: c5= .521693933E-5
+      real, parameter:: c6= .307839583E-7
+      real, parameter:: c7= .105785160E-9
+      real, parameter:: c8= .161444444E-12
 
-      X=MAX(-80.,T-273.16)
-      ESI=C0+X*(C1+X*(C2+X*(C3+X*(C4+X*(C5+X*(C6+X*(C7+X*C8)))))))
-      RSIF=.622*ESI/(P-ESI)
+      x=max(-80.,t-273.16)
+      esi=c0+x*(c1+x*(c2+x*(c3+x*(c4+x*(c5+x*(c6+x*(c7+x*c8)))))))
+      rsif=.622*esi/(p-esi)
 
-      END FUNCTION RSIF
+      end function rsif
 
-END MODULE module_sf_sfcdiags_ruclsm
+end module module_sf_sfcdiags_ruclsm
