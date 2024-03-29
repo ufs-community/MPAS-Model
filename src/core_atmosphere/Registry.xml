@@ -2060,6 +2060,11 @@
                      description="configuration for land-surface schemes"
                      possible_values="`suite',`noah',`ruc',`off'"/>
 
+	        <nml_option name="config_lakemodel" type="integer" default_value="0" in_defaults="false"
+                    units="-"
+                    description="configuration option to use lake model with RUC lsm"
+                    possible_values="0"/>
+
                 <nml_option name="config_pbl_scheme" type="character" default_value="suite" in_defaults="false"
                      units="-"
                      description="configuration for planetary boundary layer schemes"
