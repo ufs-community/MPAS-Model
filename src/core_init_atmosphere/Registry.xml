@@ -361,6 +361,9 @@
                 <package name="vertical_stage_out" description="Active only if a vertical grid is being generated"/>
                 <package name="met_stage_in" description="Active only if meteorological fields are being interpolated"/>
                 <package name="met_stage_out" description="Active only if meteorological fields are being interpolated"/>
+                <package name="mp_kessler_in" description="parameterization of kessler microphysics."/>
+                <package name="mp_thompson_in" description="parameterization of Thompson cloud microphysics."/>
+                <package name="mp_wsm6_in" description="parameterization of WSM6 cloud microphysics."/>
                 <package name="first_guess_field" description="3-d atmospheric or land-surface fields on first-guess levels"/>
         </packages>
 
@@ -370,10 +373,10 @@
 <!-- **************************************************************************************** -->
 
 	<streams>
-		<stream name="input" 
-                        type="input" 
+		<stream name="input"
+                        type="input"
                         filename_template="x1.40962.grid.nc"
-                        input_interval="initial_only" 
+                        input_interval="initial_only"
                         immutable="true">
 
                         <var name="latCell"/>
@@ -469,8 +472,8 @@
                         <var name="dss" packages="met_stage_in"/>
 		</stream>
 
-		<stream name="output" 
-                        type="output" 
+		<stream name="output"
+                        type="output"
                         filename_template="x1.40962.init.nc"
                         output_interval="initial_only"
                         packages="initial_conds"
@@ -609,10 +612,10 @@
                         <var name="t2m" packages="met_stage_out"/>
 		</stream>
 
-		<stream name="surface" 
-                        type="output" 
+		<stream name="surface"
+                        type="output"
                         filename_template="x1.40962.sfc_update.nc"
-                        output_interval="86400" 
+                        output_interval="86400"
                         filename_interval="none"
                         packages="sfc_update"
                         immutable="true">
