@@ -12,6 +12,7 @@ OBJS =  \
 	mpas_init_atm_hinterp.o \
 	mpas_init_atm_static.o \
 	mpas_init_atm_gwd.o \
+        mpas_init_atm_gwd_gsl.o \
 	mpas_init_atm_surface.o \
 	mpas_init_atm_vinterp.o \
 	read_geogrid.o \
@@ -56,6 +57,7 @@ mpas_init_atm_cases.o: \
 	mpas_init_atm_hinterp.o \
 	mpas_init_atm_static.o \
 	mpas_init_atm_gwd.o \
+        mpas_init_atm_gwd_gsl.o \
 	mpas_init_atm_surface.o \
 	mpas_init_atm_vinterp.o \
 	mpas_atmphys_constants.o \
