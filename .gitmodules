@@ -1,4 +1,4 @@
-[submodule "src/core_atmosphere/physics/physics_wrf/GSL_cloud_physics"]
-	path = src/core_atmosphere/physics/physics_wrf/GSL_cloud_physics
+[submodule "src/core_atmosphere/physics/GSL_cloud_physics"]
+	path = src/core_atmosphere/physics/GSL_cloud_physics
 	url = https://github.com/AndersJensen-NOAA/GSL_cloud_physics.git
 	branch = develop
