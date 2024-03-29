@@ -1148,7 +1148,7 @@
        call sfcdiags_ruclsm( &
                 hfx     = hfx_p  , qfx     = qfx_p   , tsk  = tsk_p       , qsfc = qsfc_p , chs = chs_p , &
                 chs2    = chs2_p , cqs2    = cqs2_p  , t2   = t2m_p       , th2  = th2m_p , q2  = q2_p  , &
-                psfc2d  = psfc_p , t3d     = t_p     , qv3d = qv_p        , cp   = cp     , R_d = R_d   , &
+                psfc2d  = psfc_p , t3d  = t_p , qv3d  = qv_p , dz  = dz_p , cp   = cp     , R_d = R_d   , &
                 rovcp   = rcp    , rho3d   = rho_p   , p3d  = pres2_hyd_p , snow = snow_p , cqs = cqs_p,  &
                 ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde ,                   &
                 ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme ,                   &
