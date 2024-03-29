@@ -53,7 +53,7 @@ core_physics_mmm: core_physics_init
 	(cd physics_mmm; $(MAKE) all)
 
 core_microphysics: core_physics_init core_physics_mmm
-	test -s physics_wrf/module_mp_thompson.F && rm physics_wrf/module_mp_thompson.F
+	(if [ -f physics_wrf/module_mp_thompson.F ]; then rm physics_wrf/module_mp_thompson.F; else echo "No old module_mp_thompson.F file found"; fi)
 	(cd GSL_cloud_physics; cp ./drivers/mpas/module_mp_thompson.F90 .; $(MAKE) all COREDEF="$(COREDEF)")
 
 core_physics_wrf: core_physics_init core_physics_mmm
