@@ -5,7 +5,7 @@ module module_sf_sfcdiags_ruclsm
 contains
 
    subroutine sfcdiags_ruclsm(hfx,qfx,tsk,qsfc,cqs,cqs2,chs,chs2,t2,th2,q2,  &
-                     t3d,qv3d,rho3d,p3d,psfc2d,snow,                         &
+                     t3d,qv3d,dz,rho3d,p3d,psfc2d,snow,                      &
                      cp,r_d,rovcp,                                           &
                      ids,ide, jds,jde, kds,kde,                              &
                      ims,ime, jms,jme, kms,kme,                              &        
@@ -35,6 +35,7 @@ contains
                                                              cqs2
       real,    dimension( ims:ime, kms:kme, jms:jme )            , &
                intent(in   )    ::                           qv3d, &
+                                                               dz, &
                                                               t3d, &
                                                               p3d, &
                                                             rho3d
@@ -44,6 +45,7 @@ contains
       integer ::  i,j
       real    ::  rho, x2m, qlev1, tempc, qsat, p2m, qsfcprox, qsfcmr, &
                   psfc, dT, dQ, fh, fac, dz1
+      real,     dimension( ims:ime, jms:jme ) :: t2_alt, q2_alt
 
       logical :: flux
 
@@ -108,9 +110,9 @@ contains
           !    print *,'(q2-qlev1)/qlev1 =', (q2(i,j)-qlev1)/qlev1
 
 ! Alternative logarithmic diagnostics:
-          dt = t3d(i,1,j)-tsk(i,j)
+          dt = t3d(i,1,j) - tsk(i,j)
           dq = qlev1 - qsfcmr
-          dz1= 0.5*dz(i,1,j)
+          dz1= 0.5 * dz(i,1,j)
           if (dt > 0.) then
           ! stable stratification        
              fh  = min(max(1.-dt/10.,0.01), 1.0)
@@ -118,11 +120,9 @@ contains
              fac = log((2.  + .05)/(0.05 + fh))/ &
                    log((dz1 + .05)/(0.05 + fh))
              t2_alt(i,j) = tsk(i,j) + fac*(t3d(i,1,j) - tsk(i,j))
-             th2_alt(I,J) = t2_alt(I,J)*(1.E5/psfc)**rovcp
           else
              !no alternatives (yet) for unstable conditions
              t2_alt(i,j) = t2(i,j)
-             th2_alt(i,j)= th2(i,j)
           endif
           if (dq > 0.) then
              fh  = min(max(1.-dq/0.003,0.01), 1.0)
