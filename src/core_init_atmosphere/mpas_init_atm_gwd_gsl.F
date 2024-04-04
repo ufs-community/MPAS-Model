@@ -22,8 +22,8 @@
 !
 module mpas_init_atm_gwd_gsl
 
+   use gsl_oro_data_sm_scale, only: calc_gsl_oro_data_sm_scale
 ! Temporary comment
-! use gsl_oro_data_sm_scale, only: calc_gsl_oro_data_sm_scale
 ! use gsl_oro_data_lg_scale, only: calc_gsl_oro_data_lg_scale
 
    use iso_c_binding, only : c_char, c_int, c_float, c_ptr, c_loc
@@ -57,8 +57,9 @@ module mpas_init_atm_gwd_gsl
       integer, intent(inout) :: iErr
 
       type (mpas_pool_type), pointer :: mesh, state
-      integer :: iCell
-      real (kind=RKIND) :: cellArea
+      integer :: iCell, i
+      real (kind=RKIND) :: dc
+      real (kind=RKIND), dimension(:), allocatable :: areaCell
       real (kind=RKIND), pointer :: config_gwd_cell_scaling
       integer, pointer :: nCells
       integer, pointer :: nEdges
@@ -68,11 +69,9 @@ module mpas_init_atm_gwd_gsl
       real (kind=RKIND), pointer :: sphere_radius
       real (kind=RKIND), dimension(:), pointer :: latCell, lonCell, dcEdge
       character(len=StrKIND), pointer :: config_geog_data_path
-      character(len=StrKIND), pointer :: config_topo_data
       character(len=StrKIND) :: geog_sub_path
       character(len=StrKIND+1) :: geog_data_path      ! same as config_geog_data_path, but guaranteed to have a trailing slash
-
-      integer (kind=I1KIND), dimension(:), pointer :: hlanduse ! Dominant land mask (0 or 1)
+      real (kind=RKIND), parameter :: Re = 6371229.0_RKIND        ! Earth radius in MPAS-Atmosphere
 
       logical :: duplicate_oro_data_file   ! flag for whether oro_data_ls file is a duplicate
                                            ! of oro_data_ss due to minimum grid size being less than 7.5km
@@ -83,14 +82,7 @@ module mpas_init_atm_gwd_gsl
       call mpas_log_write('In sub calc_gsl_oro_data #1')
 
       call mpas_pool_get_config(mesh, 'sphere_radius', sphere_radius)
-      call mpas_log_write('In sub calc_gsl_oro_data #2')
-      call mpas_pool_get_config(domain % configs, 'config_geog_data_path', config_geog_data_path)
-      call mpas_log_write('In sub calc_gsl_oro_data #3')
-      call mpas_pool_get_config(domain % configs, 'config_topo_data', config_topo_data)
-      call mpas_log_write('In sub calc_gsl_oro_data #4')
       call mpas_pool_get_config(domain % configs, 'config_gwd_cell_scaling', config_gwd_cell_scaling)
-
-      call mpas_log_write('In sub calc_gsl_oro_data #5')
 
       !
       ! Retrieve pointers to arrays holding the latitudes and longitudes of cells
@@ -102,10 +94,6 @@ module mpas_init_atm_gwd_gsl
       call mpas_pool_get_array(mesh, 'nEdgesOnCell', nEdgesOnCell)
       call mpas_pool_get_array(mesh, 'edgesOnCell', edgesOnCell)
       call mpas_pool_get_array(mesh, 'dcEdge', dcEdge)
-
-      allocate(hlanduse(nCells+1))    ! +1, since we access hlanduse(cellsOnCell(i,iCell)) later on for iCell=1,nCells
-
-      call mpas_log_write('In sub calc_gsl_oro_data #6')
 
       !
       ! It is possible that this code is called before the mesh fields have been scaled
@@ -126,21 +114,37 @@ module mpas_init_atm_gwd_gsl
          call mpas_log_write('in the computation of GWD static fields.')
       end if
 
-      call mpas_log_write('In sub calc_gsl_oro_data #7')
+      allocate(areaCell(nCells))
 
+      call mpas_log_write('In sub calc_gsl_oro_data #2')
 
       !
       ! Loop to compute approximate area of each MPAS horizontal grid cell
       !
       do iCell=1,nCells
 
-         print *, "iCell =", iCell
+         !
+         ! First, get an estimate of the mean diameter (in meters) of the grid 
+         ! cell by averaging the distances to each of the neighboring cells
+         !
+         dc = 0.0
+         do i=1,nEdgesOnCell(iCell)
+            dc = dc + dcEdge(edgesOnCell(i,iCell))
+         end do
+         dc = dc / real(nEdgesOnCell(iCell),RKIND)
+         if (onUnitSphere) then
+            dc = dc * sphere_radius
+         end if
+         dc = dc * config_gwd_cell_scaling
+
+         ! Assume square shape with MPAS grid cell diameter as length of sides
+         areaCell(iCell) = dc*dc
 
       end do
 
 
-      ! Temporary comment
-      ! call calc_gsl_oro_data_sm_scale(,duplicate_oro_data_file)
+      call calc_gsl_oro_data_sm_scale(nCells,latCell,lonCell,areaCell,Re,     &
+                                                     duplicate_oro_data_file)
 
 
       print *, "duplicate_oro_data_file =", duplicate_oro_data_file
@@ -151,6 +155,7 @@ module mpas_init_atm_gwd_gsl
       !    call calc_gsl_oro_data_lg_scale(tile_num,res_indx,halo)
       ! end if
 
+      deallocate(areaCell)
 
       call mpas_log_write('')
       call mpas_log_write('End module gsl_oro_data')
