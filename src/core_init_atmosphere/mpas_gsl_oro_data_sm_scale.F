@@ -1,6 +1,6 @@
 ! This module calculates the parameters required for the subgrid-
-! scale orographic gravity-wave drag (GWDO) scheme on the FV3
-! grid.  These parameters are for the small-scale GWD (Tsiringakis et al.,
+! scale orographic gravity-wave drag (GWDO) scheme on the MPAS
+! mesh.  These parameters are for the small-scale GWD (Tsiringakis et al.,
 ! 2017) and the turbulent orographic form drag (TOFD) (Beljaars, 2004)
 ! schemes of the GSL drag suite.  30 second (~1km) global topography
 ! is used.  The topographic data comes from the 'fix' file
@@ -15,12 +15,14 @@
 !
 ! Based on code by Michael Duda provided by NCAR/MMM
 !
-module gsl_oro_data_sm_scale
+module mpas_gsl_oro_data_sm_scale
 
 use iso_c_binding, only : c_char, c_int, c_float, c_ptr, c_loc
 
 use mpas_derived_types
+use mpas_framework
 use mpas_kind_types
+use mpas_log, only : mpas_log_write
 use mpas_stream_manager
 use mpas_c_interfacing, only : mpas_f_to_c_string
 
@@ -54,19 +56,24 @@ integer, parameter :: dimY_fine = 21600 ! y-dimension of fine grid (30-arc-secon
 real (kind=RKIND), allocatable :: lat1d_fine(:) !< latitude of fine grid pts (radians)
 real (kind=RKIND), allocatable :: lon1d_fine(:) !< longitude of fine grid pts (radians)
 
+real (kind=RKIND), allocatable :: lon_MPAS(:)   ! "adjusted" longitude
+
 real (kind=RKIND), parameter :: p5 = 0.5_RKIND !< one half
 
 
 contains
 
-subroutine calc_gsl_oro_data_sm_scale(nCells,lat_MPAS,lon_MPAS,areaCell, &
+subroutine calc_gsl_oro_data_sm_scale(nCells,lat_MPAS,lon_MPAS_raw,area_MPAS, &
                                           Re,duplicate_oro_data_file)
+
 
 implicit none
 
+type (domain_type) :: domain
+
 integer, intent(in)  :: nCells
-real (kind=RKIND), dimension(:), intent(in) :: lat_MPAS, lon_MPAS  ! radians
-real (kind=RKIND), dimension(:), intent(in) :: areaCell  ! approx area of MPAS grid cell (m^2)
+real (kind=RKIND), dimension(:), intent(in) :: lat_MPAS, lon_MPAS_raw  ! radians
+real (kind=RKIND), dimension(:), intent(in) :: area_MPAS  ! approx area of MPAS grid cell (m^2)
 real (kind=RKIND), intent(in) :: Re
 logical, intent(out) :: duplicate_oro_data_file  ! flag to let main program know that
                                       ! oro_data_ls file was created by this subroutine
@@ -111,7 +118,6 @@ real (kind=RKIND) :: ratio
 
 
 integer :: temp_int
-real (kind=RKIND), allocatable :: area_MPAS(:,:)   ! meters squared
 real (kind=R4KIND), allocatable :: HGT_M_fine(:,:)
 real (kind=RKIND) :: dlta_lat, dlta_lon
 
@@ -123,7 +129,6 @@ integer :: i_blk, j_blk
 integer :: ii_loc, jj_loc, ii_m, jj_m
 integer, dimension(3) :: s_ii, e_ii, s_jj, e_jj
 real (kind=RKIND), dimension(3) :: lat_blk, lon_blk
-integer :: cell_count  ! allows for use of 1D arrays for GWD statistics fields
 
 
 
@@ -166,6 +171,7 @@ if (istatus /= 0) then
    return
 end if
 HGT_M_fine(:,:) = tile(:,:,1)
+deallocate(tile)
 
 
 ! Calculate fine grid lat/lon in radians
@@ -179,18 +185,15 @@ do i = 1,nx
 end do
 
 
-! Convert lat/lon to radians
-lat1d_fine = lat1d_fine*Pi/180._RKIND
-lon1d_fine = lon1d_fine*Pi/180._RKIND
-
-
-! Reassign FV3 longitude to vary from -Pi to Pi to match lon1d_fine range
-do j = 1,dimY_FV3
-   do i = 1,dimX_FV3
-      if ( lon_MPAS(i,j).gt.Pi ) then
-         lon_MPAS(i,j) = lon_MPAS(i,j) - 2*Pi
-      end if
-   end do
+! Reassign MPAS longitude to vary from -Pi to Pi to match lon1d_fine range
+! Transfer data from lon_MPAS_raw to lon_MPAS
+allocate (lon_MPAS(nCells))
+do i = 1,nCells
+   if ( lon_MPAS_raw(i).gt.Pi ) then
+      lon_MPAS(i) = lon_MPAS_raw(i) - 2*Pi
+   else
+      lon_MPAS(i) = lon_MPAS_raw(i)
+   end if
 end do
 
 
@@ -225,11 +228,10 @@ end do
 
 ! Calculate the minimum coarse grid cell size as implied by the cell area
 min_area = 1.E+14
-do j = 1,dimY_FV3
-   do i = 1,dimX_FV3
-      min_area = min(min_area,area_MPAS(i,j))
-   end do
+do i = 1,nCells
+   min_area = min(min_area,area_MPAS(i))
 end do
+
 ! The square root of min_area will count as the minimum cell size
 min_DX = sqrt(min_area)/1000._RKIND  ! grid size in km
 ! NOTE:  min_DX will be used after the big loop below to determine whether
@@ -239,7 +241,7 @@ min_DX = sqrt(min_area)/1000._RKIND  ! grid size in km
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! This is a loop over all the FV3 (coarse) grid cells
+! This is a loop over all the MPAS (coarse) grid cells
 ! The subgrid-scale topographic variables needed for the large-scale
 ! orographic gravity wave drag schemes are calculated by the following steps:
 ! 1) Sample the fine-scale (30sec) topography contained within each
@@ -248,25 +250,23 @@ min_DX = sqrt(min_area)/1000._RKIND  ! grid size in km
 !    ol1,...,ol4
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-cell_count = 1
 
-do j = 1,dimY_FV3
-   do i = 1,dimX_FV3
+do i = 1,nCells
 
       ! Calculate approximate side-lengths of square lat-long "coarse" grid
       ! cell centered on FV3 cell (units = radians)
-      dlta_lat = sqrt(area_MPAS(i,j))/Re
-      dlta_lon = sqrt(area_MPAS(i,j))/(Re*COS(lat_MPAS(i,j)))
+      dlta_lat = sqrt(area_MPAS(i))/Re
+      dlta_lon = sqrt(area_MPAS(i))/(Re*COS(lat_MPAS(i)))
 
       ! Determine lat/lon of 9 lat-lon block centers
-      ! Note:  lat_blk(2)/lon_blk(2) = lat_MPAS(i,j)/lon_MPAS(i,j)
+      ! Note:  lat_blk(2)/lon_blk(2) = lat_MPAS(i)/lon_MPAS(i)
       ! Note:  abs(lon_blk) may exceed Pi
       do i_blk = 1,3
-         lon_blk(i_blk) = lon_MPAS(i,j) + (i_blk-2)*dlta_lon
+         lon_blk(i_blk) = lon_MPAS(i) + (i_blk-2)*dlta_lon
       end do
       ! Note:  abs(lat_blk) may exceed Pi/2 (90 degrees)
       do j_blk = 1,3
-         lat_blk(j_blk) = lat_MPAS(i,j) + (j_blk-2)*dlta_lat
+         lat_blk(j_blk) = lat_MPAS(i) + (j_blk-2)*dlta_lat
       end do
 
       ! Find starting and ending fine-grid i,j indices for each
@@ -371,18 +371,17 @@ do j = 1,dimY_FV3
          end do
       end do
       if ( .not.zs_accum ) then   ! no terrain in the grid cell
-         std_dev(cell_count) = 0._RKIND
-         convexity(cell_count) = 0._RKIND
-         OA1(cell_count) = 0._RKIND
-         OA2(cell_count) = 0._RKIND
-         OA3(cell_count) = 0._RKIND
-         OA4(cell_count) = 0._RKIND
-         OL1(cell_count) = 0._RKIND
-         OL2(cell_count) = 0._RKIND
-         OL3(cell_count) = 0._RKIND
-         OL4(cell_count) = 0._RKIND
+         std_dev(i) = 0._RKIND
+         convexity(i) = 0._RKIND
+         OA1(i) = 0._RKIND
+         OA2(i) = 0._RKIND
+         OA3(i) = 0._RKIND
+         OA4(i) = 0._RKIND
+         OL1(i) = 0._RKIND
+         OL2(i) = 0._RKIND
+         OL3(i) = 0._RKIND
+         OL4(i) = 0._RKIND
          deallocate(zs)
-         cell_count = cell_count + 1
          cycle   ! move on to next (coarse) grid cell 
       end if
 
@@ -408,7 +407,7 @@ do j = 1,dimY_FV3
             sum2 = sum2 + ( zs(ii,jj) - zs_mean )**2
          end do
       end do
-      std_dev(cell_count) = sqrt( sum2/real(nfinepoints,RKIND) )
+      std_dev(i) = sqrt( sum2/real(nfinepoints,RKIND) )
 
 
       !
@@ -426,9 +425,9 @@ do j = 1,dimY_FV3
 
       var = sum2 / real(nfinepoints,RKIND)
       if ( abs(var) < 1.0E-05_RKIND ) then
-         convexity(cell_count) = 0._RKIND
+         convexity(i) = 0._RKIND
       else
-         convexity(cell_count) = min( sum4 / ( var**2 *                    &
+         convexity(i) = min( sum4 / ( var**2 *                    &
                         real(nfinepoints,RKIND) ), max_convexity )
       end if
 
@@ -455,10 +454,10 @@ do j = 1,dimY_FV3
          end do
       end do
       if ( nu + nd > 0 ) then
-         OA1(cell_count) = real((nu - nd),RKIND) /     &
+         OA1(i) = real((nu - nd),RKIND) /     &
                                    real((nu + nd),RKIND)
       else
-         OA1(cell_count) = 0._RKIND
+         OA1(i) = 0._RKIND
       end if
 
       ! OA2 -- orographic asymmetry in South direction
@@ -483,10 +482,10 @@ do j = 1,dimY_FV3
          end do
       end do
       if ( nu + nd > 0 ) then
-         OA2(cell_count) = real((nu - nd),RKIND) /     &
+         OA2(i) = real((nu - nd),RKIND) /     &
                                    real((nu + nd),RKIND)
       else
-         OA2(cell_count) = 0._RKIND
+         OA2(i) = 0._RKIND
       end if
 
       ! OA3 -- orographic asymmetry in South-West direction
@@ -506,10 +505,10 @@ do j = 1,dimY_FV3
          end do
       end do
       if ( nu + nd > 0 ) then
-         OA3(cell_count) = real((nu - nd),RKIND) /     &
+         OA3(i) = real((nu - nd),RKIND) /     &
                                    real((nu + nd),RKIND)
       else
-         OA3(cell_count) = 0._RKIND
+         OA3(i) = 0._RKIND
       end if
 
       ! OA4 -- orographic asymmetry in North-West direction
@@ -529,10 +528,10 @@ do j = 1,dimY_FV3
          end do
       end do
       if ( nu + nd > 0 ) then
-         OA4(cell_count) = real((nu - nd),RKIND) /     &
+         OA4(i) = real((nu - nd),RKIND) /     &
                                    real((nu + nd),RKIND)
       else
-         OA4(cell_count) = 0._RKIND
+         OA4(i) = 0._RKIND
       end if
 
 
@@ -551,9 +550,9 @@ do j = 1,dimY_FV3
          end do
       end do
       if ( nt /= 0 ) then
-         OL1(cell_count) = real(nw,RKIND) / real(nt,RKIND)
+         OL1(i) = real(nw,RKIND) / real(nt,RKIND)
       else
-         OL1(cell_count) = 0._RKIND
+         OL1(i) = 0._RKIND
       end if
 
       ! OL2 -- orographic effective length for Southerly flow
@@ -567,9 +566,9 @@ do j = 1,dimY_FV3
          end do
       end do
       if ( nt /= 0 ) then
-         OL2(cell_count) = real(nw,RKIND) / real(nt,RKIND)
+         OL2(i) = real(nw,RKIND) / real(nt,RKIND)
       else
-         OL2(cell_count) = 0._RKIND
+         OL2(i) = 0._RKIND
       end if
 
       ! OL3 -- orographic effective length for South-Westerly flow
@@ -588,9 +587,9 @@ do j = 1,dimY_FV3
          end do
       end do
       if ( nt /= 0 ) then
-         OL3(cell_count) = real(nw,RKIND) / real(nt,RKIND)
+         OL3(i) = real(nw,RKIND) / real(nt,RKIND)
       else
-         OL3(cell_count) = 0._RKIND
+         OL3(i) = 0._RKIND
       end if
 
       ! OL4 -- orographic effective length for North-Westerly flow
@@ -609,19 +608,17 @@ do j = 1,dimY_FV3
          end do
       end do
       if ( nt /= 0 ) then
-         OL4(cell_count) = real(nw,RKIND) / real(nt,RKIND)
+         OL4(i) = real(nw,RKIND) / real(nt,RKIND)
       else
-         OL4(cell_count) = 0._RKIND
+         OL4(i) = 0._RKIND
       end if
 
 
 
       deallocate (zs)
 
-      cell_count = cell_count + 1
 
-   end do   ! j = 1,dimY_FV3
-end do      ! i = 1,dimX_FV3
+end do   ! i = 1,nCells
 
 
 
@@ -873,9 +870,9 @@ end if
 
 
 ! Deallocate arrays
-deallocate(area_MPAS)
 deallocate(lat1d_fine)
 deallocate(lon1d_fine)
+deallocate(lon_MPAS)
 deallocate(HGT_M_fine)
 deallocate(std_dev)
 deallocate(convexity)
@@ -1043,4 +1040,4 @@ end function interp_1d
 
 
 
-end module gsl_oro_data_sm_scale
+end module mpas_gsl_oro_data_sm_scale

@@ -22,7 +22,7 @@
 !
 module mpas_init_atm_gwd_gsl
 
-   use gsl_oro_data_sm_scale, only: calc_gsl_oro_data_sm_scale
+   use mpas_gsl_oro_data_sm_scale, only: calc_gsl_oro_data_sm_scale
 ! Temporary comment
 ! use gsl_oro_data_lg_scale, only: calc_gsl_oro_data_lg_scale
 
