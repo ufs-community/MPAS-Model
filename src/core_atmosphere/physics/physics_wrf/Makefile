@@ -33,6 +33,8 @@ OBJS = \
 	module_sf_mynn.o               \
 	module_sf_noahdrv.o            \
 	module_sf_noahlsm.o            \
+	module_sf_ruclsm.o             \
+	module_sf_sfcdiags_ruclsm.o    \
         module_sf_noahlsm_glacial_only.o \
         module_sf_noah_seaice.o        \
         module_sf_noah_seaice_drv.o    \

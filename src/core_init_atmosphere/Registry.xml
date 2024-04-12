@@ -40,6 +40,10 @@
                      description="The number of atmospheric levels, always one more than the number of layers"/>
                 <dim name="nMonths" definition="namelist:config_months"
                      description="The number of months in a year"/>
+		<dim name="nlcat" definition="namelist:config_landuse_data" calculation='20 + 4 * merge(1,0,config_landuse_data(1:4)=="USGS")'
+                     description="The number of landuse categories used in the land surface model"/>
+                <dim name="nscat" definition="16" definition:"namelist:config_nsoilcat"
+                     description="The number of soil categories used in the land surface model"/>
         </dims>
 
 
@@ -128,6 +132,11 @@
                      description="The number of months in a year"
                      possible_values="Positive integer values"/>
 
+                <nml_option name="config_nsoilcat"              type="integer"       default_value="16"
+                     units='-'
+                     description="The number of landuse categories used by the LSM."
+                     possible_values="16"/>
+
         </nml_record>
 
         <nml_record name="data_sources" in_defaults="true">
@@ -156,6 +165,11 @@
                      units="-"
                      description="The land use classification to use (case 7 only)"
                      possible_values="`USGS' or `MODIFIED_IGBP_MODIS_NOAH'"/>
+
+                <nml_option name="config_soilcat_data"          type="character"     default_value="STASGO"
+                     units="-"
+                     description="The soil type classification to use (case 7 only)"
+                     possible_values="`STASGO' or `BNU'"/>
 
                 <nml_option name="config_topo_data"             type="character"     default_value="GMTED2010"
                      units="-"
@@ -192,6 +206,10 @@
                      description="Whether to use specific-humidity as the first-guess moisture variable. If this option is False, relative humidity will be used."
                      possible_values="true or false"/>
 
+		<nml_option name="config_lai_data"           type="character"     default_value="MODIS"
+                     units="-"
+                     description="The climatological monthly leaf area index dataset to use (case 7 only)"
+                     possible_values="`MODIS'"/>
         </nml_record>
 
         <nml_record name="vertical_grid" in_defaults="true">
@@ -343,6 +361,9 @@
                 <package name="vertical_stage_out" description="Active only if a vertical grid is being generated"/>
                 <package name="met_stage_in" description="Active only if meteorological fields are being interpolated"/>
                 <package name="met_stage_out" description="Active only if meteorological fields are being interpolated"/>
+                <package name="mp_kessler_in" description="parameterization of kessler microphysics."/>
+                <package name="mp_thompson_in" description="parameterization of Thompson cloud microphysics."/>
+                <package name="mp_wsm6_in" description="parameterization of WSM6 cloud microphysics."/>
                 <package name="first_guess_field" description="3-d atmospheric or land-surface fields on first-guess levels"/>
         </packages>
 
@@ -352,10 +373,10 @@
 <!-- **************************************************************************************** -->
 
 	<streams>
-		<stream name="input" 
-                        type="input" 
+		<stream name="input"
+                        type="input"
                         filename_template="x1.40962.grid.nc"
-                        input_interval="initial_only" 
+                        input_interval="initial_only"
                         immutable="true">
 
                         <var name="latCell"/>
@@ -410,12 +431,15 @@
                         <var name="iswater_lu" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
                         <var name="ivgtyp" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
                         <var name="isltyp" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
+                        <var name="landusef" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
+                        <var name="soilf" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
                         <var name="snoalb" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
                         <var name="soiltemp" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
                         <var name="greenfrac" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
                         <var name="shdmin" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
                         <var name="shdmax" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
                         <var name="albedo12m" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
+                        <var name="lai12m" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
                         <var name="var2d" packages="vertical_stage_in;met_stage_in"/>
                         <var name="con" packages="vertical_stage_in;met_stage_in"/>
                         <var name="oa1" packages="vertical_stage_in;met_stage_in"/>
@@ -448,8 +472,8 @@
                         <var name="dss" packages="met_stage_in"/>
 		</stream>
 
-		<stream name="output" 
-                        type="output" 
+		<stream name="output"
+                        type="output"
                         filename_template="x1.40962.init.nc"
                         output_interval="initial_only"
                         packages="initial_conds"
@@ -509,6 +533,8 @@
                         <var name="isice_lu"/>
                         <var name="iswater_lu"/>
                         <var name="ivgtyp"/>
+			<var name="landusef"/>
+			<var name="soilf"/>
                         <var name="isltyp"/>
                         <var name="snoalb"/>
                         <var name="soiltemp"/>
@@ -516,6 +542,7 @@
                         <var name="shdmin"/>
                         <var name="shdmax"/>
                         <var name="albedo12m"/>
+                        <var name="lai12m"/>
                         <var name="var2d" packages="gwd_stage_out;vertical_stage_out;met_stage_out"/>
                         <var name="con" packages="gwd_stage_out;vertical_stage_out;met_stage_out"/>
                         <var name="oa1" packages="gwd_stage_out;vertical_stage_out;met_stage_out"/>
@@ -585,10 +612,10 @@
                         <var name="t2m" packages="met_stage_out"/>
 		</stream>
 
-		<stream name="surface" 
-                        type="output" 
+		<stream name="surface"
+                        type="output"
                         filename_template="x1.40962.sfc_update.nc"
-                        output_interval="86400" 
+                        output_interval="86400"
                         filename_interval="none"
                         packages="sfc_update"
                         immutable="true">
@@ -770,11 +797,17 @@
                 <var name="ivgtyp" name_in_code="lu_index" type="integer"  dimensions="nCells" units="unitless"
                      description="dominant vegetation category"/>
 
+		<var name="landusef" name_in_code="landusef" type="real"  dimensions="nlcat nCells" units="unitless"
+                     description="fraction of each landuse category present in each cell"/>
+
                 <var name="mminlu" type="text" dimensions="" units="unitless"
                      description="land use classification"/>
 
                 <var name="isltyp" name_in_code="soilcat_top"  type="integer"  dimensions="nCells" units="unitless"
                      description="dominate soil category"/>
+
+		<var name="soilf" name_in_code="soilf" type="real"  dimensions="nscat nCells" units="unitless"
+                     description="fraction of each soil type present in each cell"/>
 
                 <var name="snoalb" type="real" dimensions="nCells" units="unitless"
                      description="annual maximum snow albedo"/>
@@ -793,6 +826,9 @@
 
                 <var name="albedo12m" type="real" dimensions="nMonths nCells" units="unitless"
                      description="monthly-mean climatological surface albedo"/>
+                     
+                <var name="lai12m" type="real" dimensions="nMonths nCells" units="unitless"
+                     description="monthly-mean climatological leaf area index"/>
 
                 <var name="isice_lu" type="integer" dimensions="" units="unitless" default_value="24"
                      description="Index category for snow/ice"/>

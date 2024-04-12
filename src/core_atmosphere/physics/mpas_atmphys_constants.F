@@ -89,6 +89,8 @@
  real(kind=RKIND),parameter:: degrad   = 3.1415926/180. !conversion from degree to radiant                     [-]
  real(kind=RKIND),parameter:: dpd      = 360./365.
 
+ REAL(kind=RKIND), PARAMETER :: p1000mb      = 100000.    ! pressure at 1000 hPa (pa)
+
  contains
 
 !=================================================================================================================

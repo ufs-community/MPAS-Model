@@ -77,7 +77,7 @@ int validate_reg_xml(ezxml_t registry)/*{{{*/
 	ezxml_t streams_xml, stream_xml, substream_xml;
 	ezxml_t streams_xml2, stream_xml2;
 
-	const char *dimname, *dimunits, *dimdesc, *dimdef, *dimdecomp;
+	const char *dimname, *dimunits, *dimdesc, *dimdef, *dimdecomp, *dimcalc;
 	const char *nmlrecname, *nmlrecindef;
 	const char *nmloptname, *nmlopttype, *nmloptval, *nmloptunits, *nmloptdesc, *nmloptposvals, *nmloptindef;
 	const char *structname, *structpackages, *structstreams;
@@ -157,7 +157,7 @@ int validate_reg_xml(ezxml_t registry)/*{{{*/
 			dimunits = ezxml_attr(dim_xml, "units");
 			dimdesc = ezxml_attr(dim_xml, "description");
 			dimdecomp = ezxml_attr(dim_xml, "decomposition");
-
+			dimcalc = ezxml_attr(dim_xml, "calculation");
 			if (dimname == NULL){
 				fprintf(stderr,"ERROR: Name missing for dimension.\n");
 				return 1;
@@ -179,10 +179,12 @@ int validate_reg_xml(ezxml_t registry)/*{{{*/
 							nmlopttype = ezxml_attr(nmlopt_xml, "type");
 
 							if (strncmp(name_holder, nmloptname, 1024) == 0){
-								if (strcasecmp("integer", nmlopttype) != 0){
+								if (dimcalc == NULL){
+								    if (strcasecmp("integer", nmlopttype) != 0){
 									fprintf(stderr, "ERROR: Namelist variable %s must be an integer for namelist-derived dimension %s.\n", nmloptname, dimname);
 									return 1;
-								}
+								    } 
+								}  
 
 								found = 1;
 							}
