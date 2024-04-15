@@ -1,10 +1,9 @@
 ! This module calculates the parameters required for the subgrid-
-! scale orographic gravity-wave drag (GWDO) scheme on the MPAS
-! mesh.  These parameters are for the small-scale GWD (Tsiringakis et al.,
-! 2017) and the turbulent orographic form drag (TOFD) (Beljaars, 2004)
-! schemes of the GSL drag suite.  30 second (~1km) global topography
-! is used.  The topographic data comes from the 'fix' file
-! HGT.Beljaars_filtered.lat-lon.30s_res.nc.
+! scale orographic gravity-wave drag (GWDO) scheme on the FV3
+! grid.  These parameters are for the large-scale GWDO and blocking
+! schemes of the GSL drag suite.  2.5minute (~5km) global topography
+! is used. The topographic data comes from the 'fix' file
+! geo_em.d01.lat-lon.2.5m.HGT_M.nc. 
 ! The output fields are:
 ! - stddev      standard deviation of subgrid-scale topograpy
 ! - convexity   convexity (kurtosis) of subgrid-scale topography
@@ -15,7 +14,7 @@
 !
 ! Based on code by Michael Duda provided by NCAR/MMM
 !
-module mpas_gsl_oro_data_sm_scale
+module mpas_gsl_oro_data_lg_scale
 
 use iso_c_binding, only : c_char, c_int, c_float, c_ptr, c_loc
 
@@ -50,8 +49,8 @@ private
 
 real (kind=RKIND), parameter :: Pi = 2.0_RKIND * asin(1.0_RKIND)
 
-integer, parameter :: dimX_fine = 43200 ! x-dimension of fine grid (30-arc-second topog array)
-integer, parameter :: dimY_fine = 21600 ! y-dimension of fine grid (30-arc-second topog array)
+integer, parameter :: dimX_fine = 8640 ! x-dimension of fine grid (30-arc-second topog array)
+integer, parameter :: dimY_fine = 4320 ! y-dimension of fine grid (30-arc-second topog array)
 
 real (kind=RKIND), allocatable :: lat1d_fine(:) !< latitude of fine grid pts (radians)
 real (kind=RKIND), allocatable :: lon1d_fine(:) !< longitude of fine grid pts (radians)
@@ -118,6 +117,7 @@ real (kind=RKIND) :: ratio
 
 integer :: temp_int
 real (kind=R4KIND), allocatable :: HGT_M_fine(:,:)
+real (kind=RKIND), parameter :: HGT_missing = 1.E+10 ! Flag for missing data
 real (kind=RKIND) :: dlta_lat, dlta_lon
 
 character(len=StrKIND), pointer :: config_geog_data_path
@@ -140,12 +140,12 @@ i = len_trim(geog_data_path)
 if (geog_data_path(i:i) /= '/') then
    geog_data_path(i+1:i+1) = '/'
 end if
-geog_sub_path_file = 'topo_ugwp_30s/topo_source_filt_30sec.dat'
+geog_sub_path_file = 'topo_ugwp_2.5m/topo_source_2.5min.dat'
 write(filename,'(a)') trim(geog_data_path)//trim(geog_sub_path_file)
 call mpas_f_to_c_string(filename, c_filename)
 
 !
-! Retrieve 30s topo data from WPS_GEOG
+! Retrieve 2.5m topo data from WPS_GEOG
 !
 isigned  = 1
 endian   = 0
@@ -1044,4 +1044,4 @@ end function interp_1d
 
 
 
-end module mpas_gsl_oro_data_sm_scale
+end module mpas_gsl_oro_data_lg_scale

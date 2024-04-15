@@ -142,9 +142,12 @@ module mpas_init_atm_gwd_gsl
 
       end do
 
+      call mpas_log_write('In sub calc_gsl_oro_data #3')
 
       call calc_gsl_oro_data_sm_scale(nCells,latCell,lonCell,areaCell,Re,     &
-                                                     duplicate_oro_data_file)
+                                             domain,duplicate_oro_data_file)
+
+      call mpas_log_write('In sub calc_gsl_oro_data #4')
 
 
       print *, "duplicate_oro_data_file =", duplicate_oro_data_file
