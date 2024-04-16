@@ -23,8 +23,7 @@
 module mpas_init_atm_gwd_gsl
 
    use mpas_gsl_oro_data_sm_scale, only: calc_gsl_oro_data_sm_scale
-! Temporary comment
-! use gsl_oro_data_lg_scale, only: calc_gsl_oro_data_lg_scale
+   use mpas_gsl_oro_data_lg_scale, only: calc_gsl_oro_data_lg_scale
 
    use iso_c_binding, only : c_char, c_int, c_float, c_ptr, c_loc
 
@@ -68,6 +67,10 @@ module mpas_init_atm_gwd_gsl
       logical :: onUnitSphere
       real (kind=RKIND), pointer :: sphere_radius
       real (kind=RKIND), dimension(:), pointer :: latCell, lonCell, dcEdge
+      real (kind=RKIND), dimension(:), pointer :: var2dls, conls, oa1ls, oa2ls, oa3ls, oa4ls,  &
+                                                  ol1ls, ol2ls, ol3ls, ol4ls
+      real (kind=RKIND), dimension(:), pointer :: var2dss, conss, oa1ss, oa2ss, oa3ss, oa4ss,  &
+                                                  ol1ss, ol2ss, ol3ss, ol4ss
       character(len=StrKIND), pointer :: config_geog_data_path
       character(len=StrKIND) :: geog_sub_path
       character(len=StrKIND+1) :: geog_data_path      ! same as config_geog_data_path, but guaranteed to have a trailing slash
@@ -145,7 +148,9 @@ module mpas_init_atm_gwd_gsl
       call mpas_log_write('In sub calc_gsl_oro_data #3')
 
       call calc_gsl_oro_data_sm_scale(nCells,latCell,lonCell,areaCell,Re,     &
-                                             domain,duplicate_oro_data_file)
+                                 var2dss,conss,oa1ss,oa2ss,oa3ss,oa4ss,       &
+                                 ol1ss,ol2ss,ol3ss,ol4ss,                     &
+                                 domain,duplicate_oro_data_file)
 
       call mpas_log_write('In sub calc_gsl_oro_data #4')
 
@@ -153,10 +158,11 @@ module mpas_init_atm_gwd_gsl
       print *, "duplicate_oro_data_file =", duplicate_oro_data_file
       print *
 
-      ! Temporary comment
-      ! if ( .not.duplicate_oro_data_file ) then
-      !    call calc_gsl_oro_data_lg_scale(tile_num,res_indx,halo)
-      ! end if
+      if ( .not.duplicate_oro_data_file ) then
+         call calc_gsl_oro_data_lg_scale(nCells,latCell,lonCell,areaCell,Re,  &
+                                      var2dls,conls,oa1ls,oa2ls,oa3ls,oa4ls,  &
+                                      ol1ls,ol2ls,ol3ls,ol4ls,domain)
+      end if
 
       deallocate(areaCell)
 

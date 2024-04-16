@@ -27,7 +27,7 @@ use mpas_c_interfacing, only : mpas_f_to_c_string
 
 implicit none
 
-public :: calc_gsl_oro_data_sm_scale
+public :: calc_gsl_oro_data_lg_scale
 
 private
 
@@ -59,11 +59,15 @@ real (kind=RKIND), allocatable :: lon_MPAS(:)   ! "adjusted" longitude
 
 real (kind=RKIND), parameter :: p5 = 0.5_RKIND !< one half
 
+real (kind=R4KIND), allocatable :: HGT_M_fine(:,:)
+real (kind=RKIND), parameter :: HGT_missing = 1.E+10 ! Flag for missing data
+
 
 contains
 
-subroutine calc_gsl_oro_data_sm_scale(nCells,lat_MPAS,lon_MPAS_raw,area_MPAS, &
-                                          Re,domain,duplicate_oro_data_file)
+subroutine calc_gsl_oro_data_lg_scale(nCells,lat_MPAS,lon_MPAS_raw,area_MPAS,  &
+                                  Re,std_dev,convexity,OA1,OA2,OA3,OA4,        &
+                                  OL1,OL2,OL3,OL4,domain)
 
 
 implicit none
@@ -74,10 +78,8 @@ integer, intent(in)  :: nCells
 real (kind=RKIND), dimension(:), intent(in) :: lat_MPAS, lon_MPAS_raw  ! radians
 real (kind=RKIND), dimension(:), intent(in) :: area_MPAS  ! approx area of MPAS grid cell (m^2)
 real (kind=RKIND), intent(in) :: Re
-logical, intent(out) :: duplicate_oro_data_file  ! flag to let main program know that
-                                      ! oro_data_ls file was created by this subroutine
-                                      ! as dupliate of oro_data_ss file due to grid size
-                                      ! being below 7.5km
+real (kind=RKIND), dimension(:), intent(out) :: std_dev,convexity,OA1,OA2,OA3,OA4, &
+                                                OL1,OL2,OL3,OL4
 
 integer (c_int) :: istatus
 integer (c_int) :: isigned, endian, wordsize, nx, ny, nz
@@ -104,10 +106,6 @@ real (kind=RKIND), allocatable :: zs(:,:)
 logical :: zs_accum
 
 real (kind=RKIND) :: zs_mean
-real (kind=RKIND), allocatable ::                               &
-           std_dev(:),convexity(:),                &
-           OA1(:),OA2(:),OA3(:),OA4(:),            &
-           OL1(:),OL2(:),OL3(:),OL4(:)
 
 real (kind=RKIND), parameter :: max_convexity = 10._RKIND  ! max value for convexity
 
@@ -115,9 +113,6 @@ integer :: nu, nd, nw, nt
 real (kind=RKIND) :: ratio
 
 
-integer :: temp_int
-real (kind=R4KIND), allocatable :: HGT_M_fine(:,:)
-real (kind=RKIND), parameter :: HGT_missing = 1.E+10 ! Flag for missing data
 real (kind=RKIND) :: dlta_lat, dlta_lon
 
 character(len=StrKIND), pointer :: config_geog_data_path
@@ -128,10 +123,18 @@ integer :: i_blk, j_blk
 integer :: ii_loc, jj_loc, ii_m, jj_m
 integer, dimension(3) :: s_ii, e_ii, s_jj, e_jj
 real (kind=RKIND), dimension(3) :: lat_blk, lon_blk
+real (kind=RKIND), dimension(3,3) :: HGT_M_coarse
+real (kind=RKIND), allocatable :: HGT_M_coarse_on_fine(:,:)
+
+logical, parameter :: detrend_topography = .true.  ! switch for using detrended
+                                                   ! or actual fine-grid topography
+                                                   ! to represent subgrid terrain
 
 
+! Temporary line
+print *, "Pi =", Pi
 
-call mpas_log_write('Creating oro_data_ss file')
+call mpas_log_write('Creating oro_data_ls file')
 
 call mpas_pool_get_config(domain % configs, 'config_geog_data_path', config_geog_data_path)
 
@@ -159,23 +162,23 @@ allocate(HGT_M_fine(dimX_fine,dimY_fine))
 allocate(tile(dimX_fine,dimY_fine,1))
 tile_ptr = c_loc(tile)
 
-print *, "1_0. HGT_M_fine(tile) =", tile(1,1,1), tile(43200,1,1), tile(1,21600,1)
-print *, "1_0. HGT_M_fine =", HGT_M_fine(1,1), HGT_M_fine(43200,1), HGT_M_fine(1,21600)
+print *, "1_0. HGT_M_fine(tile) =", tile(1,1,1), tile(8640,1,1), tile(1,4320,1)
+print *, "1_0. HGT_M_fine =", HGT_M_fine(1,1), HGT_M_fine(8640,1), HGT_M_fine(1,4320)
 print *, "1_0. tile_ptr =", tile_ptr
 
 call read_geogrid(c_filename, tile_ptr, nx, ny, nz, isigned, endian,  &
                   wordsize, istatus) 
 print *, "1.5. tile_ptr =", tile_ptr
-print *, "1.5. HGT_M_fine(tile) =", tile(1,1,1), tile(43200,1,1), tile(1,21600,1)
+print *, "1.5. HGT_M_fine(tile) =", tile(1,1,1), tile(8640,1,1), tile(1,4320,1)
 tile(:,:,:) = tile(:,:,:) * scalefactor
-print *, "2. HGT_M_fine(tile) =", tile(1,1,1), tile(43200,1,1), tile(1,21600,1)
+print *, "2. HGT_M_fine(tile) =", tile(1,1,1), tile(8640,1,1), tile(1,4320,1)
 if (istatus /= 0) then
    call mpas_log_write('Error reading topography tile '//trim(filename), messageType=MPAS_LOG_ERR)
    iErr = 1
    return
 end if
 HGT_M_fine(:,:) = tile(:,:,1)
-print *, "2. HGT_M_fine =", HGT_M_fine(1,1), HGT_M_fine(43200,1), HGT_M_fine(1,21600)
+print *, "2. HGT_M_fine =", HGT_M_fine(1,1), HGT_M_fine(8640,1), HGT_M_fine(1,4320)
 deallocate(tile)
 
 
@@ -201,8 +204,6 @@ do i = 1,nCells
    end if
 end do
 
-
-! Read in fine-scale topography
 
 
 ! Allocate GWD statistics fields
@@ -231,27 +232,16 @@ OL4(:) = 0._RKIND
 
 
 
-! Calculate the minimum coarse grid cell size as implied by the cell area
-min_area = 1.E+14
-do i = 1,nCells
-   min_area = min(min_area,area_MPAS(i))
-end do
-
-! The square root of min_area will count as the minimum cell size
-min_DX = sqrt(min_area)/1000._RKIND  ! grid size in km
-! NOTE:  min_DX will be used after the big loop below to determine whether
-!        to copy topographic statistics to "large-scale" file
-
-print *, "min_DX =", min_DX
-
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! This is a loop over all the MPAS (coarse) grid cells
+! This is a loop over all the FV3 (coarse) grid cells
 ! The subgrid-scale topographic variables needed for the large-scale
 ! orographic gravity wave drag schemes are calculated by the following steps:
-! 1) Sample the fine-scale (30sec) topography contained within each
+! 1) Sample the fine-scale (2.5min) topography contained within each
 !    coarse grid cell.
-! 2) Calculate the orographic statistics: stddev,convexity,oa1,...oa4,
+! 2) Detrend the topography by subtracting a bilinear-interpolated height field
+!    from the fine-scale height field (if detrend_topography = .true.),
+!    otherwise actual fine-scale height field is used to calculate statistics
+! 3) Calculate the orographic statistics: stddev,convexity,oa1,...oa4,
 !    ol1,...,ol4
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -267,11 +257,11 @@ do i = 1,nCells
 
       ! Determine lat/lon of 9 lat-lon block centers
       ! Note:  lat_blk(2)/lon_blk(2) = lat_MPAS(i)/lon_MPAS(i)
-      ! Note:  abs(lon_blk) may exceed Pi
+      ! Note:  abs(lon_blk) may exceed pi
       do i_blk = 1,3
          lon_blk(i_blk) = lon_MPAS(i) + (i_blk-2)*dlta_lon
       end do
-      ! Note:  abs(lat_blk) may exceed Pi/2 (90 degrees)
+      ! Note:  abs(lat_blk) may exceed pi/2 (90 degrees)
       do j_blk = 1,3
          lat_blk(j_blk) = lat_MPAS(i) + (j_blk-2)*dlta_lat
       end do
@@ -289,7 +279,11 @@ do i = 1,nCells
          e_jj(j_blk) = nearest_j_south(lat_blk(j_blk)+p5*dlta_lat)
       end do
 
-      ! Calculate lat/lon relevant to each "coarse grid" block
+
+      ! Calculate mean topographic height in each "coarse grid" block
+      ! Note:  We only do the mean-height calculation if we are detrending
+      !        the subgrid topography, otherwise, we still need the
+      !        fine-grid indices for the block limits -- s_ii, etc.
       do i_blk = 1,3
 
          ! "Shave" blocks on north or south due to proximity to poles
@@ -324,7 +318,18 @@ do i = 1,nCells
             lat_blk(j_blk) = p5*(lat1d_fine(s_jj(j_blk))+lat1d_fine(dimY_fine))
          end if
 
+         if ( detrend_topography ) then
+            do j_blk = 1,3
+               call calc_mean_HGT(s_ii(i_blk),e_ii(i_blk),                 &
+                         s_jj(j_blk),e_jj(j_blk),HGT_M_coarse(i_blk,j_blk))
+               ! Note:  If there is no block because s_jj and e_jj are
+               !        both -999 HGT_M_coarse returns with a "missing"
+               !        value of HGT_missing = 1.E+10
+            end do
+         end if
+
       end do
+
 
       ! Calculate number of fine-grid points within center coarse block (2,2)
       ! Check if center block straddles date line
@@ -336,9 +341,51 @@ do i = 1,nCells
       jj_m = e_jj(2) - s_jj(2) + 1
 
 
+      ! Bilinearly interpolate coarse-grid topography of the 9 blocks to
+      ! fine grid for the purpose of detrending the fine-grid topography
+      ! to represent the sub-grid topography
+      ! Note:  The detrending only occurs within the center coarse block (2,2)
+      if ( detrend_topography ) then
+
+         ! i,j indices of HGT_M_coarse_on_fine range from 1,ii_m and 1,jj_m
+         ! i.e., a "local" index system
+         allocate (HGT_M_coarse_on_fine(ii_m,jj_m))
+
+         do jj = s_jj(2), e_jj(2)
+            jj_loc = jj - s_jj(2) + 1  ! local j-index (1 ... jj_m)
+            ! Check if block straddles the date line
+            if ( s_ii(2).gt.e_ii(2) ) then
+               do ii = s_ii(2), dimX_fine  ! west of the date line
+                  ii_loc = ii - s_ii(2) + 1   ! local i-index ( 1 ... ii_m)
+                  call HGT_interpolate(lat1d_fine(jj),lon1d_fine(ii),      &
+                              lat_blk(:),lon_blk(:),HGT_M_coarse(:,:),     &
+                              HGT_M_coarse_on_fine(ii_loc,jj_loc))
+               end do
+               do ii = 1, e_ii(2)   ! east of the date line
+                  ii_loc = ii_loc + 1  ! local i-index ( 1 ... ii_m )
+                  call HGT_interpolate(lat1d_fine(jj),lon1d_fine(ii),      &
+                              lat_blk(:),lon_blk(:),HGT_M_coarse(:,:),     &
+                              HGT_M_coarse_on_fine(ii_loc,jj_loc))
+               end do
+            else   ! no crossing of the date line
+               do ii = s_ii(2), e_ii(2)
+                  ii_loc = ii - s_ii(2) + 1   ! local i-index ( 1 ... ii_m)
+                  call HGT_interpolate(lat1d_fine(jj),lon1d_fine(ii),      &
+                              lat_blk(:),lon_blk(:),HGT_M_coarse(:,:),     &
+                              HGT_M_coarse_on_fine(ii_loc,jj_loc))
+               end do
+            end if
+         end do
+
+      end if
+
+
       ! Assign values to "zs", which is the fine-grid surface topography field
       ! that we will calculate statistics on, i.e, stddev, convexity, etc.
+      ! This will either be the detrended values (detrend_topography = .true.)
+      ! or the actual values (detrend_topography = .false.)
       allocate (zs(ii_m,jj_m))
+
 
       do jj = s_jj(2), e_jj(2)
          jj_loc = jj - s_jj(2) + 1  ! local j-index (1 ... jj_m)
@@ -346,19 +393,36 @@ do i = 1,nCells
          if ( s_ii(2).gt.e_ii(2) ) then
             do ii = s_ii(2), dimX_fine  ! west of the date line
                ii_loc = ii - s_ii(2) + 1   ! local i-index ( 1 ... ii_m)
-               zs(ii_loc,jj_loc) = HGT_M_fine(ii,jj)
+               if ( detrend_topography ) then
+                  zs(ii_loc,jj_loc) = HGT_M_fine(ii,jj) -            &
+                            HGT_M_coarse_on_fine(ii_loc,jj_loc)
+               else
+                  zs(ii_loc,jj_loc) = HGT_M_fine(ii,jj)
+               end if
             end do
             do ii = 1, e_ii(2)   ! east of the date line
                ii_loc = ii_loc + 1  ! local i-index ( 1 ... ii_m )
-               zs(ii_loc,jj_loc) = HGT_M_fine(ii,jj)
+               if ( detrend_topography ) then
+                  zs(ii_loc,jj_loc) = HGT_M_fine(ii,jj) -            &
+                            HGT_M_coarse_on_fine(ii_loc,jj_loc)
+               else
+                  zs(ii_loc,jj_loc) = HGT_M_fine(ii,jj)
+               end if
             end do
          else   ! no crossing of the date line
             do ii = s_ii(2), e_ii(2)
                ii_loc = ii - s_ii(2) + 1   ! local i-index ( 1 ... ii_m)
-               zs(ii_loc,jj_loc) = HGT_M_fine(ii,jj)
+               if ( detrend_topography ) then
+                  zs(ii_loc,jj_loc) = HGT_M_fine(ii,jj) -            &
+                            HGT_M_coarse_on_fine(ii_loc,jj_loc)
+               else
+                  zs(ii_loc,jj_loc) = HGT_M_fine(ii,jj)
+               end if
             end do
          end if
       end do
+
+
 
       !
       ! Finally, we can now calculate the topographic statistics fields needed
@@ -366,11 +430,10 @@ do i = 1,nCells
       !
 
       ! Make sure statistics are zero if there is no terrain in the grid cell
-      ! Note:  This is a proxy for a landmask
       zs_accum = .false.
       do jj = 1,jj_m
          do ii = 1,ii_m
-            if ( abs(zs(ii,jj)).gt.1.E-1 ) zs_accum = .true.
+            if ( abs(zs(ii,jj)).gt.1.E-3 ) zs_accum = .true.
          end do
       end do
       if ( .not.zs_accum ) then   ! no terrain in the grid cell
@@ -384,9 +447,15 @@ do i = 1,nCells
          OL2(i) = 0._RKIND
          OL3(i) = 0._RKIND
          OL4(i) = 0._RKIND
+         if ( detrend_topography ) deallocate (HGT_M_coarse_on_fine)
          deallocate(zs)
+         ! Temporary lines
+            print *
+            print *, i, lat_MPAS(i)*180./Pi, lon_MPAS(i)*180./Pi, std_dev(i), convexity(i),  &
+               OA1(i), OA2(i), OA3(i), OA4(i), OL1(i), OL2(i), OL3(i), OL4(i)
          cycle   ! move on to next (coarse) grid cell 
       end if
+
 
       !
       ! Calculate standard deviation of subgrid-scale terrain height
@@ -409,8 +478,8 @@ do i = 1,nCells
             sum2 = sum2 + ( zs(ii,jj) - zs_mean )**2
          end do
       end do
-      ! print *, "Ahoj", zs(1,1), zs_mean
       std_dev(i) = sqrt( sum2/real(nfinepoints,RKIND) )
+
 
       !
       ! Calculate convexity of sub-grid-scale terrain
@@ -432,6 +501,7 @@ do i = 1,nCells
          convexity(i) = min( sum4 / ( var**2 *                    &
                         real(nfinepoints,RKIND) ), max_convexity )
       end if
+
 
       !
       ! Calculate orographic asymmetries
@@ -614,16 +684,16 @@ do i = 1,nCells
          OL4(i) = 0._RKIND
       end if
 
+
+      if ( detrend_topography ) deallocate (HGT_M_coarse_on_fine)
       deallocate (zs)
 
-
    print *
-   print *, i, std_dev(i), convexity(i), OA1(i), OA2(i), OA3(i), OA4(i), &
-               OL1(i), OL2(i), OL3(i), OL4(i)
+   print *, i, lat_MPAS(i)*180./Pi, lon_MPAS(i)*180./Pi, std_dev(i), convexity(i),  &
+               OA1(i), OA2(i), OA3(i), OA4(i), OL1(i), OL2(i), OL3(i), OL4(i)
 
 
 end do   ! i = 1,nCells
-
 
 
 !
@@ -631,245 +701,6 @@ end do   ! i = 1,nCells
 !
 
 
-! Open netCDF file for output
-! err = nf90_create(oro_data_output_file_name, NF90_CLOBBER, ncid_out)
-
-
-! Define variables and attributes to put in the netCDF file
-! err = nf90_def_var(ncid_out,'geolon',NF90_FLOAT,dimids,varid)
-! err = nf90_put_att(ncid_out,varid,'units','degrees')
-! err = nf90_put_att(ncid_out,varid,'description','longitude')
-! err = nf90_def_var(ncid_out,'geolat',NF90_FLOAT,dimids,varid)
-! err = nf90_put_att(ncid_out,varid,'units','degrees')
-! err = nf90_put_att(ncid_out,varid,'description','latitude')
-! err = nf90_def_var(ncid_out,'stddev',NF90_FLOAT,dimids,varid)
-! err = nf90_put_att(ncid_out,varid,'units','meters')
-! err = nf90_put_att(ncid_out,varid,'description',                     &
-!                       'standard deviation of subgrid topography')
-! err = nf90_def_var(ncid_out,'convexity',NF90_FLOAT,dimids,varid)
-! err = nf90_put_att(ncid_out,varid,'units','-')
-! err = nf90_put_att(ncid_out,varid,'description',                     &
-!                       'convexity of subgrid topography')
-! err = nf90_def_var(ncid_out,'oa1',NF90_FLOAT,dimids,varid)
-! err = nf90_put_att(ncid_out,varid,'units','-')
-! err = nf90_put_att(ncid_out,varid,'description',                     &
-!                       'orographic asymmetry in west direction')
-! err = nf90_def_var(ncid_out,'oa2',NF90_FLOAT,dimids,varid)
-! err = nf90_put_att(ncid_out,varid,'units','-')
-! err = nf90_put_att(ncid_out,varid,'description',                     &
-!                       'orographic asymmetry in south direction')
-! err = nf90_def_var(ncid_out,'oa3',NF90_FLOAT,dimids,varid)
-! err = nf90_put_att(ncid_out,varid,'units','-')
-! err = nf90_put_att(ncid_out,varid,'description',                     &
-!                       'orographic asymmetry in south-west direction')
-! err = nf90_def_var(ncid_out,'oa4',NF90_FLOAT,dimids,varid)
-! err = nf90_put_att(ncid_out,varid,'units','-')
-! err = nf90_put_att(ncid_out,varid,'description',                     &
-!                       'orographic asymmetry in north-west direction')
-! err = nf90_def_var(ncid_out,'ol1',NF90_FLOAT,dimids,varid)
-! err = nf90_put_att(ncid_out,varid,'units','-')
-! err = nf90_put_att(ncid_out,varid,'description',                     &
-!                       'orographic effective length for westerly flow')
-! err = nf90_def_var(ncid_out,'ol2',NF90_FLOAT,dimids,varid)
-! err = nf90_put_att(ncid_out,varid,'units','-')
-! err = nf90_put_att(ncid_out,varid,'description',                     &
-!                       'orographic effective length for southerly flow')
-! err = nf90_def_var(ncid_out,'ol3',NF90_FLOAT,dimids,varid)
-! err = nf90_put_att(ncid_out,varid,'units','-')
-! err = nf90_put_att(ncid_out,varid,'description',                     &
-!                  'orographic effective length for south-westerly flow')
-! err = nf90_def_var(ncid_out,'ol4',NF90_FLOAT,dimids,varid)
-! err = nf90_put_att(ncid_out,varid,'units','-')
-! err = nf90_put_att(ncid_out,varid,'description',                     &
-!                  'orographic effective length for north-westerly flow')
-
-! Add global attributes
-! err = nf90_put_att(ncid_out,nf90_global,                               &
-!             'source_file_for_high-resolution_topography',              &
-!             trim(fine_topo_source_file_name))
-  
-! err = nf90_enddef(ncid_out)
-
-
-! Write data to output netCDF file
-! err = nf90_inq_varid(ncid_out,'geolon',varid)
-! err = nf90_put_var(ncid_out,varid,lon_MPAS_deg,start=(/1,1/),           &
-!                    count=(/dimX_FV3,dimY_FV3/))
-! err = nf90_inq_varid(ncid_out,'geolat',varid)
-! err = nf90_put_var(ncid_out,varid,lat_FV3_deg,start=(/1,1/),           &
-!                    count=(/dimX_FV3,dimY_FV3/))
-! err = nf90_inq_varid(ncid_out,'stddev',varid)
-! err = nf90_put_var(ncid_out,varid,std_dev,start=(/1,1/),               &
-!                    count=(/dimX_FV3,dimY_FV3/))
-! err = nf90_inq_varid(ncid_out,'convexity',varid)
-! err = nf90_put_var(ncid_out,varid,convexity,start=(/1,1/),             &
-!                    count=(/dimX_FV3,dimY_FV3/))
-! err = nf90_inq_varid(ncid_out,'oa1',varid)
-! err = nf90_put_var(ncid_out,varid,OA1,start=(/1,1/),                   &
-!                    count=(/dimX_FV3,dimY_FV3/))
-! err = nf90_inq_varid(ncid_out,'oa2',varid)
-! err = nf90_put_var(ncid_out,varid,OA2,start=(/1,1/),                   &
-!                    count=(/dimX_FV3,dimY_FV3/))
-! err = nf90_inq_varid(ncid_out,'oa3',varid)
-! err = nf90_put_var(ncid_out,varid,OA3,start=(/1,1/),                   &
-!                    count=(/dimX_FV3,dimY_FV3/))
-! err = nf90_inq_varid(ncid_out,'oa4',varid)
-! err = nf90_put_var(ncid_out,varid,OA4,start=(/1,1/),                   &
-!                    count=(/dimX_FV3,dimY_FV3/))
-! err = nf90_inq_varid(ncid_out,'ol1',varid)
-! err = nf90_put_var(ncid_out,varid,OL1,start=(/1,1/),                   &
-!                    count=(/dimX_FV3,dimY_FV3/))
-! err = nf90_inq_varid(ncid_out,'ol2',varid)
-! err = nf90_put_var(ncid_out,varid,OL2,start=(/1,1/),                   &
-!                    count=(/dimX_FV3,dimY_FV3/))
-! err = nf90_inq_varid(ncid_out,'ol3',varid)
-! err = nf90_put_var(ncid_out,varid,OL3,start=(/1,1/),                   &
-!                    count=(/dimX_FV3,dimY_FV3/))
-! err = nf90_inq_varid(ncid_out,'ol4',varid)
-! err = nf90_put_var(ncid_out,varid,OL4,start=(/1,1/),                   &
-!                    count=(/dimX_FV3,dimY_FV3/))
-
-! err = nf90_close(ncid_out)
-
-
-
-! Determine whether grid size falls below threshold for use by large-scale
-! orographic gravity wave drag and blocking scheme.  If it is, then
-! create "dummy" oro_data_ls file containing the same data as oro_data_ss file
-
-duplicate_oro_data_file = .false.
-
-if ( min_DX.le.7.5 ) then
-
-   duplicate_oro_data_file = .true.
-   print *, "Creating oro_data_ls file as duplicate of oro_data_ss"
-   print *, "Minimum grid cell size = ", min_DX, " km"
-   print *
-
-
-!    if ( halo.eq."-999" ) then   ! global or nested tile
-!       oro_data_output_file_name = "C" // trim(res_indx) // "_oro_data_ls.tile" &
-!                                       // trim(tile_num) // ".nc"
-!    else   ! stand-alone regional tile
-!       oro_data_output_file_name = "C" // trim(res_indx) // "_oro_data_ls.tile" &
-!                                       // trim(tile_num) // ".halo0.nc"
-!    end if
-
-   ! Open netCDF file for output
-!    err = nf90_create(oro_data_output_file_name, NF90_CLOBBER, ncid_out)
-
-!    err = nf90_redef(ncid_out)
-
-   ! Define dimensions
-!    err = nf90_def_dim(ncid_out,'lon',dimX_FV3,lonid)
-!    err = nf90_def_dim(ncid_out,'lat',dimY_FV3,latid)
-
-   ! Define the 'dimensions vector' dimids to be used for writing
-   ! the 2-dimensional variables to the netCDF file
-!    dimids(1) = lonid
-!    dimids(2) = latid
-
-   ! Define variables and attributes to put in the netCDF file
-!    err = nf90_def_var(ncid_out,'geolon',NF90_FLOAT,dimids,varid)
-!    err = nf90_put_att(ncid_out,varid,'units','degrees')
-!    err = nf90_put_att(ncid_out,varid,'description','longitude')
-!    err = nf90_def_var(ncid_out,'geolat',NF90_FLOAT,dimids,varid)
-!    err = nf90_put_att(ncid_out,varid,'units','degrees')
-!    err = nf90_put_att(ncid_out,varid,'description','latitude')
-!    err = nf90_def_var(ncid_out,'stddev',NF90_FLOAT,dimids,varid)
-!    err = nf90_put_att(ncid_out,varid,'units','meters')
-!    err = nf90_put_att(ncid_out,varid,'description',                     &
-!                          'standard deviation of subgrid topography')
-!    err = nf90_def_var(ncid_out,'convexity',NF90_FLOAT,dimids,varid)
-!    err = nf90_put_att(ncid_out,varid,'units','-')
-!    err = nf90_put_att(ncid_out,varid,'description',                     &
-!                          'convexity of subgrid topography')
-!    err = nf90_def_var(ncid_out,'oa1',NF90_FLOAT,dimids,varid)
-!    err = nf90_put_att(ncid_out,varid,'units','-')
-!    err = nf90_put_att(ncid_out,varid,'description',                     &
-!                          'orographic asymmetry in west direction')
-!    err = nf90_def_var(ncid_out,'oa2',NF90_FLOAT,dimids,varid)
-!    err = nf90_put_att(ncid_out,varid,'units','-')
-!    err = nf90_put_att(ncid_out,varid,'description',                     &
-!                          'orographic asymmetry in south direction')
-!    err = nf90_def_var(ncid_out,'oa3',NF90_FLOAT,dimids,varid)
-!    err = nf90_put_att(ncid_out,varid,'units','-')
-!    err = nf90_put_att(ncid_out,varid,'description',                     &
-!                          'orographic asymmetry in south-west direction')
-!    err = nf90_def_var(ncid_out,'oa4',NF90_FLOAT,dimids,varid)
-!    err = nf90_put_att(ncid_out,varid,'units','-')
-!    err = nf90_put_att(ncid_out,varid,'description',                     &
-!                          'orographic asymmetry in north-west direction')
-!    err = nf90_def_var(ncid_out,'ol1',NF90_FLOAT,dimids,varid)
-!    err = nf90_put_att(ncid_out,varid,'units','-')
-!    err = nf90_put_att(ncid_out,varid,'description',                     &
-!                          'orographic effective length for westerly flow')
-!    err = nf90_def_var(ncid_out,'ol2',NF90_FLOAT,dimids,varid)
-!    err = nf90_put_att(ncid_out,varid,'units','-')
-!    err = nf90_put_att(ncid_out,varid,'description',                     &
-!                          'orographic effective length for southerly flow')
-!    err = nf90_def_var(ncid_out,'ol3',NF90_FLOAT,dimids,varid)
-!    err = nf90_put_att(ncid_out,varid,'units','-')
-!    err = nf90_put_att(ncid_out,varid,'description',                     &
-!                     'orographic effective length for south-westerly flow')
-!    err = nf90_def_var(ncid_out,'ol4',NF90_FLOAT,dimids,varid)
-!    err = nf90_put_att(ncid_out,varid,'units','-')
-!    err = nf90_put_att(ncid_out,varid,'description',                     &
-!                     'orographic effective length for north-westerly flow')
-
-   ! Add global attributes
-!    err = nf90_put_att(ncid_out,nf90_global,                               &
-!                   'NOTE','This is a duplicate of the oro_data_ss file')
-
-!    err = nf90_enddef(ncid_out)
-
-
-   ! Write data to output netCDF file
-!    err = nf90_inq_varid(ncid_out,'geolon',varid)
-!    err = nf90_put_var(ncid_out,varid,lon_MPAS_deg,start=(/1,1/),           &
-!                       count=(/dimX_FV3,dimY_FV3/))
-!    err = nf90_inq_varid(ncid_out,'geolat',varid)
-!    err = nf90_put_var(ncid_out,varid,lat_FV3_deg,start=(/1,1/),           &
-!                       count=(/dimX_FV3,dimY_FV3/))
-!    err = nf90_inq_varid(ncid_out,'stddev',varid)
-!    err = nf90_put_var(ncid_out,varid,std_dev,start=(/1,1/),               &
-!                       count=(/dimX_FV3,dimY_FV3/))
-!    err = nf90_inq_varid(ncid_out,'convexity',varid)
-!    err = nf90_put_var(ncid_out,varid,convexity,start=(/1,1/),             &
-!                       count=(/dimX_FV3,dimY_FV3/))
-!    err = nf90_inq_varid(ncid_out,'oa1',varid)
-!    err = nf90_put_var(ncid_out,varid,OA1,start=(/1,1/),                   &
-!                       count=(/dimX_FV3,dimY_FV3/))
-!    err = nf90_inq_varid(ncid_out,'oa2',varid)
-!    err = nf90_put_var(ncid_out,varid,OA2,start=(/1,1/),                   &
-!                       count=(/dimX_FV3,dimY_FV3/))
-!    err = nf90_inq_varid(ncid_out,'oa3',varid)
-!    err = nf90_put_var(ncid_out,varid,OA3,start=(/1,1/),                   &
-!                       count=(/dimX_FV3,dimY_FV3/))
-!    err = nf90_inq_varid(ncid_out,'oa4',varid)
-!    err = nf90_put_var(ncid_out,varid,OA4,start=(/1,1/),                   &
-!                       count=(/dimX_FV3,dimY_FV3/))
-!    err = nf90_inq_varid(ncid_out,'ol1',varid)
-!    err = nf90_put_var(ncid_out,varid,OL1,start=(/1,1/),                   &
-!                       count=(/dimX_FV3,dimY_FV3/))
-!    err = nf90_inq_varid(ncid_out,'ol2',varid)
-!    err = nf90_put_var(ncid_out,varid,OL2,start=(/1,1/),                   &
-!                       count=(/dimX_FV3,dimY_FV3/))
-!    err = nf90_inq_varid(ncid_out,'ol3',varid)
-!    err = nf90_put_var(ncid_out,varid,OL3,start=(/1,1/),                   &
-!                       count=(/dimX_FV3,dimY_FV3/))
-!    err = nf90_inq_varid(ncid_out,'ol4',varid)
-!    err = nf90_put_var(ncid_out,varid,OL4,start=(/1,1/),                   &
-!                       count=(/dimX_FV3,dimY_FV3/))
-
-!    err = nf90_close(ncid_out)
-
-else
-
-   print *, "Minimum grid cell size = ", min_DX, " km"
-   print *
-
-end if
 
 
 
@@ -890,7 +721,204 @@ deallocate(OL3)
 deallocate(OL4)
 
 
-end subroutine calc_gsl_oro_data_sm_scale
+end subroutine calc_gsl_oro_data_lg_scale
+
+
+
+!> Calculates average terrain height within coarse grid cell ("block")
+!!
+!! @param[in] s_ii Fine grid starting i-index
+!! @param[in] e_ii Fine grid ending i-index
+!! @param[in] s_jj Fine grid starting j-index
+!! @param[in] e_jj Fine grid ending j-index
+!! @param[out] hgt Fine grid height (m)
+!! @author Michael Toy, NOAA/GSL
+subroutine calc_mean_HGT(s_ii,e_ii,s_jj,e_jj,HGT)
+
+! This subroutine calculates the average terrain height within
+! coarse grid cell ("block")
+
+implicit none
+
+integer :: s_ii,   &   ! starting fine-grid i-index
+           e_ii,   &   ! ending fine-grid i-index
+           s_jj,   &   ! starting fine-grid j-index
+           e_jj        ! ending fine-grid j-index
+real (kind=RKIND), intent(out) :: HGT
+
+! Local variables
+integer :: i,j,grid_pt_count
+real (kind=RKIND) :: HGT_sum
+
+
+! Return a value of 0 if s_jj and e_jj are both -999,
+! i.e., if there is no block adjoining the center row
+! due to proximity to one of the poles
+! Note: The HGT value of the block will be ignored
+if ( (s_jj.eq.-999).and.(e_jj.eq.-999) ) then
+   HGT = HGT_missing
+   return
+end if
+
+grid_pt_count = 0
+HGT_sum = 0._RKIND
+do j = s_jj, e_jj
+   ! Note:  If the grid block straddles the date line, then s_ii > e_ii
+   !        We need to correct for this
+   if ( s_ii.gt.e_ii ) then   ! straddling the date line
+      do i = s_ii, dimX_fine  ! west of the date line
+         HGT_sum = HGT_sum + HGT_M_fine(i,j)
+         grid_pt_count = grid_pt_count + 1
+      end do
+      do i = 1, e_ii          ! east of the date line
+         HGT_sum = HGT_sum + HGT_M_fine(i,j)
+         grid_pt_count = grid_pt_count + 1
+      end do
+   else   ! no crossing of the date line
+      do i = s_ii, e_ii
+         HGT_sum = HGT_sum + HGT_M_fine(i,j)
+         grid_pt_count = grid_pt_count + 1
+      end do
+   end if
+end do
+HGT = HGT_sum/grid_pt_count
+
+end subroutine calc_mean_HGT
+
+!> Interpolates height from coarse grid on to fine grid points
+!!
+!! @param[in] lat Latitude of fine grid point.
+!! @param[in] lon_in Longitude of fine grid point.
+!! @param[in] lat_blk Latitudes of neighboring coarse grid points.
+!! @param[in] lon_blk Longitudes of neighboring coarse grid points.
+!! @param[in] hgt_coarse Topographic heights on coarse grid
+!! @param[out] hgt_coarse_on_fine Coarse grid heights interpolated on to fine grid
+!! @author Michael Toy, NOAA/GSL
+subroutine HGT_interpolate(lat,lon_in,lat_blk,lon_blk,HGT_coarse,        &
+                                                 HGT_coarse_on_fine)
+
+! This subroutine bilinearly interpolates neighboring coarse-grid terrain
+! heights (HGT_coarse) to fine-grid points (HGT_coarse_on_fine)
+! (extrapolates in the case near poles)
+! Note:  Bilinear interpolation is done by calling a 1D interpolation
+!        function of a 1D interpolation function
+
+implicit none
+
+real (kind = RKIND), intent(in) ::                     &
+             lat,   &   ! latitude of fine grid point
+             lon_in     ! longitude of fine grid point
+real (kind = RKIND), dimension(3),intent(in) ::        &
+             lat_blk,   &  ! latitudes of neighboring coarse grid points
+             lon_blk       ! longitudes of neighboring coarse grid points
+real (kind = RKIND), dimension(3,3), intent(in) :: HGT_coarse
+real (kind = RKIND), intent(out) :: HGT_coarse_on_fine
+real (kind = RKIND) :: lon
+
+
+lon = lon_in
+! We need to make sure that if we're straddling the date line, that
+! we remove the possible 2*pi discontinuity between lon and
+! {lon_blk(1),lon_blk(2),lon_blk(3)) for interpolation purposes
+! This will line the 4 longitudes up monotonically
+if ( abs(lon_in-lon_blk(2)).gt.pi ) then   ! discontinuity exists
+   if ( lon_in.gt.0. ) lon = lon - 2*pi    ! lon_in lies west of date line
+   if ( lon_in.lt.0. ) lon = lon + 2*pi    ! lon_in lies east of date line
+end if
+
+
+! Check for need to extrapolate if top or bottom block rows
+! have height = HGT_missing
+
+! Check for missing north row
+if ( (HGT_coarse(1,3).eq.HGT_missing).or.(HGT_coarse(2,3).eq.HGT_missing)  &
+      .or.(HGT_coarse(3,3).eq.HGT_missing) ) then
+
+   ! Determine which quadrant of the coarse grid cell we are in
+   if ( (lat.ge.lat_blk(2)).and.(lon.ge.lon_blk(2)) ) then       ! Quadrant I
+      ! Extrapolate from lat_blk(1) and lat_blk(2)
+      HGT_coarse_on_fine = interp_1d(                                         &
+        lon,lon_blk(2),lon_blk(3),                                            &
+        interp_1d(lat,lat_blk(1),lat_blk(2),HGT_coarse(2,1),HGT_coarse(2,2)), &
+        interp_1d(lat,lat_blk(1),lat_blk(2),HGT_coarse(3,1),HGT_coarse(3,2)) )
+   elseif ( (lat.ge.lat_blk(2)).and.(lon.lt.lon_blk(2)) ) then   ! Quadrant II
+      ! Extrapolate from lat_blk(1) and lat_blk(2)
+      HGT_coarse_on_fine = interp_1d(                                         &
+        lon,lon_blk(1),lon_blk(2),                                            &
+        interp_1d(lat,lat_blk(1),lat_blk(2),HGT_coarse(1,1),HGT_coarse(1,2)), &
+        interp_1d(lat,lat_blk(1),lat_blk(2),HGT_coarse(2,1),HGT_coarse(2,2)) )
+   elseif ( (lat.lt.lat_blk(2)).and.(lon.lt.lon_blk(2)) ) then   ! Quadrant III
+      HGT_coarse_on_fine = interp_1d(                                         &
+        lon,lon_blk(1),lon_blk(2),                                            &
+        interp_1d(lat,lat_blk(1),lat_blk(2),HGT_coarse(1,1),HGT_coarse(1,2)), &
+        interp_1d(lat,lat_blk(1),lat_blk(2),HGT_coarse(2,1),HGT_coarse(2,2)) )
+   elseif ( (lat.lt.lat_blk(2)).and.(lon.ge.lon_blk(2)) ) then   ! Quadrant IV
+      HGT_coarse_on_fine = interp_1d(                                         &
+        lon,lon_blk(2),lon_blk(3),                                            &
+        interp_1d(lat,lat_blk(1),lat_blk(2),HGT_coarse(2,1),HGT_coarse(2,2)), &
+        interp_1d(lat,lat_blk(1),lat_blk(2),HGT_coarse(3,1),HGT_coarse(3,2)) )
+   end if
+
+   return
+end if
+
+! Check for missing south row
+if ( (HGT_coarse(1,1).eq.HGT_missing).or.(HGT_coarse(2,1).eq.HGT_missing)  &
+      .or.(HGT_coarse(3,1).eq.HGT_missing) ) then
+
+   ! Determine which quadrant of the coarse grid cell we are in
+   if ( (lat.ge.lat_blk(2)).and.(lon.ge.lon_blk(2)) ) then       ! Quadrant I
+      HGT_coarse_on_fine = interp_1d(                                         &
+        lon,lon_blk(2),lon_blk(3),                                            &
+        interp_1d(lat,lat_blk(2),lat_blk(3),HGT_coarse(2,2),HGT_coarse(2,3)), &
+        interp_1d(lat,lat_blk(2),lat_blk(3),HGT_coarse(3,2),HGT_coarse(3,3)) )
+   elseif ( (lat.ge.lat_blk(2)).and.(lon.lt.lon_blk(2)) ) then   ! Quadrant II
+      HGT_coarse_on_fine = interp_1d(                                         &
+        lon,lon_blk(1),lon_blk(2),                                            &
+        interp_1d(lat,lat_blk(2),lat_blk(3),HGT_coarse(1,2),HGT_coarse(1,3)), &
+        interp_1d(lat,lat_blk(2),lat_blk(3),HGT_coarse(2,2),HGT_coarse(2,3)) )
+   elseif ( (lat.lt.lat_blk(2)).and.(lon.lt.lon_blk(2)) ) then   ! Quadrant III
+      ! Extrapolate from lat_blk(2) and lat_blk(3)
+      HGT_coarse_on_fine = interp_1d(                                         &
+        lon,lon_blk(1),lon_blk(2),                                            &
+        interp_1d(lat,lat_blk(2),lat_blk(3),HGT_coarse(1,2),HGT_coarse(1,3)), &
+        interp_1d(lat,lat_blk(2),lat_blk(3),HGT_coarse(2,2),HGT_coarse(2,3)) )
+   elseif ( (lat.lt.lat_blk(2)).and.(lon.ge.lon_blk(2)) ) then   ! Quadrant IV
+      ! Extrapolate from lat_blk(2) and lat_blk(3)
+      HGT_coarse_on_fine = interp_1d(                                         &
+        lon,lon_blk(2),lon_blk(3),                                            &
+        interp_1d(lat,lat_blk(2),lat_blk(3),HGT_coarse(2,2),HGT_coarse(2,3)), &
+        interp_1d(lat,lat_blk(2),lat_blk(3),HGT_coarse(3,2),HGT_coarse(3,3)) )
+   end if
+
+   return
+end if
+
+! Interpolation only
+! Determine which quadrant of the coarse grid cell we are in
+if ( (lat.ge.lat_blk(2)).and.(lon.ge.lon_blk(2)) ) then       ! Quadrant I
+   HGT_coarse_on_fine = interp_1d(                                          &
+     lon,lon_blk(2),lon_blk(3),                                             &
+     interp_1d(lat,lat_blk(2),lat_blk(3),HGT_coarse(2,2),HGT_coarse(2,3)),  &
+     interp_1d(lat,lat_blk(2),lat_blk(3),HGT_coarse(3,2),HGT_coarse(3,3)) )
+elseif ( (lat.ge.lat_blk(2)).and.(lon.lt.lon_blk(2)) ) then   ! Quadrant II
+   HGT_coarse_on_fine = interp_1d(                                          &
+     lon,lon_blk(1),lon_blk(2),                                             &
+     interp_1d(lat,lat_blk(2),lat_blk(3),HGT_coarse(1,2),HGT_coarse(1,3)),  &
+     interp_1d(lat,lat_blk(2),lat_blk(3),HGT_coarse(2,2),HGT_coarse(2,3)) )
+elseif ( (lat.lt.lat_blk(2)).and.(lon.lt.lon_blk(2)) ) then   ! Quadrant III
+   HGT_coarse_on_fine = interp_1d(                                          &
+     lon,lon_blk(1),lon_blk(2),                                             &
+     interp_1d(lat,lat_blk(1),lat_blk(2),HGT_coarse(1,1),HGT_coarse(1,2)),  &
+     interp_1d(lat,lat_blk(1),lat_blk(2),HGT_coarse(2,1),HGT_coarse(2,2)) )
+elseif ( (lat.lt.lat_blk(2)).and.(lon.ge.lon_blk(2)) ) then   ! Quadrant IV
+   HGT_coarse_on_fine = interp_1d(                                          &
+     lon,lon_blk(2),lon_blk(3),                                             &
+     interp_1d(lat,lat_blk(1),lat_blk(2),HGT_coarse(2,1),HGT_coarse(2,2)),  &
+     interp_1d(lat,lat_blk(1),lat_blk(2),HGT_coarse(3,1),HGT_coarse(3,2)) )
+end if
+
+end subroutine HGT_interpolate
 
 !> Finds nearest fine-grid i index to the east of a given longitude
 !!
@@ -907,10 +935,10 @@ real (kind=RKIND) :: lon
 integer :: i
 
 lon = lon_in
-! Make sure longitude is between -Pi and Pi
-do while ( (lon.lt.(-Pi)).or.(lon.gt.Pi) )
-   if ( lon.lt.(-Pi) ) lon = lon + 2*Pi
-   if ( lon.gt.Pi ) lon = lon - 2*Pi
+! Make sure longitude is between -pi and pi
+do while ( (lon.lt.(-pi)).or.(lon.gt.pi) )
+   if ( lon.lt.(-pi) ) lon = lon + 2*pi
+   if ( lon.gt.pi ) lon = lon - 2*pi
 end do
 
 if ( lon.gt.lon1d_fine(dimX_fine) ) then
@@ -940,10 +968,10 @@ real (kind=RKIND) :: lon
 integer :: i
 
 lon = lon_in
-! Make sure longitude is between -Pi and Pi
-do while ( (lon.lt.(-Pi)).or.(lon.gt.Pi) )
-   if ( lon.lt.(-Pi) ) lon = lon + 2*Pi
-   if ( lon.gt.Pi ) lon = lon - 2*Pi
+! Make sure longitude is between -pi and pi
+do while ( (lon.lt.(-pi)).or.(lon.gt.pi) )
+   if ( lon.lt.(-pi) ) lon = lon + 2*pi
+   if ( lon.gt.pi ) lon = lon - 2*pi
 end do
 
 if ( (lon.lt.lon1d_fine(1)).or.(lon.ge.lon1d_fine(dimX_fine)) ) then
@@ -965,7 +993,7 @@ end function nearest_i_west
 !! @author Michael Toy, NOAA/GSL
 function nearest_j_north(lat_in)
 ! Calculates nearest fine-grid j index to the north of a given latitude
-! Note:  If the abs(latitude) is greater than Pi/2 (90 degrees) then
+! Note:  If the abs(latitude) is greater than pi/2 (90 degrees) then
 !        the value -999 is returned
 implicit none
 
@@ -975,7 +1003,7 @@ real (kind=RKIND) :: lat
 integer :: j
 
 lat = lat_in
-if ( abs(lat_in).gt.p5*Pi ) then
+if ( abs(lat_in).gt.p5*pi ) then
    nearest_j_north = -999
 else
    j = 1
@@ -994,7 +1022,7 @@ end function nearest_j_north
 !! @author Michael Toy, NOAA/GSL
 function nearest_j_south(lat_in)
 ! Calculates nearest fine-grid j index to the south of a given latitude
-! Note:  If the abs(latitude) is greater than Pi/2 (90 degrees) then
+! Note:  If the abs(latitude) is greater than pi/2 (90 degrees) then
 !        the value -999 is returned
 implicit none
 
@@ -1004,7 +1032,7 @@ real (kind=RKIND) :: lat
 integer :: j
 
 lat = lat_in
-if ( abs(lat_in).gt.p5*Pi ) then
+if ( abs(lat_in).gt.p5*pi ) then
    nearest_j_south = -999
 elseif ( lat_in.le.lat1d_fine(1) ) then
    nearest_j_south = 1
@@ -1041,7 +1069,6 @@ slope = (y2-y1)/(x2-x1)
 interp_1d = y1 + slope*(x-x1)
 
 end function interp_1d
-
 
 
 end module mpas_gsl_oro_data_lg_scale

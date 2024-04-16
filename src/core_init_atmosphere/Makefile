@@ -13,6 +13,7 @@ OBJS =  \
 	mpas_init_atm_static.o \
 	mpas_init_atm_gwd.o \
         mpas_gsl_oro_data_sm_scale.o \
+        mpas_gsl_oro_data_lg_scale.o \
         mpas_init_atm_gwd_gsl.o \
 	mpas_init_atm_surface.o \
 	mpas_init_atm_vinterp.o \
@@ -59,6 +60,7 @@ mpas_init_atm_cases.o: \
 	mpas_init_atm_static.o \
 	mpas_init_atm_gwd.o \
         mpas_gsl_oro_data_sm_scale.o \
+        mpas_gsl_oro_data_lg_scale.o \
         mpas_init_atm_gwd_gsl.o \
 	mpas_init_atm_surface.o \
 	mpas_init_atm_vinterp.o \

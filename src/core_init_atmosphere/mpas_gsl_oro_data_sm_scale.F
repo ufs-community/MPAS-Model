@@ -64,7 +64,8 @@ real (kind=RKIND), parameter :: p5 = 0.5_RKIND !< one half
 contains
 
 subroutine calc_gsl_oro_data_sm_scale(nCells,lat_MPAS,lon_MPAS_raw,area_MPAS, &
-                                          Re,domain,duplicate_oro_data_file)
+                                 Re,std_dev,convexity,OA1,OA2,OA3,OA4,        &
+                                 OL1,OL2,OL3,OL4,domain,duplicate_oro_data_file)
 
 
 implicit none
@@ -75,6 +76,8 @@ integer, intent(in)  :: nCells
 real (kind=RKIND), dimension(:), intent(in) :: lat_MPAS, lon_MPAS_raw  ! radians
 real (kind=RKIND), dimension(:), intent(in) :: area_MPAS  ! approx area of MPAS grid cell (m^2)
 real (kind=RKIND), intent(in) :: Re
+real (kind=RKIND), dimension(:), intent(out) :: std_dev,convexity,OA1,OA2,OA3,OA4, &
+                                                OL1,OL2,OL3,OL4
 logical, intent(out) :: duplicate_oro_data_file  ! flag to let main program know that
                                       ! oro_data_ls file was created by this subroutine
                                       ! as dupliate of oro_data_ss file due to grid size
@@ -105,10 +108,6 @@ real (kind=RKIND), allocatable :: zs(:,:)
 logical :: zs_accum
 
 real (kind=RKIND) :: zs_mean
-real (kind=RKIND), allocatable ::                               &
-           std_dev(:),convexity(:),                &
-           OA1(:),OA2(:),OA3(:),OA4(:),            &
-           OL1(:),OL2(:),OL3(:),OL4(:)
 
 real (kind=RKIND), parameter :: max_convexity = 10._RKIND  ! max value for convexity
 
@@ -116,7 +115,6 @@ integer :: nu, nd, nw, nt
 real (kind=RKIND) :: ratio
 
 
-integer :: temp_int
 real (kind=R4KIND), allocatable :: HGT_M_fine(:,:)
 real (kind=RKIND) :: dlta_lat, dlta_lon
 
@@ -201,8 +199,6 @@ do i = 1,nCells
    end if
 end do
 
-
-! Read in fine-scale topography
 
 
 ! Allocate GWD statistics fields

@@ -466,6 +466,26 @@
                         <var name="ol2" packages="vertical_stage_in;met_stage_in"/>
                         <var name="ol3" packages="vertical_stage_in;met_stage_in"/>
                         <var name="ol4" packages="vertical_stage_in;met_stage_in"/>
+                        <var name="var2dls" packages="vertical_stage_in;met_stage_in"/>
+                        <var name="conls" packages="vertical_stage_in;met_stage_in"/>
+                        <var name="oa1ls" packages="vertical_stage_in;met_stage_in"/>
+                        <var name="oa2ls" packages="vertical_stage_in;met_stage_in"/>
+                        <var name="oa3ls" packages="vertical_stage_in;met_stage_in"/>
+                        <var name="oa4ls" packages="vertical_stage_in;met_stage_in"/>
+                        <var name="ol1ls" packages="vertical_stage_in;met_stage_in"/>
+                        <var name="ol2ls" packages="vertical_stage_in;met_stage_in"/>
+                        <var name="ol3ls" packages="vertical_stage_in;met_stage_in"/>
+                        <var name="ol4ls" packages="vertical_stage_in;met_stage_in"/>
+                        <var name="var2dss" packages="vertical_stage_in;met_stage_in"/>
+                        <var name="conss" packages="vertical_stage_in;met_stage_in"/>
+                        <var name="oa1ss" packages="vertical_stage_in;met_stage_in"/>
+                        <var name="oa2ss" packages="vertical_stage_in;met_stage_in"/>
+                        <var name="oa3ss" packages="vertical_stage_in;met_stage_in"/>
+                        <var name="oa4ss" packages="vertical_stage_in;met_stage_in"/>
+                        <var name="ol1ss" packages="vertical_stage_in;met_stage_in"/>
+                        <var name="ol2ss" packages="vertical_stage_in;met_stage_in"/>
+                        <var name="ol3ss" packages="vertical_stage_in;met_stage_in"/>
+                        <var name="ol4ss" packages="vertical_stage_in;met_stage_in"/>
                         <var name="deriv_two" packages="gwd_stage_in;gwd_gsl_stage_in;vertical_stage_in;met_stage_in"/>
                         <var name="defc_a" packages="gwd_stage_in;gwd_gsl_stage_in;vertical_stage_in;met_stage_in"/>
                         <var name="defc_b" packages="gwd_stage_in;gwd_gsl_stage_in;vertical_stage_in;met_stage_in"/>
