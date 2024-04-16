@@ -88,7 +88,8 @@ module mpas_init_atm_gwd_gsl
       call mpas_pool_get_config(domain % configs, 'config_gwd_cell_scaling', config_gwd_cell_scaling)
 
       !
-      ! Retrieve pointers to arrays holding the latitudes and longitudes of cells
+      ! Retrieve pointers to arrays holding the latitudes and longitudes of cells,
+      ! and arrays that will hold the computed GWDO statistics
       !
       call mpas_pool_get_dimension(mesh, 'nCells', nCells)
       call mpas_pool_get_dimension(mesh, 'nEdges', nEdges)
@@ -97,6 +98,27 @@ module mpas_init_atm_gwd_gsl
       call mpas_pool_get_array(mesh, 'nEdgesOnCell', nEdgesOnCell)
       call mpas_pool_get_array(mesh, 'edgesOnCell', edgesOnCell)
       call mpas_pool_get_array(mesh, 'dcEdge', dcEdge)
+      call mpas_pool_get_array(mesh, 'var2dls', var2dls)
+      call mpas_pool_get_array(mesh, 'conls', conls)
+      call mpas_pool_get_array(mesh, 'ol1ls', ol1ls)
+      call mpas_pool_get_array(mesh, 'ol2ls', ol2ls)
+      call mpas_pool_get_array(mesh, 'ol3ls', ol3ls)
+      call mpas_pool_get_array(mesh, 'ol4ls', ol4ls)
+      call mpas_pool_get_array(mesh, 'oa1ls', oa1ls)
+      call mpas_pool_get_array(mesh, 'oa2ls', oa2ls)
+      call mpas_pool_get_array(mesh, 'oa3ls', oa3ls)
+      call mpas_pool_get_array(mesh, 'oa4ls', oa4ls)
+      call mpas_pool_get_array(mesh, 'var2dss', var2dss)
+      call mpas_pool_get_array(mesh, 'conss', conss)
+      call mpas_pool_get_array(mesh, 'ol1ss', ol1ss)
+      call mpas_pool_get_array(mesh, 'ol2ss', ol2ss)
+      call mpas_pool_get_array(mesh, 'ol3ss', ol3ss)
+      call mpas_pool_get_array(mesh, 'ol4ss', ol4ss)
+      call mpas_pool_get_array(mesh, 'oa1ss', oa1ss)
+      call mpas_pool_get_array(mesh, 'oa2ss', oa2ss)
+      call mpas_pool_get_array(mesh, 'oa3ss', oa3ss)
+      call mpas_pool_get_array(mesh, 'oa4ss', oa4ss)
+
 
       !
       ! It is possible that this code is called before the mesh fields have been scaled
@@ -106,7 +128,7 @@ module mpas_init_atm_gwd_gsl
       ! is the case.
       !
       if (maxval(dcEdge(1:nEdges)) < 1.0_RKIND) then
-         call mpas_log_write('Computing GWD statistics on a unit sphere')
+         call mpas_log_write('Computing GSL GWD statistics on a unit sphere')
          onUnitSphere = .true.
       else
          onUnitSphere = .false.
@@ -163,6 +185,8 @@ module mpas_init_atm_gwd_gsl
                                       var2dls,conls,oa1ls,oa2ls,oa3ls,oa4ls,  &
                                       ol1ls,ol2ls,ol3ls,ol4ls,domain)
       end if
+
+      call mpas_log_write('In sub calc_gsl_oro_data #5')
 
       deallocate(areaCell)
 

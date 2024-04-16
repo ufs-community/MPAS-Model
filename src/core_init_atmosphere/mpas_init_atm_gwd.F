@@ -187,10 +187,6 @@ module mpas_init_atm_gwd
       call mpas_pool_get_array(mesh, 'oa2', oa2)
       call mpas_pool_get_array(mesh, 'oa3', oa3)
       call mpas_pool_get_array(mesh, 'oa4', oa4)
-!      call mpas_pool_get_array(mesh, 'elvmax', elvmax)
-!      call mpas_pool_get_array(mesh, 'theta', htheta)
-!      call mpas_pool_get_array(mesh, 'gamma', hgamma)
-!      call mpas_pool_get_array(mesh, 'sigma', hsigma)
 
       allocate(hlanduse(nCells+1))    ! +1, since we access hlanduse(cellsOnCell(i,iCell)) later on for iCell=1,nCells
 

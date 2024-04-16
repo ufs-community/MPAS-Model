@@ -67,7 +67,6 @@ subroutine calc_gsl_oro_data_sm_scale(nCells,lat_MPAS,lon_MPAS_raw,area_MPAS, &
                                  Re,std_dev,convexity,OA1,OA2,OA3,OA4,        &
                                  OL1,OL2,OL3,OL4,domain,duplicate_oro_data_file)
 
-
 implicit none
 
 type (domain_type), intent(inout) :: domain
@@ -129,7 +128,7 @@ real (kind=RKIND), dimension(3) :: lat_blk, lon_blk
 
 
 
-call mpas_log_write('Creating oro_data_ss file')
+call mpas_log_write('Creating oro_data_ss fields')
 
 call mpas_pool_get_config(domain % configs, 'config_geog_data_path', config_geog_data_path)
 
@@ -199,19 +198,7 @@ do i = 1,nCells
    end if
 end do
 
-
-
-! Allocate GWD statistics fields
-allocate (std_dev(nCells))
-allocate (convexity(nCells))
-allocate (OA1(nCells))
-allocate (OA2(nCells))
-allocate (OA3(nCells))
-allocate (OA4(nCells))
-allocate (OL1(nCells))
-allocate (OL2(nCells))
-allocate (OL3(nCells))
-allocate (OL4(nCells))
+print *, "Ahoj.  About to assign values."
 
 ! Initialize GWD statistics fields
 std_dev(:) = 0._RKIND
@@ -225,7 +212,7 @@ OL2(:) = 0._RKIND
 OL3(:) = 0._RKIND
 OL4(:) = 0._RKIND
 
-
+print *, "Ahoj.  Just assigned values."
 
 ! Calculate the minimum coarse grid cell size as implied by the cell area
 min_area = 1.E+14
@@ -874,16 +861,6 @@ deallocate(lat1d_fine)
 deallocate(lon1d_fine)
 deallocate(lon_MPAS)
 deallocate(HGT_M_fine)
-deallocate(std_dev)
-deallocate(convexity)
-deallocate(OA1)
-deallocate(OA2)
-deallocate(OA3)
-deallocate(OA4)
-deallocate(OL1)
-deallocate(OL2)
-deallocate(OL3)
-deallocate(OL4)
 
 
 end subroutine calc_gsl_oro_data_sm_scale
