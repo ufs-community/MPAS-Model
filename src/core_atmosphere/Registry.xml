@@ -660,6 +660,9 @@
                         <var name="ch"/>
 			<var name="kpbl"/>
 			<var name="hpbl"/>
+                        <var name="maxmf"/>
+			<var name="maxwidth"/>
+			<var name="ztop_plume"/>
 			<var name="hfx"/>
 			<var name="mavail"/>
 			<var name="mol"/>
@@ -795,7 +798,10 @@
 			<var name="rqvblten"/>
 			<var name="rqcblten"/>
 			<var name="rqiblten"/>
+			<var name="rncblten"/>
 			<var name="rniblten"/>
+			<var name="rnwfablten"/>
+			<var name="rnifablten"/>
 			<var name="rthratensw"/>
 			<var name="rthratenlw"/>
 			<var name="isltyp"/>
@@ -849,9 +855,9 @@
 #endif
 		</stream>
 
-		<stream name="output" 
-                        type="output" 
-                        filename_template="history.$Y-$M-$D_$h.$m.$s.nc" 
+		<stream name="output"
+                        type="output"
+                        filename_template="history.$Y-$M-$D_$h.$m.$s.nc"
                         output_interval="6:00:00"
                         runtime_format="separate_file">
 
@@ -984,9 +990,9 @@
 #endif
 		</stream>
 
-		<stream name="diagnostics" 
-                        type="output" 
-                        filename_template="diag.$Y-$M-$D_$h.$m.$s.nc" 
+		<stream name="diagnostics"
+                        type="output"
+                        filename_template="diag.$Y-$M-$D_$h.$m.$s.nc"
                         output_interval="3:00:00"
                         runtime_format="separate_file">
 
@@ -1504,7 +1510,7 @@
 
                         <var name="qs" array_group="moist" units="kg kg^{-1}"
                              description="Snow mixing ratio"
-                             packages="mp_thompson_in;mp_wsm6_in"/>
+                             packages="bl_mynn_in;mp_thompson_in;mp_wsm6_in"/>
 
                         <var name="qg" array_group="moist" units="kg kg^{-1}"
                              description="Graupel mixing ratio"
@@ -1514,9 +1520,9 @@
                              description="Cloud ice number concentration"
                              packages="bl_mynn_in;mp_thompson_in"/>
 
-                        <var name="nc" array_group="number" units="nb kg^{-1}"
-                             description="Cloud number concentration"
-                             packages="mp_thompson_in"/>
+			<var name="nc" array_group="number" units="nb kg^{-1}"
+                             description="Cloud water number concentration"
+                             packages="bl_mynn_in;mp_thompson_in"/>
 
                         <var name="nr" array_group="number" units="nb kg^{-1}"
                              description="Rain number concentration"
@@ -1524,11 +1530,11 @@
 			
 			<var name="nwfa" array_group="passive" units="nb kg^{-1}"
                              description="Number of water-friendly aerosols for microphysics"
-                             packages="mp_thompson_in"/>
+                             packages="bl_mynn_in;mp_thompson_in"/>
 
 			<var name="nifa" array_group="passive" units="nb kg^{-1}"
                              description="Number of ice-friendly aerosols for microphysics"
-                             packages="mp_thompson_in"/>
+                             packages="bl_mynn_in;mp_thompson_in"/>
                 </var_array>
 #endif
 
@@ -1779,7 +1785,7 @@
 
         <var_struct name="tend" time_levs="1">
 
-                
+
                 <!-- tendencies for prognostic variables -->
                 <var name="tend_u" name_in_code="u" type="real" dimensions="nVertLevels nEdges Time" units="m s^{-2}"
                      description="Tendency of u from dynamics"/>
@@ -1848,9 +1854,9 @@
                              description="Tendency of cloud ice number concentration multiplied by dry air density divided by d(zeta)/dz"
                              packages="bl_mynn_in;mp_thompson_in"/>
 
-			<var name="tend_nc" name_in_code="nc" array_group="number" units="nb m^{-3} s^{-1}" 
-                             description="Tendency of cloud number concentration multiplied by dry air density divided by d(zeta)/dz"
-                             packages="mp_thompson_in"/>
+			<var name="tend_nc" name_in_code="nc" array_group="number" units="nb m^{-3} s^{-1}"
+                             description="Tendency of cloud water number concentration multiplied by dry air density divided by d(zeta)/dz"
+                             packages="bl_mynn_in;mp_thompson_in"/>
 			
                         <var name="tend_nr" name_in_code="nr" array_group="number" units="nb m^{-3} s^{-1}" 
                              description="Tendency of rain number concentration multiplied by dry air density divided by d(zeta)/dz"
@@ -1858,11 +1864,11 @@
 
 			<var name="tend_nwfa" name_in_code="nwfa" array_group="passive" units="nb m^{-3} s^{-1}" 
                              description="Tendency of water-friendly aerosols multiplied by dry air density divided by d(zeta)/dz"
-                             packages="mp_thompson_in"/>
+                             packages="bl_mynn_in;mp_thompson_in"/>
 
 			<var name="tend_nifa" name_in_code="nifa" array_group="passive" units="nb m^{-3} s^{-1}" 
                              description="Tendency of ice-friendly aerosols multiplied by dry air density divided by d(zeta)/dz"
-                             packages="mp_thompson_in"/>
+                             packages="bl_mynn_in;mp_thompson_in"/>
                 </var_array>
 #endif
         </var_struct>
@@ -1910,14 +1916,14 @@
                         <var name="lbc_qi" name_in_code="qi" array_group="moist"  packages="bl_mynn_in;cu_tiedtke_in;mp_thompson_in;mp_wsm6_in" units="kg kg^{-1} s^{-1}"
                              description="Lateral boundary tendency of ice mixing ratio"/>
 
-                        <var name="lbc_qs" name_in_code="qs" array_group="moist"  packages="mp_thompson_in;mp_wsm6_in" units="kg kg^{-1} s^{-1}"
+                        <var name="lbc_qs" name_in_code="qs" array_group="moist"  packages="bl_mynn_in;mp_thompson_in;mp_wsm6_in" units="kg kg^{-1} s^{-1}"
                              description="Lateral boundary tendency of snow mixing ratio"/>
 
                         <var name="lbc_qg" name_in_code="qg" array_group="moist"  packages="mp_thompson_in;mp_wsm6_in" units="kg kg^{-1} s^{-1}"
                              description="Lateral boundary tendency of graupel mixing ratio"/>
 
-                        <var name="lbc_nc" name_in_code="nc" array_group="number" packages="mp_thompson_in" units="m^{-3} s^{-1}"
-                             description="Lateral boundary tendency of cloud number concentration"/>
+                        <var name="lbc_nc" name_in_code="nc" array_group="number" packages="bl_mynn_in;mp_thompson_in" units="m^{-3} s^{-1}"
+                             description="Lateral boundary tendency of cloud water number concentration"/>
 			
                         <var name="lbc_nr" name_in_code="nr" array_group="number" packages="mp_thompson_in" units="m^{-3} s^{-1}"
                              description="Lateral boundary tendency of rain number concentration"/>
@@ -1925,10 +1931,10 @@
                         <var name="lbc_ni" name_in_code="ni" array_group="number" packages="bl_mynn_in;mp_thompson_in" units="m^{-3} s^{-1}"
                              description="Lateral boundary tendency of ice number concentration"/>
 
-                        <var name="lbc_nwfa" name_in_code="nwfa" array_group="passive" packages="mp_thompson_in" units="m^{-3} s^{-1}"
+                        <var name="lbc_nwfa" name_in_code="nwfa" array_group="passive" packages="bl_mynn_in;mp_thompson_in" units="m^{-3} s^{-1}"
                              description="Lateral boundary tendency of wfa"/>
 
-                        <var name="lbc_nifa" name_in_code="nifa" array_group="passive" packages="mp_thompson_in" units="m^{-3} s^{-1}"
+                        <var name="lbc_nifa" name_in_code="nifa" array_group="passive" packages="bl_mynn_in;mp_thompson_in" units="m^{-3} s^{-1}"
                              description="Lateral boundary tendency of ifa"/>
                 </var_array>
         </var_struct>
@@ -1987,7 +1993,7 @@
                      possible_values="Positive integers"/>
 
                 <!-- NAMELIST VARIABLES ADDED FOR PHYSICS CONFIGURATION: -->
-                
+
                 <nml_option name="config_frac_seaice" type="logical" default_value="true" in_defaults="false"
                      units="-"
                      description="logical for configuration of fractional sea-ice"
@@ -2103,6 +2109,76 @@
                      description="configuration for planetary boundary layer schemes"
                      possible_values="`suite',`bl_ysu',`bl_mynn',`off'"/>
 
+		<nml_option name="config_mynn_output" type="integer" default_value="0" in_defaults="false"
+                     units="-"
+                     description="extra output for mynn planetary boundary layer scheme"
+                     possible_values="`0: not output',`1: updraft arrays',`2: downdraft arrays'"/>
+
+		<nml_option name="config_tkebudget" type="integer" default_value="0" in_defaults="false"
+                     units="-"
+                     description="tke budget for planetary boundary layer schemes"
+                     possible_values="`0: off',`1: activated'"/>
+
+		<nml_option name="config_mynn_cloudpdf" type="integer" default_value="2" in_defaults="false"
+                     units="-"
+                     description="configuration for cloud pdf in MYNN"
+                     possible_values="`0: Someria-Deardorff',`1: Someria-Deardorf 1st order',`1: Modified Chab-Bechtold'"/>
+
+		<nml_option name="config_mynn_mixlength" type="integer" default_value="1" in_defaults="false"
+                     units="-"
+                     description="configuration for mixing length option in the MYNN"
+                     possible_values="`0: orig',`1: operational',`1: research"/>
+
+		<nml_option name="config_mynn_edmf" type="integer" default_value="1" in_defaults="false"
+                     units="-"
+                     description="configuration for activating the mass-flux component of the MYNN"
+                     possible_values="`0: off',`1: activated'"/>
+
+		<nml_option name="config_mynn_edmf_mom" type="integer" default_value="1" in_defaults="false"
+                     units="-"
+                     description="configuration for transporting momentum in MYNN mass flux component"
+                     possible_values="`0: off',`1: transport momentum'"/>
+
+		<nml_option name="config_mynn_edmf_tke" type="integer" default_value="0" in_defaults="false"
+                     units="-"
+                     description="configuration for transporting TKE in MYNN mass flux component"
+                     possible_values="`0: off',`1: transport TKE'"/>
+
+		<nml_option name="config_mynn_mixscalars" type="integer" default_value="1" in_defaults="false"
+                     units="-"
+                     description="configuration for mixing scalars in MYNN"
+                     possible_values="`0: do not mix scalars',`1: mix scalars'"/>
+
+		<nml_option name="config_mynn_mixqt" type="integer" default_value="0" in_defaults="false"
+                     units="-"
+                     description="configuration for mixing individual species vs total water in MYNN"
+                     possible_values="`0: mix individual species',`1: mix total water (do not use)'"/>
+
+		<nml_option name="config_mynn_cloudmix" type="integer" default_value="1" in_defaults="false"
+                     units="-"
+                     description="configuration for mixing cloud species in MYNN"
+                     possible_values="`0: do not mix cloud species',`1: mix all cloud species'"/>
+		
+		<nml_option name="config_icloud_bl" type="integer" default_value="1" in_defaults="false"
+                     units="-"
+                     description="configuration for MYNN subgrid cloud coupling to radiation"
+                     possible_values="`0: uncoupled',`1: coupled'"/>
+
+		<nml_option name="config_mynn_closure" type="real" default_value="2.6" in_defaults="false"
+                     units="-"
+                     description="configuration for closure level for MYNN-EDMF"
+                     possible_values="`2.5: level 2.5',`2.6: level 2.6',`3.0: level 3.0'"/>
+
+		<nml_option name="config_mynn_tkeadvect" type="logical" default_value="false" in_defaults="false"
+                     units="-"
+                     description="configuration for tke advection"
+                     possible_values="`false: off',`true: activated'"/>
+
+		<nml_option name="config_spp_pbl" type="integer" default_value="0" in_defaults="false"
+                     units="-"
+                     description="configuration for spp boundary layer"
+                     possible_values="`0: off',`1: activated'"/>
+		
                 <nml_option name="config_gwdo_scheme" type="character" default_value="suite" in_defaults="false"
                      units="-"
                      description="configuration of gravity wave drag over orography"
@@ -2368,7 +2444,7 @@
 
                 <var name="delta" type="real" dimensions="nCells Time" units="m"
                      description="entrainment layer depth from PBL scheme"
-                     packages="bl_mynn_in;bl_ysu_in"/>
+                     packages="bl_ysu_in"/>
 
                 <var name="wstar" type="real" dimensions="nCells Time" units="m s^{-1}"
                      description="mixed velocity scale from PBL scheme"
@@ -2422,6 +2498,18 @@
                      description="turbulent kinetic energy from PBL"
                      packages="bl_mynn_in"/>
 
+		<var name="cldfrac_bl" type="real" dimensions="nVertLevels nCells Time" units="fraction"
+                     description="cloud fraction from boundary layer scheme"
+                     packages="bl_mynn_in"/>
+
+                <var name="qc_bl" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1}"
+                     description="subgrid cloud water from boundary layer scheme"
+                     packages="bl_mynn_in"/>
+
+                <var name="qi_bl" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1}"
+                     description="subgrid cloud ice from boundary layer scheme"
+                     packages="bl_mynn_in"/> 
+
                 <var name="dqke" type="real" dimensions="nVertLevels nCells Time" units="m^{2} s^{-2}"
                      description="TKE change"
                      packages="bl_mynn_in"/>
@@ -2442,7 +2530,66 @@
                      description="TKE vertical distribution"
                      packages="bl_mynn_in"/>
 
+		<var name="edmf_a" type="real" dimensions="nVertLevels nCells Time" units="frac"
+                     description="mass flux relative updraft area"
+                     packages="bl_mynn_in"/>
 
+		<var name="edmf_w" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1}"
+                     description="mass flux relative updraft area"
+                     packages="bl_mynn_in"/>
+
+		<var name="edmf_thl" type="real" dimensions="nVertLevels nCells Time" units="K"
+                     description="liquid potential temperature in mass flux updrafts"
+                     packages="bl_mynn_in"/>
+
+		<var name="edmf_qt" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1}"
+                     description="total water in mass flux updrafts"
+                     packages="bl_mynn_in"/>
+
+		<var name="edmf_ent" type="real" dimensions="nVertLevels nCells Time" units="m^{-1}"
+                     description="entrainment rate in mass flux updrafts"
+                     packages="bl_mynn_in"/>
+
+		<var name="edmf_qc" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1}"
+                     description="cloud water in mass flux updrafts"
+                     packages="bl_mynn_in"/>
+
+		<var name="sub_thl" type="real" dimensions="nVertLevels nCells Time" units="K s^{-1}"
+                     description="temperature tendency from subsidence"
+                     packages="bl_mynn_in"/>
+
+		<var name="sub_sqv" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1} s^{-1}"
+                     description="water vapor tendency from subsidence"
+                     packages="bl_mynn_in"/>
+
+		<var name="det_thl" type="real" dimensions="nVertLevels nCells Time" units="K s^{-1}"
+                     description="temperature tendency from detrainment"
+                     packages="bl_mynn_in"/>
+
+                <var name="det_sqv" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1} s^{-1}"
+                     description="water vapor tendency from detrainment"
+                     packages="bl_mynn_in"/>
+
+		<var name="sh3d" type="real" dimensions="nVertLevels nCells Time" units="-"
+                     description="stability function for scalars"
+                     packages="bl_mynn_in"/>
+
+                <var name="sm3d" type="real" dimensions="nVertLevels nCells Time" units="-"
+                     description="stability function for momentum"
+                     packages="bl_mynn_in"/>
+
+                <var name="maxmf" type="real" dimensions="nCells Time" units="m s^{-1}"
+                     description="Maximum mass flux in the each column"
+                     packages="bl_mynn_in"/>
+
+		<var name="maxwidth" type="real" dimensions="nCells Time" units="m"
+                     description="Maximum width of updrafts"
+                     packages="bl_mynn_in"/>
+
+		<var name="ztop_plume" type="real" dimensions="nCells Time" units="m"
+                     description="Height of highest penetratign plume"
+                     packages="bl_mynn_in"/>
+		
                 <!-- ================================================================================================== -->
                 <!-- ... PARAMETERIZATION OF SURFACE LAYER PROCESSES:                                                   -->
                 <!-- ================================================================================================== -->
@@ -2574,10 +2721,6 @@
                 <var name="qcg" type="real" dimensions="nCells Time" units="kg kg^{-1}"
                      description="cloud water mixing ratio at the ground surface"
                      packages="bl_mynn_in;lsm_ruc_in"/>
-
-                <var name="sh3d" type="real" dimensions="nVertLevels nCells Time" units="unitless"
-                     description="stability function for heat"
-                     packages="bl_mynn_in"/>
 
 
                 <!-- DIAGNOSTICS: -->
@@ -3143,6 +3286,18 @@
                      description="tendency of cloud ice number concentration due to pbl processes"
                      packages="bl_mynn_in"/>
 
+		<var name="rncblten" type="real" dimensions="nVertLevels nCells Time" units="nb kg^{-1} s^{-1}"
+                     description="tendency of cloud water number concentration due to pbl processes"
+                     packages="bl_mynn_in"/>
+
+		<var name="rnwfablten" type="real" dimensions="nVertLevels nCells Time" units="nb kg^{-1} s^{-1}"
+                     description="tendency of water friendly aerosol number concentration due to pbl processes"
+                     packages="bl_mynn_in"/>
+
+		<var name="rnifablten" type="real" dimensions="nVertLevels nCells Time" units="nb kg^{-1} s^{-1}"
+                     description="tendency of ice friendly aerosol number concentration due to pbl processes"
+                     packages="bl_mynn_in"/>
+
 	        <!-- MGD should we add packages to the field below? -->
 	        <var name="rublten_Edge" type="real"     dimensions="nVertLevels nEdges Time"/>
 
@@ -3171,7 +3326,6 @@
                 <var name="ozmixm" type="real" dimensions="nMonths nOznLevels nCells" units="mol mol^{-1}"
                      description="monthly-mean climatological ozone defined at fixed pressure levels"/>
         </var_struct>
-
 
         <var_struct name="sfc_input" time_levs="1">
 
@@ -3313,7 +3467,7 @@
 #endif
 
         <var_struct name="tend_iau" time_levs="1" packages="iau">
-			
+
                 <!-- analysis increments; read from iau input -->
                 <var name="u_amb"     name_in_code="u" type="real" dimensions="nVertLevels nEdges Time" units="m s^{-1}"
                      description="Horizontal normal velocity increment"/>

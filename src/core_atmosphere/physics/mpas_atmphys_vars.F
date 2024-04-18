@@ -198,7 +198,8 @@
     ni_p,             &!
     nr_p,             &!
     nwfa_p,           &!
-    nifa_p             !
+    nifa_p,           &!
+    nbca_p
 
 !... arrays located at w (vertical velocity) points, or at interface between layers:
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
@@ -250,7 +251,10 @@
 
  logical,parameter:: &
     f_qnc = .true.,   &!
-    f_qni = .true.     !
+    f_qni = .true.,   &!
+    f_nwfa = .true.,  &
+    f_nifa = .true.,  &
+    f_nbca = .true.
 
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
     f_ice,            &!fraction of cloud ice (used in WRF only).
@@ -396,31 +400,70 @@
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
     kzh_p,            &!
     kzm_p,            &!
-    kzq_p              !
+    kzq_p,            &!
+    exch_h_p,         &!exchange coefficient for heat                                                    [K s-1]
+    exch_m_p           !exchange coefficient for momentum                                                [K s-1]
 
 !... MYNN PBL scheme (module_bl_mynn.F):
- integer,parameter:: grav_settling = 0
-
- logical,parameter:: bl_mynn_tkeadvect = .false.!
- integer,parameter:: bl_mynn_tkebudget = 0      !
- integer,parameter:: bl_mynn_cloudpdf  = 0      !
-
- real(kind=RKIND),dimension(:,:),allocatable:: &
-    vdfg_p             !
+ logical,parameter:: bl_mynn_tkeadvect  = .false.!
+ integer,parameter:: tkebudget          = 0      !
+ integer,parameter:: bl_mynn_cloudpdf   = 2      !
+ integer,parameter:: bl_mynn_cloudmix   = 1      !
+ integer,parameter:: bl_mynn_mixlength  = 1
+ integer,parameter:: bl_mynn_edmf       = 1      !
+ integer,parameter:: bl_mynn_edmf_mom   = 1      !
+ integer,parameter:: bl_mynn_edmf_tke   = 0      !
+ integer,parameter:: bl_mynn_output     = 0      !
+ integer,parameter:: bl_mynn_mixscalars = 1      !
+ integer,parameter:: bl_mynn_mixqt      = 0
+ logical,parameter:: flag_qnwfa         = .false.
+ logical,parameter:: flag_qnifa         = .false.
+ logical,parameter:: flag_qnbca         = .false.
+ real,parameter   :: bl_mynn_closure    = 2.6
+ integer,parameter:: spp_pbl            = 0
+ 
+real(kind=RKIND),dimension(:,:),allocatable:: &
+    vdfg_p,             &
+    maxmf_p,            & !
+    maxwidth_p,         &
+    ztop_plume_p
 
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
-    dqke_p,           &!
-    qbuoy_p,          &!
-    qdiss_p,          &!
-    qke_p,            &!
-    qkeadv_p,         &!
-    qshear_p,         &!
-    qwt_p,            &!
-    tkepbl_p           !
+    dqke_p,            &!
+    qbuoy_p,           &!
+    qdiss_p,           &!
+    qshear_p,          &!
+    qwt_p,             &!
+    qke_p,             &!
+    qkeadv_p,          &!
+    elpbl_p,           &
+    sm3d_p,            &!stability function for momentum
+    sh3d_p,            &!stability function for heat
+    qc_bl_p,           &!sgs clouds
+    qi_bl_p,           &!sgs clouds
+    cldfrac_bl_p,      &!sgs_clouds
+    edmf_a_p,          &!optional output
+    edmf_w_p,          &
+    edmf_thl_p,        &
+    edmf_qt_p, 	       &
+    edmf_qc_p,         &
+    edmf_ent_p,        &
+    sub_thl_p,         &
+    sub_sqv_p, 	       &
+    det_thl_p,         &
+    det_sqv_p
+    
+ real(kind=RKIND),dimension(:,:,:),allocatable:: &
+    rniblten_p,        &!
+    rncblten_p,        &! Qnc tendency due to PBL parameterization                                    [# kg-1 s-1]
+    rqsblten_p,        &
+    rnwfablten_p,      &
+    rnifablten_p,      &
+    rnbcablten_p
 
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
-    rniblten_p         !
-
+    pattern_spp_pbl_p
+      
 !=================================================================================================================
 !... variables and arrays related to parameterization of gravity wave drag over orography:
 !=================================================================================================================
@@ -525,9 +568,7 @@
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
     cov_p,            &!liquid water-liquid water potential temperature covariance                       [K kg/kg]
     qsq_p,            &!liquid water variance                                                          [(kg/kg)^2]
-    tsq_p,            &!liquid water potential temperature variance                                          [K^2]
-    sh3d_p,           &!stability function for heat                                                            [-]
-    elpbl_p            !length scale from PBL                                                                  [m]
+    tsq_p              !liquid water potential temperature variance                                          [K^2]
 
 !=================================================================================================================
 !... variables and arrays related to parameterization of seaice:

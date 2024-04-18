@@ -99,6 +99,7 @@
                                   config_radt_lw_scheme,    &
                                   config_radt_sw_scheme,    &
                                   config_sfclayer_scheme
+ integer,pointer :: config_icloud_bl
 
 !-----------------------------------------------------------------------------------------------------------------
 !call mpas_log_write('')
@@ -114,7 +115,7 @@
  call mpas_pool_get_config(configs,'config_radt_lw_scheme'   ,config_radt_lw_scheme   )
  call mpas_pool_get_config(configs,'config_radt_sw_scheme'   ,config_radt_sw_scheme   )
  call mpas_pool_get_config(configs,'config_sfclayer_scheme'  ,config_sfclayer_scheme  )
-
+ call mpas_pool_get_config(configs,'config_icloud_bl'        ,config_icloud_bl)
  call mpas_log_write('')
  call mpas_log_write('----- Setting up physics suite '''//trim(config_physics_suite)//''' -----')
 
@@ -256,6 +257,19 @@
     call physics_message(mpas_err_message)
     config_radt_cld_scheme = "cld_incidence"
 
+ endif
+
+ if(     config_pbl_scheme     .eq. 'bl_mynn'          .and. &
+         config_icloud_bl      .gt.  0                 .and. &
+    .not.config_radt_cld_scheme == 'cld_fraction_mynn') then
+    call mpas_log_write('')
+    write(mpas_err_message,'(A,A10)') &
+       '    config_pbl_scheme is set to bl_mynn and config_icloud_bl > 0  '
+    call physics_message(mpas_err_message)
+    write(mpas_err_message,'(A,A10)') &
+       '    switch calculation of cloud fraction to config_radt_cld_scheme = cld_fraction_mynn'
+    call physics_message(mpas_err_message)
+    config_radt_cld_scheme = "cld_fraction_mynn"
  endif
 
 !surface-layer scheme:

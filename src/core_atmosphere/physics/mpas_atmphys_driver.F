@@ -200,12 +200,12 @@
     end do
 !$OMP END PARALLEL DO
 
-    !call to cloud scheme:
+    call mpas_log_write( ' call to cloud scheme: ')
     if(l_radtlw .or. l_radtsw) then
-       call allocate_cloudiness
+       call allocate_cloudiness(block%configs)
 !$OMP PARALLEL DO
        do thread=1,nThreads
-          call driver_cloudiness(block%configs,mesh,diag_physics,sfc_input, &
+          call driver_cloudiness(itimestep,block%configs,mesh,diag_physics,sfc_input, &
                                  cellSolveThreadStart(thread),cellSolveThreadEnd(thread))
        end do
 !$OMP END PARALLEL DO
@@ -249,7 +249,7 @@
 
     !deallocate all radiation arrays:
     if(config_radt_sw_scheme.ne.'off' .or. config_radt_lw_scheme.ne.'off') &
-       call deallocate_cloudiness
+       call deallocate_cloudiness(block%configs)
     if(config_radt_sw_scheme.ne.'off') call deallocate_radiation_sw(block%configs)
     if(config_radt_lw_scheme.ne.'off') call deallocate_radiation_lw(block%configs)
 

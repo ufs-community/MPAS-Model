@@ -97,7 +97,7 @@
 
  integer:: i,iCell,k,n
  integer,pointer:: index_qv, index_qc, index_qr, index_qi, index_qs, index_qg
- integer,pointer:: index_ni
+ integer,pointer:: index_ni,index_nc,index_nwfa,index_nifa
  integer,pointer:: nCells,nCellsSolve,nEdges,nEdgesSolve
 
  real(kind=RKIND),dimension(:,:),pointer:: mass          ! time level 2 rho_zz
@@ -106,7 +106,8 @@
  real(kind=RKIND),dimension(:,:,:),pointer:: scalars
  real(kind=RKIND),dimension(:,:),pointer:: rthblten,rqvblten,rqcblten, &
                                            rqiblten,rublten,rvblten
- real(kind=RKIND),dimension(:,:),pointer:: rniblten
+ real(kind=RKIND),dimension(:,:),pointer:: rniblten,rncblten,    &
+                                           rnwfablten,rnifablten
  real(kind=RKIND),dimension(:,:),pointer:: rthcuten,rqvcuten,rqccuten, &
                                            rqrcuten,rqicuten,rqscuten, &
                                            rucuten,rvcuten
@@ -148,7 +149,10 @@
  call mpas_pool_get_dimension(state, 'index_qs', index_qs)
  call mpas_pool_get_dimension(state, 'index_qg', index_qg)
  call mpas_pool_get_dimension(state, 'index_ni', index_ni)
-
+ call mpas_pool_get_dimension(state, 'index_ni', index_nc)
+ call mpas_pool_get_dimension(state, 'index_ni', index_nwfa)
+ call mpas_pool_get_dimension(state, 'index_ni', index_nifa)
+      
  call mpas_pool_get_array(tend_physics, 'rublten', rublten)
  call mpas_pool_get_array(tend_physics, 'rvblten', rvblten)
  call mpas_pool_get_array(tend_physics, 'rublten_Edge', rublten_Edge)
@@ -157,6 +161,9 @@
  call mpas_pool_get_array(tend_physics, 'rqcblten', rqcblten)
  call mpas_pool_get_array(tend_physics, 'rqiblten', rqiblten)
  call mpas_pool_get_array(tend_physics, 'rniblten', rniblten)
+ call mpas_pool_get_array(tend_physics, 'rncblten', rncblten)
+ call mpas_pool_get_array(tend_physics, 'rnwfablten', rnwfablten)
+ call mpas_pool_get_array(tend_physics, 'rnifablten', rnifablten)
 
  call mpas_pool_get_array(tend_physics, 'rucuten', rucuten)
  call mpas_pool_get_array(tend_physics, 'rvcuten', rvcuten)
@@ -205,6 +212,9 @@
  if (.not. associated(rqvblten)) allocate(rqvblten(0,0))
  if (.not. associated(rqcblten)) allocate(rqcblten(0,0))
  if (.not. associated(rqiblten)) allocate(rqiblten(0,0))
+ if (.not. associated(rncblten)) allocate(rncblten(0,0))
+ if (.not. associated(rnwfablten)) allocate(rnwfablten(0,0))
+ if (.not. associated(rnifablten)) allocate(rnifablten(0,0))
  if (.not. associated(rthcuten)) allocate(rthcuten(0,0))
  if (.not. associated(rqvcuten)) allocate(rqvcuten(0,0))
  if (.not. associated(rqccuten)) allocate(rqccuten(0,0))
@@ -213,11 +223,13 @@
  call physics_get_tend_work(block, mesh, nCells, nEdges, nCellsSolve, nEdgesSolve, &
                            rk_step, dynamics_substep, &
                            config_pbl_scheme, config_convection_scheme, config_radt_lw_scheme, config_radt_sw_scheme, &
-                           index_qv, index_qc, index_qr, index_qi, index_qs, index_ni, &
+                           index_qv, index_qc, index_qr, index_qi, index_qs, &
+                           index_ni, index_nc, index_nwfa, index_nifa, &
                            rublten, rvblten, mass_edge, rublten_Edge, &
                            tend_ru_physics, &
                            rucuten, rvcuten, rucuten_Edge, &
                            tend_th, tend_scalars, mass, rthblten, rqvblten, rqcblten, rqiblten, rniblten, &
+			   rncblten, rnwfablten, rnifablten, &
                            rthcuten, rqvcuten, rqccuten, rqrcuten, rqicuten, rqscuten, &
                            rthratenlw, rthratensw, &
                            tend_u_phys, &
@@ -242,6 +254,9 @@
  if (size(rqvblten) == 0) deallocate(rqvblten)
  if (size(rqcblten) == 0) deallocate(rqcblten)
  if (size(rqiblten) == 0) deallocate(rqiblten)
+ if (size(rncblten) == 0) deallocate(rncblten)
+ if (size(rnwfablten) == 0) deallocate(rnwfablten)
+ if (size(rnifablten) == 0) deallocate(rnifablten)
  if (size(rthcuten) == 0) deallocate(rthcuten)
  if (size(rqvcuten) == 0) deallocate(rqvcuten)
  if (size(rqccuten) == 0) deallocate(rqccuten)
@@ -272,9 +287,11 @@
                                  rk_step, dynamics_substep, &
                                  config_pbl_scheme, config_convection_scheme, config_radt_lw_scheme, config_radt_sw_scheme, &
                                  index_qv, index_qc, index_qr, index_qi, index_qs, index_ni, &
+                                 index_nc, index_nwfa, index_nifa, &
                                  rublten, rvblten, mass_edge, rublten_Edge, tend_u, &
                                  rucuten, rvcuten, rucuten_Edge, &
                                  tend_th, tend_scalars, mass, rthblten, rqvblten, rqcblten, rqiblten, rniblten, &
+				 rncblten, rnwfablten, rnifablten, &
                                  rthcuten, rqvcuten, rqccuten, rqrcuten, rqicuten, rqscuten, &
                                  rthratenlw, rthratensw, &
                                  tend_u_phys, &
@@ -295,7 +312,8 @@
     character(len=StrKIND), intent(in) :: config_convection_scheme
     character(len=StrKIND), intent(in) :: config_radt_lw_scheme
     character(len=StrKIND), intent(in) :: config_radt_sw_scheme
-    integer, intent(in) :: index_qv, index_qc, index_qr, index_qi, index_qs, index_ni
+    integer, intent(in) :: index_qv, index_qc, index_qr, index_qi, index_qs, &
+                           index_ni, index_nc, index_nwfa, index_nifa
     real (kind=RKIND), dimension(nVertLevels,nCells+1), intent(in) :: rublten
     real (kind=RKIND), dimension(nVertLevels,nCells+1), intent(in) :: rvblten
     real (kind=RKIND), dimension(nVertLevels,nEdges+1), intent(in) :: mass_edge
@@ -312,6 +330,9 @@
     real (kind=RKIND), dimension(nVertLevels,nCells+1), intent(in) :: rqcblten
     real (kind=RKIND), dimension(nVertLevels,nCells+1), intent(in) :: rqiblten
     real (kind=RKIND), dimension(nVertLevels,nCells+1), intent(in) :: rniblten
+    real (kind=RKIND), dimension(nVertLevels,nCells+1), intent(in) :: rncblten
+    real (kind=RKIND), dimension(nVertLevels,nCells+1), intent(in) :: rnwfablten
+    real (kind=RKIND), dimension(nVertLevels,nCells+1), intent(in) :: rnifablten
     real (kind=RKIND), dimension(nVertLevels,nCells+1), intent(in) :: rthcuten
     real (kind=RKIND), dimension(nVertLevels,nCells+1), intent(in) :: rqvcuten
     real (kind=RKIND), dimension(nVertLevels,nCells+1), intent(in) :: rqccuten
@@ -362,6 +383,9 @@
              do i = 1, nCellsSolve
              do k = 1, nVertLevels
                 tend_scalars(index_ni,k,i) = tend_scalars(index_ni,k,i) + rniblten(k,i)*mass(k,i)
+                tend_scalars(index_nc,k,i) = tend_scalars(index_nc,k,i) + rncblten(k,i)*mass(k,i)
+		tend_scalars(index_nwfa,k,i) = tend_scalars(index_nwfa,k,i) + rnwfablten(k,i)*mass(k,i)
+		tend_scalars(index_nifa,k,i) = tend_scalars(index_nifa,k,i) + rnifablten(k,i)*mass(k,i)
              enddo
              enddo
    

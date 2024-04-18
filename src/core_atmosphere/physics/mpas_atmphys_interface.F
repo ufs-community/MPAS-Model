@@ -117,7 +117,9 @@
  pbl_select: select case (trim(pbl_scheme))
     case("bl_mynn")
        if(.not.allocated(ni_p)) allocate(ni_p(ims:ime,kms:kme,jms:jme))
-
+       if(.not.allocated(nc_p)) allocate(nc_p(ims:ime,kms:kme,jms:jme))
+       if(.not.allocated(nwfa_p)) allocate(nwfa_p(ims:ime,kms:kme,jms:jme))
+       if(.not.allocated(nifa_p)) allocate(nifa_p(ims:ime,kms:kme,jms:jme))
     case default
 
  end select pbl_select
@@ -181,7 +183,9 @@
  pbl_select: select case (trim(pbl_scheme))
     case("bl_mynn")
        if(allocated(ni_p)) deallocate(ni_p)
-
+       if(allocated(nc_p)) deallocate(nc_p)
+       if(allocated(nwfa_p)) deallocate(nwfa_p)
+       if(allocated(nifa_p)) deallocate(nifa_p)
     case default
 
  end select pbl_select
@@ -216,7 +220,7 @@
  character(len=StrKIND),pointer:: pbl_scheme
 
  integer,pointer:: index_qv,index_qc,index_qr,index_qi,index_qs,index_qg
- integer,pointer:: index_ni
+ integer,pointer:: index_ni,index_nc,index_nwfa,index_nifa
 
  real(kind=RKIND),dimension(:),pointer    :: latCell,lonCell
  real(kind=RKIND),dimension(:),pointer    :: fzm,fzp,rdzw
@@ -225,7 +229,7 @@
  real(kind=RKIND),dimension(:,:),pointer  :: zz,exner,pressure_b,rtheta_p,rtheta_b
  real(kind=RKIND),dimension(:,:),pointer  :: rho_zz,theta_m,pressure_p,u,v,w
  real(kind=RKIND),dimension(:,:),pointer  :: qv,qc,qr,qi,qs,qg
- real(kind=RKIND),dimension(:,:),pointer  :: ni
+ real(kind=RKIND),dimension(:,:),pointer  :: ni,nc,nwfa,nifa
  real(kind=RKIND),dimension(:,:,:),pointer:: scalars
 
 !local variables:
@@ -322,11 +326,20 @@
     case("bl_mynn")
        call mpas_pool_get_dimension(state,'index_ni',index_ni)
        ni => scalars(index_ni,:,:)
-
+       call mpas_pool_get_dimension(state,'index_nc',index_nc)
+       nc => scalars(index_nc,:,:)
+       call mpas_pool_get_dimension(state,'index_nwfa',index_nwfa)
+       nwfa => scalars(index_nwfa,:,:)
+       call mpas_pool_get_dimension(state,'index_nifa',index_nifa)
+       nifa => scalars(index_nifa,:,:)
+       
        do j = jts,jte
        do k = kts,kte
        do i = its,ite
           ni_p(i,k,j) = max(0.,ni(k,i))
+          nc_p(i,k,j) = max(0.,nc(k,i))
+	  nwfa_p(i,k,j) = max(0.,nwfa(k,i))
+	  nifa_p(i,k,j) = max(0.,nifa(k,i))
        enddo
        enddo
        enddo
