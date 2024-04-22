@@ -71,28 +71,64 @@
  subroutine allocate_gwdo
 !=================================================================================================================
 
+ !local variables:
+ character(len=StrKIND),pointer:: gwdo_scheme
+
+ call mpas_pool_get_config(configs,'config_gwdo_scheme',gwdo_scheme)
+
  if(.not.allocated(cosa_p)  ) allocate(cosa_p(ims:ime,jms:jme)  )
  if(.not.allocated(sina_p)  ) allocate(sina_p(ims:ime,jms:jme)  )
 
  if(.not.allocated(dx_p)    ) allocate(dx_p(ims:ime,jms:jme)    )
- if(.not.allocated(var2d_p) ) allocate(var2d_p(ims:ime,jms:jme) )
- if(.not.allocated(con_p)   ) allocate(con_p(ims:ime,jms:jme)   )
- if(.not.allocated(oa1_p)   ) allocate(oa1_p(ims:ime,jms:jme)   )
- if(.not.allocated(oa2_p)   ) allocate(oa2_p(ims:ime,jms:jme)   )
- if(.not.allocated(oa3_p)   ) allocate(oa3_p(ims:ime,jms:jme)   )
- if(.not.allocated(oa4_p)   ) allocate(oa4_p(ims:ime,jms:jme)   )
- if(.not.allocated(ol1_p)   ) allocate(ol1_p(ims:ime,jms:jme)   )
- if(.not.allocated(ol2_p)   ) allocate(ol2_p(ims:ime,jms:jme)   )
- if(.not.allocated(ol3_p)   ) allocate(ol3_p(ims:ime,jms:jme)   )
- if(.not.allocated(ol4_p)   ) allocate(ol4_p(ims:ime,jms:jme)   )
  if(.not.allocated(kpbl_p  )) allocate(kpbl_p(ims:ime,jms:jme)  )
  if(.not.allocated(dusfcg_p)) allocate(dusfcg_p(ims:ime,jms:jme))
  if(.not.allocated(dvsfcg_p)) allocate(dvsfcg_p(ims:ime,jms:jme))
- 
  if(.not.allocated(dtaux3d_p)) allocate(dtaux3d_p(ims:ime,kms:kme,jms:jme))
  if(.not.allocated(dtauy3d_p)) allocate(dtauy3d_p(ims:ime,kms:kme,jms:jme))
  if(.not.allocated(rublten_p)) allocate(rublten_p(ims:ime,kms:kme,jms:jme))
  if(.not.allocated(rvblten_p)) allocate(rvblten_p(ims:ime,kms:kme,jms:jme))
+
+ gwdo_select: select case (trim(gwdo_scheme))
+
+   case("bl_ysu_gwdo")
+    if(.not.allocated(var2d_p) ) allocate(var2d_p(ims:ime,jms:jme) )
+    if(.not.allocated(con_p)   ) allocate(con_p(ims:ime,jms:jme)   )
+    if(.not.allocated(oa1_p)   ) allocate(oa1_p(ims:ime,jms:jme)   )
+    if(.not.allocated(oa2_p)   ) allocate(oa2_p(ims:ime,jms:jme)   )
+    if(.not.allocated(oa3_p)   ) allocate(oa3_p(ims:ime,jms:jme)   )
+    if(.not.allocated(oa4_p)   ) allocate(oa4_p(ims:ime,jms:jme)   )
+    if(.not.allocated(ol1_p)   ) allocate(ol1_p(ims:ime,jms:jme)   )
+    if(.not.allocated(ol2_p)   ) allocate(ol2_p(ims:ime,jms:jme)   )
+    if(.not.allocated(ol3_p)   ) allocate(ol3_p(ims:ime,jms:jme)   )
+    if(.not.allocated(ol4_p)   ) allocate(ol4_p(ims:ime,jms:jme)   )
+
+   case("bl_ugwp_gwdo")
+    if(.not.allocated(var2dls_p) ) allocate(var2d_p(ims:ime,jms:jme) )
+    if(.not.allocated(conls_p)   ) allocate(con_p(ims:ime,jms:jme)   )
+    if(.not.allocated(oa1ls_p)   ) allocate(oa1_p(ims:ime,jms:jme)   )
+    if(.not.allocated(oa2ls_p)   ) allocate(oa2_p(ims:ime,jms:jme)   )
+    if(.not.allocated(oa3ls_p)   ) allocate(oa3_p(ims:ime,jms:jme)   )
+    if(.not.allocated(oa4ls_p)   ) allocate(oa4_p(ims:ime,jms:jme)   )
+    if(.not.allocated(ol1ls_p)   ) allocate(ol1_p(ims:ime,jms:jme)   )
+    if(.not.allocated(ol2ls_p)   ) allocate(ol2_p(ims:ime,jms:jme)   )
+    if(.not.allocated(ol3ls_p)   ) allocate(ol3_p(ims:ime,jms:jme)   )
+    if(.not.allocated(ol4ls_p)   ) allocate(ol4_p(ims:ime,jms:jme)   )
+    if(.not.allocated(var2dss_p) ) allocate(var2d_p(ims:ime,jms:jme) )
+    if(.not.allocated(conss_p)   ) allocate(con_p(ims:ime,jms:jme)   )
+    if(.not.allocated(oa1ss_p)   ) allocate(oa1_p(ims:ime,jms:jme)   )
+    if(.not.allocated(oa2ss_p)   ) allocate(oa2_p(ims:ime,jms:jme)   )
+    if(.not.allocated(oa3ss_p)   ) allocate(oa3_p(ims:ime,jms:jme)   )
+    if(.not.allocated(oa4ss_p)   ) allocate(oa4_p(ims:ime,jms:jme)   )
+    if(.not.allocated(ol1ss_p)   ) allocate(ol1_p(ims:ime,jms:jme)   )
+    if(.not.allocated(ol2ss_p)   ) allocate(ol2_p(ims:ime,jms:jme)   )
+    if(.not.allocated(ol3ss_p)   ) allocate(ol3_p(ims:ime,jms:jme)   )
+    if(.not.allocated(ol4ss_p)   ) allocate(ol4_p(ims:ime,jms:jme)   )
+    if(.not.allocated(dusfcg_ls_p)) allocate(dusfcg_ls_p(ims:ime,jms:jme))
+    if(.not.allocated(dvsfcg_ls_p)) allocate(dvsfcg_ls_p(ims:ime,jms:jme))
+
+   case default
+
+ end select gwdo_select
 
  end subroutine allocate_gwdo
 

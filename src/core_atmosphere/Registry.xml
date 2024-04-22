@@ -571,6 +571,26 @@
 			<var name="ol2"/>
 			<var name="ol3"/>
 			<var name="ol4"/>
+                        <var name="var2dls"/>
+                        <var name="conls"/>
+                        <var name="oa1ls"/>
+                        <var name="oa2ls"/>
+                        <var name="oa3ls"/>
+                        <var name="oa4ls"/>
+                        <var name="ol1ls"/>
+                        <var name="ol2ls"/>
+                        <var name="ol3ls"/>
+                        <var name="ol4ls"/>
+                        <var name="var2dss"/>
+                        <var name="conss"/>
+                        <var name="oa1ss"/>
+                        <var name="oa2ss"/>
+                        <var name="oa3ss"/>
+                        <var name="oa4ss"/>
+                        <var name="ol1ss"/>
+                        <var name="ol2ss"/>
+                        <var name="ol3ss"/>
+                        <var name="ol4ss"/>
 			<var name="h_oml_initial"/>
 #endif
 		</stream>
@@ -721,8 +741,24 @@
 			<var name="th2m"/>
 			<var name="dusfcg"/>
 			<var name="dvsfcg"/>
+                        <var name="dusfcg_ls"/>
+                        <var name="dvsfcg_ls"/>
+                        <var name="dusfcg_bl"/>
+                        <var name="dvsfcg_bl"/>
+                        <var name="dusfcg_ss"/>
+                        <var name="dvsfcg_ss"/>
+                        <var name="dusfcg_fd"/>
+                        <var name="dvsfcg_fd"/>
 			<var name="dtaux3d"/>
 			<var name="dtauy3d"/>
+                        <var name="dtaux3d_ls"/>
+                        <var name="dtauy3d_ls"/>
+                        <var name="dtaux3d_bl"/>
+                        <var name="dtauy3d_bl"/>
+                        <var name="dtaux3d_ss"/>
+                        <var name="dtauy3d_ss"/>
+                        <var name="dtaux3d_fd"/>
+                        <var name="dtauy3d_fd"/>
 			<var name="rubldiff"/>
 			<var name="rvbldiff"/>
 			<var name="i_acswdnb"/>
@@ -864,6 +900,26 @@
 			<var name="ol2"/>
 			<var name="ol3"/>
 			<var name="ol4"/>
+                        <var name="var2dls"/>
+                        <var name="conls"/>
+                        <var name="oa1ls"/>
+                        <var name="oa2ls"/>
+                        <var name="oa3ls"/>
+                        <var name="oa4ls"/>
+                        <var name="ol1ls"/>
+                        <var name="ol2ls"/>
+                        <var name="ol3ls"/>
+                        <var name="ol4ls"/>
+                        <var name="var2dss"/>
+                        <var name="conss"/>
+                        <var name="oa1ss"/>
+                        <var name="oa2ss"/>
+                        <var name="oa3ss"/>
+                        <var name="oa4ss"/>
+                        <var name="ol1ss"/>
+                        <var name="ol2ss"/>
+                        <var name="ol3ss"/>
+                        <var name="ol4ss"/>
 			<var name="t_oml"/>
 			<var name="t_oml_initial"/>
 			<var name="t_oml_200m_initial"/>
@@ -2273,7 +2329,7 @@
                 <nml_option name="config_gwdo_scheme" type="character" default_value="suite" in_defaults="false"
                      units="-"
                      description="configuration of gravity wave drag over orography"
-                     possible_values="`suite',`bl_ysu_gwdo',`off'"/>
+                     possible_values="`suite',`bl_ysu_gwdo',`bl_ugwp_gwdo',`off'"/>
 
                 <nml_option name="config_radt_cld_scheme" type="character" default_value="suite" in_defaults="false"
                      units="-"
@@ -3025,11 +3081,59 @@
                 <var name="dvsfcg" type="real" dimensions="nCells Time" units="Pa m s^{-1}"
                      description="vertically-integrated gravity wave drag over orography v-stress"/>
 
+                <var name="dusfcg_ls" type="real" dimensions="nCells Time" units="Pa m s^{-1}"
+                     description="vertically-integrated mesoscale orog gravity wave drag u-stress"/>
+
+                <var name="dvsfcg_ls" type="real" dimensions="nCells Time" units="Pa m s^{-1}"
+                     description="vertically-integrated mesoscale orog gravity wave drag v-stress"/>
+
+                <var name="dusfcg_bl" type="real" dimensions="nCells Time" units="Pa m s^{-1}"
+                     description="vertically-integrated orog blocking drag u-stress"/>
+
+                <var name="dvsfcg_bl" type="real" dimensions="nCells Time" units="Pa m s^{-1}"
+                     description="vertically-integrated orog blocking drag v-stress"/>
+
+                <var name="dusfcg_ss" type="real" dimensions="nCells Time" units="Pa m s^{-1}"
+                     description="vertically-integrated small-scale orog gravity wave drag u-stress"/>
+
+                <var name="dvsfcg_ss" type="real" dimensions="nCells Time" units="Pa m s^{-1}"
+                     description="vertically-integrated small-scale orog gravity wave drag v-stress"/>
+
+                <var name="dusfcg_fd" type="real" dimensions="nCells Time" units="Pa m s^{-1}"
+                     description="vertically-integrated turb orog form drag u-stress"/>
+
+                <var name="dvsfcg_fd" type="real" dimensions="nCells Time" units="Pa m s^{-1}"
+                     description="vertically-integrated turb orog form drag v-stress"/>
+
                 <var name="dtaux3d" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1}"
                      description="gravity wave drag over orography u-stress"/>
 
                 <var name="dtauy3d" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1}"
                      description="gravity wave drag over orography v-stress"/>
+
+                <var name="dtaux3d_ls" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1}"
+                     description="mesoscale orog gravity wave drag u-stress"/>
+
+                <var name="dtauy3d_ls" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1}"
+                     description="mesoscale orog gravity wave drag v-stress"/>
+
+                <var name="dtaux3d_bl" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1}"
+                     description="orog blocking drag u-stress"/>
+
+                <var name="dtauy3d_bl" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1}"
+                     description="orog blocking drag v-stress"/>
+
+                <var name="dtaux3d_ss" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1}"
+                     description="small-scale orog gravity wave drag u-stress"/>
+
+                <var name="dtauy3d_ss" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1}"
+                     description="small-scale orog gravity wave drag v-stress"/>
+
+                <var name="dtaux3d_fd" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1}"
+                     description="turb orog form drag u-stress"/>
+
+                <var name="dtauy3d_fd" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1}"
+                     description="turb orog form drag v-stress"/>
 
                 <var name="rubldiff" type="real" dimensions="nVertLevels nCells Time" units="m s^{-2}"
                      description="change in PBL zonal wind tendency due to gravity wave drag over orography"/>
@@ -3725,11 +3829,74 @@
                 <var name="ol2" type="real" dimensions="nCells" units="unitless"
                      description="effective orographic length for southerly flow"/>
 
-                <var name="ol3" type="real" dimensions="nCells" units="unitles"
+                <var name="ol3" type="real" dimensions="nCells" units="unitless"
                      description="effective orographic length for south-westerly flow"/>
 
                 <var name="ol4" type="real" dimensions="nCells" units="unitless"
                      description="effective orographic length for north-westerly flow"/>
+
+                <!-- GSL GWDO fields - meso-scale -->
+                <var name="var2dls" type="real" dimensions="nCells" units="m"
+                     description="standard deviation of subgrid-scale orography"/>
+
+                <var name="conls" type="real" dimensions="nCells" units="unitless"
+                     description="orographic convexity"/>
+
+                <var name="oa1ls" type="real" dimensions="nCells" units="unitless"
+                     description="asymmetry of subgrid-scale orography for westerly flow"/>
+
+                <var name="oa2ls" type="real" dimensions="nCells" units="unitless"
+                     description="asymmetry of subgrid-scale orography for southerly flow"/>
+
+                <var name="oa3ls" type="real" dimensions="nCells" units="unitless"
+                     description="asymmetry of subgrid-scale orography for south-westerly flow"/>
+
+                <var name="oa4ls" type="real" dimensions="nCells" units="unitless"
+                     description="asymmetry of subgrid-scale orography for north-westerly flow"/>
+
+                <var name="ol1ls" type="real" dimensions="nCells" units="unitless"
+                     description="effective orographic length for westerly flow"/>
+
+                <var name="ol2ls" type="real" dimensions="nCells" units="unitless"
+                     description="effective orographic length for southerly flow"/>
+
+                <var name="ol3ls" type="real" dimensions="nCells" units="unitless"
+                     description="effective orographic length for south-westerly flow"/>
+
+                <var name="ol4ls" type="real" dimensions="nCells" units="unitless"
+                     description="effective orographic length for north-westerly flow"/>
+
+                <!-- GSL GWDO fields - small-scale -->
+                <var name="var2dss" type="real" dimensions="nCells" units="m"
+                     description="standard deviation of subgrid-scale orography"/>
+
+                <var name="conss" type="real" dimensions="nCells" units="unitless"
+                     description="orographic convexity"/>
+
+                <var name="oa1ss" type="real" dimensions="nCells" units="unitless"
+                     description="asymmetry of subgrid-scale orography for westerly flow"/>
+
+                <var name="oa2ss" type="real" dimensions="nCells" units="unitless"
+                     description="asymmetry of subgrid-scale orography for southerly flow"/>
+
+                <var name="oa3ss" type="real" dimensions="nCells" units="unitless"
+                     description="asymmetry of subgrid-scale orography for south-westerly flow"/>
+
+                <var name="oa4ss" type="real" dimensions="nCells" units="unitless"
+                     description="asymmetry of subgrid-scale orography for north-westerly flow"/>
+
+                <var name="ol1ss" type="real" dimensions="nCells" units="unitless"
+                     description="effective orographic length for westerly flow"/>
+
+                <var name="ol2ss" type="real" dimensions="nCells" units="unitless"
+                     description="effective orographic length for southerly flow"/>
+
+                <var name="ol3ss" type="real" dimensions="nCells" units="unitless"
+                     description="effective orographic length for south-westerly flow"/>
+
+                <var name="ol4ss" type="real" dimensions="nCells" units="unitless"
+                     description="effective orographic length for north-westerly flow"/>
+
         </var_struct>
 #endif
 
