@@ -502,7 +502,7 @@ contains
        keepfr3dflag(i,k,j)=0.
             enddo
 !--- initializing snow fraction, thereshold = 32 mm of snow water or ~100 mm of snow height
-call physics_message('!--- initializing inside snow temp if it is not defined')
+! call physics_message('!--- initializing inside snow temp if it is not defined')
        if((soilt1(i,j) .lt. 170.) .or. (soilt1(i,j) .gt.400.)) then
          if(snowc(i,j).gt.0.) then
            soilt1(i,j)=0.5*(soilt(i,j)+tso(i,1,j))

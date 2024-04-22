@@ -244,9 +244,8 @@ module init_atm_cases
             call init_atm_case_gfs(block_ptr, mesh, nCells, nEdges, nVertLevels, fg, state, &
                                    diag, diag_physics, block_ptr % dimensions, block_ptr % configs)
 
-            call init_microphysics_aerosols(mesh, state, diag, block_ptr % configs)
-            
             if (config_met_interp) then
+               call init_microphysics_aerosols(mesh, state, diag, block_ptr % configs)
                call physics_initialize_real(mesh, fg, domain % dminfo, block_ptr % dimensions, block_ptr % configs)
             end if
 
