@@ -160,43 +160,43 @@
        if(.not.allocated(sh3d_p)  ) allocate(sh3d_p(ims:ime,kms:kme,jms:jme)  )
        if(.not.allocated(sm3d_p)  ) allocate(sm3d_p(ims:ime,kms:kme,jms:jme)  )
 
-       if (config_tkebudget .gt. 0) then
+       !if (config_tkebudget .gt. 0) then
           if(.not.allocated(dqke_p)  ) allocate(dqke_p(ims:ime,kms:kme,jms:jme)  )
           if(.not.allocated(qbuoy_p) ) allocate(qbuoy_p(ims:ime,kms:kme,jms:jme) )
           if(.not.allocated(qdiss_p) ) allocate(qdiss_p(ims:ime,kms:kme,jms:jme) )
           if(.not.allocated(qshear_p)) allocate(qshear_p(ims:ime,kms:kme,jms:jme))
           if(.not.allocated(qwt_p)   ) allocate(qwt_p(ims:ime,kms:kme,jms:jme)   )
-       else
-          if(.not.allocated(dqke_p)  ) allocate(dqke_p(1,1,1)  )
-          if(.not.allocated(qbuoy_p) ) allocate(qbuoy_p(1,1,1) )
-          if(.not.allocated(qdiss_p) ) allocate(qdiss_p(1,1,1) )
-          if(.not.allocated(qshear_p)) allocate(qshear_p(1,1,1))
-          if(.not.allocated(qwt_p)   ) allocate(qwt_p(1,1,1)   )
-       endif
+       !else
+       !   if(.not.allocated(dqke_p)  ) allocate(dqke_p(1,1,1)  )
+       !   if(.not.allocated(qbuoy_p) ) allocate(qbuoy_p(1,1,1) )
+       !   if(.not.allocated(qdiss_p) ) allocate(qdiss_p(1,1,1) )
+       !   if(.not.allocated(qshear_p)) allocate(qshear_p(1,1,1))
+       !   if(.not.allocated(qwt_p)   ) allocate(qwt_p(1,1,1)   )
+       !endif
 
-       if (config_mynn_output .gt. 0) then
+       !if (config_mynn_output .gt. 0) then
           if(.not.allocated(edmf_a_p)  ) allocate(edmf_a_p(ims:ime,kms:kme,jms:jme)  )
           if(.not.allocated(edmf_w_p)  ) allocate(edmf_w_p(ims:ime,kms:kme,jms:jme)  )
           if(.not.allocated(edmf_thl_p)) allocate(edmf_thl_p(ims:ime,kms:kme,jms:jme))
           if(.not.allocated(edmf_qt_p) ) allocate(edmf_qt_p(ims:ime,kms:kme,jms:jme) )
           if(.not.allocated(edmf_qc_p) ) allocate(edmf_qc_p(ims:ime,kms:kme,jms:jme) )
           if(.not.allocated(edmf_ent_p)) allocate(edmf_ent_p(ims:ime,kms:kme,jms:jme))
-          if(.not.allocated(sub_thl_p) ) allocate(edmf_w_p(ims:ime,kms:kme,jms:jme)  )
-          if(.not.allocated(sub_sqv_p) ) allocate(edmf_thl_p(ims:ime,kms:kme,jms:jme))
-          if(.not.allocated(det_thl_p) ) allocate(edmf_qt_p(ims:ime,kms:kme,jms:jme) )
-          if(.not.allocated(det_sqv_p) ) allocate(edmf_qc_p(ims:ime,kms:kme,jms:jme) )
-       else
-          if(.not.allocated(edmf_a_p)  ) allocate(edmf_a_p(1,1,1)  )
-          if(.not.allocated(edmf_w_p)  ) allocate(edmf_w_p(1,1,1)  )
-          if(.not.allocated(edmf_thl_p)) allocate(edmf_thl_p(1,1,1))
-          if(.not.allocated(edmf_qt_p) ) allocate(edmf_qt_p(1,1,1) )
-          if(.not.allocated(edmf_qc_p) ) allocate(edmf_qc_p(1,1,1) )
-          if(.not.allocated(edmf_ent_p)) allocate(edmf_ent_p(1,1,1))
-          if(.not.allocated(sub_thl_p) ) allocate(sub_thl_p(1,1,1) )
-          if(.not.allocated(sub_sqv_p) ) allocate(sub_sqv_p(1,1,1) )
-          if(.not.allocated(det_thl_p) ) allocate(det_thl_p(1,1,1) )
-          if(.not.allocated(det_sqv_p) ) allocate(det_sqv_p(1,1,1) )
-       endif
+          if(.not.allocated(sub_thl_p) ) allocate(sub_thl_p(ims:ime,kms:kme,jms:jme)  )
+          if(.not.allocated(sub_sqv_p) ) allocate(sub_sqv_p(ims:ime,kms:kme,jms:jme))
+          if(.not.allocated(det_thl_p) ) allocate(det_thl_p(ims:ime,kms:kme,jms:jme) )
+          if(.not.allocated(det_sqv_p) ) allocate(det_sqv_p(ims:ime,kms:kme,jms:jme) )
+       !else
+       !   if(.not.allocated(edmf_a_p)  ) allocate(edmf_a_p(1,1,1)  )
+       !   if(.not.allocated(edmf_w_p)  ) allocate(edmf_w_p(1,1,1)  )
+       !   if(.not.allocated(edmf_thl_p)) allocate(edmf_thl_p(1,1,1))
+       !   if(.not.allocated(edmf_qt_p) ) allocate(edmf_qt_p(1,1,1) )
+       !   if(.not.allocated(edmf_qc_p) ) allocate(edmf_qc_p(1,1,1) )
+       !   if(.not.allocated(edmf_ent_p)) allocate(edmf_ent_p(1,1,1))
+       !   if(.not.allocated(sub_thl_p) ) allocate(sub_thl_p(1,1,1) )
+       !   if(.not.allocated(sub_sqv_p) ) allocate(sub_sqv_p(1,1,1) )
+       !   if(.not.allocated(det_thl_p) ) allocate(det_thl_p(1,1,1) )
+       !   if(.not.allocated(det_sqv_p) ) allocate(det_sqv_p(1,1,1) )
+       !endif
        
        if(.not.allocated(rqsblten_p)  ) allocate(rqsblten_p(ims:ime,kms:kme,jms:jme)  )
        if(.not.allocated(rniblten_p)  ) allocate(rniblten_p(ims:ime,kms:kme,jms:jme)  )
@@ -206,9 +206,9 @@
        if(.not.allocated(rnbcablten_p)) allocate(rnbcablten_p(ims:ime,kms:kme,jms:jme)) 
        if(.not.allocated(nbca_p)      ) allocate(nbca_p(ims:ime,kms:kme,jms:jme)      )
        
-       if(.not.allocated(qc_bl_p)    ) allocate(qc_bl_p(ims:ime,kms:kme,jms:jme)    )
-       if(.not.allocated(qi_bl_p)    ) allocate(qi_bl_p(ims:ime,kms:kme,jms:jme)    )
-       if(.not.allocated(cldfrac_bl_p))allocate(cldfrac_bl_p(ims:ime,kms:kme,jms:jme))
+       if(.not.allocated(qc_bl_p)     ) allocate(qc_bl_p(ims:ime,kms:kme,jms:jme)     )
+       if(.not.allocated(qi_bl_p)     ) allocate(qi_bl_p(ims:ime,kms:kme,jms:jme)     )
+       if(.not.allocated(cldfrac_bl_p)) allocate(cldfrac_bl_p(ims:ime,kms:kme,jms:jme))
 
        !from radiation schemes:
        if(.not.allocated(rthraten_p)) allocate(rthraten_p(ims:ime,kms:kme,jms:jme))
@@ -313,8 +313,25 @@
        if(allocated(qc_bl_p)    ) deallocate(qc_bl_p    )
        if(allocated(qi_bl_p)    ) deallocate(qi_bl_p    )
        if(allocated(cldfrac_bl_p))deallocate(cldfrac_bl_p)
-       if(allocated(rthraten_p) ) deallocate(rthraten_p )
 
+       if(allocated(dqke_p)  ) deallocate(dqke_p      )
+       if(allocated(qbuoy_p) ) deallocate(qbuoy_p     )
+       if(allocated(qdiss_p) ) deallocate(qdiss_p     )
+       if(allocated(qshear_p)) deallocate(qshear_p    )
+       if(allocated(qwt_p)   ) deallocate(qwt_p       )
+
+       if(allocated(edmf_a_p)  ) deallocate(edmf_a_p  )
+       if(allocated(edmf_w_p)  ) deallocate(edmf_w_p  )
+       if(allocated(edmf_thl_p)) deallocate(edmf_thl_p)
+       if(allocated(edmf_qt_p) ) deallocate(edmf_qt_p )
+       if(allocated(edmf_qc_p) ) deallocate(edmf_qc_p )
+       if(allocated(edmf_ent_p)) deallocate(edmf_ent_p)
+       if(allocated(sub_thl_p) ) deallocate(sub_thl_p )
+       if(allocated(sub_sqv_p) ) deallocate(sub_sqv_p )
+       if(allocated(det_thl_p) ) deallocate(det_thl_p )
+       if(allocated(det_sqv_p) ) deallocate(det_sqv_p )
+
+       if(allocated(rthraten_p)) deallocate(rthraten_p)
        if(allocated(pattern_spp_pbl_p)) deallocate(pattern_spp_pbl_p) 
     case default
 
@@ -777,8 +794,8 @@
              edmf_qt(k,i)    = edmf_qt_p(i,k,j)
              edmf_qc(k,i)    = edmf_qc_p(i,k,j)
              edmf_ent(k,i)   = edmf_ent_p(i,k,j)
-             det_thl(k,i)    = sub_thl_p(i,k,j)
-             det_sqv(k,i)    = sub_sqv_p(i,k,j)
+             sub_thl(k,i)    = sub_thl_p(i,k,j)
+             sub_sqv(k,i)    = sub_sqv_p(i,k,j)
              det_thl(k,i)    = det_thl_p(i,k,j)
              det_sqv(k,i)    = det_sqv_p(i,k,j)
           enddo
