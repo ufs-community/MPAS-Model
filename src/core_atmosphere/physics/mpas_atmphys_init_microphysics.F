@@ -35,7 +35,7 @@
 
 
 !=================================================================================================================
- subroutine init_thompson_clouddroplets_forMPAS(mesh,sfc_input,diag_physics)
+ subroutine init_thompson_clouddroplets_forMPAS(mesh,sfc_input,diag_physics,state)
 !=================================================================================================================
 
 !input variables:
@@ -44,21 +44,29 @@
 
 !inout variables:
  type(mpas_pool_type),intent(inout):: diag_physics
+ type(mpas_pool_type),intent(inout):: state
 
 !local variables and pointers:
+ integer,pointer:: index_nwfa, index_nc
  integer,pointer:: nCellsSolve
+ integer,pointer:: nVertLevels
  integer,dimension(:),pointer:: landmask
 
  real(kind=RKIND),dimension(:),pointer:: nt_c,mu_c
+ real(kind=RKIND),dimension(:,:,:),pointer:: scalars
 
- integer:: iCell
+ integer:: iCell, k
 
 !-----------------------------------------------------------------------------------------------------------------
 !call mpas_log_write('')
 !call mpas_log_write('--- enter subroutine init_thompson_clouddroplets_forMPAS:')
 
  call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
+ call mpas_pool_get_dimension(mesh,'nVertLevels',nVertLevels)
+ call mpas_pool_get_dimension(state,'index_nwfa',index_nwfa)
+ call mpas_pool_get_dimension(state,'index_nc',index_nc)
 
+ call mpas_pool_get_array(state,'scalars',scalars)
  call mpas_pool_get_array(sfc_input,'landmask',landmask)
  call mpas_pool_get_array(diag_physics,'nt_c',nt_c)
  call mpas_pool_get_array(diag_physics,'mu_c',mu_c)
@@ -68,11 +76,22 @@
 !is set to 100 per cc (100.E6 m^-3) for maritime cases and 300 per cc (300.E6 m^-3) for continental cases.
  do iCell = 1, nCellsSolve
     if(landmask(iCell) .eq. 1) then
-       nt_c(iCell) = 300.e6 
+       nt_c(iCell) = 300.e6
     elseif(landmask(iCell) .eq. 0) then
        nt_c(iCell) = 100.e6
     endif
     mu_c(iCell) = MIN(15., (1000.e6/nt_c(iCell) + 2.))
+ enddo
+
+! AAJ - Set initial value of nc to 10% of the available WFA.
+! This is a quick fix (01 April 2024) since the values of nc
+! that are set above are to high to use as intial conditions
+! with the aerosol-aware scheme.
+
+ do k = 1, nVertLevels
+    do iCell = 1, nCellsSolve
+       scalars(index_nc,k,iCell) = max(10.e6, min(500.e6, (0.1 * scalars(index_nwfa,k,iCell))))
+    enddo
  enddo
 
 !call mpas_log_write('--- end subroutine init_thompson_clouddroplets_forMPAS.')

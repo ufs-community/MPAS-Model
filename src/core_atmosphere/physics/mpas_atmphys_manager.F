@@ -231,7 +231,7 @@
     if(mpas_is_alarm_ringing(clock,greenAlarmID,ierr=ierr)) then
        call mpas_reset_clock_alarm(clock,greenAlarmID,ierr=ierr)
        call mpas_log_write('--- time to update background surface albedo, greeness fraction.')
-       call physics_update_surface(timeStamp,config_sfc_albedo,mesh,sfc_input)
+       call physics_update_surface(timeStamp,config_sfc_albedo,mesh,sfc_input,diag_physics)
     endif
 
     !update surface boundary conditions with input sea-surface temperatures and fractional
@@ -406,7 +406,7 @@
  integer,pointer:: cam_dim1
  integer,pointer:: nMonths
  integer,pointer:: nAerosols,nAerLevels,nOznLevels
- integer,pointer:: nCellsSolve,nSoilLevels,nVertLevels
+ integer,pointer:: nCellsSolve,nSoilLevels,nVertLevels,nlcat,nscat
 
  real(kind=RKIND),pointer:: config_dt
 
@@ -448,7 +448,8 @@
  call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
  call mpas_pool_get_dimension(mesh,'nSoilLevels',nSoilLevels)
  call mpas_pool_get_dimension(mesh,'nVertLevels',nVertLevels)
-
+ call mpas_pool_get_dimension(mesh,'nlcat'      ,nlcat      )
+ call mpas_pool_get_dimension(mesh,'nscat'      , nscat     )
  call mpas_pool_get_dimension(state,'num_aerosols',nAerosols)
 
 !initialization of gmt, julian day, and alarms:
@@ -673,6 +674,8 @@
 !initialization local physics variables:
  num_months = nMonths
  num_soils  = nSoilLevels
+ num_landcat = nlcat
+ num_soilcat = nscat
 
  if(trim(config_lsm_scheme) .eq. "sf_noah") sf_surface_physics = 2
 

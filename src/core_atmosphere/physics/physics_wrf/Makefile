@@ -1,4 +1,4 @@
-.SUFFIXES: .F .o
+.SUFFIXES: .F .o .F90
 
 all: dummy physics_wrf
 
@@ -19,7 +19,6 @@ OBJS = \
 	module_cu_ntiedtke.o           \
 	module_cu_kfeta.o              \
 	module_mp_kessler.o            \
-	module_mp_thompson.o           \
 	module_mp_thompson_cldfra3.o   \
 	module_mp_wsm6.o               \
 	module_ra_cam.o                \
@@ -34,6 +33,8 @@ OBJS = \
 	module_sf_mynn.o               \
 	module_sf_noahdrv.o            \
 	module_sf_noahlsm.o            \
+	module_sf_ruclsm.o             \
+	module_sf_sfcdiags_ruclsm.o    \
         module_sf_noahlsm_glacial_only.o \
         module_sf_noah_seaice.o        \
         module_sf_noah_seaice_drv.o    \
@@ -108,4 +109,11 @@ ifeq "$(GEN_F90)" "true"
 	$(FC) $(FFLAGS) -c $*.f90 $(FCINCLUDES) -I.. -I../physics_mmm -I../../../framework -I../../../external/esmf_time_f90
 else
 	$(FC) $(CPPFLAGS) $(COREDEF) $(FFLAGS) -c $*.F $(CPPINCLUDES) $(FCINCLUDES) -I.. -I../physics_mmm -I../../../framework -I../../../external/esmf_time_f90
+endif
+
+.F90.o:
+ifeq "$(GEN_F90)" "true"
+	$(FC) $(FFLAGS) -c $*.f90 $(FCINCLUDES) -I.. -I../physics_mmm -I../../../framework -I../../../external/esmf_time_f90
+else
+	$(FC) $(CPPFLAGS) $(COREDEF) $(FFLAGS) -c $*.F90 $(CPPINCLUDES) $(FCINCLUDES) -I.. -I../physics_mmm -I../../../framework -I../../../external/esmf_time_f90
 endif

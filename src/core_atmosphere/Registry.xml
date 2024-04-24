@@ -48,6 +48,10 @@
                      description="dimension of CAM radiation absorption save array"/>
                 <dim name="nVertLevelsP2"      definition="nVertLevels+2"
                      description="Two more than the number of atmospheric layers"/>
+		<dim name="nlcat"
+		    description="Number of landuse categories in the input data"/>
+		<dim name="nscat"
+                    description="Number of soil categories in the input data"/>
 #endif
         </dims>
 
@@ -403,6 +407,8 @@
                 <package name="cu_ntiedtke_in" description="parameterization of Tiedtke convection."/>
                 <package name="bl_ysu_in" description="parameterization of YSU Planetary Boundary Layer."/>
                 <package name="bl_mynn_in" description="parameterization of MYNN Planetary Boundary Layer."/>
+                <package name="lsm_ruc_in" description="parameterization of the RUC land surface."/>
+                <package name="lsm_noah_in" description="parameterization of the Noah land surface."/>
 
                 <package name="iau" description="Incremental Analysis Update"/>
                 <package name="limited_area" description="Limited-area simulations, which have lateral boundaries"/>
@@ -518,7 +524,9 @@
 
 #ifdef DO_PHYSICS
 			<var name="isltyp"/>
+			<var name="soilf"/>
 			<var name="ivgtyp"/>
+			<var name="landusef"/>
 			<var name="mminlu"/>
 			<var name="isice_lu"/>
 			<var name="iswater_lu"/>
@@ -528,6 +536,7 @@
 			<var name="snoalb"/>
 			<var name="albedo12m"/>
 			<var name="greenfrac"/>
+			<var name="lai12m"/>
 			<var name="sfc_albbck"/>
 			<var name="skintemp"/>
 			<var name="snow"/>
@@ -545,6 +554,7 @@
 			<var name="t2m"/>
 			<var name="precipw"/>
 			<var name="dzs"/>
+		        <var name="zs"/>
 			<var name="sh2o"/>
 			<var name="smois"/>
 			<var name="tslb"/>
@@ -765,6 +775,16 @@
 			<var name="xicem"/>
 			<var name="z0"/>
 			<var name="zs"/>
+			<var name="rhosnf"/>
+                        <var name="precipfr"/>
+                        <var name="qsg"/>
+                        <var name="qvg"/>
+                        <var name="dew"/>
+                        <var name="soilt1"/>
+                        <var name="tsnav"/>
+                        <var name="acrunoff"/>
+                        <var name="snowfallac"/>
+                        <var name="smfr3d"/>
 			<var name="k22_shallow"/>
 			<var name="kbcon_shallow"/>
 			<var name="ktop_shallow"/>
@@ -794,7 +814,9 @@
 			<var name="rthratensw"/>
 			<var name="rthratenlw"/>
 			<var name="isltyp"/>
+			<var name="soilf"/>
 			<var name="ivgtyp"/>
+			<var name="landusef"/>
 			<var name="mminlu"/>
 			<var name="isice_lu"/>
 			<var name="iswater_lu"/>
@@ -804,6 +826,7 @@
 			<var name="snoalb"/>
 			<var name="albedo12m"/>
 			<var name="greenfrac"/>
+			<var name="lai12m"/>
 			<var name="sfc_albbck"/>
 			<var name="skintemp"/>
 			<var name="snow"/>
@@ -816,6 +839,7 @@
 			<var name="xice"/>
 			<var name="xland"/>
 			<var name="dzs"/>
+			<var name="zs"/>
 			<var name="smcrel"/>
 			<var name="sh2o"/>
 			<var name="smois"/>
@@ -962,6 +986,16 @@
 			<var name="sh2o"/>
 			<var name="smois"/>
 			<var name="tslb"/>
+			<var name="soilt1"/>
+			<var name="rhosnf"/>
+			<var name="snowfallac"/>
+			<var name="acrunoff"/>
+			<var name="grdflx"/>
+			<var name="ivgtyp"/>
+			<var name="isltyp"/>
+			<var name="lai"/>
+			<var name="sfc_albedo"/>
+
 #endif
 		</stream>
 
@@ -1495,8 +1529,20 @@
                              description="Cloud ice number concentration"
                              packages="bl_mynn_in;mp_thompson_in"/>
 
+                        <var name="nc" array_group="number" units="nb kg^{-1}"
+                             description="Cloud number concentration"
+                             packages="mp_thompson_in"/>
+
                         <var name="nr" array_group="number" units="nb kg^{-1}"
                              description="Rain number concentration"
+                             packages="mp_thompson_in"/>
+			
+			<var name="nwfa" array_group="passive" units="nb kg^{-1}"
+                             description="Number of water-friendly aerosols for microphysics"
+                             packages="mp_thompson_in"/>
+
+			<var name="nifa" array_group="passive" units="nb kg^{-1}"
+                             description="Number of ice-friendly aerosols for microphysics"
                              packages="mp_thompson_in"/>
                 </var_array>
 #endif
@@ -1817,8 +1863,20 @@
                              description="Tendency of cloud ice number concentration multiplied by dry air density divided by d(zeta)/dz"
                              packages="bl_mynn_in;mp_thompson_in"/>
 
+			<var name="tend_nc" name_in_code="nc" array_group="number" units="nb m^{-3} s^{-1}" 
+                             description="Tendency of cloud number concentration multiplied by dry air density divided by d(zeta)/dz"
+                             packages="mp_thompson_in"/>
+			
                         <var name="tend_nr" name_in_code="nr" array_group="number" units="nb m^{-3} s^{-1}" 
                              description="Tendency of rain number concentration multiplied by dry air density divided by d(zeta)/dz"
+                             packages="mp_thompson_in"/>
+
+			<var name="tend_nwfa" name_in_code="nwfa" array_group="passive" units="nb m^{-3} s^{-1}" 
+                             description="Tendency of water-friendly aerosols multiplied by dry air density divided by d(zeta)/dz"
+                             packages="mp_thompson_in"/>
+
+			<var name="tend_nifa" name_in_code="nifa" array_group="passive" units="nb m^{-3} s^{-1}" 
+                             description="Tendency of ice-friendly aerosols multiplied by dry air density divided by d(zeta)/dz"
                              packages="mp_thompson_in"/>
                 </var_array>
 #endif
@@ -1873,11 +1931,20 @@
                         <var name="lbc_qg" name_in_code="qg" array_group="moist"  packages="mp_thompson_in;mp_wsm6_in" units="kg kg^{-1} s^{-1}"
                              description="Lateral boundary tendency of graupel mixing ratio"/>
 
+                        <var name="lbc_nc" name_in_code="nc" array_group="number" packages="mp_thompson_in" units="m^{-3} s^{-1}"
+                             description="Lateral boundary tendency of cloud number concentration"/>
+			
                         <var name="lbc_nr" name_in_code="nr" array_group="number" packages="mp_thompson_in" units="m^{-3} s^{-1}"
                              description="Lateral boundary tendency of rain number concentration"/>
 
                         <var name="lbc_ni" name_in_code="ni" array_group="number" packages="bl_mynn_in;mp_thompson_in" units="m^{-3} s^{-1}"
                              description="Lateral boundary tendency of ice number concentration"/>
+
+                        <var name="lbc_nwfa" name_in_code="nwfa" array_group="passive" packages="mp_thompson_in" units="m^{-3} s^{-1}"
+                             description="Lateral boundary tendency of wfa"/>
+
+                        <var name="lbc_nifa" name_in_code="nifa" array_group="passive" packages="mp_thompson_in" units="m^{-3} s^{-1}"
+                             description="Lateral boundary tendency of ifa"/>
                 </var_array>
         </var_struct>
 
@@ -2039,7 +2106,12 @@
                 <nml_option name="config_lsm_scheme" type="character" default_value="suite" in_defaults="false"
                      units="-"
                      description="configuration for land-surface schemes"
-                     possible_values="`suite',`noah',`off'"/>
+                     possible_values="`suite',`noah',`ruc',`off'"/>
+
+	        <nml_option name="config_lakemodel" type="integer" default_value="0" in_defaults="false"
+                    units="-"
+                    description="configuration option to use lake model with RUC lsm"
+                    possible_values="0"/>
 
                 <nml_option name="config_pbl_scheme" type="character" default_value="suite" in_defaults="false"
                      units="-"
@@ -2532,7 +2604,7 @@
 
                 <var name="mavail" type="real" dimensions="nCells Time" units="unitless"
                      description="surface moisture availability (between 0 and 1)"
-                     packages="bl_mynn_in;bl_ysu_in"/>
+                     packages="bl_mynn_in;bl_ysu_in;lsm_ruc_in"/>
 
                 <var name="mol" type="real" dimensions="nCells Time" units="K"
                      description="T* in similarity theory"
@@ -2596,11 +2668,11 @@
 
                 <var name="flhc" type="real" dimensions="nCells Time" units="W m^{-2} K^{-1}"
                      description="exchange coefficient for heat"
-                     packages="bl_mynn_in;bl_ysu_in"/>
+                     packages="bl_mynn_in;bl_ysu_in;lsm_ruc_in"/>
 
                 <var name="flqc" type="real" dimensions="nCells Time" units="kg m^{-2} s^{-1}"
                      description="exchange coefficient for moisture"
-                     packages="bl_mynn_in;bl_ysu_in"/>
+                     packages="bl_mynn_in;bl_ysu_in;lsm_ruc_in"/>
 
                 <var name="gz1oz0" type="real" dimensions="nCells Time" units="unitless"
                      description="log(z/z0) where z0 is roughness length"
@@ -2652,7 +2724,7 @@
 
                 <var name="qcg" type="real" dimensions="nCells Time" units="kg kg^{-1}"
                      description="cloud water mixing ratio at the ground surface"
-                     packages="bl_mynn_in"/>
+                     packages="bl_mynn_in;lsm_ruc_in"/>
 
                 <var name="sh3d" type="real" dimensions="nVertLevels nCells Time" units="unitless"
                      description="stability function for heat"
@@ -3028,8 +3100,69 @@
                 <var name="znt" type="real" dimensions="nCells Time" units="m"
                      description="roughness length"/>
 
-                <var name="zs" type="real" dimensions="nCells Time" units="m"
-                     description="depth of centers of soil layers"/>
+                <var name="rhosnf" type="real" dimensions="nCells Time" units="kg m^{-3}"
+                   description="density of snowfall"
+                    packages="lsm_ruc_in"/>
+
+                <var name="precipfr" type="real" dimensions="nCells Time" units="mm"
+                    description="time step water equivalent of frozen precipitation"
+                    packages="lsm_ruc_in"/>
+
+                <var name="qsg" type="real" dimensions="nCells Time" units="kg kg^{-1}"
+                    description="saturated mixing ratio at the surface"
+                    packages="lsm_ruc_in"/>
+
+                <var name="qvg" type="real" dimensions="nCells Time" units="kg kg^{-1}"
+                    description="water vapor mixing ratio at the surface"
+                    packages="lsm_ruc_in"/>
+
+                <var name="dew" type="real" dimensions="nCells Time" units="kg m^{-2}"
+                    description="dew"
+                    packages="lsm_ruc_in"/>
+
+                <var name="soilt1" type="real" dimensions="nCells Time" units="K"
+                    description="snow temperature at 7.5cm depth"
+                    packages="lsm_ruc_in"/>
+
+                <var name="tsnav" type="real" dimensions="nCells Time" units="C"
+                    description="average temperature of snowpack"
+                    packages="lsm_ruc_in"/>
+
+                <var name="acrunoff" type="real" dimensions="nCells Time" units="kg m^{-2}"
+                    description="run total accumulated runoff"
+                    packages="lsm_ruc_in"/>
+
+                <var name="snowfallac" type="real" dimensions="nCells Time" units="mm"
+                    description="run total snowfall accumulated taking in to account melting"
+                    packages="lsm_ruc_in"/>
+
+                <var name="smfr3d" type="real" dimensions="nSoilLevels nCells Time" units=""
+                    description="fraction frozen soil moisture"
+                    packages="lsm_ruc_in"/>
+
+		<var name="spp_lsm_loc" type="integer" dimensions="" units=""
+		    description="use spoil property perturbations; 1 or 0; Hardcoded to 0 for now"
+		    packages="lsm_ruc_in"/>
+
+		<var name="mosaic_lu" type="integer" dimensions="" units=""
+	 	    description="use fractional landuse categories; 1 or 0; Hardcoded to 1 for now"
+		    packages="lsm_ruc_in"/>
+
+		<var name="mosaic_soil" type="integer" dimensions="" units=""
+		    desciption="use fractional soil categories; 1 or 0; Hardcoded to 1 for now"
+                    packages="lsm_ruc_in"/>
+
+		<var name="keepfr3d" type="real" dimensions="nSoilLevels nCells Time" units=""
+		    description="keep 3d frozen soil categorization for next time step"
+		    packages="lsm_ruc_in"/>
+
+		<var name="sfcexc" type="real" dimensions="nCells Time" units="m s^{-1}"
+		    desciption="surface exchange coefficient for heat"
+		    packages="lsm_ruc_in"/>
+
+		<var name="sfcevp" type="real" dimensions="nCells Time" units="kg m^{-2}"
+		    description="total evaporation"
+		    packages="lsm_ruc_in"/>
 
                 <!-- ================================================================================================== -->
                 <!-- ... PARAMETERIZATION OF THE 1D OCEAN MIXED LAYER                                                   -->
@@ -3208,8 +3341,14 @@
                 <var name="isltyp" type="integer" dimensions="nCells" units="unitless"
                      description="dominant soil category"/>
 
+		<var name="soilf" type="real" dimensions="nscat nCells" units="unitless"
+                     description="fraction of each soil category present"/>
+
                 <var name="ivgtyp" type="integer" dimensions="nCells" units="unitless"
                      description="dominant vegetation category"/>
+
+		<var name="landusef" type="real" dimensions="nlcat nCells" units="unitless"
+		     description="fraction of each vegetation category present"/>
 
                 <var name="mminlu" type="text" dimensions="" units="unitless"
                      description="land use classification"/>
@@ -3238,11 +3377,17 @@
                 <var name="albedo12m" type="real" dimensions="nMonths nCells" units="unitless"
                      description="monthly-mean climatological surface albedo"/>
 
+		<var name="lai12m" type="real" dimensions="nMonths nCells" units="unitless"
+                     description="monthly-mean climatological leaf area index"/>
+
                 <var name="greenfrac" type="real" dimensions="nMonths nCells" units="unitless"
                      description="monthly-mean climatological greeness fraction"/>
 
                 <var name="dzs" type="real" dimensions="nSoilLevels nCells Time" units="m"
                      description="soil layer thickness"/>
+
+		<var name="zs" type="real" dimensions="nSoilLevels nCells Time" units="m"
+                     description="depth of centers of soil layers"/>
 
                 <var name="sfc_albbck" type="real" dimensions="nCells Time" units="unitless"
                      description="background surface albedo"/>
