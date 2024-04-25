@@ -287,7 +287,7 @@
                              cellSolveThreadStart(thread),cellSolveThreadEnd(thread))
        enddo
 !$OMP END PARALLEL DO
-       call deallocate_seaice,config_lsm_scheme
+       call deallocate_seaice
     endif
 
     !call to pbl schemes:

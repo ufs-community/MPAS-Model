@@ -16,7 +16,8 @@
  use mpas_atmphys_lsm_noahinit
  use mpas_atmphys_lsm_rucinit
  use mpas_atmphys_vars
-
+ use mpas_atmphys_lsm_shared, only: correct_tsk_over_seaice
+      
 !wrf physics
  use module_sf_noahdrv
  use module_sf_noah_seaice_drv
@@ -366,7 +367,8 @@
  type(mpas_pool_type),intent(inout):: sfc_input
  integer,intent(in):: its,ite
 
-!local pointers:
+!     local pointers:
+ logical,pointer               :: config_frac_seaice
  character(len=StrKIND),pointer:: config_microp_scheme,    &
                                   config_convection_scheme, &
                                   config_lsm_scheme
@@ -398,7 +400,8 @@
  call mpas_pool_get_config(configs,'config_convection_scheme',config_convection_scheme)
  call mpas_pool_get_config(configs,'config_microp_scheme'    ,config_microp_scheme    )
  call mpas_pool_get_config(configs,'config_lsm_scheme'       ,config_lsm_scheme       )
-
+ call mpas_pool_get_config(configs,'config_frac_seaice'      ,config_frac_seaice      )
+      
  call mpas_pool_get_array(diag_physics,'acsnom'           ,acsnom           )
  call mpas_pool_get_array(diag_physics,'acsnow'           ,acsnow           )
  call mpas_pool_get_array(diag_physics,'canwat'           ,canwat           )
