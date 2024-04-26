@@ -224,7 +224,7 @@
  end subroutine allocate_lsm
 
 !=================================================================================================================
- subroutine deallocate_lsm(seaice,config_lsm_scheme)
+ subroutine deallocate_lsm(config_lsm_scheme)
 !=================================================================================================================
 
  character(len=StrKIND),pointer, intent(in) :: config_lsm_scheme
