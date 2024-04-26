@@ -121,9 +121,8 @@
 
 
 !=================================================================================================================
- subroutine allocate_lsm(config_frac_seaice,config_lsm_scheme)
+ subroutine allocate_lsm(config_lsm_scheme)
 !=================================================================================================================
- logical,intent(in)                         :: config_frac_seaice
  character(len=StrKIND),pointer, intent(in) :: config_lsm_scheme
 !-----------------------------------------------------------------------------------------------------------------
 
@@ -195,14 +194,6 @@
  if(.not.allocated(ust_urb_p)   ) allocate(ust_urb_p(ims:ime,jms:jme)   )
  if(.not.allocated(utype_urb_p) ) allocate(utype_urb_p(ims:ime,jms:jme) )
 
- if(config_frac_seaice) then
-    if(.not.allocated(tsk_sea)   ) allocate(tsk_sea(ims:ime,jms:jme)   )
-    if(.not.allocated(tsk_ice)   ) allocate(tsk_ice(ims:ime,jms:jme)   )
-    if(.not.allocated(albsi_p)   ) allocate(albsi_p(ims:ime,jms:jme)   )
-    if(.not.allocated(icedepth_p)) allocate(icedepth_p(ims:ime,jms:jme))
-    if(.not.allocated(snowsi_p)  ) allocate(snowsi_p(ims:ime,jms:jme)  )
- endif
-
  if(config_lsm_scheme=='sf_ruc') then
     if(.not.allocated(rhosnf_p)   )  allocate(rhosnf_p(ims:ime,jms:jme)    )
     if(.not.allocated(precipfr_p) )  allocate(precipfr_p(ims:ime,jms:jme)  )
@@ -233,10 +224,9 @@
  end subroutine allocate_lsm
 
 !=================================================================================================================
- subroutine deallocate_lsm(config_frac_seaice,config_lsm_scheme)
+ subroutine deallocate_lsm(seaice,config_lsm_scheme)
 !=================================================================================================================
 
- logical,intent(in)                         :: config_frac_seaice
  character(len=StrKIND),pointer, intent(in) :: config_lsm_scheme
 
 !-----------------------------------------------------------------------------------------------------------------
@@ -308,23 +298,6 @@
  if(allocated(frc_urb_p)   ) deallocate(frc_urb_p   )
  if(allocated(ust_urb_p)   ) deallocate(ust_urb_p   )
  if(allocated(utype_urb_p) ) deallocate(utype_urb_p )
-
- if(config_frac_seaice) then
-    if(allocated(chs_sea)   ) deallocate(chs_sea   )
-    if(allocated(chs2_sea)  ) deallocate(chs2_sea  )
-    if(allocated(cqs2_sea)  ) deallocate(cqs2_sea  )
-    if(allocated(cpm_sea)   ) deallocate(cpm_sea   )
-    if(allocated(hfx_sea)   ) deallocate(hfx_sea   )
-    if(allocated(qfx_sea)   ) deallocate(qfx_sea   )
-    if(allocated(qgh_sea)   ) deallocate(qgh_sea   )
-    if(allocated(qsfc_sea)  ) deallocate(qsfc_sea  )
-    if(allocated(lh_sea)    ) deallocate(lh_sea    )
-    if(allocated(tsk_sea)   ) deallocate(tsk_sea   )
-    if(allocated(tsk_ice)   ) deallocate(tsk_ice   )
-    if(allocated(albsi_p)   ) deallocate(albsi_p   )
-    if(allocated(icedepth_p)) deallocate(icedepth_p)
-    if(allocated(snowsi_p)  ) deallocate(snowsi_p  )
- endif
 
  if (config_lsm_scheme == "sf_ruc") then
     if(allocated(rhosnf_p)    ) deallocate(rhosnf_p    )
@@ -613,43 +586,6 @@
  enddo
  enddo
 
-
-
- if(config_frac_seaice) then
-    do j = jts,jte
-    do i = its,ite
-       !modify the surface albedo and surface emissivity, and surface temperatures over sea-ice points:
-       if(xice(i).ge.xice_threshold .and. xice(i).le.1._RKIND) then
-          sfc_albedo_p(i,j) = (sfc_albedo(i) - 0.08_RKIND*(1._RKIND-xice(i))) / xice(i)
-          sfc_emiss_p(i,j)  = (sfc_emiss(i) - 0.98_RKIND*(1._RKIND-xice(i))) / xice(i)
-       else
-          sfc_albedo_p(i,j) = sfc_albedo(i)
-          sfc_emiss_p(i,j)  = sfc_emiss(i)
-       endif
-    enddo
-    enddo
-
-    !calculate sea-surface and sea-ice temperatures over sea-ice grid cells:
-    call correct_tsk_over_seaice(ims,ime,jms,jme,its,ite,jts,jte,xice_threshold,xice_p, &
-                                 tsk_p,tsk_sea,tsk_ice)
-
-    do j = jts,jte
-    do i = its,ite
-       tsk_p(i,j) = tsk_ice(i,j)
-    enddo
-    enddo
-
-    !initialize the surface albedo, the surface albedo over snow-covered seaice, and the
-    !seaice thickness.
-    do j = jts,jte
-    do i = its,ite
-       albsi_p(i,j)    = seaice_albedo_default
-       icedepth_p(i,j) = seaice_thickness_default
-       snowsi_p(i,j)   = seaice_snowdepth_min
-    enddo
-    enddo
- endif
-
  do j = jts,jte
  do i = its,ite
     sr_p(i,j)     = 0._RKIND
@@ -699,8 +635,6 @@
  integer,intent(in):: its,ite
 
 !local pointers:
- logical,pointer:: config_frac_seaice
-
  character(len=StrKIND),pointer:: config_microp_scheme, &
                                   config_lsm_scheme
 
@@ -891,29 +825,6 @@
  enddo
  enddo
 
- 
-
- if(config_frac_seaice) then
-    do j = jts,jte
-    do i = its,ite
-       if(xice_p(i,j).ge.xice_threshold .and. xice_p(i,j).le.1._RKIND) then
-          chs(i)        = xice_p(i,j)*chs_p(i,j)  + (1._RKIND-xice_p(i,j))*chs_sea(i,j)
-          chs2(i)       = xice_p(i,j)*chs2_p(i,j) + (1._RKIND-xice_p(i,j))*chs2_sea(i,j)
-          cqs2(i)       = xice_p(i,j)*cqs2_p(i,j) + (1._RKIND-xice_p(i,j))*cqs2_sea(i,j)
-          cpm(i)        = xice_p(i,j)*cpm_p(i,j)  + (1._RKIND-xice_p(i,j))*cpm_sea(i,j)
-          hfx(i)        = xice_p(i,j)*hfx_p(i,j)  + (1._RKIND-xice_p(i,j))*hfx_sea(i,j)
-          lh(i)         = xice_p(i,j)*lh_p(i,j)   + (1._RKIND-xice_p(i,j))*lh_sea(i,j)
-          qfx(i)        = xice_p(i,j)*qfx_p(i,j)  + (1._RKIND-xice_p(i,j))*qfx_sea(i,j)
-          qgh(i)        = xice_p(i,j)*qgh_p(i,j)  + (1._RKIND-xice_p(i,j))*qgh_sea(i,j)
-          qsfc(i)       = xice_p(i,j)*qsfc_p(i,j) + (1._RKIND-xice_p(i,j))*qsfc_sea(i,j)
-          skintemp(i)   = xice_p(i,j)*tsk_p(i,j)  + (1._RKIND-xice_p(i,j))*tsk_sea(i,j)
-          sfc_albedo(i) = xice_p(i,j)*sfc_albedo_p(i,j) + (1._RKIND-xice_p(i,j))*0.08_RKIND
-          sfc_emiss(i)  = xice_p(i,j)*sfc_emiss_p(i,j)  + (1._RKIND-xice_p(i,j))*0.98_RKIND
-       endif
-    enddo
-    enddo
- endif
-
  if(config_microp_scheme .ne. 'off') then
     call mpas_pool_get_array(diag_physics,'sr',sr) 
 
@@ -1057,6 +968,7 @@
        myjpbl = .false.
 
        call lsmruc( spp_lsm        = spp_lsm_loc   , lakemodel    = lakemodel   , lakemask  = lakemask_p,  &
+                    doseaice       = .false.,                                                              &
                     rhosnf         = rhosnf_p      , precipfr     = precipfr_p  , mosaic_lu = mosaic_lu,   &
                     qsg            = qsg_p         , qvg          = qvg_p       , dew       = dew_p,       &
                     soilt1         = soilt1_p      , tsnav        = tsnav_p     , acrunoff  = acrunoff_p,  &
@@ -1091,15 +1003,6 @@
                     ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme ,  &
                     its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte    &
                           )
-       call sfcdiags_ruclsm( &
-                hfx     = hfx_p  , qfx     = qfx_p   , tsk  = tsk_p       , qsfc = qsfc_p , chs = chs_p , &
-                chs2    = chs2_p , cqs2    = cqs2_p  , t2   = t2m_p       , th2  = th2m_p , q2  = q2_p  , &
-                psfc2d  = psfc_p , t3d  = t_p , qv3d  = qv_p , dz  = dz_p , cp   = cp     , R_d = R_d   , &
-                rovcp   = rcp    , rho3d   = rho_p   , p3d  = pres2_hyd_p , snow = snow_p , cqs = cqs_p,  &
-                ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde ,                   &
-                ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme ,                   &
-                its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte                     &
-                    ) 
         call mpas_timer_stop('sf_ruc')
     case default
 
