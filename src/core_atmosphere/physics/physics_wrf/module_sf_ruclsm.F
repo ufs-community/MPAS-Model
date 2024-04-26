@@ -1,6 +1,11 @@
-! Author: Tanya Smirnova (Tanya.Smirnova@noaa.gov)
-! 15 march 2024 - RUC LSM is updated to the version used in RRFS version 1.
-! Most changes are in the snow model.
+! * Author - Tanya Smirnova, GSL/ESRL/NOAA, Tanya.Smirnova@noaa.gov
+! * RUC LSM is updated to the version used in RRFS version 1. Most changes are in the snow model.
+!   2024-03-15.
+! * for the use in mpas a logical variable - doseaice is added. This change was needed to separate computations
+!   for land and for ice inside RUC lsm because there are two drivers in mpas: one for land, and another for sea ice, 
+!   thus, there should be two calls to RUC lsm.
+!   If doseaice=.true. only the sea ice part of RUC lsm is activated. When doseaice=.false. - land part is activated. 
+!   2024-04-26.
 !
 #define lsmruc_dbg_lvl 3000
 !wrf:model_layer:physics
@@ -30,7 +35,6 @@ use mpas_log, only: mpas_log_write
   use module_wrf_error
 #define fatal_error(m) call wrf_error_fatal( m )
 #endif
-
 
 ! vegetation parameters
         integer :: lucats , bare, natural, crop, urban
@@ -103,7 +107,7 @@ contains
 #endif
                    dt,ktau,nsl,                                  &
 #if (em_core==1)
-                   lakemodel,lakemask,                           &
+                   lakemodel,lakemask,doseaice,                  &
                    graupelncv,snowncv,rainncv,                   &
 #endif
                    zs,rainbl,snow,snowh,snowc,frzfrac,frpcpn,    &
@@ -211,7 +215,7 @@ contains
    integer,     parameter            ::     nvegclas=24+3
 
    real,       intent(in   )    ::     dt
-   logical,    intent(in   )    ::     myjpbl,frpcpn
+   logical,    intent(in   )    ::     myjpbl,frpcpn,doseaice
    integer,    intent(in   )    ::     spp_lsm
    integer,    intent(in   )    ::     nlcat, nscat, mosaic_lu, mosaic_soil
    integer,    intent(in   )    ::     ktau, nsl, isice, iswater, &
@@ -885,7 +889,6 @@ contains
               print*,' sea-ice at water point, i=',i,            &
               'j=',j
     endif
-!            iland = 24
             iland = isice
             isoil = 16
             znt(i,j) = 0.011
@@ -960,7 +963,7 @@ contains
     field_sf_temp = field_sf_loc(i,:,j)
 !-----------------------------------------------------------------
          call sfctmp (spp_lsm,rstoch_temp,field_sf_temp, &
-                dt,ktau,conflx,i,j,                              &
+                 doseaice, dt,ktau,conflx,i,j,                   &
 !--- input variables
                 nzs,nddzs,nroot,meltfactor,                      &   !added meltfactor
                 iland,isoil,xland(i,j),ivgtyp(i,j),isltyp(i,j),  &
@@ -1204,7 +1207,7 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
 
 
    subroutine sfctmp (spp_lsm,rstochcol,fieldcol_sf,             &
-                delt,ktau,conflx,i,j,                            &
+                doseaice,delt,ktau,conflx,i,j,                   &
 !--- input variables
                 nzs,nddzs,nroot,meltfactor,                      &
                 iland,isoil,xland,ivgtyp,isltyp,prcpms,          &
@@ -1241,7 +1244,7 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
 
    real,     intent(in   )   ::  delt,conflx,meltfactor
    real,     intent(in   )   ::  c1sn,c2sn
-   logical,    intent(in   )    ::     myj
+   logical,  intent(in   )   ::  myj, doseaice
 !--- 3-d atmospheric variables
    real                                                        , &
             intent(in   )    ::                            patm, &
@@ -1706,6 +1709,7 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
        endif
 
     if(seaice .lt. 0.5) then
+      if(doseaice) goto 119
 !----- snow on soil
 !-- alb dependence on snow depth
 ! alb_snow across canada's forested areas is very low - 0.27-0.35, this
@@ -1756,13 +1760,14 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
 !-- albedo of temperatures below -10c.
      if(albsn.lt.0.4 .or. keep_snow_albedo==1) then
         alb=albsn
-      else
+     else
 !-- change albedo when no fresh snow and snow albedo is higher than 0.5
         alb = min(albsn,max(albsn - 0.1*(soilt - 263.15)/       &
                 (273.15-263.15)*albsn, albsn - 0.05))
-      endif
+     endif
     else
 !----- snow on ice
+     if (.not. doseaice) goto 119
      if( snow_mosaic == 1.) then
          albsn=alb_snow
          emiss= emissn
@@ -1787,13 +1792,15 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
        alb = min(albsn,max(albsn - 0.15*albsn*(soilt - 263.15)/  &
                 (273.15-263.15), albsn - 0.1))
       endif
-
     endif
+
+ 119  continue
 
     if (snow_mosaic==1.) then
 !may 2014 - treat separately snow-free and snow-covered areas
 
-       if(seaice .lt. 0.5) then
+      if(seaice .lt. 0.5) then
+        if(doseaice) goto 129
 !  land
 ! portion not covered with snow
 ! compute absorbed gsw for snow-free portion
@@ -1850,6 +1857,7 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
 ! sea ice
 ! portion not covered with snow
 ! compute absorbed gsw for snow-free portion
+        if(.not. doseaice) goto 129
 
          gswnew=gswin*(1.-albice)
 !--------------
@@ -1903,6 +1911,8 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
             enddo
         endif ! seaice < 0.5
 
+ 129    continue
+
 !return gswnew to incoming solar
     if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
      print *,'gswnew,alb_snow_free,alb',gswnew,alb_snow_free,alb
@@ -1930,6 +1940,7 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
 
       if (seaice .lt. 0.5) then
 ! land
+       if(doseaice) goto 139
            if(snow_mosaic==1.)then
               snfr=1.
            else
@@ -1958,6 +1969,7 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
             qfx,hfx,s,sublim,prcpl,fltot,runoff1,runoff2,       &
             mavail,soilice,soiliqw,infiltr                      )
        else
+         if(.not. doseaice) goto 139
 ! sea ice
            if(snow_mosaic==1.)then
               snfr=1.
@@ -2001,12 +2013,15 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
             enddo
        endif
 
+ 139     continue
+
 
      if (snow_mosaic==1.) then
 ! may 2014 - now combine snow covered and snow-free land fluxes, soil temp, moist,
 ! etc.
-        if(seaice .lt. 0.5) then
+       if(seaice .lt. 0.5) then
 ! land
+        if(doseaice) goto 149
    if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
       print *,'soilt snow on land', ktau, i,j,soilt
       print *,'soilt on snow-free land', i,j,soilts
@@ -2066,6 +2081,7 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
        else
 ! sea ice
 ! now combine fluxes for snow-free sea ice and snow-covered area
+       if(.not.doseaice) goto 149
     if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
       print *,'soilt snow on ice', soilt
     endif
@@ -2098,6 +2114,7 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
       print *,'soilt combined on ice', soilt
     endif
        endif
+ 149     continue
      endif ! snow_mosaic = 1.
  
      if(snhei.eq.0.) then
@@ -2156,6 +2173,7 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
     endif
 
        if(seaice .lt. 0.5) then
+         if(doseaice) goto 159
 !  land
          call soil(spp_lsm,rstochcol,fieldcol_sf,               &
 !--- input variables
@@ -2180,6 +2198,7 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
 ! sea ice
 ! if current ice albedo is not the same as from the previous time step, then
 ! update gsw, alb and rnet for surface energy budget
+           if(.not.doseaice) goto 159
          if(alb.ne.albice) gswnew=gsw/(1.-alb)*(1.-albice)
          alb=albice
          rnet    = gswnew + xinet
@@ -2214,6 +2233,7 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
                keepfr(k)=0.
             enddo
         endif
+ 159      continue
 
         endif
 
