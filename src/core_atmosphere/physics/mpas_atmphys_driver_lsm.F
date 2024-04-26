@@ -356,7 +356,6 @@
                                            flqc,flhc,sfcexc,sfcevp
  real(kind=RKIND),dimension(:),pointer  :: shdmin,shdmax,snoalb,sfc_albbck,snow,snowc,snowh,tmn, &
                                            skintemp,vegfra,xice,xland,mavail
- real(kind=RKIND),dimension(:),pointer  :: t2m,th2m,q2
  real(kind=RKIND),dimension(:),pointer  :: raincv,rainncv
  real(kind=RKIND),dimension(:,:),pointer:: sh2o,smcrel,smois,tslb,dzs,zs
  real(kind=RKIND),dimension(:,:),pointer:: smfr3d,landusef,soilf,keepfr3d
@@ -405,9 +404,6 @@
  call mpas_pool_get_array(diag_physics,'udrunoff'         ,udrunoff         )
  call mpas_pool_get_array(diag_physics,'z0'               ,z0               )
  call mpas_pool_get_array(diag_physics,'znt'              ,znt              )
- call mpas_pool_get_array(diag_physics,'t2m'              ,t2m              )
- call mpas_pool_get_array(diag_physics,'th2m'             ,th2m             )
- call mpas_pool_get_array(diag_physics,'q2'               ,q2               )
  if (config_lsm_scheme .eq. "sf_ruc") then
    call mpas_pool_get_array(diag_physics,'rhosnf'         ,rhosnf           )
    call mpas_pool_get_array(diag_physics,'precipfr'       ,precipfr         )
@@ -649,7 +645,6 @@
                                            flqc,flhc,sfcexc,sfcevp
  real(kind=RKIND),dimension(:),pointer  :: shdmin,shdmax,snoalb,sfc_albbck,snow,snowc,snowh,tmn, &
                                            skintemp,vegfra,xice,xland,mavail
- real(kind=RKIND),dimension(:),pointer  :: t2m,th2m,q2                                           
  real(kind=RKIND),dimension(:),pointer  :: raincv,rainncv
  real(kind=RKIND),dimension(:,:),pointer:: sh2o,smcrel,smois,tslb
  real(kind=RKIND),dimension(:,:),pointer:: smfr3d,keepfr3d
@@ -696,9 +691,6 @@
  call mpas_pool_get_array(diag_physics,'udrunoff'  ,udrunoff  )
  call mpas_pool_get_array(diag_physics,'z0'        ,z0        )
  call mpas_pool_get_array(diag_physics,'znt'       ,znt       )
- call mpas_pool_get_array(diag_physics,'t2m'       ,t2m       )
- call mpas_pool_get_array(diag_physics,'th2m'      ,th2m      )
- call mpas_pool_get_array(diag_physics,'q2'        ,q2        )
  if (config_lsm_scheme .eq. "sf_ruc") then
    call mpas_pool_get_array(diag_physics,'rhosnf'         ,rhosnf     )
    call mpas_pool_get_array(diag_physics,'precipfr'       ,precipfr   )
