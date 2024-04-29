@@ -3837,65 +3837,65 @@
 
                 <!-- GSL GWDO fields - meso-scale -->
                 <var name="var2dls" type="real" dimensions="nCells" units="m"
-                     description="standard deviation of subgrid-scale orography"/>
+                     description="standard deviation of subgrid-scale orography (meso-scale GWD)"/>
 
                 <var name="conls" type="real" dimensions="nCells" units="unitless"
-                     description="orographic convexity"/>
+                     description="orographic convexity (meso-scale GWD)"/>
 
                 <var name="oa1ls" type="real" dimensions="nCells" units="unitless"
-                     description="asymmetry of subgrid-scale orography for westerly flow"/>
+                     description="asymmetry of subgrid-scale orography for westerly flow (meso-scale GWD)"/>
 
                 <var name="oa2ls" type="real" dimensions="nCells" units="unitless"
-                     description="asymmetry of subgrid-scale orography for southerly flow"/>
+                     description="asymmetry of subgrid-scale orography for southerly flow (meso-scale GWD)"/>
 
                 <var name="oa3ls" type="real" dimensions="nCells" units="unitless"
-                     description="asymmetry of subgrid-scale orography for south-westerly flow"/>
+                     description="asymmetry of subgrid-scale orography for south-westerly flow (meso-scale GWD)"/>
 
                 <var name="oa4ls" type="real" dimensions="nCells" units="unitless"
-                     description="asymmetry of subgrid-scale orography for north-westerly flow"/>
+                     description="asymmetry of subgrid-scale orography for north-westerly flow (meso-scale GWD)"/>
 
                 <var name="ol1ls" type="real" dimensions="nCells" units="unitless"
-                     description="effective orographic length for westerly flow"/>
+                     description="effective orographic length for westerly flow (meso-scale GWD)"/>
 
                 <var name="ol2ls" type="real" dimensions="nCells" units="unitless"
-                     description="effective orographic length for southerly flow"/>
+                     description="effective orographic length for southerly flow (meso-scale GWD)"/>
 
                 <var name="ol3ls" type="real" dimensions="nCells" units="unitless"
-                     description="effective orographic length for south-westerly flow"/>
+                     description="effective orographic length for south-westerly flow (meso-scale GWD)"/>
 
                 <var name="ol4ls" type="real" dimensions="nCells" units="unitless"
-                     description="effective orographic length for north-westerly flow"/>
+                     description="effective orographic length for north-westerly flow (meso-scale GWD)"/>
 
                 <!-- GSL GWDO fields - small-scale -->
                 <var name="var2dss" type="real" dimensions="nCells" units="m"
-                     description="standard deviation of subgrid-scale orography"/>
+                     description="standard deviation of subgrid-scale orography (small-scale GWD)"/>
 
                 <var name="conss" type="real" dimensions="nCells" units="unitless"
-                     description="orographic convexity"/>
+                     description="orographic convexity (small-scale GWD)"/>
 
                 <var name="oa1ss" type="real" dimensions="nCells" units="unitless"
-                     description="asymmetry of subgrid-scale orography for westerly flow"/>
+                     description="asymmetry of subgrid-scale orography for westerly flow (small-scale GWD)"/>
 
                 <var name="oa2ss" type="real" dimensions="nCells" units="unitless"
-                     description="asymmetry of subgrid-scale orography for southerly flow"/>
+                     description="asymmetry of subgrid-scale orography for southerly flow (small-scale GWD)"/>
 
                 <var name="oa3ss" type="real" dimensions="nCells" units="unitless"
-                     description="asymmetry of subgrid-scale orography for south-westerly flow"/>
+                     description="asymmetry of subgrid-scale orography for south-westerly flow (small-scale GWD)"/>
 
                 <var name="oa4ss" type="real" dimensions="nCells" units="unitless"
-                     description="asymmetry of subgrid-scale orography for north-westerly flow"/>
+                     description="asymmetry of subgrid-scale orography for north-westerly flow (small-scale GWD)"/>
 
                 <var name="ol1ss" type="real" dimensions="nCells" units="unitless"
-                     description="effective orographic length for westerly flow"/>
+                     description="effective orographic length for westerly flow (small-scale GWD)"/>
 
                 <var name="ol2ss" type="real" dimensions="nCells" units="unitless"
-                     description="effective orographic length for southerly flow"/>
+                     description="effective orographic length for southerly flow (small-scale GWD)"/>
 
                 <var name="ol3ss" type="real" dimensions="nCells" units="unitless"
-                     description="effective orographic length for south-westerly flow"/>
+                     description="effective orographic length for south-westerly flow (small-scale GWD)"/>
 
                 <var name="ol4ss" type="real" dimensions="nCells" units="unitless"
-                     description="effective orographic length for north-westerly flow"/>
+                     description="effective orographic length for north-westerly flow (small-scale GWD)"/>
 
         </var_struct>
 #endif
