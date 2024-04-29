@@ -49,8 +49,8 @@ private
 
 real (kind=RKIND), parameter :: Pi = 2.0_RKIND * asin(1.0_RKIND)
 
-integer, parameter :: dimX_fine = 8640 ! x-dimension of fine grid (30-arc-second topog array)
-integer, parameter :: dimY_fine = 4320 ! y-dimension of fine grid (30-arc-second topog array)
+integer, parameter :: topo_x = 8640 ! x-dimension of fine grid (30-arc-second topog array)
+integer, parameter :: topo_y = 4320 ! y-dimension of fine grid (30-arc-second topog array)
 
 real (kind=RKIND), allocatable :: lat1d_fine(:) !< latitude of fine grid pts (radians)
 real (kind=RKIND), allocatable :: lon1d_fine(:) !< longitude of fine grid pts (radians)
@@ -81,6 +81,7 @@ real (kind=RKIND), dimension(:), intent(out) :: std_dev,convexity,OA1,OA2,OA3,OA
                                                 OL1,OL2,OL3,OL4
 
 integer (c_int) :: istatus
+integer :: ix, iy
 integer (c_int) :: isigned, endian, wordsize, nx, ny, nz
 real (c_float) :: scalefactor
 real (c_float), dimension(:,:,:), pointer, contiguous :: tile
@@ -94,6 +95,10 @@ real (kind=RKIND) :: min_DX        ! minimum grid size in km
 
 integer :: i,j,ii,jj
 integer :: iErr
+
+integer, parameter :: tile_x = 8640       ! x-dimension of each tile of global 30-arc-second topography
+integer, parameter :: tile_y = 4320       ! y-dimension of each tile of global 30-arc-second topography
+integer, parameter :: tile_bdr = 0        ! number of layers of border/halo points surrounding each tile
 
 integer :: nfinepoints   ! number of fine grid points in each coarse grid cell
 
@@ -115,7 +120,7 @@ real (kind=RKIND) :: ratio
 real (kind=RKIND) :: dlta_lat, dlta_lon
 
 character(len=StrKIND), pointer :: config_geog_data_path
-character(len=StrKIND) :: geog_sub_path_file
+character(len=StrKIND) :: geog_sub_path
 character(len=StrKIND+1) :: geog_data_path     ! same as config_geog_data_path, but guaranteed to have a trailing slash
 
 integer :: i_blk, j_blk
@@ -130,9 +135,6 @@ logical, parameter :: detrend_topography = .true.  ! switch for using detrended
                                                    ! to represent subgrid terrain
 
 
-! Temporary line
-print *, "Pi =", Pi
-
 call mpas_log_write('Creating oro_data_ls fields')
 
 call mpas_pool_get_config(domain % configs, 'config_geog_data_path', config_geog_data_path)
@@ -142,53 +144,51 @@ i = len_trim(geog_data_path)
 if (geog_data_path(i:i) /= '/') then
    geog_data_path(i+1:i+1) = '/'
 end if
-geog_sub_path_file = 'topo_ugwp_2.5m/topo_source_2.5min.dat'
-write(filename,'(a)') trim(geog_data_path)//trim(geog_sub_path_file)
-call mpas_f_to_c_string(filename, c_filename)
+geog_sub_path = 'topo_ugwp_2.5m/'
 
 !
 ! Retrieve 2.5m topo data from WPS_GEOG
 !
 isigned  = 1
 endian   = 0
-wordsize = 2
-scalefactor = 1.0
-nx = dimX_fine
-ny = dimY_fine
+wordsize = 4
+scalefactor = 0.1
+nx = tile_x + 2*tile_bdr
+ny = tile_y + 2*tile_bdr
 nz = 1
 
-allocate(HGT_M_fine(dimX_fine,dimY_fine))
-allocate(tile(dimX_fine,dimY_fine,1))
+allocate(HGT_M_fine(topo_x,topo_y))
+allocate(tile(tile_x+2*tile_bdr,tile_y+2*tile_bdr,1))
 tile_ptr = c_loc(tile)
 
-print *, "1_0. HGT_M_fine(tile) =", tile(1,1,1), tile(8640,1,1), tile(1,4320,1)
-print *, "1_0. HGT_M_fine =", HGT_M_fine(1,1), HGT_M_fine(8640,1), HGT_M_fine(1,4320)
-print *, "1_0. tile_ptr =", tile_ptr
+do iy=1,topo_y,tile_y
+do ix=1,topo_x,tile_x
+   write(filename,'(a,i5.5,a1,i5.5,a1,i5.5,a1,i5.5)') trim(geog_data_path)//trim(geog_sub_path), &
+                       ix, '-', (ix+tile_x-1), '.', iy, '-', (iy+tile_y-1)
+   call mpas_f_to_c_string(filename, c_filename)
+   call read_geogrid(c_filename, tile_ptr, nx, ny, nz, isigned, endian,  &
+                  wordsize, istatus)
+   tile(:,:,:) = tile(:,:,:) * scalefactor
+   if (istatus /= 0) then
+      call mpas_log_write('Error reading topography tile '//trim(filename), messageType=MPAS_LOG_ERR)
+      iErr = 1
+      return
+   end if
+   HGT_M_fine(ix:(ix+tile_x-1),iy:(iy+tile_y-1)) = tile((tile_bdr+1):(tile_x+tile_bdr),(tile_bdr+1):(tile_y+tile_bdr),1)
+end do
+end do
 
-call read_geogrid(c_filename, tile_ptr, nx, ny, nz, isigned, endian,  &
-                  wordsize, istatus) 
-print *, "1.5. tile_ptr =", tile_ptr
-print *, "1.5. HGT_M_fine(tile) =", tile(1,1,1), tile(8640,1,1), tile(1,4320,1)
-tile(:,:,:) = tile(:,:,:) * scalefactor
-print *, "2. HGT_M_fine(tile) =", tile(1,1,1), tile(8640,1,1), tile(1,4320,1)
-if (istatus /= 0) then
-   call mpas_log_write('Error reading topography tile '//trim(filename), messageType=MPAS_LOG_ERR)
-   iErr = 1
-   return
-end if
-HGT_M_fine(:,:) = tile(:,:,1)
-print *, "2. HGT_M_fine =", HGT_M_fine(1,1), HGT_M_fine(8640,1), HGT_M_fine(1,4320)
 deallocate(tile)
 
 
 ! Calculate fine grid lat/lon in radians
-allocate (lat1d_fine(dimY_fine))
-allocate (lon1d_fine(dimX_fine))
-do j = 1,dimY_fine
-   lat1d_fine(j) = ( -90._RKIND + (180._RKIND/dimY_fine)*(j-p5) )*Pi/180._RKIND
+allocate (lat1d_fine(topo_y))
+allocate (lon1d_fine(topo_x))
+do j = 1,topo_y
+   lat1d_fine(j) = ( -90._RKIND + (180._RKIND/topo_y)*(j-p5) )*Pi/180._RKIND
 end do
-do i = 1,dimX_fine
-   lon1d_fine(i) = (-180._RKIND + (360._RKIND/dimX_fine)*(i-p5) )*Pi/180._RKIND
+do i = 1,topo_x
+   lon1d_fine(i) = (-180._RKIND + (360._RKIND/topo_x)*(i-p5) )*Pi/180._RKIND
 end do
 
 
@@ -202,8 +202,6 @@ do i = 1,nCells
       lon_MPAS(i) = lon_MPAS_raw(i)
    end if
 end do
-
-
 
 ! Initialize GWD statistics fields
 std_dev(:) = 0._RKIND
@@ -234,8 +232,6 @@ OL4(:) = 0._RKIND
 
 
 do i = 1,nCells
-
-      ! print *, "nCells =", nCells
 
       ! Calculate approximate side-lengths of square lat-long "coarse" grid
       ! cell centered on FV3 cell (units = radians)
@@ -292,17 +288,17 @@ do i = 1,nCells
             lat_blk(j_blk) = p5*(lat1d_fine(1)+lat1d_fine(e_jj(j_blk)))
          end if
          if ( e_jj(j_blk).eq.-999 ) then
-            e_jj(j_blk) = dimY_fine  ! block shaved on the north
+            e_jj(j_blk) = topo_y  ! block shaved on the north
             ! Reassign latitude of block center
-            lat_blk(j_blk) = p5*(lat1d_fine(s_jj(j_blk))+lat1d_fine(dimY_fine))
+            lat_blk(j_blk) = p5*(lat1d_fine(s_jj(j_blk))+lat1d_fine(topo_y))
          end if
 
          j_blk = 3  ! northern row
          ! Check for "shaved" block due to proximity to north pole
          if ( (e_jj(j_blk).eq.-999).and.(s_jj(j_blk).ne.-999) ) then
-            e_jj(j_blk) = dimY_fine  ! northern boundary of shaved block
+            e_jj(j_blk) = topo_y  ! northern boundary of shaved block
             ! Reassign latitude of block center 
-            lat_blk(j_blk) = p5*(lat1d_fine(s_jj(j_blk))+lat1d_fine(dimY_fine))
+            lat_blk(j_blk) = p5*(lat1d_fine(s_jj(j_blk))+lat1d_fine(topo_y))
          end if
 
          if ( detrend_topography ) then
@@ -321,7 +317,7 @@ do i = 1,nCells
       ! Calculate number of fine-grid points within center coarse block (2,2)
       ! Check if center block straddles date line
       if ( s_ii(2).gt.e_ii(2) ) then
-         ii_m = dimX_fine - s_ii(2) + 1 + e_ii(2)
+         ii_m = topo_x - s_ii(2) + 1 + e_ii(2)
       else
          ii_m = e_ii(2) - s_ii(2) + 1
       end if
@@ -342,7 +338,7 @@ do i = 1,nCells
             jj_loc = jj - s_jj(2) + 1  ! local j-index (1 ... jj_m)
             ! Check if block straddles the date line
             if ( s_ii(2).gt.e_ii(2) ) then
-               do ii = s_ii(2), dimX_fine  ! west of the date line
+               do ii = s_ii(2), topo_x  ! west of the date line
                   ii_loc = ii - s_ii(2) + 1   ! local i-index ( 1 ... ii_m)
                   call HGT_interpolate(lat1d_fine(jj),lon1d_fine(ii),      &
                               lat_blk(:),lon_blk(:),HGT_M_coarse(:,:),     &
@@ -378,7 +374,7 @@ do i = 1,nCells
          jj_loc = jj - s_jj(2) + 1  ! local j-index (1 ... jj_m)
          ! Check if block straddles the date line
          if ( s_ii(2).gt.e_ii(2) ) then
-            do ii = s_ii(2), dimX_fine  ! west of the date line
+            do ii = s_ii(2), topo_x  ! west of the date line
                ii_loc = ii - s_ii(2) + 1   ! local i-index ( 1 ... ii_m)
                if ( detrend_topography ) then
                   zs(ii_loc,jj_loc) = HGT_M_fine(ii,jj) -            &
@@ -436,10 +432,6 @@ do i = 1,nCells
          OL4(i) = 0._RKIND
          if ( detrend_topography ) deallocate (HGT_M_coarse_on_fine)
          deallocate(zs)
-         ! Temporary lines
-            print *
-            print *, i, lat_MPAS(i)*180./Pi, lon_MPAS(i)*180./Pi, std_dev(i), convexity(i),  &
-               OA1(i), OA2(i), OA3(i), OA4(i), OL1(i), OL2(i), OL3(i), OL4(i)
          cycle   ! move on to next (coarse) grid cell 
       end if
 
@@ -675,11 +667,6 @@ do i = 1,nCells
       if ( detrend_topography ) deallocate (HGT_M_coarse_on_fine)
       deallocate (zs)
 
-   print *
-   print *, i, lat_MPAS(i)*180./Pi, lon_MPAS(i)*180./Pi, std_dev(i), convexity(i),  &
-               OA1(i), OA2(i), OA3(i), OA4(i), OL1(i), OL2(i), OL3(i), OL4(i)
-
-
 end do   ! i = 1,nCells
 
 
@@ -743,7 +730,7 @@ do j = s_jj, e_jj
    ! Note:  If the grid block straddles the date line, then s_ii > e_ii
    !        We need to correct for this
    if ( s_ii.gt.e_ii ) then   ! straddling the date line
-      do i = s_ii, dimX_fine  ! west of the date line
+      do i = s_ii, topo_x  ! west of the date line
          HGT_sum = HGT_sum + HGT_M_fine(i,j)
          grid_pt_count = grid_pt_count + 1
       end do
@@ -918,7 +905,7 @@ do while ( (lon.lt.(-pi)).or.(lon.gt.pi) )
    if ( lon.gt.pi ) lon = lon - 2*pi
 end do
 
-if ( lon.gt.lon1d_fine(dimX_fine) ) then
+if ( lon.gt.lon1d_fine(topo_x) ) then
    nearest_i_east = 1
 else
    i = 1
@@ -951,8 +938,8 @@ do while ( (lon.lt.(-pi)).or.(lon.gt.pi) )
    if ( lon.gt.pi ) lon = lon - 2*pi
 end do
 
-if ( (lon.lt.lon1d_fine(1)).or.(lon.ge.lon1d_fine(dimX_fine)) ) then
-   nearest_i_west = dimX_fine
+if ( (lon.lt.lon1d_fine(1)).or.(lon.ge.lon1d_fine(topo_x)) ) then
+   nearest_i_west = topo_x
 else
    i = 1
    do while ( lon1d_fine(i).le.lon )
@@ -984,7 +971,7 @@ if ( abs(lat_in).gt.p5*pi ) then
    nearest_j_north = -999
 else
    j = 1
-   do while ( (lat1d_fine(j).lt.lat).and.(j.lt.dimY_fine) )
+   do while ( (lat1d_fine(j).lt.lat).and.(j.lt.topo_y) )
       j = j + 1
    end do
    nearest_j_north = j
@@ -1015,7 +1002,7 @@ elseif ( lat_in.le.lat1d_fine(1) ) then
    nearest_j_south = 1
 else
    j = 2
-   do while ( (lat1d_fine(j).le.lat).and.(j.le.dimY_fine) )
+   do while ( (lat1d_fine(j).le.lat).and.(j.le.topo_y) )
       j = j + 1
    end do
    nearest_j_south = j - 1

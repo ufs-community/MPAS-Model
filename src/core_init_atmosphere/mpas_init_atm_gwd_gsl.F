@@ -76,13 +76,11 @@ module mpas_init_atm_gwd_gsl
       character(len=StrKIND+1) :: geog_data_path      ! same as config_geog_data_path, but guaranteed to have a trailing slash
       real (kind=RKIND), parameter :: Re = 6371229.0_RKIND        ! Earth radius in MPAS-Atmosphere
 
-      logical :: duplicate_oro_data_file   ! flag for whether oro_data_ls file is a duplicate
+      logical :: duplicate_oro_data   ! flag for whether oro_data_ls file is a duplicate
                                            ! of oro_data_ss due to minimum grid size being less than 7.5km
 
       call mpas_pool_get_subpool(domain % blocklist % structs, 'mesh', mesh)
       call mpas_pool_get_subpool(domain % blocklist % structs, 'state', state)
-
-      call mpas_log_write('In sub calc_gsl_oro_data #1')
 
       call mpas_pool_get_config(mesh, 'sphere_radius', sphere_radius)
       call mpas_pool_get_config(domain % configs, 'config_gwd_cell_scaling', config_gwd_cell_scaling)
@@ -141,8 +139,6 @@ module mpas_init_atm_gwd_gsl
 
       allocate(areaCell(nCells))
 
-      call mpas_log_write('In sub calc_gsl_oro_data #2')
-
       !
       ! Loop to compute approximate area of each MPAS horizontal grid cell
       !
@@ -167,32 +163,33 @@ module mpas_init_atm_gwd_gsl
 
       end do
 
-      call mpas_log_write('In sub calc_gsl_oro_data #3')
-
       call calc_gsl_oro_data_sm_scale(nCells,latCell,lonCell,areaCell,Re,     &
                                  var2dss,conss,oa1ss,oa2ss,oa3ss,oa4ss,       &
                                  ol1ss,ol2ss,ol3ss,ol4ss,                     &
-                                 domain,duplicate_oro_data_file)
+                                 domain,duplicate_oro_data)
 
-      call mpas_log_write('In sub calc_gsl_oro_data #4')
+      call mpas_log_write('duplicate_oro_data = $l', logicArgs=(/duplicate_oro_data/)) 
 
-
-      print *, "duplicate_oro_data_file =", duplicate_oro_data_file
-      print *
-
-      if ( .not.duplicate_oro_data_file ) then
+      if ( duplicate_oro_data ) then
+         var2dls(:) = var2dss(:)
+         conls(:) = conss(:)
+         oa1ls(:) = oa1ss(:)
+         oa2ls(:) = oa2ss(:)
+         oa3ls(:) = oa3ss(:)
+         oa4ls(:) = oa4ss(:) 
+         ol1ls(:) = ol1ss(:)
+         ol2ls(:) = ol2ss(:)
+         ol3ls(:) = ol3ss(:)
+         ol4ls(:) = ol4ss(:)
+      else
          call calc_gsl_oro_data_lg_scale(nCells,latCell,lonCell,areaCell,Re,  &
                                       var2dls,conls,oa1ls,oa2ls,oa3ls,oa4ls,  &
                                       ol1ls,ol2ls,ol3ls,ol4ls,domain)
       end if
 
-      call mpas_log_write('In sub calc_gsl_oro_data #5')
-
       deallocate(areaCell)
 
-      call mpas_log_write('')
-      call mpas_log_write('End module gsl_oro_data')
-      call mpas_log_write('')
+      call mpas_log_write('End module mpas_init_atm_gwd_gsl')
 
       iErr = 0
 

@@ -223,10 +223,9 @@ module init_atm_cases
                 end if
             end if
 
-            ! Temporary changes
-            ! if (config_static_interp) then
-            !    call init_atm_static(mesh, block_ptr % dimensions, block_ptr % configs)
-            ! end if
+            if (config_static_interp) then
+               call init_atm_static(mesh, block_ptr % dimensions, block_ptr % configs)
+            end if
 
             if (config_native_gwd_static) then
                call mpas_log_write(' ')
