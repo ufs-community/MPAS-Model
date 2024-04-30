@@ -1626,7 +1626,7 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
          newsn=newsn*rhowater/rhonewsn
        endif
 
-   if(snhei.gt.0.0) then
+  if(snhei.gt.0.0) then
 !-- snow on the ground
 !--- land-use category should be changed to snow/ice for grid points with snow>0
          iland=isice
@@ -1689,7 +1689,7 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
 ! new snow
              keep_snow_albedo = 1.
              snow_mosaic = 0.
-      endif
+       endif
 
     if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
       print *,'snhei_crit,snowfrac,snhei_crit_newsn,snowfracnewsn', &
@@ -1708,8 +1708,7 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
          endif
        endif
 
-    if(seaice .lt. 0.5) then
-      if(doseaice) goto 119
+    if(seaice .lt. 0.5 .and. .not. doseaice) then
 !----- snow on soil
 !-- alb dependence on snow depth
 ! alb_snow across canada's forested areas is very low - 0.27-0.35, this
@@ -1765,9 +1764,9 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
         alb = min(albsn,max(albsn - 0.1*(soilt - 263.15)/       &
                 (273.15-263.15)*albsn, albsn - 0.05))
      endif
-    else
+
+    elseif (seaice .gt. 0.5 .and. doseaice) then
 !----- snow on ice
-     if (.not. doseaice) goto 119
      if( snow_mosaic == 1.) then
          albsn=alb_snow
          emiss= emissn
@@ -1792,15 +1791,13 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
        alb = min(albsn,max(albsn - 0.15*albsn*(soilt - 263.15)/  &
                 (273.15-263.15), albsn - 0.1))
       endif
-    endif
+    endif ! land or ice
 
- 119  continue
 
     if (snow_mosaic==1.) then
 !may 2014 - treat separately snow-free and snow-covered areas
 
-      if(seaice .lt. 0.5) then
-        if(doseaice) goto 129
+    if(seaice .lt. 0.5 .and. .not. doseaice) then
 !  land
 ! portion not covered with snow
 ! compute absorbed gsw for snow-free portion
@@ -1853,11 +1850,11 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
             ett1s,eetas,qfxs,hfxs,ss,evapls,prcpls,fltots,runoff1s, &
             runoff2s,mavails,soilices,soiliqws,                 &
             infiltrs,smf,globalcellid)
-        else
+
+    elseif(seaice .gt. 0.5 .and. doseaice) then
 ! sea ice
 ! portion not covered with snow
 ! compute absorbed gsw for snow-free portion
-        if(.not. doseaice) goto 129
 
          gswnew=gswin*(1.-albice)
 !--------------
@@ -1909,24 +1906,21 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
                smfrkeep(k)=1.
                keepfr(k)=0.
             enddo
-        endif ! seaice < 0.5
+    endif ! land or seaice
 
- 129    continue
 
-!return gswnew to incoming solar
     if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
      print *,'gswnew,alb_snow_free,alb',gswnew,alb_snow_free,alb
     endif
 
-    if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
-       print *,'incoming gswnew snowfrac<1 -',gswnew
-    endif
     endif ! snow_mosaic=1.
 
 !--- recompute absorbed solar radiation and net radiation
 !--- for updated value of snow albedo - alb
          gswnew=gswin*(1.-alb)
-!      print *,'snow fraction gswnew',gswnew,'alb=',alb
+    if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
+      print *,'snow-covered gswnew=',gswnew,'alb=',alb
+    endif
 !--------------
          t3      = stbolt*soilt*soilt*soilt
          upflux  = t3 *soilt
@@ -1938,9 +1932,8 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
                  i,j,newsn,snwe,snhei,gsw,gswnew,glw,upflux,alb
     endif
 
-      if (seaice .lt. 0.5) then
+    if (seaice .lt. 0.5 .and. .not. doseaice) then
 ! land
-       if(doseaice) goto 139
            if(snow_mosaic==1.)then
               snfr=1.
            else
@@ -1968,8 +1961,8 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
             smelt,snoh,snflx,snom,edir1,ec1,ett1,eeta,          &
             qfx,hfx,s,sublim,prcpl,fltot,runoff1,runoff2,       &
             mavail,soilice,soiliqw,infiltr                      )
-       else
-         if(.not. doseaice) goto 139
+
+    elseif(seaice .gt. 0.5 .and. doseaice) then
 ! sea ice
            if(snow_mosaic==1.)then
               snfr=1.
@@ -2011,17 +2004,13 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
                smfrkeep(k)=1.
                keepfr(k)=0.
             enddo
-       endif
+    endif ! land or ice
 
- 139     continue
-
-
-     if (snow_mosaic==1.) then
+    if (snow_mosaic==1.) then
 ! may 2014 - now combine snow covered and snow-free land fluxes, soil temp, moist,
 ! etc.
-       if(seaice .lt. 0.5) then
+    if(seaice .lt. 0.5 .and. .not. doseaice) then
 ! land
-        if(doseaice) goto 149
    if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
       print *,'soilt snow on land', ktau, i,j,soilt
       print *,'soilt on snow-free land', i,j,soilts
@@ -2078,10 +2067,10 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
       print *,'soilt combined on land', soilt
       print *,'ts combined on land', ts1d
     endif
-       else
+
+    elseif(seaice .gt. 0.5 .and. doseaice) then
 ! sea ice
 ! now combine fluxes for snow-free sea ice and snow-covered area
-       if(.not.doseaice) goto 149
     if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
       print *,'soilt snow on ice', soilt
     endif
@@ -2113,9 +2102,8 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
     if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
       print *,'soilt combined on ice', soilt
     endif
-       endif
- 149     continue
-     endif ! snow_mosaic = 1.
+    endif ! land or ice
+    endif ! snow_mosaic = 1.
  
      if(snhei.eq.0.) then
      !-- all snow is melted
@@ -2157,11 +2145,11 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
       snowfallac = snowfallac + newsn * 1.e3    ! accumulated snow depth [mm], using variable snow den
       !snowfallac = snowfallac + max(0.,(newsn - rhowater/rhonewsn*smelt*delt*newsnowratio))
 
-   else
+  else
 !--- no snow
-           snheiprint=0.
-           snweprint=0.
-           smelt=0.
+         snheiprint=0.
+         snweprint=0.
+         smelt=0.
 
 !--------------
          t3      = stbolt*soilt*soilt*soilt
@@ -2172,8 +2160,7 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
      print *,'no snow on the ground gswnew -',gswnew,'rnet=',rnet
     endif
 
-       if(seaice .lt. 0.5) then
-         if(doseaice) goto 159
+    if(seaice .lt. 0.5 .and. .not. doseaice) then
 !  land
          call soil(spp_lsm,rstochcol,fieldcol_sf,               &
 !--- input variables
@@ -2194,16 +2181,16 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
             ett1,eeta,qfx,hfx,s,evapl,prcpl,fltot,runoff1,      &
             runoff2,mavail,soilice,soiliqw,                     &
             infiltr,smf,globalcellid)
-        else
+
+    elseif(seaice .gt. 0.5 .and. doseaice) then
 ! sea ice
 ! if current ice albedo is not the same as from the previous time step, then
 ! update gsw, alb and rnet for surface energy budget
-           if(.not.doseaice) goto 159
          if(alb.ne.albice) gswnew=gsw/(1.-alb)*(1.-albice)
          alb=albice
          rnet    = gswnew + xinet
 
-          call sice(                                            &
+         call sice(                                             &
 !--- input variables
             i,j,iland,isoil,delt,ktau,conflx,nzs,nddzs,nroot,   &
             prcpms,rainf,patm,qvatm,qcatm,glw,gswnew,           &
@@ -2225,20 +2212,16 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
            mavail = 1.
            infiltr=0.
            cst=0.
-            do k=1,nzs
+           do k=1,nzs
                soilm1d(k)=1.
                soiliqw(k)=0.
                soilice(k)=1.
                smfrkeep(k)=1.
                keepfr(k)=0.
-            enddo
-        endif
- 159      continue
+           enddo
+    endif ! land or ice
+  endif ! snow or no-snow points
 
-        endif
-
-!      return
-!       end
 !---------------------------------------------------------------
    end subroutine sfctmp
 !---------------------------------------------------------------
