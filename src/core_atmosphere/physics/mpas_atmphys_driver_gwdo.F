@@ -364,6 +364,11 @@
                  )
        call mpas_timer_stop('bl_gwdo')
 
+    case("bl_ugwp_gwdo")
+       call mpas_timer_start('bl_ugwp_gwdo')
+       call gwdo_ugwp ( stuff goes here ) 
+       call mpas_timer_stop('bl_ugwp_gwdo')
+
      case default
 
  end select gwdo_select
