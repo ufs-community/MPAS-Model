@@ -147,6 +147,9 @@
        if(.not.allocated(reice_p)   ) allocate(reice_p(ims:ime,kms:kme,jms:jme)  )
        if(.not.allocated(resnow_p)  ) allocate(resnow_p(ims:ime,kms:kme,jms:jme) )
 
+       ! 3D reflectivity
+       if(.not.allocated(refl10cm_p)  ) allocate(refl10cm_p(ims:ime,kms:kme,jms:jme) )
+
     microp2_select: select case(microp_scheme)
 
        case("mp_thompson")
@@ -223,6 +226,8 @@
        if(allocated(recloud_p) ) deallocate(recloud_p )
        if(allocated(reice_p)   ) deallocate(reice_p   )
        if(allocated(resnow_p)  ) deallocate(resnow_p  )
+
+       if(allocated(refl10cm_p)  ) deallocate(refl10cm_p  )
 
     microp2_select: select case(microp_scheme)
 
@@ -381,7 +386,7 @@
                   sr        = sr_p        , rainprod   = rainprod_p   , evapprod   = evapprod_p   , &
                   re_cloud  = recloud_p   , re_ice     = reice_p      , re_snow    = resnow_p     , &
                   has_reqc  = has_reqc    , has_reqi   = has_reqi     , has_reqs   = has_reqs     , &
-                  ntc       = ntc_p       , muc        = muc_p        ,                             &
+                  ntc       = ntc_p       , muc        = muc_p        , refl_10cm  = refl10cm_p   , &
                   ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde           , &
                   ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme           , &
                   its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte             &
@@ -627,7 +632,7 @@
 
 !local pointers:
  character(len=StrKIND),pointer:: microp_scheme
- real(kind=RKIND),dimension(:),pointer:: refl10cm_max,refl10cm_1km,refl10cm_1km_max
+ real(kind=RKIND),dimension(:),pointer:: refl10cm,refl10cm_max,refl10cm_1km,refl10cm_1km_max
 
 !local variables and arrays:
  integer:: i,j,k,kp
@@ -637,7 +642,8 @@
 !-----------------------------------------------------------------------------------------------------------------
 
  call mpas_pool_get_config(configs,'config_microp_scheme',microp_scheme)
-
+ 
+ call mpas_pool_get_array(diag_physics,'refl10cm',refl10cm)
  call mpas_pool_get_array(diag_physics,'refl10cm_max',refl10cm_max)
  call mpas_pool_get_array(diag_physics,'refl10cm_1km',refl10cm_1km)
  call mpas_pool_get_array(diag_physics,'refl10cm_1km_max',refl10cm_1km_max)
@@ -718,11 +724,12 @@
              qs1d(k)  = qs_p(i,k,j)
              qg1d(k)  = qg_p(i,k,j)
              nr1d(k)  = nr_p(i,k,j)
-             dBZ1d(k) = -35._RKIND
+             dBZ1d(k) = refl10cm_p(i,k,j)
              zp(k) = z_p(i,k,j) - z_p(i,1,j)+0.5*dz_p(i,1,j) ! height AGL
           enddo
-
-          call calc_refl10cm(qv1d,qc1d,qr1d,nr1d,qs1d,qg1d,t1d,p1d,dBZ1d,kts,kte,i,j)
+          
+          ! AAJ This function is called directly from the microphysics
+          ! call calc_refl10cm(qv1d,qc1d,qr1d,nr1d,qs1d,qg1d,t1d,p1d,dBZ1d,kts,kte,i,j)
 
           kp = 1
           do k = kts,kte
