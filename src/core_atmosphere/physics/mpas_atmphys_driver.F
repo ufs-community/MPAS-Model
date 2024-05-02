@@ -280,15 +280,18 @@
 !$OMP END PARALLEL DO
        call deallocate_lsm(config_frac_seaice,config_lsm_scheme)
 
-       call allocate_seaice
+       if(config_lsm_scheme .ne. 'sf_ruc') then
+          call allocate_seaice
 !$OMP PARALLEL DO
-       do thread=1,nThreads
-          call driver_seaice(block%configs,diag_physics,sfc_input, &
-                             cellSolveThreadStart(thread),cellSolveThreadEnd(thread))
-       enddo
+          do thread=1,nThreads
+             call driver_seaice(block%configs,diag_physics,sfc_input, &
+                                cellSolveThreadStart(thread),cellSolveThreadEnd(thread))
+          enddo
 !$OMP END PARALLEL DO
-       call deallocate_seaice,config_lsm_scheme
-    endif
+          call deallocate_seaice
+       endif ! sf_ruc
+    endif ! lsm off
+
 
     !call to pbl schemes:
     if(config_pbl_scheme .ne. 'off' .and. config_sfclayer_scheme .ne. 'off') then
