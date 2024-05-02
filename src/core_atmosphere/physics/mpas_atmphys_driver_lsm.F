@@ -12,6 +12,7 @@
  use mpas_timer, only : mpas_timer_start, mpas_timer_stop
 
  use mpas_atmphys_constants
+ use mpas_atmphys_lsm_shared,only: correct_tsk_over_seaice
  use mpas_atmphys_landuse, only: isurban
  use mpas_atmphys_lsm_noahinit
  use mpas_atmphys_lsm_rucinit
@@ -187,6 +188,9 @@
  if(.not.allocated(xland_p)     ) allocate(xland_p(ims:ime,jms:jme)     )
  if(.not.allocated(z0_p)        ) allocate(z0_p(ims:ime,jms:jme)        )
  if(.not.allocated(znt_p)       ) allocate(znt_p(ims:ime,jms:jme)       )
+ if(.not.allocated(t2m_p)       ) allocate(t2m_p(ims:ime,jms:jme)       )
+ if(.not.allocated(th2m_p)      ) allocate(th2m_p(ims:ime,jms:jme)      )
+ if(.not.allocated(q2_p)        ) allocate(q2_p(ims:ime,jms:jme)        )
  if(.not.allocated(flxsnow_p)   ) allocate(flxsnow_p(ims:ime,jms:jme)   )
  if(.not.allocated(fvbsnow_p)   ) allocate(fvbsnow_p(ims:ime,jms:jme)   )
  if(.not.allocated(fbursnow_p)  ) allocate(fbursnow_p(ims:ime,jms:jme)  )
@@ -301,6 +305,9 @@
  if(allocated(xland_p)     ) deallocate(xland_p     )
  if(allocated(z0_p)        ) deallocate(z0_p        )
  if(allocated(znt_p)       ) deallocate(znt_p       )
+ if(allocated(t2m_p)       ) deallocate(t2m_p       )
+ if(allocated(th2m_p)      ) deallocate(th2m_p      )
+ if(allocated(q2_p)        ) deallocate(q2_p        )
  if(allocated(flxsnow_p)   ) deallocate(flxsnow_p   )
  if(allocated(fvbsnow_p)   ) deallocate(fvbsnow_p   )
  if(allocated(fbursnow_p)  ) deallocate(fbursnow_p  )
@@ -367,6 +374,7 @@
  integer,intent(in):: its,ite
 
 !local pointers:
+ logical, pointer              :: config_frac_seaice
  character(len=StrKIND),pointer:: config_microp_scheme,    &
                                   config_convection_scheme, &
                                   config_lsm_scheme
@@ -398,6 +406,7 @@
  call mpas_pool_get_config(configs,'config_convection_scheme',config_convection_scheme)
  call mpas_pool_get_config(configs,'config_microp_scheme'    ,config_microp_scheme    )
  call mpas_pool_get_config(configs,'config_lsm_scheme'       ,config_lsm_scheme       )
+ call mpas_pool_get_config(configs,'config_frac_seaice'      ,config_frac_seaice      )
 
  call mpas_pool_get_array(diag_physics,'acsnom'           ,acsnom           )
  call mpas_pool_get_array(diag_physics,'acsnow'           ,acsnow           )
@@ -559,6 +568,9 @@
     udrunoff_p(i,j)   = udrunoff(i)
     z0_p(i,j)         = z0(i)
     znt_p(i,j)        = znt(i)
+    t2m_p(i,j)        = t2m(i)
+    th2m_p(i,j)       = th2m(i)
+    q2_p(i,j)         = q2(i)
 
     isltyp_p(i,j)     = isltyp(i)
     ivgtyp_p(i,j)     = ivgtyp(i)
@@ -728,6 +740,7 @@
 
  call mpas_pool_get_config(configs,'config_microp_scheme',config_microp_scheme)
  call mpas_pool_get_config(configs,'config_lsm_scheme',config_lsm_scheme)
+ call mpas_pool_get_config(configs,'config_frac_seaice',config_frac_seaice)
 
  call mpas_pool_get_array(diag_physics,'acsnom'    ,acsnom    )
  call mpas_pool_get_array(diag_physics,'acsnow'    ,acsnow    )
@@ -856,6 +869,9 @@
     udrunoff(i)   = udrunoff_p(i,j)
     z0(i)         = z0_p(i,j)
     znt(i)        = znt_p(i,j)
+    t2m(i)        = t2m_p(i,j)
+    th2m(i)       = th2m_p(i,j)
+    q2(i)         = q2_p(i,j)
 
     snoalb(i)     = snoalb_p(i,j)
     sfc_albbck(i) = sfc_albbck_p(i,j)
