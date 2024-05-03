@@ -8,6 +8,7 @@
 !=================================================================================================================
  module atmphys_build_tables_thompson
  use module_mp_thompson
+ use module_mp_thompson_utils
  use module_mp_thompson_params, only : NRHG
 
  implicit none
@@ -34,9 +35,9 @@
  integer:: mp_unit
 
 !-----------------------------------------------------------------------------------------------------------------
-
 !--- partial initialization before building the look-up tables:
- call thompson_init(l_mp_tables)
+!--- AAJ This needs a hail_aware_flag defined in module_mp_thompson_params
+ call thompson_init(l_mp_tables=l_mp_tables, hail_aware_flag=build_table_hail_aware)
 
  call mpas_new_unit(mp_unit, unformatted = .true.)
 
