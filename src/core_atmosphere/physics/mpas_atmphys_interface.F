@@ -494,7 +494,7 @@
  real(kind=RKIND),dimension(:,:),pointer  :: qv,qc,qr,qi,qs,qg
  real(kind=RKIND),dimension(:,:),pointer  :: ni,nc,nr,nwfa,nifa
  real(kind=RKIND),dimension(:,:),pointer  :: rainprod,evapprod
- real(kind=RKIND),dimension(:,:),pointer  :: re_cloud,re_ice,re_snow
+ real(kind=RKIND),dimension(:,:),pointer  :: re_cloud,re_ice,re_snow,refl10cm
  real(kind=RKIND),dimension(:,:,:),pointer:: scalars
 
 !local variables:
@@ -518,6 +518,7 @@
  call mpas_pool_get_array(diag_physics,'re_cloud',re_cloud)
  call mpas_pool_get_array(diag_physics,'re_ice'  ,re_ice  )
  call mpas_pool_get_array(diag_physics,'re_snow' ,re_snow )
+ call mpas_pool_get_array(diag_physics,'refl10cm', refl10cm )
 
  call mpas_pool_get_array(state,'rho_zz' ,rho_zz ,time_lev)
  call mpas_pool_get_array(state,'theta_m',theta_m,time_lev)
@@ -578,6 +579,7 @@
           recloud_p(i,k,j) = re_cloud(k,i)
           reice_p(i,k,j)   = re_ice(k,i)
           resnow_p(i,k,j)  = re_snow(k,i)
+          refl10cm_p(i,k,j) = refl10cm(k,i)
        enddo
        enddo
        enddo
@@ -651,7 +653,7 @@
  real(kind=RKIND),dimension(:,:),pointer  :: qv,qc,qr,qi,qs,qg
  real(kind=RKIND),dimension(:,:),pointer  :: ni,nr,nc,nwfa,nifa
  real(kind=RKIND),dimension(:,:),pointer  :: rainprod,evapprod
- real(kind=RKIND),dimension(:,:),pointer  :: re_cloud,re_ice,re_snow
+ real(kind=RKIND),dimension(:,:),pointer  :: re_cloud,re_ice,re_snow,refl10cm
  real(kind=RKIND),dimension(:,:,:),pointer:: scalars
 
 !local variables:
@@ -680,6 +682,7 @@
  call mpas_pool_get_array(diag_physics,'re_cloud',re_cloud)
  call mpas_pool_get_array(diag_physics,'re_ice'  ,re_ice  )
  call mpas_pool_get_array(diag_physics,'re_snow' ,re_snow )
+ call mpas_pool_get_array(diag_physics,'refl10cm' ,refl10cm )
 
  call mpas_pool_get_array(tend,'tend_sfc_pressure',tend_sfc_pressure)
 
@@ -774,6 +777,7 @@
           re_cloud(k,i) = recloud_p(i,k,j)
           re_ice(k,i)   = reice_p(i,k,j)
           re_snow(k,i)  = resnow_p(i,k,j)
+          refl10cm(k,i) = refl10cm_p(i,k,j)
        enddo
        enddo
        enddo

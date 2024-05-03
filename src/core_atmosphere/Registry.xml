@@ -631,6 +631,7 @@
 			<var name="tday_accum"/>
 			<var name="tyear_mean"/>
 			<var name="tyear_accum"/>
+			<var name="refl10cm"/>
 			<var name="refl10cm_max"/>
 			<var name="i_rainnc"/>
 			<var name="rainncv"/>
@@ -1086,6 +1087,7 @@
 			<var name="olrtoa"/>
 			<var name="rainc"/>
 			<var name="rainnc"/>
+			<var name="refl10cm"/>
 			<var name="refl10cm_max"/>
 			<var name="refl10cm_1km"/>
 			<var name="refl10cm_1km_max"/>
@@ -2237,6 +2239,16 @@
                      description="=0:activatevmixing of moisture species separately;= 1:activate mixing of total water in the mynn PBL scheme"
                      possible_values="0,1"/>
 
+		<nml_option name="config_thompson_aerosol_aware" type="logical" default_value="true" in_defaults="false"
+                     units="-"
+                     description="Logical flag to turn on/off prognostic cloud droplet and aerosol number concentrations"
+                     possible_values=".true. or .false."/>
+
+		<nml_option name="config_thompson_hail_aware" type="logical" default_value="false" in_defaults="false"
+                     units="-"
+                     description="Logical flag to turn on/off prognostic graupel number concentration and rime density"
+                     possible_values=".true. or .false."/>
+				
                 <nml_option name="config_bucket_radt" type="real" default_value="1.0e9" in_defaults="false"
                      units="-"
                      description="threshold above which accumulated radiation diagnostics are reset"
@@ -2302,6 +2314,10 @@
                 <!-- ================================================================================================== -->
                 <!-- ... PARAMETERIZATION OF CLOUD MICROPHYSICS:                                                        -->
                 <!-- ================================================================================================== -->
+
+		<var name="refl10cm" type="real" dimensions="nVertLevels nCells Time" units="dBZ"
+                     description="10 cm radar reflectivity"
+                     packages="mp_thompson_in;mp_wsm6_in"/>
 
                 <var name="refl10cm_max" type="real" dimensions="nCells Time" units="dBZ"
                      description="10 cm maximum radar reflectivity"
