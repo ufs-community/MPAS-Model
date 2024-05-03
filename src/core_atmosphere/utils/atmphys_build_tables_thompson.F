@@ -9,7 +9,7 @@
  module atmphys_build_tables_thompson
  use module_mp_thompson
  use module_mp_thompson_utils
- use module_mp_thompson_params, only : NRHG
+ use module_mp_thompson_params, only : dimNRHG
 
  implicit none
  private
@@ -37,7 +37,8 @@
 !-----------------------------------------------------------------------------------------------------------------
 !--- partial initialization before building the look-up tables:
 !--- AAJ This needs a hail_aware_flag defined in module_mp_thompson_params
- call thompson_init(l_mp_tables=l_mp_tables, hail_aware_flag=build_table_hail_aware)
+
+ call thompson_init(l_mp_tables=l_mp_tables, hail_aware_flag=build_hail_aware_table)
 
  call mpas_new_unit(mp_unit, unformatted = .true.)
 
@@ -49,7 +50,7 @@
     call print_parallel_mesg('MP_THOMPSON_QRacrQG_DATA.DBL')
     return
  end if
- call qr_acr_qg(NRHG)
+ call qr_acr_qg(dimNRHG)
  write(mp_unit) tcg_racg
  write(mp_unit) tmr_racg
  write(mp_unit) tcr_gacr
