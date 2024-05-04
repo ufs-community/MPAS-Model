@@ -370,5 +370,40 @@
  end subroutine calc_cldfraction
 
 !=================================================================================================================
+ subroutine cal_mynncld(cldfrac,qc,qi,qc_bl,qi_bl,its,ite,jts,jte,kts,kte)
+!=================================================================================================================
+
+!input arguments:
+ integer,intent(in):: its,ite,jts,jte,kts,kte
+ real(kind=RKIND),intent(inout),dimension(ims:ime,kms:kme,jms:jme):: qc,qi
+ real(kind=RKIND),intent(in),dimension(ims:ime,kms:kme,jms:jme):: qc_bl,qi_bl
+
+ real(kind=RKIND),intent(in),dimension(ims:ime,kms:kme,jms:jme):: cldfrac
+
+!local variables:
+ integer:: i,j,k
+
+ real(kind=RKIND),parameter:: qc_thresh = 1.e-06
+ real(kind=RKIND),parameter:: qi_thresh = 1.e-08
+ real(kind=RKIND),parameter:: cld_thresh = 1.e-04
+
+ do j = jts,jte
+ do k = kts,kte
+ do i = its,ite
+    if (qc(i,k,j) < qc_thresh .AND. cldfrac(i,k,j) > cld_thresh) THEN
+ !      call mpas_log_write("Adding in cldfra_bl to qc at $i,$i,$i", intArgs=(/i,j,k/))
+       qc(i,k,j)=qc(i,k,j) + qc_bl(i,k,j)
+    endif
+    if (qi(i,k,j) < qi_thresh .AND. cldfrac(i,k,j) > cld_thresh) THEN
+ !      call mpas_log_write("Adding in cldfra_bl to qi at $i,$i,$i", intArgs=(/i,j,k/))
+       qi(i,k,j)=qi(i,k,j) + qi_bl(i,k,j)
+    endif
+ enddo
+ enddo
+ enddo
+
+end subroutine cal_mynncld
+      
+!=================================================================================================================
  end module mpas_atmphys_driver_cloudiness
 !=================================================================================================================
