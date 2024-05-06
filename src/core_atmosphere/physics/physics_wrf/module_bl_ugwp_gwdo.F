@@ -12,10 +12,16 @@
 
 
 !=================================================================================================================
- subroutine gwdo_ugwp(u3d,v3d,t3d,qv3d,p3d,p3di,pi3d,z,                            &
+ subroutine gwdo_ugwp(u3d,v3d,t3d,qv3d,p3d,p3di,pi3d,z,                       &
                  rublten,rvblten,                                             &
                  dtaux3d,dtauy3d,dusfcg,dvsfcg,                               &
-                 var2d,oc12d,oa2d1,oa2d2,oa2d3,oa2d4,ol2d1,ol2d2,ol2d3,ol2d4, &
+                 dtaux3d_ls,dtauy3d_ls,dtaux3d_bl,dtauy3d_bl,                 &
+                 dtaux3d_ss,dtauy3d_ss,dtaux3d_fd,dtauy3d_fd,                 &
+                 dusfcg_ls,dvsfcg_ls,dusfcg_bl,dvsfcg_bl,dusfcg_ss,dvsfcg_ss, &
+                 dusfcg_fd,dvsfcg_fd,                                         &
+                 var2dls,oc12dls,oa2d1ls,oa2d2ls,oa2d3ls,oa2d4ls,ol2d1ls,     &
+                 ol2d2ls,ol2d3ls,ol2d4ls,var2dss,oc12dss,oa2d1ss,oa2d2ss,     &
+                 oa2d3ss,oa2d4ss,ol2d1ss,ol2d2ss,ol2d3ss,ol2d4ss,             &
                  sina,cosa,znu,znw,p_top,                                     &
                  cp,g,rd,rv,ep1,pi,                                           &
                  dt,dx,kpbl2d,itimestep,                                      &
@@ -84,11 +90,16 @@
 
  real(kind=kind_phys),intent(in),dimension(ims:ime,jms:jme):: &
                                                                   dx, &
-                                                               var2d, &
-                                                               oc12d, &
-                                             oa2d1,oa2d2,oa2d3,oa2d4, &
-                                             ol2d1,ol2d2,ol2d3,ol2d4, &
                                                            sina,cosa
+
+real(kind=kind_phys),intent(in),dimension(ims:ime,jms:jme):: &
+                                                     var2dls,var2dss, &
+                                                     oc12dls,oc12dss, & 
+                                     oa2d1ls,oa2d2ls,oa2d3ls,oa2d4ls, &
+                                     oa2d1ss,oa2d2ss,oa2d3ss,oa2d4ss, &
+                                     ol2d1ls,ol2d2ls,ol2d3ls,ol2d4ls, &
+                                     ol2d1ss,ol2d2ss,ol2d3ss,ol2d4ss
+
 
  real(kind=kind_phys),intent(in),dimension(ims:ime,kms:kme,jms:jme):: &
                                                                 qv3d, &
@@ -108,12 +119,12 @@
  integer,intent(out):: errflg
 
  real(kind=kind_phys),intent(out),dimension(ims:ime,jms:jme):: &
-                                                              dusfcg, &
-                                                              dvsfcg
+                      dusfcg,dusfcg_ls,dusfcg_bl,dusfcg_ss,dusfcg_fd, &
+                      dvsfcg,dvsfcg_ls,dvsfcg_bl,dvsfcg_ss,dvsfcg_fd
 
  real(kind=kind_phys),intent(out),dimension(ims:ime,kms:kme,jms:jme ):: &
-                                                             dtaux3d, &
-                                                             dtauy3d
+                   dtaux3d,dtaux3d_ls,dtaux3d_bl,dtaux3d_ss,dtaux3d_fd, &
+                   dtauy3d,dtauy3d_ls,dtauy3d_bl,dtauy3d_ss,dtauy3d_fd
 
 !--- inout arguments:
  real(kind=kind_phys),intent(inout),dimension(ims:ime,kms:kme,jms:jme):: &
@@ -124,17 +135,26 @@
  integer:: i,j,k
 
  real(kind=kind_phys),dimension(its:ite):: &
-    var2d_hv,oc12d_hv,dx_hv,sina_hv,cosa_hv
+    dx_hv,sina_hv,cosa_hv
  real(kind=kind_phys),dimension(its:ite):: &
-    oa2d1_hv,oa2d2_hv,oa2d3_hv,oa2d4_hv,ol2d1_hv,ol2d2_hv,ol2d3_hv,ol2d4_hv
+    var2dls_hv,oc12dls_hv,oa2d1ls_hv,oa2d2ls_hv,oa2d3ls_hv,oa2d4ls_hv,  &
+    ol2d1ls_hv,ol2d2ls_hv,ol2d3ls_hv,ol2d4ls_hv
  real(kind=kind_phys),dimension(its:ite):: &
-    dusfcg_hv,dvsfcg_hv
+    var2dss_hv,oc12dss_hv,oa2d1ss_hv,oa2d2ss_hv,oa2d3ss_hv,oa2d4ss_hv,  &
+    ol2d1ss_hv,ol2d2ss_hv,ol2d3ss_hv,ol2d4ss_hv
+    
+ real(kind=kind_phys),dimension(its:ite):: &
+    dusfcg_hv,dvsfcg_hv,dusfcg_ls_hv,dvsfcg_ls_hv,dusfcg_bl_hv,dvsfcg_bl_hv, &
+    dusfcg_ss_hv,dvsfcg_ss_hv,dusfcg_fd_hv,dvsfcg_fd_hv
 
  real(kind=kind_phys),dimension(its:ite,kts:kte):: &
      u3d_hv,v3d_hv,t3d_hv,qv3d_hv,pi3d_hv,p3d_hv,z_hv
 
  real(kind=kind_phys),dimension(its:ite,kts:kte):: &
      rublten_hv,rvblten_hv,dtaux3d_hv,dtauy3d_hv
+ real(kind=kind_phys),dimension(its:ite,kts:kte):: &
+     dtaux3d_ls_hv,dtauy3d_ls_hv,dtaux3d_bl_hv,dtauy3d_bl_hv,  &
+     dtaux3d_ss_hv,dtauy3d_ss_hv,dtaux3d_fd_hv,dtauy3d_fd_hv
 
  real(kind=kind_phys),dimension(its:ite,kms:kme):: &
      p3di_hv
@@ -180,19 +200,29 @@
 
     !  2d:
     do i = its,ite
-          dx_hv(i) =    dx(i,j)
-       var2d_hv(i) = var2d(i,j)
-       oc12d_hv(i) = oc12d(i,j)
-        sina_hv(i) =  sina(i,j)
-        cosa_hv(i) =  cosa(i,j)
-       oa2d1_hv(i) = oa2d1(i,j)
-       oa2d2_hv(i) = oa2d2(i,j)
-       oa2d3_hv(i) = oa2d3(i,j)
-       oa2d4_hv(i) = oa2d4(i,j)
-       ol2d1_hv(i) = ol2d1(i,j)
-       ol2d2_hv(i) = ol2d2(i,j)
-       ol2d3_hv(i) = ol2d3(i,j)
-       ol2d4_hv(i) = ol2d4(i,j)
+            dx_hv(i) =      dx(i,j)
+          sina_hv(i) =    sina(i,j)
+          cosa_hv(i) =    cosa(i,j)
+       var2dls_hv(i) = var2dls(i,j)
+       oc12dls_hv(i) = oc12dls(i,j)
+       oa2d1ls_hv(i) = oa2d1ls(i,j)
+       oa2d2ls_hv(i) = oa2d2ls(i,j)
+       oa2d3ls_hv(i) = oa2d3ls(i,j)
+       oa2d4ls_hv(i) = oa2d4ls(i,j)
+       ol2d1ls_hv(i) = ol2d1ls(i,j)
+       ol2d2ls_hv(i) = ol2d2ls(i,j)
+       ol2d3ls_hv(i) = ol2d3ls(i,j)
+       ol2d4ls_hv(i) = ol2d4ls(i,j)
+       var2dss_hv(i) = var2dss(i,j)
+       oc12dss_hv(i) = oc12dss(i,j)
+       oa2d1ss_hv(i) = oa2d1ss(i,j)
+       oa2d2ss_hv(i) = oa2d2ss(i,j)
+       oa2d3ss_hv(i) = oa2d3ss(i,j)
+       oa2d4ss_hv(i) = oa2d4ss(i,j)
+       ol2d1ss_hv(i) = ol2d1ss(i,j)
+       ol2d2ss_hv(i) = ol2d2ss(i,j)
+       ol2d3ss_hv(i) = ol2d3ss(i,j)
+       ol2d4ss_hv(i) = ol2d4ss(i,j)
     enddo
 
     call bl_ugwp_run(sina=sina_hv,cosa=cosa_hv                &
@@ -223,6 +253,14 @@
           rvblten(i,k,j) = rvblten_hv(i,k)
           dtaux3d(i,k,j) = dtaux3d_hv(i,k)
           dtauy3d(i,k,j) = dtauy3d_hv(i,k)
+          dtaux3d_ls(i,k,j) = dtaux3d_ls_hv(i,k)
+          dtauy3d_ls(i,k,j) = dtauy3d_ls_hv(i,k)
+          dtaux3d_bl(i,k,j) = dtaux3d_bl_hv(i,k)
+          dtauy3d_bl(i,k,j) = dtauy3d_bl_hv(i,k)
+          dtaux3d_ss(i,k,j) = dtaux3d_ss_hv(i,k)
+          dtauy3d_ss(i,k,j) = dtauy3d_ss_hv(i,k)
+          dtaux3d_fd(i,k,j) = dtaux3d_fd_hv(i,k)
+          dtauy3d_fd(i,k,j) = dtauy3d_fd_hv(i,k)
        enddo
     enddo
 
@@ -230,6 +268,14 @@
     do i = its,ite
        dusfcg(i,j) = dusfcg_hv(i)
        dvsfcg(i,j) = dvsfcg_hv(i)
+       dusfcg_ls(i,j) = dusfcg_ls_hv(i)
+       dvsfcg_ls(i,j) = dvsfcg_ls_hv(i)
+       dusfcg_bl(i,j) = dusfcg_bl_hv(i)
+       dvsfcg_bl(i,j) = dvsfcg_bl_hv(i)
+       dusfcg_ss(i,j) = dusfcg_ss_hv(i)
+       dvsfcg_ss(i,j) = dvsfcg_ss_hv(i)
+       dusfcg_fd(i,j) = dusfcg_fd_hv(i)
+       dvsfcg_fd(i,j) = dvsfcg_fd_hv(i)
     enddo
 
  enddo ! Outer J-loop

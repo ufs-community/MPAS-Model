@@ -600,16 +600,14 @@
                   itimestep = itimestep   , dt        = dt_pbl       , dx      = dx_p      , &
                   cp        = cp          , g         = gravity      , rd      = R_d       , &
                   rv        = R_v         , ep1       = ep_1         , pi      = pii       , &
-                  var2d     = var2d_p     , oc12d     = con_p        , oa2d1   = oa1_p     , &
-                  oa2d2     = oa2_p       , oa2d3     = oa3_p        , oa2d4   = oa4_p     , &
-                  ol2d1     = ol1_p       , ol2d2     = ol2_p        , ol2d3   = ol3_p     , &
-                  ol2d4     = ol4_p       , sina      = sina_p       , cosa    = cosa_p    , &
+                  sina      = sina_p      , cosa      = cosa_p       ,                       &
                   var2dls   = var2dls_p   , oc12dls   = conls_p      , oa2d1ls = oa1ls_p   , &
                   oa2d2ls   = oa2ls_p     , oa2d3ls   = oa3ls_p      , oa2d4ls = oa4ls_p   , &
                   ol2d1ls   = ol1ls_p     , ol2d2ls   = ol2ls_p      , ol2d3ls = ol3ls_p   , &
-                  var2dss   = var2dss_p   , oc12dss   = conss_p      , oa2d1ss = oa1ss_p   , &
-                  oa2d2ss   = oa2ss_p     , oa2d3ss   = oa3ss_p      , oa2d4ss = oa4ss_p   , &
-                  ol2d1ss   = ol1ss_p     , ol2d2ss   = ol2ss_p      , ol2d3ss = ol3ss_p   , &
+                  ol2d4ls   = ol4ls_p     , var2dss   = var2dss_p    , oc12dss   = conss_p , & 
+                  oa2d1ss = oa1ss_p       , oa2d2ss   = oa2ss_p      , oa2d3ss   = oa3ss_p , & 
+                  oa2d4ss = oa4ss_p       , ol2d1ss   = ol1ss_p      , ol2d2ss   = ol2ss_p , &
+                  ol2d3ss = ol3ss_p       , ol2d4ss   = ol4ss_p      ,                       &
                   dusfcg_ls = dusfcg_ls_p , dvsfcg_ls = dvsfcg_ls_p  , dusfcg_bl = dusfcg_bl_p,    &
                   dvsfcg_bl = dvsfcg_bl_p , dusfcg_ss = dusfcg_ss_p  , dvsfcg_ss = dvsfcg_ss_p,    &
                   dusfcg_fd = dusfcg_fd_p , dvsfcg_fd = dvsfcg_fd_p  , dtaux3d_ls = dtaux3d_ls_p,  &
