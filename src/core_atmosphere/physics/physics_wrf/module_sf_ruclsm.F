@@ -574,10 +574,6 @@ contains
          enddo
      enddo
 
-        do k=1,nsl
-           soilice(k)=0.
-           soiliqw(k)=0.
-        enddo
      endif
 
 !-----------------------------------------------------------------
@@ -1073,7 +1069,7 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
                   tso(i,k,j) = tso1d(k)
         enddo
 
-        tso(i,nzs,j) = tbot(i,j)
+        !tso(i,nzs,j) = tbot(i,j)
 
         do k=1,nzs
              smfr3d(i,k,j) = smfrkeep(k)
