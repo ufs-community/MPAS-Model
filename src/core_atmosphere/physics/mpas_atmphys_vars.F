@@ -495,6 +495,50 @@
     dtaux3d_p,        &!gravity wave drag over orography u-stress                                          [m s-1]
     dtauy3d_p          !gravity wave drag over orography u-stress                                          [m s-1]
 
+!... variables for GSL orographic gravity wave drag:
+
+ real(kind=RKIND),dimension(:,:),allocatable:: &
+    var2dls_p,          &!orographic variance (meso-scale orographic variation)                                [m]
+    conls_p,            &!orographic convexity (meso-scale orographic variation)                               [-]
+    oa1ls_p,            &!orographic direction asymmetry function (meso-scale orographic variation)            [-]
+    oa2ls_p,            &!orographic direction asymmetry function (meso-scale orographic variation)            [-]
+    oa3ls_p,            &!orographic direction asymmetry function (meso-scale orographic variation)            [-]
+    oa4ls_p,            &!orographic direction asymmetry function (meso-scale orographic variation)            [-]
+    ol1ls_p,            &!orographic direction asymmetry function (meso-scale orographic variation)            [-]
+    ol2ls_p,            &!orographic direction asymmetry function (meso-scale orographic variation)            [-]
+    ol3ls_p,            &!orographic direction asymmetry function (meso-scale orographic variation)            [-]
+    ol4ls_p,            &!orographic direction asymmetry function (meso-scale orographic variation)            [-]
+    var2dss_p,          &!orographic variance (small-scale orographic variation)                               [m]
+    conss_p,            &!orographic convexity (small-scale orographic variation)                              [-]
+    oa1ss_p,            &!orographic direction asymmetry function (small-scale orographic variation)           [-]
+    oa2ss_p,            &!orographic direction asymmetry function (small-scale orographic variation)           [-]
+    oa3ss_p,            &!orographic direction asymmetry function (small-scale orographic variation)           [-]
+    oa4ss_p,            &!orographic direction asymmetry function (small-scale orographic variation)           [-]
+    ol1ss_p,            &!orographic direction asymmetry function (small-scale orographic variation)           [-]
+    ol2ss_p,            &!orographic direction asymmetry function (small-scale orographic variation)           [-]
+    ol3ss_p,            &!orographic direction asymmetry function (small-scale orographic variation)           [-]
+    ol4ss_p              !orographic direction asymmetry function (small-scale orographic variation)           [-]
+
+ real(kind=RKIND),dimension(:,:),allocatable:: &
+    dusfc_ls_p,         &!vertically-integrated mesoscale orog gravity wave drag u-stress                     [Pa]
+    dvsfc_ls_p,         &!vertically-integrated mesoscale orog gravity wave drag v-stress                     [Pa]
+    dusfc_bl_p,         &!vertically-integrated orog blocking drag u-stress                                   [Pa]
+    dvsfc_bl_p,         &!vertically-integrated orog blocking drag v-stress                                   [Pa]
+    dusfc_ss_p,         &!vertically-integrated small-scale orog gravity wave drag u-stres                    [Pa]
+    dvsfc_ss_p,         &!vertically-integrated small-scale orog gravity wave drag v-stres                    [Pa]
+    dusfc_fd_p,         &!vertically-integrated turb orog form drag u-stress                                  [Pa]
+    dvsfc_fd_p           !vertically-integrated turb orog form drag v-stress                                  [Pa]
+
+ real(kind=RKIND),dimension(:,:,:),allocatable:: &
+    dtaux3d_ls_p,        &!mesoscale orog gravity wave drag u-tendency                                        [m s-2]
+    dtauy3d_ls_p,        &!mesoscale orog gravity wave drag v-tendency                                        [m s-2]
+    dtaux3d_bl_p,        &!orog blocking drag u-tendency u-tendency                                           [m s-2]
+    dtauy3d_bl_p,        &!orog blocking drag u-tendency v-tendency                                           [m s-2]
+    dtaux3d_ss_p,        &!small-scale orog gravity wave drag u-tendency                                      [m s-2]
+    dtauy3d_ss_p,        &!small-scale orog gravity wave drag v-tendency                                      [m s-2]
+    dtaux3d_fd_p,        &!turb orog form drag u-tendency                                                     [m s-2]
+    dtauy3d_fd_p          !turb orog form drag u-tendency                                                     [m s-2]
+
 !=================================================================================================================
 !... variables and arrays related to parameterization of surface layer:
 !=================================================================================================================

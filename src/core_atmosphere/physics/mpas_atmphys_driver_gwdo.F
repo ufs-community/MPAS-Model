@@ -82,6 +82,7 @@
 
  if(.not.allocated(dx_p)    ) allocate(dx_p(ims:ime,jms:jme)    )
  if(.not.allocated(kpbl_p  )) allocate(kpbl_p(ims:ime,jms:jme)  )
+ if(.not.allocated(xland_p )) allocate(xland_p(ims:ime,jms:jme) )
  if(.not.allocated(dusfcg_p)) allocate(dusfcg_p(ims:ime,jms:jme))
  if(.not.allocated(dvsfcg_p)) allocate(dvsfcg_p(ims:ime,jms:jme))
  if(.not.allocated(dtaux3d_p)) allocate(dtaux3d_p(ims:ime,kms:kme,jms:jme))
@@ -124,22 +125,23 @@
     if(.not.allocated(ol2ss_p)   ) allocate(ol2_p(ims:ime,jms:jme)   )
     if(.not.allocated(ol3ss_p)   ) allocate(ol3_p(ims:ime,jms:jme)   )
     if(.not.allocated(ol4ss_p)   ) allocate(ol4_p(ims:ime,jms:jme)   )
-    if(.not.allocated(dusfcg_ls_p)) allocate(dusfcg_ls_p(ims:ime,jms:jme))
-    if(.not.allocated(dvsfcg_ls_p)) allocate(dvsfcg_ls_p(ims:ime,jms:jme))
-    if(.not.allocated(dusfcg_bl_p)) allocate(dusfcg_ls_p(ims:ime,jms:jme))
-    if(.not.allocated(dvsfcg_bl_p)) allocate(dvsfcg_ls_p(ims:ime,jms:jme))
-    if(.not.allocated(dusfcg_ss_p)) allocate(dusfcg_ls_p(ims:ime,jms:jme))
-    if(.not.allocated(dvsfcg_ss_p)) allocate(dvsfcg_ls_p(ims:ime,jms:jme))
-    if(.not.allocated(dusfcg_fd_p)) allocate(dusfcg_ls_p(ims:ime,jms:jme))
-    if(.not.allocated(dvsfcg_fd_p)) allocate(dvsfcg_ls_p(ims:ime,jms:jme))
+    if(.not.allocated(dusfc_ls_p)) allocate(dusfc_ls_p(ims:ime,jms:jme))
+    if(.not.allocated(dvsfc_ls_p)) allocate(dvsfc_ls_p(ims:ime,jms:jme))
+    if(.not.allocated(dusfc_bl_p)) allocate(dusfc_bl_p(ims:ime,jms:jme))
+    if(.not.allocated(dvsfc_bl_p)) allocate(dvsfc_bl_p(ims:ime,jms:jme))
+    if(.not.allocated(dusfc_ss_p)) allocate(dusfc_ss_p(ims:ime,jms:jme))
+    if(.not.allocated(dvsfc_ss_p)) allocate(dvsfc_ss_p(ims:ime,jms:jme))
+    if(.not.allocated(dusfc_fd_p)) allocate(dusfc_fd_p(ims:ime,jms:jme))
+    if(.not.allocated(dvsfc_fd_p)) allocate(dvsfc_fd_p(ims:ime,jms:jme))
+    if(.not.allocated(hpbl_p)     ) allocate(hpbl_p(ims:ime,jms:jme))
     if(.not.allocated(dtaux3d_ls_p)) allocate(dtaux3d_ls_p(ims:ime,kms:kme,jms:jme))
     if(.not.allocated(dtauy3d_ls_p)) allocate(dtauy3d_ls_p(ims:ime,kms:kme,jms:jme))
-    if(.not.allocated(dtaux3d_bl_p)) allocate(dtaux3d_ls_p(ims:ime,kms:kme,jms:jme))
-    if(.not.allocated(dtauy3d_bl_p)) allocate(dtauy3d_ls_p(ims:ime,kms:kme,jms:jme))
-    if(.not.allocated(dtaux3d_ss_p)) allocate(dtaux3d_ls_p(ims:ime,kms:kme,jms:jme))
-    if(.not.allocated(dtauy3d_ss_p)) allocate(dtauy3d_ls_p(ims:ime,kms:kme,jms:jme))
-    if(.not.allocated(dtaux3d_fd_p)) allocate(dtaux3d_ls_p(ims:ime,kms:kme,jms:jme))
-    if(.not.allocated(dtauy3d_fd_p)) allocate(dtauy3d_ls_p(ims:ime,kms:kme,jms:jme))
+    if(.not.allocated(dtaux3d_bl_p)) allocate(dtaux3d_bl_p(ims:ime,kms:kme,jms:jme))
+    if(.not.allocated(dtauy3d_bl_p)) allocate(dtauy3d_bl_p(ims:ime,kms:kme,jms:jme))
+    if(.not.allocated(dtaux3d_ss_p)) allocate(dtaux3d_ss_p(ims:ime,kms:kme,jms:jme))
+    if(.not.allocated(dtauy3d_ss_p)) allocate(dtauy3d_ss_p(ims:ime,kms:kme,jms:jme))
+    if(.not.allocated(dtaux3d_fd_p)) allocate(dtaux3d_fd_p(ims:ime,kms:kme,jms:jme))
+    if(.not.allocated(dtauy3d_fd_p)) allocate(dtauy3d_fd_p(ims:ime,kms:kme,jms:jme))
 
    case default
 
@@ -203,22 +205,24 @@
     if(allocated(ol2ss_p)   ) deallocate(ol2_p(ims:ime,jms:jme)   )
     if(allocated(ol3ss_p)   ) deallocate(ol3_p(ims:ime,jms:jme)   )
     if(allocated(ol4ss_p)   ) deallocate(ol4_p(ims:ime,jms:jme)   )
-    if(allocated(dusfcg_ls_p)) deallocate(dusfcg_ls_p(ims:ime,jms:jme))
-    if(allocated(dvsfcg_ls_p)) deallocate(dvsfcg_ls_p(ims:ime,jms:jme))
-    if(allocated(dusfcg_bl_p)) deallocate(dusfcg_ls_p(ims:ime,jms:jme))
-    if(allocated(dvsfcg_bl_p)) deallocate(dvsfcg_ls_p(ims:ime,jms:jme))
-    if(allocated(dusfcg_ss_p)) deallocate(dusfcg_ls_p(ims:ime,jms:jme))
-    if(allocated(dvsfcg_ss_p)) deallocate(dvsfcg_ls_p(ims:ime,jms:jme))
-    if(allocated(dusfcg_fd_p)) deallocate(dusfcg_ls_p(ims:ime,jms:jme))
-    if(allocated(dvsfcg_fd_p)) deallocate(dvsfcg_ls_p(ims:ime,jms:jme))
+    if(allocated(dusfc_ls_p)) deallocate(dusfc_ls_p(ims:ime,jms:jme))
+    if(allocated(dvsfc_ls_p)) deallocate(dvsfc_ls_p(ims:ime,jms:jme))
+    if(allocated(dusfc_bl_p)) deallocate(dusfc_bl_p(ims:ime,jms:jme))
+    if(allocated(dvsfc_bl_p)) deallocate(dvsfc_bl_p(ims:ime,jms:jme))
+    if(allocated(dusfc_ss_p)) deallocate(dusfc_ss_p(ims:ime,jms:jme))
+    if(allocated(dvsfc_ss_p)) deallocate(dvsfc_ss_p(ims:ime,jms:jme))
+    if(allocated(dusfc_fd_p)) deallocate(dusfc_fd_p(ims:ime,jms:jme))
+    if(allocated(dvsfc_fd_p)) deallocate(dvsfc_fd_p(ims:ime,jms:jme))
+    if(allocated(hpbl_p)     ) deallocate(hpbl_p  )
+    if(allocated(xland_p)    ) deallocate(xland_p )
     if(allocated(dtaux3d_ls_p)) deallocate(dtaux3d_ls_p(ims:ime,kms:kme,jms:jme))
     if(allocated(dtauy3d_ls_p)) deallocate(dtauy3d_ls_p(ims:ime,kms:kme,jms:jme))
-    if(allocated(dtaux3d_bl_p)) deallocate(dtaux3d_ls_p(ims:ime,kms:kme,jms:jme))
-    if(allocated(dtauy3d_bl_p)) deallocate(dtauy3d_ls_p(ims:ime,kms:kme,jms:jme))
-    if(allocated(dtaux3d_ss_p)) deallocate(dtaux3d_ls_p(ims:ime,kms:kme,jms:jme))
-    if(allocated(dtauy3d_ss_p)) deallocate(dtauy3d_ls_p(ims:ime,kms:kme,jms:jme))
-    if(allocated(dtaux3d_fd_p)) deallocate(dtaux3d_ls_p(ims:ime,kms:kme,jms:jme))
-    if(allocated(dtauy3d_fd_p)) deallocate(dtauy3d_ls_p(ims:ime,kms:kme,jms:jme))
+    if(allocated(dtaux3d_bl_p)) deallocate(dtaux3d_bl_p(ims:ime,kms:kme,jms:jme))
+    if(allocated(dtauy3d_bl_p)) deallocate(dtauy3d_bl_p(ims:ime,kms:kme,jms:jme))
+    if(allocated(dtaux3d_ss_p)) deallocate(dtaux3d_ss_p(ims:ime,kms:kme,jms:jme))
+    if(allocated(dtauy3d_ss_p)) deallocate(dtauy3d_ss_p(ims:ime,kms:kme,jms:jme))
+    if(allocated(dtaux3d_fd_p)) deallocate(dtaux3d_fd_p(ims:ime,kms:kme,jms:jme))
+    if(allocated(dtauy3d_fd_p)) deallocate(dtauy3d_fd_p(ims:ime,kms:kme,jms:jme))
 
    case default
 
@@ -252,8 +256,9 @@
                                            ol3ss,ol4ss,conss,var2dss
  real(kind=RKIND),dimension(:),pointer  :: dusfcg,dvsfcg
  real(kind=RKIND),dimension(:,:),pointer:: dtaux3d,dtauy3d,rublten,rvblten
- real(kind=RKIND),dimension(:),pointer  :: dusfcg_ls,dvsfcg_ls,dusfcg_bl,dvsfcg_bl,     &
-                                           dusfcg_ss,dvsfcg_ss,dusfcg_fd,dvsfcg_fd
+ real(kind=RKIND),dimension(:),pointer  :: dusfc_ls,dvsfc_ls,dusfc_bl,dvsfc_bl,     &
+                                           dusfc_ss,dvsfc_ss,dusfc_fd,dvsfc_fd
+ real(kind=RKIND),dimension(:),pointer  :: hpbl,xland
  real(kind=RKIND),dimension(:,:),pointer:: dtaux3d_ls,dtauy3d_ls,dtaux3d_bl,dtauy3d_bl, &
                                            dtaux3d_ss,dtauy3d_ss,dtaux3d_fd,dtauy3d_fd
 
@@ -313,6 +318,7 @@
       call mpas_pool_get_array(sfc_input,'ol2ss'  ,ol2ss  )
       call mpas_pool_get_array(sfc_input,'ol3ss'  ,ol3ss  )
       call mpas_pool_get_array(sfc_input,'ol4ss'  ,ol4ss  )
+      call mpas_pool_get_array(sfc_input,'xland'  ,xland  )
       do j = jts,jte
       do i = its,ite
          var2dls_p(i,j) = var2dls(i)
@@ -335,16 +341,18 @@
          ol2ss_p(i,j)   = ol2ss(i)
          ol3ss_p(i,j)   = ol3ss(i)
          ol4ss_p(i,j)   = ol4ss(i)
+         xland_p(i,j)   = xland(i)
       enddo
       enddo
-      call mpas_pool_get_array(diag_physics,'dusfcg_ls'  ,dusfcg_ls  )
-      call mpas_pool_get_array(diag_physics,'dvsfcg_ls'  ,dvsfcg_ls  )
-      call mpas_pool_get_array(diag_physics,'dusfcg_bl'  ,dusfcg_bl  )
-      call mpas_pool_get_array(diag_physics,'dvsfcg_bl'  ,dvsfcg_bl  )
-      call mpas_pool_get_array(diag_physics,'dusfcg_ss'  ,dusfcg_ss  )
-      call mpas_pool_get_array(diag_physics,'dvsfcg_ss'  ,dvsfcg_ss  )
-      call mpas_pool_get_array(diag_physics,'dusfcg_fd'  ,dusfcg_fd  )
-      call mpas_pool_get_array(diag_physics,'dvsfcg_fd'  ,dvsfcg_fd  )
+      call mpas_pool_get_array(diag_physics,'dusfc_ls'  ,dusfc_ls  )
+      call mpas_pool_get_array(diag_physics,'dvsfc_ls'  ,dvsfc_ls  )
+      call mpas_pool_get_array(diag_physics,'dusfc_bl'  ,dusfc_bl  )
+      call mpas_pool_get_array(diag_physics,'dvsfc_bl'  ,dvsfc_bl  )
+      call mpas_pool_get_array(diag_physics,'dusfc_ss'  ,dusfc_ss  )
+      call mpas_pool_get_array(diag_physics,'dvsfc_ss'  ,dvsfc_ss  )
+      call mpas_pool_get_array(diag_physics,'dusfc_fd'  ,dusfc_fd  )
+      call mpas_pool_get_array(diag_physics,'dvsfc_fd'  ,dvsfc_fd  )
+      call mpas_pool_get_array(diag_physics,'hpbl'       ,hpbl       )
       call mpas_pool_get_array(diag_physics,'dtaux3d_ls' ,dtaux3d_ls )
       call mpas_pool_get_array(diag_physics,'dtauy3d_ls' ,dtauy3d_ls )
       call mpas_pool_get_array(diag_physics,'dtaux3d_bl' ,dtaux3d_bl )
@@ -355,14 +363,15 @@
       call mpas_pool_get_array(diag_physics,'dtauy3d_fd' ,dtauy3d_fd )
       do j = jts,jte
       do i = its,ite
-         dusfcg_ls_p(i,j) = dusfcg_ls(i)
-         dvsfcg_ls_p(i,j) = dvsfcg_ls(i)
-         dusfcg_bl_p(i,j) = dusfcg_bl(i)
-         dvsfcg_bl_p(i,j) = dvsfcg_bl(i)
-         dusfcg_ss_p(i,j) = dusfcg_ss(i)
-         dvsfcg_ss_p(i,j) = dvsfcg_ss(i)
-         dusfcg_fd_p(i,j) = dusfcg_fd(i)
-         dvsfcg_fd_p(i,j) = dvsfcg_fd(i)
+         dusfc_ls_p(i,j) = dusfc_ls(i)
+         dvsfc_ls_p(i,j) = dvsfc_ls(i)
+         dusfc_bl_p(i,j) = dusfc_bl(i)
+         dvsfc_bl_p(i,j) = dvsfc_bl(i)
+         dusfc_ss_p(i,j) = dusfc_ss(i)
+         dvsfc_ss_p(i,j) = dvsfc_ss(i)
+         dusfc_fd_p(i,j) = dusfc_fd(i)
+         dvsfc_fd_p(i,j) = dvsfc_fd(i)
+         hpbl_p(i,j)      = hpbl(i)
       enddo
       enddo
       do j = jts,jte
@@ -438,8 +447,8 @@
                                            ol3ls,ol4ls,conls,var2dls
  real(kind=RKIND),dimension(:),pointer  :: oa1ss,oa2ss,oa3ss,oa4ss,ol1ss,ol2ss,       &
                                            ol3ss,ol4ss,conss,var2dss
- real(kind=RKIND),dimension(:),pointer  :: dusfcg_ls,dvsfcg_ls,dusfcg_bl,dvsfcg_bl,     &
-                                           dusfcg_ss,dvsfcg_ss,dusfcg_fd,dvsfcg_fd
+ real(kind=RKIND),dimension(:),pointer  :: dusfc_ls,dvsfc_ls,dusfc_bl,dvsfc_bl,     &
+                                           dusfc_ss,dvsfc_ss,dusfc_fd,dvsfc_fd
  real(kind=RKIND),dimension(:,:),pointer:: dtaux3d_ls,dtauy3d_ls,dtaux3d_bl,dtauy3d_bl, &
                                            dtaux3d_ss,dtauy3d_ss,dtaux3d_fd,dtauy3d_fd
 
@@ -458,14 +467,14 @@
  gwdo_select: select case (trim(gwdo_scheme))
 
    case("bl_ugwp_gwdo")
-      call mpas_pool_get_array(diag_physics,'dusfcg_ls'  ,dusfcg_ls  )
-      call mpas_pool_get_array(diag_physics,'dvsfcg_ls'  ,dvsfcg_ls  )
-      call mpas_pool_get_array(diag_physics,'dusfcg_bl'  ,dusfcg_bl  )
-      call mpas_pool_get_array(diag_physics,'dvsfcg_bl'  ,dvsfcg_bl  )
-      call mpas_pool_get_array(diag_physics,'dusfcg_ss'  ,dusfcg_ss  )
-      call mpas_pool_get_array(diag_physics,'dvsfcg_ss'  ,dvsfcg_ss  )
-      call mpas_pool_get_array(diag_physics,'dusfcg_fd'  ,dusfcg_fd  )
-      call mpas_pool_get_array(diag_physics,'dvsfcg_fd'  ,dvsfcg_fd  )
+      call mpas_pool_get_array(diag_physics,'dusfc_ls'  ,dusfc_ls  )
+      call mpas_pool_get_array(diag_physics,'dvsfc_ls'  ,dvsfc_ls  )
+      call mpas_pool_get_array(diag_physics,'dusfc_bl'  ,dusfc_bl  )
+      call mpas_pool_get_array(diag_physics,'dvsfc_bl'  ,dvsfc_bl  )
+      call mpas_pool_get_array(diag_physics,'dusfc_ss'  ,dusfc_ss  )
+      call mpas_pool_get_array(diag_physics,'dvsfc_ss'  ,dvsfc_ss  )
+      call mpas_pool_get_array(diag_physics,'dusfc_fd'  ,dusfc_fd  )
+      call mpas_pool_get_array(diag_physics,'dvsfc_fd'  ,dvsfc_fd  )
       call mpas_pool_get_array(diag_physics,'dtaux3d_ls' ,dtaux3d_ls )
       call mpas_pool_get_array(diag_physics,'dtauy3d_ls' ,dtauy3d_ls )
       call mpas_pool_get_array(diag_physics,'dtaux3d_bl' ,dtaux3d_bl )
@@ -476,14 +485,14 @@
       call mpas_pool_get_array(diag_physics,'dtauy3d_fd' ,dtauy3d_fd )
       do j = jts,jte
       do i = its,ite
-         dusfcg_ls(i) = dusfcg_ls_p(i,j)
-         dvsfcg_ls(i) = dvsfcg_ls_p(i,j)
-         dusfcg_bl(i) = dusfcg_bl_p(i,j)
-         dvsfcg_bl(i) = dvsfcg_bl_p(i,j)
-         dusfcg_ss(i) = dusfcg_ss_p(i,j)
-         dvsfcg_ss(i) = dvsfcg_ss_p(i,j)
-         dusfcg_fd(i) = dusfcg_fd_p(i,j)
-         dvsfcg_fd(i) = dvsfcg_fd_p(i,j)
+         dusfc_ls(i) = dusfc_ls_p(i,j)
+         dvsfc_ls(i) = dvsfc_ls_p(i,j)
+         dusfc_bl(i) = dusfc_bl_p(i,j)
+         dvsfc_bl(i) = dvsfc_bl_p(i,j)
+         dusfc_ss(i) = dusfc_ss_p(i,j)
+         dvsfc_ss(i) = dvsfc_ss_p(i,j)
+         dusfc_fd(i) = dusfc_fd_p(i,j)
+         dvsfc_fd(i) = dvsfc_fd_p(i,j)
       enddo
       enddo
       do j = jts,jte
@@ -598,6 +607,7 @@
                   rvblten   = rvblten_p   , dtaux3d   = dtaux3d_p    , dtauy3d = dtauy3d_p , &
                   dusfcg    = dusfcg_p    , dvsfcg    = dvsfcg_p     , kpbl2d  = kpbl_p    , &
                   itimestep = itimestep   , dt        = dt_pbl       , dx      = dx_p      , &
+                  pblh      = hpbl_p      , xland     = xland_p      ,                       &
                   cp        = cp          , g         = gravity      , rd      = R_d       , &
                   rv        = R_v         , ep1       = ep_1         , pi      = pii       , &
                   sina      = sina_p      , cosa      = cosa_p       ,                       &
@@ -608,9 +618,9 @@
                   oa2d1ss = oa1ss_p       , oa2d2ss   = oa2ss_p      , oa2d3ss   = oa3ss_p , & 
                   oa2d4ss = oa4ss_p       , ol2d1ss   = ol1ss_p      , ol2d2ss   = ol2ss_p , &
                   ol2d3ss = ol3ss_p       , ol2d4ss   = ol4ss_p      ,                       &
-                  dusfcg_ls = dusfcg_ls_p , dvsfcg_ls = dvsfcg_ls_p  , dusfcg_bl = dusfcg_bl_p,    &
-                  dvsfcg_bl = dvsfcg_bl_p , dusfcg_ss = dusfcg_ss_p  , dvsfcg_ss = dvsfcg_ss_p,    &
-                  dusfcg_fd = dusfcg_fd_p , dvsfcg_fd = dvsfcg_fd_p  , dtaux3d_ls = dtaux3d_ls_p,  &
+                  dusfc_ls = dusfc_ls_p , dvsfc_ls = dvsfc_ls_p  , dusfc_bl = dusfc_bl_p,    &
+                  dvsfc_bl = dvsfc_bl_p , dusfc_ss = dusfc_ss_p  , dvsfc_ss = dvsfc_ss_p,    &
+                  dusfc_fd = dusfc_fd_p , dvsfc_fd = dvsfc_fd_p  , dtaux3d_ls = dtaux3d_ls_p,      &
                   dtauy3d_ls = dtauy3d_ls_p, dtaux3d_bl = dtaux3d_bl_p, dtauy3d_bl = dtauy3d_bl_p, &
                   dtaux3d_ss = dtaux3d_ss_p, dtauy3d_ss = dtauy3d_ss_p, dtaux3d_fd = dtaux3d_fd_p, &
                   dtauy3d_fd = dtauy3d_fd_p,                                                       &

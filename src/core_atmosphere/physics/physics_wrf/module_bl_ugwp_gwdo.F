@@ -12,13 +12,13 @@
 
 
 !=================================================================================================================
- subroutine gwdo_ugwp(u3d,v3d,t3d,qv3d,p3d,p3di,pi3d,z,                       &
+ subroutine gwdo_ugwp(u3d,v3d,t3d,qv3d,p3d,p3di,pi3d,z,pblh,xland,            &
                  rublten,rvblten,                                             &
                  dtaux3d,dtauy3d,dusfcg,dvsfcg,                               &
                  dtaux3d_ls,dtauy3d_ls,dtaux3d_bl,dtauy3d_bl,                 &
                  dtaux3d_ss,dtauy3d_ss,dtaux3d_fd,dtauy3d_fd,                 &
-                 dusfcg_ls,dvsfcg_ls,dusfcg_bl,dvsfcg_bl,dusfcg_ss,dvsfcg_ss, &
-                 dusfcg_fd,dvsfcg_fd,                                         &
+                 dusfc_ls,dvsfc_ls,dusfc_bl,dvsfcg_bl,dusfc_ss,dvsfc_ss, &
+                 dusfc_fd,dvsfc_fd,                                         &
                  var2dls,oc12dls,oa2d1ls,oa2d2ls,oa2d3ls,oa2d4ls,ol2d1ls,     &
                  ol2d2ls,ol2d3ls,ol2d4ls,var2dss,oc12dss,oa2d1ss,oa2d2ss,     &
                  oa2d3ss,oa2d4ss,ol2d1ss,ol2d2ss,ol2d3ss,ol2d4ss,             &
@@ -39,6 +39,8 @@
 !-- p3d         3d pressure (pa)
 !-- p3di        3d pressure (pa) at interface level
 !-- pi3d        3d exner function (dimensionless)
+!-- pblh        PBL height (m)
+!-- xland       land mask (1 for land, 2 for water)
 !-- rublten     u tendency due to pbl parameterization (m/s/s) 
 !-- rvblten     v tendency due to pbl parameterization (m/s/s)
 !-- sina        sine rotation angle
@@ -90,7 +92,8 @@
 
  real(kind=kind_phys),intent(in),dimension(ims:ime,jms:jme):: &
                                                                   dx, &
-                                                           sina,cosa
+                                                           sina,cosa, &
+                                                           pblh,xland
 
 real(kind=kind_phys),intent(in),dimension(ims:ime,jms:jme):: &
                                                      var2dls,var2dss, &
@@ -119,8 +122,8 @@ real(kind=kind_phys),intent(in),dimension(ims:ime,jms:jme):: &
  integer,intent(out):: errflg
 
  real(kind=kind_phys),intent(out),dimension(ims:ime,jms:jme):: &
-                      dusfcg,dusfcg_ls,dusfcg_bl,dusfcg_ss,dusfcg_fd, &
-                      dvsfcg,dvsfcg_ls,dvsfcg_bl,dvsfcg_ss,dvsfcg_fd
+                      dusfcg,dusfc_ls,dusfc_bl,dusfc_ss,dusfc_fd, &
+                      dvsfcg,dvsfc_ls,dvsfcg_bl,dvsfc_ss,dvsfc_fd
 
  real(kind=kind_phys),intent(out),dimension(ims:ime,kms:kme,jms:jme ):: &
                    dtaux3d,dtaux3d_ls,dtaux3d_bl,dtaux3d_ss,dtaux3d_fd, &
@@ -135,7 +138,7 @@ real(kind=kind_phys),intent(in),dimension(ims:ime,jms:jme):: &
  integer:: i,j,k
 
  real(kind=kind_phys),dimension(its:ite):: &
-    dx_hv,sina_hv,cosa_hv
+    dx_hv,sina_hv,cosa_hv,pblh_hv,xland_hv
  real(kind=kind_phys),dimension(its:ite):: &
     var2dls_hv,oc12dls_hv,oa2d1ls_hv,oa2d2ls_hv,oa2d3ls_hv,oa2d4ls_hv,  &
     ol2d1ls_hv,ol2d2ls_hv,ol2d3ls_hv,ol2d4ls_hv
@@ -144,8 +147,8 @@ real(kind=kind_phys),intent(in),dimension(ims:ime,jms:jme):: &
     ol2d1ss_hv,ol2d2ss_hv,ol2d3ss_hv,ol2d4ss_hv
     
  real(kind=kind_phys),dimension(its:ite):: &
-    dusfcg_hv,dvsfcg_hv,dusfcg_ls_hv,dvsfcg_ls_hv,dusfcg_bl_hv,dvsfcg_bl_hv, &
-    dusfcg_ss_hv,dvsfcg_ss_hv,dusfcg_fd_hv,dvsfcg_fd_hv
+    dusfcg_hv,dvsfcg_hv,dusfc_ls_hv,dvsfc_ls_hv,dusfc_bl_hv,dvsfcg_bl_hv, &
+    dusfc_ss_hv,dvsfc_ss_hv,dusfc_fd_hv,dvsfc_fd_hv
 
  real(kind=kind_phys),dimension(its:ite,kts:kte):: &
      u3d_hv,v3d_hv,t3d_hv,qv3d_hv,pi3d_hv,p3d_hv,z_hv
@@ -203,6 +206,8 @@ real(kind=kind_phys),intent(in),dimension(ims:ime,jms:jme):: &
             dx_hv(i) =      dx(i,j)
           sina_hv(i) =    sina(i,j)
           cosa_hv(i) =    cosa(i,j)
+          pblh_hv(i) =    pblh(i,j)
+         xland_hv(i) =   xland(i,j)
        var2dls_hv(i) = var2dls(i,j)
        oc12dls_hv(i) = oc12dls(i,j)
        oa2d1ls_hv(i) = oa2d1ls(i,j)
@@ -228,17 +233,30 @@ real(kind=kind_phys),intent(in),dimension(ims:ime,jms:jme):: &
     call bl_ugwp_run(sina=sina_hv,cosa=cosa_hv                &
                     ,rublten=rublten_hv,rvblten=rvblten_hv    &
                     ,dtaux3d=dtaux3d_hv,dtauy3d=dtauy3d_hv    &
-                    ,dusfcg=dusfcg_hv,dvsfcg=dvsfcg_hv        &
+                    ,dtaux3d_ls=dtaux3d_ls_hv,dtauy3d_ls=dtauy3d_ls_hv  &
+                    ,dtaux3d_bl=dtaux3d_bl_hv,dtauy3d_bl=dtauy3d_bl_hv  &
+                    ,dtaux3d_ss=dtaux3d_ss_hv,dtauy3d_ss=dtauy3d_ss_hv  &
+                    ,dtaux3d_fd=dtaux3d_fd_hv,dtauy3d_fd=dtauy3d_fd_hv  &
+                    ,dusfcg=dusfcg_hv,dvsfcg=dvsfcg_hv                  &
+                    ,dusfc_ls=dusfc_ls_hv,dvsfc_ls=dvsfc_ls_hv      &
+                    ,dusfc_bl=dusfc_bl_hv,dvsfcg_bl=dvsfcg_bl_hv      &
+                    ,dusfc_ss=dusfc_ss_hv,dvsfc_ss=dvsfc_ss_hv      &
+                    ,dusfc_fd=dusfc_fd_hv,dvsfc_fd=dvsfc_fd_hv      &
                     ,uproj=u3d_hv,vproj=v3d_hv                &
                     ,t1=t3d_hv,q1=qv3d_hv                     &
                     ,prsi=p3di_hv                             &
                     ,prsl=p3d_hv,prslk=pi3d_hv                &
-                    ,zl=z_hv                                  &
-                    ,var=var2d_hv,oc1=oc12d_hv                &
-                    ,oa2d1=oa2d1_hv, oa2d2=oa2d2_hv           &
-                    ,oa2d3=oa2d3_hv, oa2d4=oa2d4_hv           &
-                    ,ol2d1=ol2d1_hv, ol2d2=ol2d2_hv           &
-                    ,ol2d3=ol2d3_hv, ol2d4=ol2d4_hv           &
+                    ,zl=z_hv,hpbl=pblh_hv,xland1=xland_hv     &
+                    ,var=var2dls_hv,oc1=oc12dls_hv            &
+                    ,oa2d1=oa2d1ls_hv,oa2d2=oa2d2ls_hv        &
+                    ,oa2d3=oa2d3ls_hv,oa2d4=oa2d4ls_hv        &
+                    ,ol2d1=ol2d1ls_hv,ol2d2=ol2d2ls_hv        &
+                    ,ol2d3=ol2d3ls_hv,ol2d4=ol2d4ls_hv        &
+                    ,varss=var2dss_hv,oc1ss=oc12dss_hv        &
+                    ,oa2d1ss=oa2d1ss_hv,oa2d2ss=oa2d2ss_hv    &
+                    ,oa2d3ss=oa2d3ss_hv,oa2d4ss=oa2d4ss_hv    &
+                    ,ol2d1ss=ol2d1ss_hv,ol2d2ss=ol2d2ss_hv    &
+                    ,ol2d3ss=ol2d3ss_hv,ol2d4ss=ol2d4ss_hv    &
                     ,g_=g,cp_=cp,rd_=rd,rv_=rv,fv_=ep1,pi_=pi &
                     ,dxmeter=dx_hv,deltim=dt                  &
                     ,its=its,ite=ite,kte=kte,kme=kte+1        &
@@ -268,14 +286,14 @@ real(kind=kind_phys),intent(in),dimension(ims:ime,jms:jme):: &
     do i = its,ite
        dusfcg(i,j) = dusfcg_hv(i)
        dvsfcg(i,j) = dvsfcg_hv(i)
-       dusfcg_ls(i,j) = dusfcg_ls_hv(i)
-       dvsfcg_ls(i,j) = dvsfcg_ls_hv(i)
-       dusfcg_bl(i,j) = dusfcg_bl_hv(i)
+       dusfc_ls(i,j) = dusfc_ls_hv(i)
+       dvsfc_ls(i,j) = dvsfc_ls_hv(i)
+       dusfc_bl(i,j) = dusfc_bl_hv(i)
        dvsfcg_bl(i,j) = dvsfcg_bl_hv(i)
-       dusfcg_ss(i,j) = dusfcg_ss_hv(i)
-       dvsfcg_ss(i,j) = dvsfcg_ss_hv(i)
-       dusfcg_fd(i,j) = dusfcg_fd_hv(i)
-       dvsfcg_fd(i,j) = dvsfcg_fd_hv(i)
+       dusfc_ss(i,j) = dusfc_ss_hv(i)
+       dvsfc_ss(i,j) = dvsfc_ss_hv(i)
+       dusfc_fd(i,j) = dusfc_fd_hv(i)
+       dvsfc_fd(i,j) = dvsfc_fd_hv(i)
     enddo
 
  enddo ! Outer J-loop

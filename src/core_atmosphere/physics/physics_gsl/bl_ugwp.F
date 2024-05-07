@@ -14,13 +14,15 @@ contains
 !-------------------------------------------------------------------------------
    subroutine bl_ugwp_run(sina, cosa,                                          &
                      rublten,rvblten,                                          &
+                     dtaux3d,dtauy3d,                                          &
                      dtaux3d_ls,dtauy3d_ls,dtaux3d_bl,dtauy3d_bl,              &
                      dtaux3d_ss,dtauy3d_ss,dtaux3d_fd,dtauy3d_fd,              &
-                     dusfcg_ls,dvsfcg_ls,dusfcg_bl,dvsfcg_bl,                  &
-                     dusfcg_ss,dvsfcg_ss,dusfcg_fd,dvsfcg_fd,                  &
+                     dusfcg,dvsfcg,                                            &
+                     dusfc_ls,dvsfc_ls,dusfc_bl,dvsfc_bl,                      &
+                     dusfc_ss,dvsfc_ss,dusfc_fd,dvsfc_fd,                      &
                      uproj, vproj,                                             &
                      t1, q1,                                                   &
-                     prsi, prsl, prslk, zl, hpbl,                              &
+                     prsi, prsl, prslk, zl, hpbl, xland1,                      &
                      var, oc1,                                                 &
                      oa2d1, oa2d2,                                             &
                      oa2d3, oa2d4,                                             &
@@ -30,7 +32,7 @@ contains
                      oa2d1ss, oa2d2ss,                                         &
                      oa2d3ss, oa2d4ss,                                         &
                      ol2d1ss, ol2d2ss,                                         &
-                     ol2d3ss, ol2d4ss, 
+                     ol2d3ss, ol2d4ss,                                         & 
                      g_, cp_, rd_, rv_, fv_, pi_,                              &
                      dxmeter, deltim,                                          &
                      its, ite, kte, kme,                                       &
@@ -105,16 +107,18 @@ contains
                                                                         cp_, deltim
    real(kind=kind_phys), dimension(its:ite)          , intent(in   ) :: dxmeter
    real(kind=kind_phys), dimension(its:ite,kts:kte)  , intent(inout) :: rublten, rvblten
-   
+  
+   real(kind=kind_phys), dimension(its:ite,kts:kte)  , intent(  out) :: dtaux3d, dtauy3d 
    real(kind=kind_phys), dimension(its:ite,kts:kte)  , intent(  out) :: dtaux3d_ls, dtauy3d_ls, &
                                                                         dtaux3d_bl, dtauy3d_bl, &
                                                                         dtaux3d_ss, dtauy3d_ss, &
                                                                         dtaux3d_fd, dtauy3d_fd
-   
-   real(kind=kind_phys), dimension(its:ite)          , intent(  out) :: dusfcg_ls, dvsfcg_ls, &
-                                                                        dusfcg_bl, dvsfcg_bl, &
-                                                                        dusfcg_ss, dvsfcg_ss, &
-                                                                        dusfcg_fd, dvsfcg_fd
+  
+   real(kind=kind_phys), dimension(its:ite)          , intent(  out) :: dusfcg, dvsfcg
+   real(kind=kind_phys), dimension(its:ite)          , intent(  out) :: dusfc_ls, dvsfc_ls, &
+                                                                        dusfc_bl, dvsfc_bl, &
+                                                                        dusfc_ss, dvsfc_ss, &
+                                                                        dusfc_fd, dvsfc_fd
    
    real(kind=kind_phys), dimension(its:ite)          , intent(in   ) :: sina, cosa
    real(kind=kind_phys), dimension(its:ite,kts:kte)  , intent(in   ) :: uproj, vproj
@@ -180,13 +184,14 @@ integer, parameter ::                                                          &
                                             wtkbj,tem,gfobnv,hd,fro,rim,temc,tem1,efact,       &
                                             temv,dtaux,dtauy
 !
-   real(kind=kind_phys), dimension(its:ite,kts:kte)   :: dudt, dvdt        
+   real(kind=kind_phys), dimension(its:ite,kts:kte)   :: dudt, dvdt
    real(kind=kind_phys), dimension(its:ite,kts:kte)   :: dtaux2d_ls, dtauy2d_ls,  &
                                                          dtaux2d_bl, dtauy2d_bl,  &
                                                          dtaux2d_ss, dtauy2d_ss,  &
                                                          dtaux2d_fd, dtauy2d_fd
    real(kind=kind_phys), dimension(its:ite)           :: dusfc, dvsfc
    logical, dimension(its:ite)                        :: ldrag, icrilv, flag,kloop1
+   logical                                            :: ugwp_diags   ! flag for outputting optional diagnostics
    real(kind=kind_phys), dimension(its:ite)           :: coefm
 !                                                                       
    real(kind=kind_phys), dimension(its:ite)           :: taub, xn, yn, ubar, vbar, fr,         &
@@ -292,6 +297,7 @@ enddo
 ! initialize arrays, array syntax is OK for OpenMP since these are local
 !                                                                       
    ldrag   = .false. ; icrilv = .false. ; flag    = .true.
+   ugwp_diags = .true.   ! Make this a namelist option eventually
 !
    klowtop = 0       ; kbl    = 0
 !
@@ -309,6 +315,10 @@ enddo
 !
    komax = 0
    taufb = 0.0
+!
+   dudt = 0.0        ; dvdt = 0.0
+!
+   dusfc = 0.0       ; dvsfc = 0.0
 !
    do k = kts,kte
      do i = its,ite
@@ -668,7 +678,7 @@ if ( gsl_gwd_ss .eq. 1 ) then
          if(vdtend>0) then
             dtend(i,kts:km,vdtend) = dtend(i,kts:km,vdtend) + vtendwave(i,kts:km)*deltim
          endif
-         if ( ldiag_ugwp ) then
+         if ( ugwp_diags ) then
             do k = kts,km
                dusfc_ss(i) = dusfc_ss(i) + utendwave(i,k) * del(i,k)
                dvsfc_ss(i) = dvsfc_ss(i) + vtendwave(i,k) * del(i,k)
@@ -726,7 +736,7 @@ if ( gsl_gwd_fd .eq. 1 ) THEN
          if(vdtend>0) then
             dtend(i,kts:km,vdtend) = dtend(i,kts:km,vdtend) + vtendform(i,kts:km)*deltim
          endif
-         if ( ldiag_ugwp ) then
+         if ( ugwp_diags ) then
             do k = kts,km
                dtaux2d_fd(i,k) = utendform(i,k)
                dtauy2d_fd(i,k) = vtendform(i,k)
@@ -742,7 +752,7 @@ if ( gsl_gwd_fd .eq. 1 ) THEN
 endif  ! if ( gsl_gwd_fd .eq. 1 )
 
 
-if ( ldiag_ugwp ) then
+if ( ugwp_diags ) then
    !  Finalize dusfc and dvsfc diagnostics for gsl small-scale drag components
    dusfc_ss(:) = -onebgrcs * dusfc_ss(:)
    dvsfc_ss(:) = -onebgrcs * dvsfc_ss(:)
@@ -961,14 +971,27 @@ enddo
       do i = its,ite
          rublten(i,k) = rublten(i,k)+dudt(i,k)*cosa(i) + dvdt(i,k)*sina(i)
          rvblten(i,k) = rvblten(i,k)-dudt(i,k)*sina(i) + dvdt(i,k)*cosa(i)
-         dtaux3d(i,k) = dtaux2d(i,k)*cosa(i) + dtauy2d(i,k)*sina(i)
-         dtauy3d(i,k) =-dtaux2d(i,k)*sina(i) + dtauy2d(i,k)*cosa(i)
+
+         ! NOTE:  Is it desirable to rotate diagnostics "back" to (unstructured) model grid?
+         !        It's probably better to keep them in zonal/meridional directions
+         ! dtaux3d(i,k) = dtaux2d(i,k)*cosa(i) + dtauy2d(i,k)*sina(i)
+         ! dtauy3d(i,k) =-dtaux2d(i,k)*sina(i) + dtauy2d(i,k)*cosa(i)
      enddo
    enddo
-   do i = its,ite
-      dusfcg(i) = dusfc(i)*cosa(i) + dvsfc(i)*sina(i)
-      dvsfcg(i) =-dusfc(i)*sina(i) + dvsfc(i)*cosa(i)
-   enddo
+   ! NOTE:  Is it desirable to rotate diagnostics "back" to (unstructured) model grid?
+   !        It's probably better to keep them in zonal/meridional directions
+   ! do i = its,ite
+   !    dusfcg(i) = dusfc(i)*cosa(i) + dvsfc(i)*sina(i)
+   !    dvsfcg(i) =-dusfc(i)*sina(i) + dvsfc(i)*cosa(i)
+   ! enddo
+
+!
+! Sum diagnostic components
+!
+   dtaux3d(:,:) = dtaux3d_ls(:,:) + dtaux3d_bl(:,:) +                &
+                  dtaux3d_ss(:,:) + dtaux3d_fd(:,:)
+   dtauy3d(:,:) = dtauy3d_ls(:,:) + dtauy3d_bl(:,:) +                &
+                  dtauy3d_ss(:,:) + dtauy3d_fd(:,:)
 
 
 
