@@ -741,24 +741,8 @@
 			<var name="th2m"/>
 			<var name="dusfcg"/>
 			<var name="dvsfcg"/>
-                        <var name="dusfc_ls"/>
-                        <var name="dvsfc_ls"/>
-                        <var name="dusfc_bl"/>
-                        <var name="dvsfc_bl"/>
-                        <var name="dusfc_ss"/>
-                        <var name="dvsfc_ss"/>
-                        <var name="dusfc_fd"/>
-                        <var name="dvsfc_fd"/>
 			<var name="dtaux3d"/>
 			<var name="dtauy3d"/>
-                        <var name="dtaux3d_ls"/>
-                        <var name="dtauy3d_ls"/>
-                        <var name="dtaux3d_bl"/>
-                        <var name="dtauy3d_bl"/>
-                        <var name="dtaux3d_ss"/>
-                        <var name="dtauy3d_ss"/>
-                        <var name="dtaux3d_fd"/>
-                        <var name="dtauy3d_fd"/>
 			<var name="rubldiff"/>
 			<var name="rvbldiff"/>
 			<var name="i_acswdnb"/>
@@ -1267,8 +1251,32 @@
                         <var name="lbc_rho" />
                         <var name="lbc_theta" />
                         <var_array name="lbc_scalars" />
-
                 </stream>
+
+                <stream name="diag_ugwp"
+                        type="output"
+                        filename_template="diag_ugwp.$Y-$M-$D_$h.$m.$s.nc"
+                        output_interval="6:00:00"
+                        runtime_format="separate_file"
+
+                        <var name="dtaux3d_ls" />
+                        <var name="dtauy3d_ls" />
+                        <var name="dtaux3d_bl" />
+                        <var name="dtauy3d_bl" />
+                        <var name="dtaux3d_ss" />
+                        <var name="dtauy3d_ss" />
+                        <var name="dtaux3d_fd" />
+                        <var name="dtauy3d_fd" />
+                        <var name="dusfc_ls"/>
+                        <var name="dvsfc_ls"/>
+                        <var name="dusfc_bl"/>
+                        <var name="dvsfc_bl"/>
+                        <var name="dusfc_ss"/>
+                        <var name="dvsfc_ss"/>
+                        <var name="dusfc_fd"/>
+                        <var name="dvsfc_fd"/>
+                </stream>
+
 	</streams>
 
 

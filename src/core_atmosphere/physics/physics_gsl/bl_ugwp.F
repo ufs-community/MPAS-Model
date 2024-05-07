@@ -182,13 +182,11 @@ integer, parameter ::                                                          &
    real(kind=kind_phys)                 ::  fdir,cs,rcsks,                                     &
                                             wdir,ti,rdz,temp,tem2,dw2,shr2,bvf2,rdelks,        &
                                             wtkbj,tem,gfobnv,hd,fro,rim,temc,tem1,efact,       &
-                                            temv,dtaux,dtauy
+                                            temv
 !
    real(kind=kind_phys), dimension(its:ite,kts:kte)   :: dudt, dvdt
    real(kind=kind_phys), dimension(its:ite,kts:kte)   :: dtaux2d_ls, dtauy2d_ls,  &
-                                                         dtaux2d_bl, dtauy2d_bl,  &
-                                                         dtaux2d_ss, dtauy2d_ss,  &
-                                                         dtaux2d_fd, dtauy2d_fd
+                                                         dtaux2d_bl, dtauy2d_bl
    real(kind=kind_phys), dimension(its:ite)           :: dusfc, dvsfc
    logical, dimension(its:ite)                        :: ldrag, icrilv, flag,kloop1
    logical                                            :: ugwp_diags   ! flag for outputting optional diagnostics
@@ -209,10 +207,16 @@ integer, parameter ::                                                          &
    real(kind=kind_phys), dimension(its:ite,4)         :: oa4, ol4
    real(kind=kind_phys), dimension(its:ite,4)         :: oa4ss, ol4ss
 !
+   real(kind=kind_phys                                :: inv_g  ! inverse of gravity
+!
    integer, dimension(its:ite)                        :: kbl, klowtop
    integer, parameter                                 :: mdir=8
    integer, dimension(mdir)                           :: nwdir
    data nwdir/6,7,5,8,2,3,1,4/
+!
+   real(kind=kind_phys)                               :: xnbv, tauwavex0, tauwavey0,  &
+                                                         utendwave, vtendwave,        &
+                                                         utendform, vtendform
 !
 ! variables for flow-blocking drag
 !
@@ -251,6 +255,7 @@ integer, parameter ::                                                          &
    lcap   = kte                                                         
    lcapp1 = lcap + 1                                                 
    fdir   = mdir / (2.0*pi_)
+   inv_g  = 1.0/g_ 
 !
 ! initialize CCPP error flag and message
 !
@@ -308,8 +313,8 @@ enddo
 !
    usqj    = 0.      ; bnv2   = 0.      ; vtj     = 0.     ; vtk     = 0. 
    taup    = 0.      ; taud_ls = 0.     ; taud_bl = 0.
+   dtaux3d = 0.      ; dtauy3d = 0.
    dtaux2d_ls = 0.   ; dtauy2d_ls = 0.  ; dtaux2d_bl = 0.  ; dtauy2d_bl = 0.
-   dtaux2d_ss = 0.   ; dtauy2d_ss = 0.  ; dtaux2d_fd = 0.  ; dtauy2d_fd = 0.
 !
    dtfac   = 1.0     ; xlinv  = 1.0/xl
 !
@@ -319,6 +324,11 @@ enddo
    dudt = 0.0        ; dvdt = 0.0
 !
    dusfc = 0.0       ; dvsfc = 0.0
+   dusfcg = 0.0      ; dvsfcg = 0.0
+if ( ugwp_diags ) then
+   dusfc_ls = 0.0    ; dvsfc_ls = 0.0  ; dusfc_bl = 0.0  ; dvsfc_bl = 0.0
+   dusfc_ss = 0.0    ; dvsfc_ss = 0.0  ; dusfc_fd = 0.0  ; dvsfc_fd = 0.0
+endif
 !
    do k = kts,kte
      do i = its,ite
@@ -666,24 +676,20 @@ if ( gsl_gwd_ss .eq. 1 ) then
             endif
          endif
 
-         do k = kts,km
+         do k = kts,kte
             dudt(i,k)  = dudt(i,k) + utendwave(i,k)
             dvdt(i,k)  = dvdt(i,k) + vtendwave(i,k)
-            dusfc(i)   = dusfc(i) - onebgrcs * utendwave(i,k) * del(i,k)
-            dvsfc(i)   = dvsfc(i) - onebgrcs * vtendwave(i,k) * del(i,k)
+            dtaux3d(i,k) = dtaux3d(i,k) + utendwave(i,k)
+            dtauy3d(i,k) = dtauy3d(i,k) + vtendwave(i,k)
+            dusfc(i)   = dusfc(i) - inv_g * utendwave(i,k) * del(i,k)
+            dvsfc(i)   = dvsfc(i) - inv_g * vtendwave(i,k) * del(i,k)
          enddo
-         if(udtend>0) then
-            dtend(i,kts:km,udtend) = dtend(i,kts:km,udtend) + utendwave(i,kts:km)*deltim
-         endif
-         if(vdtend>0) then
-            dtend(i,kts:km,vdtend) = dtend(i,kts:km,vdtend) + vtendwave(i,kts:km)*deltim
-         endif
          if ( ugwp_diags ) then
-            do k = kts,km
+            do k = kts,kte
+               dtaux3d_ss(i,k) = utendwave(i,k)
+               dtauy3d_ss(i,k) = vtendwave(i,k)
                dusfc_ss(i) = dusfc_ss(i) + utendwave(i,k) * del(i,k)
                dvsfc_ss(i) = dvsfc_ss(i) + vtendwave(i,k) * del(i,k)
-               dtaux2d_ss(i,k) = utendwave(i,k)
-               dtauy2d_ss(i,k) = vtendwave(i,k)
             enddo
          endif
 
@@ -711,7 +717,7 @@ if ( gsl_gwd_fd .eq. 1 ) THEN
             a2=a1*0.005363
             ! Beljaars H_efold
             H_efold = 1500.
-            DO k=kts,km
+            DO k=kts,kte
                wsp=sqrt(uwnd1(i,k)**2 + vwnd1(i,k)**2)
                ! alpha*beta*Cmd*Ccorr*2.109 = 12.*1.*0.005*0.6*2.109 = 0.0759
                var_temp = 0.0759*EXP(-(zl(i,k)/H_efold)**1.5)*a2*          &
@@ -724,22 +730,18 @@ if ( gsl_gwd_fd .eq. 1 ) THEN
             ENDDO
          ENDIF
 
-         do k = kts,km
+         do k = kts,kte
             dudt(i,k)  = dudt(i,k) + utendform(i,k)
             dvdt(i,k)  = dvdt(i,k) + vtendform(i,k)
-            dusfc(i)   = dusfc(i) - onebgrcs * utendform(i,k) * del(i,k)
-            dvsfc(i)   = dvsfc(i) - onebgrcs * vtendform(i,k) * del(i,k)
+            dtaux3d(i,k) = dtaux3d(i,k) + utendform(i,k)
+            dtauy3d(i,k) = dtauy3d(i,k) + vtendform(i,k)
+            dusfc(i)   = dusfc(i) - inv_g * utendform(i,k) * del(i,k)
+            dvsfc(i)   = dvsfc(i) - inv_g * vtendform(i,k) * del(i,k)
          enddo
-         if(udtend>0) then
-            dtend(i,kts:km,udtend) = dtend(i,kts:km,udtend) + utendform(i,kts:km)*deltim
-         endif
-         if(vdtend>0) then
-            dtend(i,kts:km,vdtend) = dtend(i,kts:km,vdtend) + vtendform(i,kts:km)*deltim
-         endif
          if ( ugwp_diags ) then
-            do k = kts,km
-               dtaux2d_fd(i,k) = utendform(i,k)
-               dtauy2d_fd(i,k) = vtendform(i,k)
+            do k = kts,kte
+               dtaux3d_fd(i,k) = utendform(i,k)
+               dtauy3d_fd(i,k) = vtendform(i,k)
                dusfc_fd(i) = dusfc_fd(i) + utendform(i,k) * del(i,k)
                dvsfc_fd(i) = dvsfc_fd(i) + vtendform(i,k) * del(i,k)
             enddo
@@ -754,10 +756,10 @@ endif  ! if ( gsl_gwd_fd .eq. 1 )
 
 if ( ugwp_diags ) then
    !  Finalize dusfc and dvsfc diagnostics for gsl small-scale drag components
-   dusfc_ss(:) = -onebgrcs * dusfc_ss(:)
-   dvsfc_ss(:) = -onebgrcs * dvsfc_ss(:)
-   dusfc_fd(:) = -onebgrcs * dusfc_fd(:)
-   dvsfc_fd(:) = -onebgrcs * dvsfc_fd(:)
+   dusfc_ss(:) = -inv_g * dusfc_ss(:)
+   dvsfc_ss(:) = -inv_g * dvsfc_ss(:)
+   dusfc_fd(:) = -inv_g * dusfc_fd(:)
+   dvsfc_fd(:) = -inv_g * dvsfc_fd(:)
 endif
 
 
@@ -852,7 +854,7 @@ if ( gsl_gwd_bl .eq. 1 ) then
            do k = kte, kpblmin, -1
              if(kblk.eq.0 .and. k.le.komax(i)) then
                pe = pe + bnv2(i,k)*(zl(i,komax(i))-zl(i,k))*del(i,k)/g/ro(i,k)
-               ke = 0.5*((rcs*u1(i,k))**2.+(rcs*v1(i,k))**2.)
+               ke = 0.5*((u1(i,k))**2.+(v1(i,k))**2.)
 !
 !---------- apply flow-blocking drag when pe >= ke 
 !
@@ -919,7 +921,7 @@ IF ( (gsl_gwd_ls .EQ. 1 .OR. gsl_gwd_bl .EQ. 1) .and. (ls_taper .GT. 1.E-02) ) T
          if (k .le. kbl(i)) then
            if((taud_ls(i,k)+taud_bl(i,k)).ne.0.)                         &
               dtfac(i) = min(dtfac(i),abs(velco(i,k)                     &
-                   /(deltim*rcs*(taud_ls(i,k)+taud_bl(i,k)))))
+                   /(deltim*(taud_ls(i,k)+taud_bl(i,k)))))
          endif
       enddo
    enddo
@@ -936,32 +938,38 @@ IF ( (gsl_gwd_ls .EQ. 1 .OR. gsl_gwd_bl .EQ. 1) .and. (ls_taper .GT. 1.E-02) ) T
          dtauy2d_bl(i,k) = taud_bl(i,k) * yn(i)
          dudt(i,k)  = dtaux2d_ls(i,k) + dtaux2d_bl(i,k) + dudt(i,k)
          dvdt(i,k)  = dtauy2d_ls(i,k) + dtauy2d_bl(i,k) + dvdt(i,k)
-         dusfc_ls(i)  = dusfc_ls(i) + dtaux2d_ls(i,k) * del(i,k)
-         dvsfc_ls(i)  = dvsfc_ls(i) + dtauy2d_ls(i,k) * del(i,k)
-         dusfc_bl(i)  = dusfc_bl(i) + dtaux2d_bl(i,k) * del(i,k)
-         dvsfc_bl(i)  = dvsfc_bl(i) + dtauy2d_bl(i,k) * del(i,k)
+         dtaux3d(i,k) = dtaux3d(i,k) + dtaux2d_ls(i,k) + dtaux2d_bl(i,k)
+         dtauy3d(i,k) = dtauy3d(i,k) + dtauy2d_ls(i,k) + dtauy2d_bl(i,k)
       enddo                                                          
    enddo
+
+   if ( ugwp_diags ) then
+      do k = kts,kte
+         do i = its,ite
+            dtaux3d_ls(i,k) = dtaux2d_ls(i,k)
+            dtauy3d_ls(i,k) = dtauy2d_ls(i,k)
+            dtaux3d_bl(i,k) = dtaux2d_bl(i,k)
+            dtauy3d_bl(i,k) = dtauy2d_bl(i,k)
+            dusfc_ls(i)  = dusfc_ls(i) + dtaux2d_ls(i,k) * del(i,k)
+            dvsfc_ls(i)  = dvsfc_ls(i) + dtauy2d_ls(i,k) * del(i,k)
+            dusfc_bl(i)  = dusfc_bl(i) + dtaux2d_bl(i,k) * del(i,k)
+            dvsfc_bl(i)  = dvsfc_bl(i) + dtauy2d_bl(i,k) * del(i,k) 
+         enddo
+      enddo
+   endif
 
 ENDIF ! ( (gsl_gwd_ls .EQ. 1 .OR. gsl_gwd_bl .EQ. 1) .and. (ls_taper .GT. 1.E-02) )
 
                                                   
-
+if ( ugwp_diags ) then
 !  Finalize dusfc and dvsfc diagnoses
-do i = its,ite
-   dusfc_ls(i) = (-1./g*rcs) * dusfc_ls(i)
-   dvsfc_ls(i) = (-1./g*rcs) * dvsfc_ls(i)
-   dusfc_bl(i) = (-1./g*rcs) * dusfc_bl(i)
-   dvsfc_bl(i) = (-1./g*rcs) * dvsfc_bl(i)
-   dusfc_ss(i) = (-1./g*rcs) * dusfc_ss(i)
-   dvsfc_ss(i) = (-1./g*rcs) * dvsfc_ss(i)
-   dusfc_fd(i) = (-1./g*rcs) * dusfc_fd(i)
-   dvsfc_fd(i) = (-1./g*rcs) * dvsfc_fd(i)
-enddo
-
-
-
-
+   do i = its,ite
+      dusfc_ls(i) = -inv_g * dusfc_ls(i)
+      dvsfc_ls(i) = -inv_g * dvsfc_ls(i)
+      dusfc_bl(i) = -inv_g * dusfc_bl(i)
+      dvsfc_bl(i) = -inv_g * dvsfc_bl(i)
+   enddo
+endif
 
 
 !
@@ -984,14 +992,6 @@ enddo
    !    dusfcg(i) = dusfc(i)*cosa(i) + dvsfc(i)*sina(i)
    !    dvsfcg(i) =-dusfc(i)*sina(i) + dvsfc(i)*cosa(i)
    ! enddo
-
-!
-! Sum diagnostic components
-!
-   dtaux3d(:,:) = dtaux3d_ls(:,:) + dtaux3d_bl(:,:) +                &
-                  dtaux3d_ss(:,:) + dtaux3d_fd(:,:)
-   dtauy3d(:,:) = dtauy3d_ls(:,:) + dtauy3d_bl(:,:) +                &
-                  dtauy3d_ss(:,:) + dtauy3d_fd(:,:)
 
 
 
