@@ -159,6 +159,7 @@
        if(.not.allocated(gsw_p)          ) allocate(gsw_p(ims:ime,jms:jme)              )
        if(.not.allocated(hfx_p)          ) allocate(hfx_p(ims:ime,jms:jme)              )
        if(.not.allocated(qfx_p)          ) allocate(qfx_p(ims:ime,jms:jme)              )
+       if(.not.allocated(maxmfbl_p)      ) allocate(maxmfbl_p(ims:ime,jms:jme)          )
        if(.not.allocated(xland_p)        ) allocate(xland_p(ims:ime,jms:jme)            )
 
        if(.not.allocated(rthblten_p)     ) allocate(rthblten_p(ims:ime,kms:kme,jms:jme) )
@@ -304,6 +305,7 @@
        if(allocated(gsw_p)          ) deallocate(gsw_p          )
        if(allocated(hfx_p)          ) deallocate(hfx_p          )
        if(allocated(qfx_p)          ) deallocate(qfx_p          )
+       if(allocated(maxmfbl_p)      ) deallocate(maxmfbl_p      )
        if(allocated(xland_p)        ) deallocate(xland_p        )
        if(allocated(rthblten_p)     ) deallocate(rthblten_p     )
        if(allocated(rthdynten_p)    ) deallocate(rthdynten_p    )
@@ -429,6 +431,7 @@
  logical,pointer:: config_do_restart
  integer,pointer:: gfconv_closure_deep,gfconv_closure_shallow
  character(len=StrKIND),pointer:: convection_scheme
+ character(len=StrKIND),pointer:: pbl_scheme
  real(kind=RKIND),pointer:: len_disp
 
 !variables specific to Kain_Fritsch parameterization:
@@ -455,6 +458,7 @@
  call mpas_pool_get_config(configs,'config_len_disp'         ,len_disp         )
  call mpas_pool_get_config(configs,'config_do_restart'       ,config_do_restart)
  call mpas_pool_get_config(configs,'config_convection_scheme',convection_scheme)
+ call mpas_pool_get_config(configs,'config_pbl_scheme',pbl_scheme)
 
 !initialize instantaneous precipitation, and copy convective tendencies from the dynamics to
 !the physics grid:
@@ -504,9 +508,12 @@
              gdc             = qccu_p                 , gdc2          = qicu_p          , &
              rthcuten        = rthcuten_p             , rqvcuten      = rqvcuten_p      , & 
              rqccuten        = rqccuten_p             , rqicuten      = rqicuten_p      , &
+             rucuten         = rucuten_p              , rvcuten       = rvcuten_p       , &
              ichoice_deep    = gfconv_closure_deep                                      , &
              ichoice_shallow = gfconv_closure_shallow                                   , &
              ishallow_g3     = ishallow                                                 , &
+             pbl_scheme      = pbl_scheme             , maxmf         = maxmfbl_p       , &
+             qc3d            = qc_p                   , qi3d          = qi_p            , &
              ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde      , &
              ims = ims , ime = ime , jms = jms , jme = jme , kms = kds , kme = kme      , &
              its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte        &
@@ -744,7 +751,7 @@
              rqvblten_p(i,k,j)  = rqvblten(k,i)
              rqvdynten_p(i,k,j) = rqvdynten(k,i)
              rucuten_p(i,k,j)   = rucuten(k,i)
-             rvcuten_p(i,k,j)   = rvcuten(k,k)
+             rvcuten_p(i,k,j)   = rvcuten(k,i)
           enddo
        enddo
        enddo
@@ -941,7 +948,7 @@
              qc_cu(k,i)    = qccu_p(i,k,j)
              qi_cu(k,i)    = qicu_p(i,k,j)
              rucuten(k,i)  = rucuten_p(i,k,j)
-             rvcuten(k,k)  = rvcuten_p(i,k,j)
+             rvcuten(k,i)  = rvcuten_p(i,k,j)
           enddo
        enddo
        enddo
