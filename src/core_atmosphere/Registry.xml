@@ -3113,10 +3113,10 @@
                 <var name="dvsfc_fd" type="real" dimensions="nCells Time" units="Pa"
                      description="vertically-integrated turb orog form drag v-stress"/>
 
-                <var name="dtaux3d" type="real" dimensions="nVertLevels nCells Time" units="m s^{-2}"
+                <var name="dtaux3d" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1}"
                      description="gravity wave drag over orography u-stress"/>
 
-                <var name="dtauy3d" type="real" dimensions="nVertLevels nCells Time" units="m s^{-2}"
+                <var name="dtauy3d" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1}"
                      description="gravity wave drag over orography v-stress"/>
 
                 <var name="dtaux3d_ls" type="real" dimensions="nVertLevels nCells Time" units="m s^{-2}"
