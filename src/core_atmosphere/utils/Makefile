@@ -16,6 +16,7 @@ build_tables.o: \
 
 atmphys_build_tables_thompson.o: \
 	../physics/GSL_cloud_physics/module_mp_thompson.o \
+	../physics/GSL_cloud_physics/module_mp_thompson_utils.o \
 	../physics/GSL_cloud_physics/module_mp_thompson_params.o
 
 clean:
