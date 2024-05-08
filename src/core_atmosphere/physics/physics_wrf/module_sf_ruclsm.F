@@ -574,6 +574,10 @@ contains
          enddo
      enddo
 
+        do k=1,nsl
+           soilice(k)=0.
+           soiliqw(k)=0.
+        enddo
      endif
 
 !-----------------------------------------------------------------
