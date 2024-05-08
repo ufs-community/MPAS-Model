@@ -3089,58 +3089,58 @@
                 <var name="dvsfcg" type="real" dimensions="nCells Time" units="Pa m s^{-1}"
                      description="vertically-integrated gravity wave drag over orography v-stress"/>
 
-                <var name="dusfc_ls" type="real" dimensions="nCells Time" units="Pa m s^{-1}"
+                <var name="dusfc_ls" type="real" dimensions="nCells Time" units="Pa"
                      description="vertically-integrated mesoscale orog gravity wave drag u-stress"/>
 
-                <var name="dvsfc_ls" type="real" dimensions="nCells Time" units="Pa m s^{-1}"
+                <var name="dvsfc_ls" type="real" dimensions="nCells Time" units="Pa"
                      description="vertically-integrated mesoscale orog gravity wave drag v-stress"/>
 
-                <var name="dusfc_bl" type="real" dimensions="nCells Time" units="Pa m s^{-1}"
+                <var name="dusfc_bl" type="real" dimensions="nCells Time" units="Pa"
                      description="vertically-integrated orog blocking drag u-stress"/>
 
-                <var name="dvsfc_bl" type="real" dimensions="nCells Time" units="Pa m s^{-1}"
+                <var name="dvsfc_bl" type="real" dimensions="nCells Time" units="Pa"
                      description="vertically-integrated orog blocking drag v-stress"/>
 
-                <var name="dusfc_ss" type="real" dimensions="nCells Time" units="Pa m s^{-1}"
+                <var name="dusfc_ss" type="real" dimensions="nCells Time" units="Pa"
                      description="vertically-integrated small-scale orog gravity wave drag u-stress"/>
 
-                <var name="dvsfc_ss" type="real" dimensions="nCells Time" units="Pa m s^{-1}"
+                <var name="dvsfc_ss" type="real" dimensions="nCells Time" units="Pa"
                      description="vertically-integrated small-scale orog gravity wave drag v-stress"/>
 
-                <var name="dusfc_fd" type="real" dimensions="nCells Time" units="Pa m s^{-1}"
+                <var name="dusfc_fd" type="real" dimensions="nCells Time" units="Pa"
                      description="vertically-integrated turb orog form drag u-stress"/>
 
-                <var name="dvsfc_fd" type="real" dimensions="nCells Time" units="Pa m s^{-1}"
+                <var name="dvsfc_fd" type="real" dimensions="nCells Time" units="Pa"
                      description="vertically-integrated turb orog form drag v-stress"/>
 
-                <var name="dtaux3d" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1}"
+                <var name="dtaux3d" type="real" dimensions="nVertLevels nCells Time" units="m s^{-2}"
                      description="gravity wave drag over orography u-stress"/>
 
-                <var name="dtauy3d" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1}"
+                <var name="dtauy3d" type="real" dimensions="nVertLevels nCells Time" units="m s^{-2}"
                      description="gravity wave drag over orography v-stress"/>
 
-                <var name="dtaux3d_ls" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1}"
+                <var name="dtaux3d_ls" type="real" dimensions="nVertLevels nCells Time" units="m s^{-2}"
                      description="mesoscale orog gravity wave drag u-tendency"/>
 
-                <var name="dtauy3d_ls" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1}"
+                <var name="dtauy3d_ls" type="real" dimensions="nVertLevels nCells Time" units="m s^{-2}"
                      description="mesoscale orog gravity wave drag v-tendency"/>
 
-                <var name="dtaux3d_bl" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1}"
+                <var name="dtaux3d_bl" type="real" dimensions="nVertLevels nCells Time" units="m s^{-2}"
                      description="orog blocking drag u-tendency"/>
 
-                <var name="dtauy3d_bl" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1}"
+                <var name="dtauy3d_bl" type="real" dimensions="nVertLevels nCells Time" units="m s^{-2}"
                      description="orog blocking drag v-tendency"/>
 
-                <var name="dtaux3d_ss" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1}"
+                <var name="dtaux3d_ss" type="real" dimensions="nVertLevels nCells Time" units="m s^{-2}"
                      description="small-scale orog gravity wave drag u-tendency"/>
 
-                <var name="dtauy3d_ss" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1}"
+                <var name="dtauy3d_ss" type="real" dimensions="nVertLevels nCells Time" units="m s^{-2}"
                      description="small-scale orog gravity wave drag v-tendency"/>
 
-                <var name="dtaux3d_fd" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1}"
+                <var name="dtaux3d_fd" type="real" dimensions="nVertLevels nCells Time" units="m s^{-2}"
                      description="turb orog form drag u-tendency"/>
 
-                <var name="dtauy3d_fd" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1}"
+                <var name="dtauy3d_fd" type="real" dimensions="nVertLevels nCells Time" units="m s^{-2}"
                      description="turb orog form drag v-tendency"/>
 
                 <var name="rubldiff" type="real" dimensions="nVertLevels nCells Time" units="m s^{-2}"
