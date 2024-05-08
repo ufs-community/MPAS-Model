@@ -14,8 +14,8 @@
  use mpas_atmphys_constants
  use mpas_atmphys_vars
 
- use bl_mynn,only: bl_mynn_init
- use module_bl_mynn,only: mynn_bl_driver
+! use bl_mynn,only: bl_mynn_init
+ use module_bl_mynn_driver,only: mynn_bl_driver
  use module_bl_ysu
 
  implicit none
@@ -713,10 +713,10 @@
  pbl_select: select case (trim(pbl_scheme))
 
     case("bl_mynn")
-       call mpas_log_write('--- enter subroutine bl_mynn_init:')
-       call bl_mynn_init(cp,cpv,cice,cliq,ep_1,ep_2,gravity,karman,P0,R_d,R_v,svp1,svp2,svp3,svpt0, &
-                         xlf,xls,xlv,errmsg,errflg)
-       call mpas_log_write('--- end subroutine bl_mynn_mpas_init:')
+!       call mpas_log_write('--- enter subroutine bl_mynn_init:')
+!       call bl_mynn_init(cp,cpv,cice,cliq,ep_1,ep_2,gravity,karman,P0,R_d,R_v,svp1,svp2,svp3,svpt0, &
+!                         xlf,xls,xlv,errmsg,errflg)
+!       call mpas_log_write('--- end subroutine bl_mynn_mpas_init:')
 
     case default
 
@@ -888,7 +888,7 @@
                   qi         = qi_p         , qs       = qs_p       , ni          = ni_p             , &
                   rthraten   = rthraten_p   , pblh     = hpbl_p     , kpbl        = kpbl_p           , &
                   cldfra_bl  = cldfrabl_p   , qc_bl    = qcbl_p     , qi_bl       = qibl_p           , &
-                  maxwidth   = maxwidthbl_p , maxmf    = maxmfbl_p  , ktop_plume  = kbl_plume_p      , &
+                  maxwidth   = maxwidthbl_p , maxmf    = maxmfbl_p  ,                                  &
                   ztop_plume = zbl_plume_p  , dqke     = dqke_p     , qke_adv     = qkeadv_p         , &
                   tsq        = tsq_p        , qsq      = qsq_p      , cov         = cov_p            , &
                   el_pbl     = elpbl_p      , rublten  = rublten_p  , rvblten     = rvblten_p        , &

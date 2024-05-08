@@ -25,7 +25,7 @@
 !
 !   LAND only:
 !   "iz0tlnd" namelist option is used to select the following options:
-!   (default) =0: Zilitinkevich (1995); Czil now set to 0.085
+!   (default) =0: Zilitinkevich (1995); Czil now set to 0.095
 !             =1: Czil_new (modified according to Chen & Zhang 2008)
 !             =2: Modified Yang et al (2002, 2008) - generalized for all landuse
 !             =3: constant zt = z0/7.4 (original form; Garratt 1992)
@@ -59,7 +59,7 @@
 !      Performance with the Noah (or other) LSM is relatively unknown.
 !-------------------------------------------------------------------
   use ccpp_kinds,only: kind_phys
-  use mynn_shared,only: esat_blend,qsat_blend,xl_blend
+!  use mynn_shared,only: esat_blend,qsat_blend,xl_blend
 
   implicit none
   private
@@ -1051,7 +1051,7 @@
     if ( iz0tlnd2 .eq. 1 ) then
        czil = 10.0 ** ( -0.40 * ( z_0 / 0.07 ) )
     else
-       czil = 0.085 !0.075 !0.10
+       czil = 0.095 !0.075 !0.10
     end if
 
     zt = z_0*exp(-karman*czil*sqrt(restar))

@@ -9,7 +9,9 @@ OBJS = \
 	libmassv.o                     \
 	module_bep_bem_helper.o        \
 	module_bl_gwdo.o               \
-	module_bl_mynn.o               \
+        module_bl_mynn_common.o        \
+        module_bl_mynn.o               \
+        module_bl_mynn_driver.o       \
 	module_bl_ysu.o                \
 	module_cam_error_function.o    \
 	module_cam_shr_kind_mod.o      \
@@ -50,7 +52,15 @@ physics_wrf: $(OBJS)
 	ar -ru ./../libphys.a $(OBJS)
 
 # DEPENDENCIES:
+module_bl_mynn_common.o: \
+	../mpas_atmphys_constants.o
+
 module_bl_mynn.o: \
+        module_cam_error_function.o \
+        module_bl_mynn_common.o
+
+module_bl_mynn_driver.o: \
+        module_bl_mynn.o \
 	bl_mynn_post.o \
 	bl_mynn_pre.o
 
