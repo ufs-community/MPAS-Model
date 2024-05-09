@@ -92,7 +92,7 @@ CONTAINS
                       its,ite,jts,jte,kts,kte
 
  integer,intent(in):: ichoice_deep,ichoice_shallow,itimestep
- integer,intent(inout):: ishallow_g3
+ integer,intent(in):: ishallow_g3
 
  integer,dimension(ims:ime,jms:jme ),intent(in):: kpbl
 
@@ -148,7 +148,7 @@ CONTAINS
  ! local variables required for new GF/C3 scheme, also for chem variables, should be input at some point...
  !
  integer, parameter:: nchem = 1, nranflag = 0, do_capsuppress = 0, dicycle = 0
- integer :: imid,ktopmax,kbconmax
+ integer :: imid,ishallow,ktopmax,kbconmax
  real,dimension(its:ite,kts:kte,nchem)::chem3d
  real,dimension(nchem)::fscav
  real,dimension(its:ite,nchem)::wetdpc_deep,wetdpc_mid
@@ -176,9 +176,10 @@ CONTAINS
  ipr = ite
  jpr = jte
 
- imid=1
+ imid     = 1
+ ishallow = ishallow_g3
  if (dx_loc(its)<6500.) imid = 0
- if (trim(pbl_scheme)=="bl_mynn") ishallow_g3 = 0
+ if (trim(pbl_scheme)=="bl_mynn") ishallow = 0
 
  do j = jts, jte
     do i = its, ite
@@ -344,8 +345,6 @@ CONTAINS
              mconv(i) = mconv(i) + omeg(i,k)*dq/g
           enddo
        enddo
-       print*,'pbl_scheme=',pbl_scheme
-       print*,'maxmf',maxval(maxmf)
        do i = its, itf
           if(mconv(i) .lt. 0.) mconv(i) = 0.
           if((dx_loc(i)<6500.).and.(trim(pbl_scheme)=="bl_mynn").and.(maxmf(i,jts).gt.0.))ierr(i)=555
@@ -586,7 +585,7 @@ CONTAINS
       call neg_check('deep',j,dt,qcheck,outq,outt,outu,outv,outqc,pret    &
                      ,its,ite,kts,kte,itf,ktf,ktop)
 !    !... shallow convection:
-    if(ishallow_g3 == 1 )then
+    if(ishallow == 1 )then
 !       call cup_gf_sh( &
 !               xmbs,zo,outqcs,j,aaeq,t2d,q2d,ter11,tshall,qshall,p2d,      &
 !               pret,p2d,outts,outqs,dt,itimestep,psur,us,vs,tcrit,ztexec,  &
@@ -652,10 +651,6 @@ CONTAINS
           endif
        enddo
     enddo
-!    print*,'rthcuten',maxval(rthcuten),minval(rthcuten)
-!    print*,'rqvcuten',maxval(rqvcuten),minval(rqvcuten)
-!    print*,'rucuten',maxval(rucuten),minval(rucuten)
-!    print*,'rvcuten',maxval(rvcuten),minval(rvcuten)
 
 
  enddo j_loop
