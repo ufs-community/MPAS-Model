@@ -9,6 +9,7 @@ OBJS = \
 	libmassv.o                     \
 	module_bep_bem_helper.o        \
 	module_bl_gwdo.o               \
+        module_bl_ugwp_gwdo.o          \
         module_bl_mynn_common.o        \
         module_bl_mynn.o               \
         module_bl_mynn_driver.o       \

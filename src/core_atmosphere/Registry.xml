@@ -1257,7 +1257,7 @@
                         type="output"
                         filename_template="diag_ugwp.$Y-$M-$D_$h.$m.$s.nc"
                         output_interval="6:00:00"
-                        runtime_format="separate_file"
+                        runtime_format="separate_file">
 
                         <var name="dtaux3d_ls" />
                         <var name="dtauy3d_ls" />
