@@ -672,6 +672,9 @@
                         <var name="cldfrac_bl"/>
                         <var name="qc_bl"/>
                         <var name="qi_bl"/>
+			<var name="maxmf"/>
+                        <var name="maxwidth"/>
+                        <var name="ztop_plume"/>
                         <var name="ch"/>
 			<var name="kpbl"/>
 			<var name="hpbl"/>
@@ -2128,7 +2131,7 @@
                 <nml_option name="config_radt_cld_scheme" type="character" default_value="suite" in_defaults="false"
                      units="-"
                      description="configuration for calculation of horizontal cloud fraction"
-                     possible_values="`suite',`cld_fraction',`cld_incidence'"/>
+                     possible_values="`suite',`cld_fraction',`cld_incidence',`cld_fraction_thompson',`cld_fraction_mynn'"/>
 
                 <nml_option name="config_radt_lw_scheme" type="character" default_value="suite" in_defaults="false"
                      units="-"
@@ -2165,20 +2168,20 @@
                      description="=1:option to add the MYNN TKE budget terms to output"
                      possible_values="0,1"/>
 
-                <nml_option name="config_mynn_closure" type="real" default_value="2.5" in_defaults="false"
+                <nml_option name="config_mynn_closure" type="real" default_value="2.6" in_defaults="false"
                      units="-"
-                     description="2.5 level or 3.0 level for the MYNN TKE turbulence closure"
-                     possible_values="2.0,2.5,3.0"/>
+                     description="closure level for the MYNN TKE turbulence closure"
+                     possible_values="2.5,2.6,3.0"/>
 
                 <nml_option name="config_mynn_cloudpdf" type="integer" default_value="2" in_defaults="false"
                      units="-"
                      description="switch to different cloud PDFs to represent subgrid clouds in the MYNN PBL scheme"
-                     possible_values="0,1,2"/>
+                     possible_values="`0: Someria-Deardorff',`1: Someria-Deardorf 1st order',`1: Modified Chab-Bechtold'"/>
 
-                <nml_option name="config_mynn_mixlength" type="integer" default_value="2" in_defaults="false"
+                <nml_option name="config_mynn_mixlength" type="integer" default_value="1" in_defaults="false"
                      units="-"
-                     description="mixing length in the MYNN PBL scheme:=0(Nakanishi and Niino 2009);=1(RAP/HRRR);=2(Ito et al. 2015)"
-                     possible_values="0,1,2"/>
+                     description="mixing length in the MYNN PBL scheme"
+                     possible_values="`0: orig',`1: operational',`1: research'"/>
 
                 <nml_option name="config_mynn_stfunc" type="integer" default_value="1" in_defaults="false"
                      units="-"
@@ -2222,7 +2225,7 @@
                 <nml_option name="config_mynn_edmf_output" type="integer" default_value="0" in_defaults="false"
                      units="-"
                      description="=0:suppress the allocation of variables needed in the EDMF option of the MYNN PBL scheme"
-                     possible_values="0,1"/>
+                     possible_values="0,1:updrafts,2:downdrafts"/>
 
                 <nml_option name="config_mynn_mixscalars" type="integer" default_value="1" in_defaults="false"
                      units="-"
@@ -2239,16 +2242,31 @@
                      description="=0:activatevmixing of moisture species separately;= 1:activate mixing of total water in the mynn PBL scheme"
                      possible_values="0,1"/>
 
+                <nml_option name="config_mynn_cloudmix" type="integer" default_value="1" in_defaults="false"
+                     units="-"
+                     description="configuration for mixing cloud species in MYNN"
+                     possible_values="`0: do not mix cloud species',`1: mix all cloud species'"/>
+
+                <nml_option name="config_icloud_bl" type="integer" default_value="1" in_defaults="false"
+                     units="-"
+                     description="configuration for MYNN subgrid cloud coupling to radiation"
+                     possible_values="`0: uncoupled',`1: coupled'"/>
+
+                <nml_option name="config_spp_pbl" type="integer" default_value="0" in_defaults="false"
+                     units="-"
+                     description="configuration for spp boundary layer"
+                     possible_values="`0: off',`1: activated'"/>
+
 		<nml_option name="config_thompson_aerosol_aware" type="logical" default_value="true" in_defaults="false"
                      units="-"
                      description="Logical flag to turn on/off prognostic cloud droplet and aerosol number concentrations"
                      possible_values=".true. or .false."/>
 
-		<nml_option name="config_thompson_hail_aware" type="logical" default_value="false" in_defaults="false"
+                <nml_option name="config_thompson_hail_aware" type="logical" default_value="false" in_defaults="false"
                      units="-"
                      description="Logical flag to turn on/off prognostic graupel number concentration and rime density"
                      possible_values=".true. or .false."/>
-				
+
                 <nml_option name="config_bucket_radt" type="real" default_value="1.0e9" in_defaults="false"
                      units="-"
                      description="threshold above which accumulated radiation diagnostics are reset"
@@ -2609,6 +2627,17 @@
                      description="EDMF detrainment of water vapor mixing ratio in the MYNN PBL scheme"
                      packages="bl_mynn_in"/>
 
+		 <var name="maxmf" type="real" dimensions="nCells Time" units="m s^{-1}"
+                     description="Maximum mass flux in the each column"
+                     packages="bl_mynn_in"/>
+
+                <var name="maxwidth" type="real" dimensions="nCells Time" units="m"
+                     description="Maximum width of updrafts"
+                     packages="bl_mynn_in"/>
+
+                <var name="ztop_plume" type="real" dimensions="nCells Time" units="m"
+                     description="Height of highest penetrating plume"
+                     packages="bl_mynn_in"/>
 
                 <!-- ================================================================================================== -->
                 <!-- ... PARAMETERIZATION OF SURFACE LAYER PROCESSES:                                                   -->
