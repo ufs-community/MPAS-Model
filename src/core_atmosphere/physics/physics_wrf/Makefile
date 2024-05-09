@@ -16,7 +16,9 @@ OBJS = \
 	module_cam_error_function.o    \
 	module_cam_shr_kind_mod.o      \
 	module_cam_support.o           \
-	module_cu_gf.mpas.o            \
+        module_cu_gf_mpas.o            \
+        module_cu_gf_deep.o            \
+        module_cu_gf_sh.o              \
 	module_cu_tiedtke.o            \
 	module_cu_ntiedtke.o           \
 	module_cu_kfeta.o              \
@@ -106,6 +108,13 @@ module_sf_noah_seaice_drv.o: \
 
 module_sf_noah_seaice.o: \
         module_sf_noahlsm.o
+
+module_cu_gf_mpas.o: \
+        module_cu_gf_deep.o \
+        module_cu_gf_sh.o
+
+module_cu_gf_sh.o: \
+        module_cu_gf_deep.o
 
 clean:
 	$(RM) *.f90 *.o *.mod
