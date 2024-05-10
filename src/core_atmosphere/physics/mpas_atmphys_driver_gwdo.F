@@ -69,8 +69,11 @@
 
 
 !=================================================================================================================
- subroutine allocate_gwdo
+ subroutine allocate_gwdo(configs)
 !=================================================================================================================
+
+ !input arguments:
+ type(mpas_pool_type),intent(in):: configs
 
  !local variables:
  character(len=StrKIND),pointer:: gwdo_scheme
@@ -82,7 +85,6 @@
 
  if(.not.allocated(dx_p)    ) allocate(dx_p(ims:ime,jms:jme)    )
  if(.not.allocated(kpbl_p  )) allocate(kpbl_p(ims:ime,jms:jme)  )
- if(.not.allocated(xland_p )) allocate(xland_p(ims:ime,jms:jme) )
  if(.not.allocated(dusfcg_p)) allocate(dusfcg_p(ims:ime,jms:jme))
  if(.not.allocated(dvsfcg_p)) allocate(dvsfcg_p(ims:ime,jms:jme))
  if(.not.allocated(dtaux3d_p)) allocate(dtaux3d_p(ims:ime,kms:kme,jms:jme))
@@ -105,26 +107,26 @@
     if(.not.allocated(ol4_p)   ) allocate(ol4_p(ims:ime,jms:jme)   )
 
    case("bl_ugwp_gwdo")
-    if(.not.allocated(var2dls_p) ) allocate(var2d_p(ims:ime,jms:jme) )
-    if(.not.allocated(conls_p)   ) allocate(con_p(ims:ime,jms:jme)   )
-    if(.not.allocated(oa1ls_p)   ) allocate(oa1_p(ims:ime,jms:jme)   )
-    if(.not.allocated(oa2ls_p)   ) allocate(oa2_p(ims:ime,jms:jme)   )
-    if(.not.allocated(oa3ls_p)   ) allocate(oa3_p(ims:ime,jms:jme)   )
-    if(.not.allocated(oa4ls_p)   ) allocate(oa4_p(ims:ime,jms:jme)   )
-    if(.not.allocated(ol1ls_p)   ) allocate(ol1_p(ims:ime,jms:jme)   )
-    if(.not.allocated(ol2ls_p)   ) allocate(ol2_p(ims:ime,jms:jme)   )
-    if(.not.allocated(ol3ls_p)   ) allocate(ol3_p(ims:ime,jms:jme)   )
-    if(.not.allocated(ol4ls_p)   ) allocate(ol4_p(ims:ime,jms:jme)   )
-    if(.not.allocated(var2dss_p) ) allocate(var2d_p(ims:ime,jms:jme) )
-    if(.not.allocated(conss_p)   ) allocate(con_p(ims:ime,jms:jme)   )
-    if(.not.allocated(oa1ss_p)   ) allocate(oa1_p(ims:ime,jms:jme)   )
-    if(.not.allocated(oa2ss_p)   ) allocate(oa2_p(ims:ime,jms:jme)   )
-    if(.not.allocated(oa3ss_p)   ) allocate(oa3_p(ims:ime,jms:jme)   )
-    if(.not.allocated(oa4ss_p)   ) allocate(oa4_p(ims:ime,jms:jme)   )
-    if(.not.allocated(ol1ss_p)   ) allocate(ol1_p(ims:ime,jms:jme)   )
-    if(.not.allocated(ol2ss_p)   ) allocate(ol2_p(ims:ime,jms:jme)   )
-    if(.not.allocated(ol3ss_p)   ) allocate(ol3_p(ims:ime,jms:jme)   )
-    if(.not.allocated(ol4ss_p)   ) allocate(ol4_p(ims:ime,jms:jme)   )
+    if(.not.allocated(var2dls_p) ) allocate(var2dls_p(ims:ime,jms:jme) )
+    if(.not.allocated(conls_p)   ) allocate(conls_p(ims:ime,jms:jme)   )
+    if(.not.allocated(oa1ls_p)   ) allocate(oa1ls_p(ims:ime,jms:jme)   )
+    if(.not.allocated(oa2ls_p)   ) allocate(oa2ls_p(ims:ime,jms:jme)   )
+    if(.not.allocated(oa3ls_p)   ) allocate(oa3ls_p(ims:ime,jms:jme)   )
+    if(.not.allocated(oa4ls_p)   ) allocate(oa4ls_p(ims:ime,jms:jme)   )
+    if(.not.allocated(ol1ls_p)   ) allocate(ol1ls_p(ims:ime,jms:jme)   )
+    if(.not.allocated(ol2ls_p)   ) allocate(ol2ls_p(ims:ime,jms:jme)   )
+    if(.not.allocated(ol3ls_p)   ) allocate(ol3ls_p(ims:ime,jms:jme)   )
+    if(.not.allocated(ol4ls_p)   ) allocate(ol4ls_p(ims:ime,jms:jme)   )
+    if(.not.allocated(var2dss_p) ) allocate(var2dss_p(ims:ime,jms:jme) )
+    if(.not.allocated(conss_p)   ) allocate(conss_p(ims:ime,jms:jme)   )
+    if(.not.allocated(oa1ss_p)   ) allocate(oa1ss_p(ims:ime,jms:jme)   )
+    if(.not.allocated(oa2ss_p)   ) allocate(oa2ss_p(ims:ime,jms:jme)   )
+    if(.not.allocated(oa3ss_p)   ) allocate(oa3ss_p(ims:ime,jms:jme)   )
+    if(.not.allocated(oa4ss_p)   ) allocate(oa4ss_p(ims:ime,jms:jme)   )
+    if(.not.allocated(ol1ss_p)   ) allocate(ol1ss_p(ims:ime,jms:jme)   )
+    if(.not.allocated(ol2ss_p)   ) allocate(ol2ss_p(ims:ime,jms:jme)   )
+    if(.not.allocated(ol3ss_p)   ) allocate(ol3ss_p(ims:ime,jms:jme)   )
+    if(.not.allocated(ol4ss_p)   ) allocate(ol4ss_p(ims:ime,jms:jme)   )
     if(.not.allocated(dusfc_ls_p)) allocate(dusfc_ls_p(ims:ime,jms:jme))
     if(.not.allocated(dvsfc_ls_p)) allocate(dvsfc_ls_p(ims:ime,jms:jme))
     if(.not.allocated(dusfc_bl_p)) allocate(dusfc_bl_p(ims:ime,jms:jme))
@@ -133,8 +135,9 @@
     if(.not.allocated(dvsfc_ss_p)) allocate(dvsfc_ss_p(ims:ime,jms:jme))
     if(.not.allocated(dusfc_fd_p)) allocate(dusfc_fd_p(ims:ime,jms:jme))
     if(.not.allocated(dvsfc_fd_p)) allocate(dvsfc_fd_p(ims:ime,jms:jme))
-    if(.not.allocated(hpbl_p)    ) allocate(hpbl_p(ims:ime,jms:jme))
-    if(.not.allocated(br_p)      ) allocate(br_p(ims:ime,jms:jme)  )
+    if(.not.allocated(hpbl_p)    ) allocate(hpbl_p(ims:ime,jms:jme)    )
+    if(.not.allocated(br_p)      ) allocate(br_p(ims:ime,jms:jme)      )
+    if(.not.allocated(xland_p )  ) allocate(xland_p(ims:ime,jms:jme)   )
     if(.not.allocated(dtaux3d_ls_p)) allocate(dtaux3d_ls_p(ims:ime,kms:kme,jms:jme))
     if(.not.allocated(dtauy3d_ls_p)) allocate(dtauy3d_ls_p(ims:ime,kms:kme,jms:jme))
     if(.not.allocated(dtaux3d_bl_p)) allocate(dtaux3d_bl_p(ims:ime,kms:kme,jms:jme))
@@ -151,8 +154,11 @@
  end subroutine allocate_gwdo
 
 !=================================================================================================================
- subroutine deallocate_gwdo
+ subroutine deallocate_gwdo(configs)
 !=================================================================================================================
+
+ !input arguments:
+ type(mpas_pool_type),intent(in):: configs
 
  !local variables:
  character(len=StrKIND),pointer:: gwdo_scheme
@@ -186,47 +192,49 @@
     if(allocated(ol4_p)   ) deallocate(ol4_p   )
 
    case("bl_ugwp_gwdo")
-    if(allocated(var2dls_p) ) deallocate(var2d_p(ims:ime,jms:jme) )
-    if(allocated(conls_p)   ) deallocate(con_p(ims:ime,jms:jme)   )
-    if(allocated(oa1ls_p)   ) deallocate(oa1_p(ims:ime,jms:jme)   )
-    if(allocated(oa2ls_p)   ) deallocate(oa2_p(ims:ime,jms:jme)   )
-    if(allocated(oa3ls_p)   ) deallocate(oa3_p(ims:ime,jms:jme)   )
-    if(allocated(oa4ls_p)   ) deallocate(oa4_p(ims:ime,jms:jme)   )
-    if(allocated(ol1ls_p)   ) deallocate(ol1_p(ims:ime,jms:jme)   )
-    if(allocated(ol2ls_p)   ) deallocate(ol2_p(ims:ime,jms:jme)   )
-    if(allocated(ol3ls_p)   ) deallocate(ol3_p(ims:ime,jms:jme)   )
-    if(allocated(ol4ls_p)   ) deallocate(ol4_p(ims:ime,jms:jme)   )
-    if(allocated(var2dss_p) ) deallocate(var2d_p(ims:ime,jms:jme) )
-    if(allocated(conss_p)   ) deallocate(con_p(ims:ime,jms:jme)   )
-    if(allocated(oa1ss_p)   ) deallocate(oa1_p(ims:ime,jms:jme)   )
-    if(allocated(oa2ss_p)   ) deallocate(oa2_p(ims:ime,jms:jme)   )
-    if(allocated(oa3ss_p)   ) deallocate(oa3_p(ims:ime,jms:jme)   )
-    if(allocated(oa4ss_p)   ) deallocate(oa4_p(ims:ime,jms:jme)   )
-    if(allocated(ol1ss_p)   ) deallocate(ol1_p(ims:ime,jms:jme)   )
-    if(allocated(ol2ss_p)   ) deallocate(ol2_p(ims:ime,jms:jme)   )
-    if(allocated(ol3ss_p)   ) deallocate(ol3_p(ims:ime,jms:jme)   )
-    if(allocated(ol4ss_p)   ) deallocate(ol4_p(ims:ime,jms:jme)   )
-    if(allocated(dusfc_ls_p)) deallocate(dusfc_ls_p(ims:ime,jms:jme))
-    if(allocated(dvsfc_ls_p)) deallocate(dvsfc_ls_p(ims:ime,jms:jme))
-    if(allocated(dusfc_bl_p)) deallocate(dusfc_bl_p(ims:ime,jms:jme))
-    if(allocated(dvsfc_bl_p)) deallocate(dvsfc_bl_p(ims:ime,jms:jme))
-    if(allocated(dusfc_ss_p)) deallocate(dusfc_ss_p(ims:ime,jms:jme))
-    if(allocated(dvsfc_ss_p)) deallocate(dvsfc_ss_p(ims:ime,jms:jme))
-    if(allocated(dusfc_fd_p)) deallocate(dusfc_fd_p(ims:ime,jms:jme))
-    if(allocated(dvsfc_fd_p)) deallocate(dvsfc_fd_p(ims:ime,jms:jme))
+    if(allocated(var2dls_p) ) deallocate(var2dls_p )
+    if(allocated(conls_p)   ) deallocate(conls_p   )
+    if(allocated(oa1ls_p)   ) deallocate(oa1ls_p   )
+    if(allocated(oa2ls_p)   ) deallocate(oa2ls_p   )
+    if(allocated(oa3ls_p)   ) deallocate(oa3ls_p   )
+    if(allocated(oa4ls_p)   ) deallocate(oa4ls_p   )
+    if(allocated(ol1ls_p)   ) deallocate(ol1ls_p   )
+    if(allocated(ol2ls_p)   ) deallocate(ol2ls_p   )
+    if(allocated(ol3ls_p)   ) deallocate(ol3ls_p   )
+    if(allocated(ol4ls_p)   ) deallocate(ol4ls_p   )
+    if(allocated(var2dss_p) ) deallocate(var2dss_p )
+    if(allocated(conss_p)   ) deallocate(conss_p   )
+    if(allocated(oa1ss_p)   ) deallocate(oa1ss_p   )
+    if(allocated(oa2ss_p)   ) deallocate(oa2ss_p   )
+    if(allocated(oa3ss_p)   ) deallocate(oa3ss_p   )
+    if(allocated(oa4ss_p)   ) deallocate(oa4ss_p   )
+    if(allocated(ol1ss_p)   ) deallocate(ol1ss_p   )
+    if(allocated(ol2ss_p)   ) deallocate(ol2ss_p   )
+    if(allocated(ol3ss_p)   ) deallocate(ol3ss_p   )
+    if(allocated(ol4ss_p)   ) deallocate(ol4ss_p   )
+    if(allocated(dusfc_ls_p)) deallocate(dusfc_ls_p)
+    if(allocated(dvsfc_ls_p)) deallocate(dvsfc_ls_p)
+    if(allocated(dusfc_bl_p)) deallocate(dusfc_bl_p)
+    if(allocated(dvsfc_bl_p)) deallocate(dvsfc_bl_p)
+    if(allocated(dusfc_ss_p)) deallocate(dusfc_ss_p)
+    if(allocated(dvsfc_ss_p)) deallocate(dvsfc_ss_p)
+    if(allocated(dusfc_fd_p)) deallocate(dusfc_fd_p)
+    if(allocated(dvsfc_fd_p)) deallocate(dvsfc_fd_p)
     if(allocated(hpbl_p)     ) deallocate(hpbl_p  )
     if(allocated(br_p)       ) deallocate(br_p    )
     if(allocated(xland_p)    ) deallocate(xland_p )
-    if(allocated(dtaux3d_ls_p)) deallocate(dtaux3d_ls_p(ims:ime,kms:kme,jms:jme))
-    if(allocated(dtauy3d_ls_p)) deallocate(dtauy3d_ls_p(ims:ime,kms:kme,jms:jme))
-    if(allocated(dtaux3d_bl_p)) deallocate(dtaux3d_bl_p(ims:ime,kms:kme,jms:jme))
-    if(allocated(dtauy3d_bl_p)) deallocate(dtauy3d_bl_p(ims:ime,kms:kme,jms:jme))
-    if(allocated(dtaux3d_ss_p)) deallocate(dtaux3d_ss_p(ims:ime,kms:kme,jms:jme))
-    if(allocated(dtauy3d_ss_p)) deallocate(dtauy3d_ss_p(ims:ime,kms:kme,jms:jme))
-    if(allocated(dtaux3d_fd_p)) deallocate(dtaux3d_fd_p(ims:ime,kms:kme,jms:jme))
-    if(allocated(dtauy3d_fd_p)) deallocate(dtauy3d_fd_p(ims:ime,kms:kme,jms:jme))
+    if(allocated(dtaux3d_ls_p)) deallocate(dtaux3d_ls_p)
+    if(allocated(dtauy3d_ls_p)) deallocate(dtauy3d_ls_p)
+    if(allocated(dtaux3d_bl_p)) deallocate(dtaux3d_bl_p)
+    if(allocated(dtauy3d_bl_p)) deallocate(dtauy3d_bl_p)
+    if(allocated(dtaux3d_ss_p)) deallocate(dtaux3d_ss_p)
+    if(allocated(dtauy3d_ss_p)) deallocate(dtauy3d_ss_p)
+    if(allocated(dtaux3d_fd_p)) deallocate(dtaux3d_fd_p)
+    if(allocated(dtauy3d_fd_p)) deallocate(dtauy3d_fd_p)
 
    case default
+
+ end select gwdo_select
 
  end subroutine deallocate_gwdo
 
@@ -391,6 +399,7 @@
          dtauy3d_fd_p(i,k,j) = dtauy3d_fd(k,i)
       enddo
       enddo
+      enddo
 
    case default
 
@@ -430,11 +439,12 @@
  end subroutine gwdo_from_MPAS
  
 !=================================================================================================================
- subroutine gwdo_to_MPAS(diag_physics,tend_physics,its,ite)
+ subroutine gwdo_to_MPAS(configs,diag_physics,tend_physics,its,ite)
 !=================================================================================================================
 
 !input arguments:
  integer,intent(in):: its,ite
+ type(mpas_pool_type),intent(in):: configs
 
 !inout arguments:
  type(mpas_pool_type),intent(inout):: diag_physics
@@ -442,6 +452,7 @@
 
 !local variables:
  integer:: i,k,j
+ character(len=StrKIND),pointer:: gwdo_scheme
 
 !local pointers:
  real(kind=RKIND),dimension(:),pointer  :: dusfcg,dvsfcg
@@ -458,6 +469,7 @@
 
 !-----------------------------------------------------------------------------------------------------------------
 
+ call mpas_pool_get_config(configs,'config_gwdo_scheme',gwdo_scheme)
  call mpas_pool_get_array(diag_physics,'dusfcg'  ,dusfcg  )
  call mpas_pool_get_array(diag_physics,'dvsfcg'  ,dvsfcg  )
  call mpas_pool_get_array(diag_physics,'dtaux3d' ,dtaux3d )
@@ -510,6 +522,7 @@
          dtauy3d_ss(k,i) = dtauy3d_ss_p(i,k,j)
          dtaux3d_fd(k,i) = dtaux3d_fd_p(i,k,j)
          dtauy3d_fd(k,i) = dtauy3d_fd_p(i,k,j)
+      enddo
       enddo
       enddo
 
@@ -640,7 +653,7 @@
  end select gwdo_select
 
 !copy local arrays to MPAS grid:
- call gwdo_to_MPAS(diag_physics,tend_physics,its,ite)
+ call gwdo_to_MPAS(configs,diag_physics,tend_physics,its,ite)
 
 !call mpas_log_write('--- end subroutine driver_gwdo.')
 !call mpas_log_write('')

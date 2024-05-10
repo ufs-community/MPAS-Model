@@ -17,7 +17,7 @@
                  dtaux3d,dtauy3d,dusfcg,dvsfcg,                               &
                  dtaux3d_ls,dtauy3d_ls,dtaux3d_bl,dtauy3d_bl,                 &
                  dtaux3d_ss,dtauy3d_ss,dtaux3d_fd,dtauy3d_fd,                 &
-                 dusfc_ls,dvsfc_ls,dusfc_bl,dvsfcg_bl,dusfc_ss,dvsfc_ss,      &
+                 dusfc_ls,dvsfc_ls,dusfc_bl,dvsfc_bl,dusfc_ss,dvsfc_ss,       &
                  dusfc_fd,dvsfc_fd,                                           &
                  var2dls,oc12dls,oa2d1ls,oa2d2ls,oa2d3ls,oa2d4ls,ol2d1ls,     &
                  ol2d2ls,ol2d3ls,ol2d4ls,var2dss,oc12dss,oa2d1ss,oa2d2ss,     &
@@ -125,7 +125,7 @@
 
  real(kind=kind_phys),intent(out),dimension(ims:ime,jms:jme)::    &
                       dusfcg,dusfc_ls,dusfc_bl,dusfc_ss,dusfc_fd, &
-                      dvsfcg,dvsfc_ls,dvsfcg_bl,dvsfc_ss,dvsfc_fd
+                      dvsfcg,dvsfc_ls,dvsfc_bl,dvsfc_ss,dvsfc_fd
 
  real(kind=kind_phys),intent(out),dimension(ims:ime,kms:kme,jms:jme ):: &
                    dtaux3d,dtaux3d_ls,dtaux3d_bl,dtaux3d_ss,dtaux3d_fd, &
@@ -150,7 +150,7 @@
     ol2d1ss_hv,ol2d2ss_hv,ol2d3ss_hv,ol2d4ss_hv
     
  real(kind=kind_phys),dimension(its:ite):: &
-    dusfcg_hv,dvsfcg_hv,dusfc_ls_hv,dvsfc_ls_hv,dusfc_bl_hv,dvsfcg_bl_hv, &
+    dusfcg_hv,dvsfcg_hv,dusfc_ls_hv,dvsfc_ls_hv,dusfc_bl_hv,dvsfc_bl_hv, &
     dusfc_ss_hv,dvsfc_ss_hv,dusfc_fd_hv,dvsfc_fd_hv
 
  real(kind=kind_phys),dimension(its:ite,kts:kte):: &
@@ -244,7 +244,7 @@
                     ,dtaux3d_fd=dtaux3d_fd_hv,dtauy3d_fd=dtauy3d_fd_hv  &
                     ,dusfcg=dusfcg_hv,dvsfcg=dvsfcg_hv                  &
                     ,dusfc_ls=dusfc_ls_hv,dvsfc_ls=dvsfc_ls_hv          &
-                    ,dusfc_bl=dusfc_bl_hv,dvsfcg_bl=dvsfcg_bl_hv        &
+                    ,dusfc_bl=dusfc_bl_hv,dvsfc_bl=dvsfc_bl_hv          &
                     ,dusfc_ss=dusfc_ss_hv,dvsfc_ss=dvsfc_ss_hv          &
                     ,dusfc_fd=dusfc_fd_hv,dvsfc_fd=dvsfc_fd_hv          &
                     ,uproj=u3d_hv,vproj=v3d_hv                &
@@ -294,7 +294,7 @@
        dusfc_ls(i,j) = dusfc_ls_hv(i)
        dvsfc_ls(i,j) = dvsfc_ls_hv(i)
        dusfc_bl(i,j) = dusfc_bl_hv(i)
-       dvsfcg_bl(i,j) = dvsfcg_bl_hv(i)
+       dvsfc_bl(i,j) = dvsfc_bl_hv(i)
        dusfc_ss(i,j) = dusfc_ss_hv(i)
        dvsfc_ss(i,j) = dvsfc_ss_hv(i)
        dusfc_fd(i,j) = dusfc_fd_hv(i)
