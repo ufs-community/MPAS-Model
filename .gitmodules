@@ -1,3 +1,7 @@
 [submodule "src/core_atmosphere/physics/TEMPO"]
 	path = src/core_atmosphere/physics/TEMPO
 	url = https://github.com/NCAR/TEMPO.git
+[submodule "src/core_atmosphere/physics/GSL_gwd_physics"]
+        path = src/core_atmosphere/physics/GSL_gwd_physics
+        url = https://github.com/mdtoyNOAA/GSL_gwd_physics.git
+        branch = main
