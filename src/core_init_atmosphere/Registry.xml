@@ -1130,6 +1130,12 @@
                      description="First guess specific humidity"
                      packages="first_guess_field"/>
 
+	        <var name="qnwfa_fg" name_in_code="qnwfa" type="real" dimensions="nFGLevels nCells Time" units="kg^{-1}"
+		     description="First guess water-friendly aerosols"/>
+
+		<var name="qnifa_fg" name_in_code="qnifa" type="real" dimensions="nFGLevels nCells Time" units="kg^{-1}"
+		     description="First guess ice-friendly aerosols"/>
+
                 <var name="qc_fg" name_in_code="qc" type="real" dimensions="nFGLevels nCells Time" units="kg kg^{-1}"
                      description="First guess cloud mixing ratio"/>
 
