@@ -1,3 +1,4 @@
+
 <?xml version="1.0"?>
 <registry model="mpas" core="init_atmosphere" core_abbrev="init_atm" version="8.1.0">
 
@@ -1018,6 +1019,24 @@
 
 			<var name="nifa" array_group="passive" units="kg^{-1}"
                              description="Number of ice-friendly aerosols for microphysics"/>
+
+                        <var name="qi" array_group="moist" units="kg kg^{-1}"
+                             description="Ice mixing ratio"/>
+
+                        <var name="qs" array_group="moist" units="kg kg^{-1}"
+                             description="Snow mixing ratio"/>
+
+                        <var name="qg" array_group="moist" units="kg kg^{-1}"
+                             description="Graupel mixing ratio"/>
+
+                        <var name="ni" array_group="number" units="nb kg^{-1}"
+                             description="Cloud ice number concentration"/>
+
+                        <var name="nr" array_group="number" units="nb kg^{-1}"
+                             description="Rain number concentration"/>
+
+                        <var name="nc" array_group="number" units="nb kg^{-1}"
+                             description="Cloud droplet number concentration"/>
                 </var_array>
 
                 <!-- Climatology for ocean mixed-layer depth -->
@@ -1058,6 +1077,24 @@
 
 			<var name="lbc_nifa" array_group="passive" units="kg^{-1}"
                              description="Number of ice-friendly aerosols for microphysics on LBCs"/>
+
+                        <var name="lbc_qi" array_group="moist" units="kg kg^{-1} s^{-1}"
+                             description="Lateral boundary tendency of ice mixing ratio"/>
+
+                        <var name="lbc_qs" array_group="moist" units="kg kg^{-1} s^{-1}"
+                             description="Lateral boundary tendency of snow mixing ratio"/>
+
+                        <var name="lbc_qg" array_group="moist" units="kg kg^{-1} s^{-1}"
+                             description="Lateral boundary tendency of graupel mixing ratio"/>
+
+                        <var name="lbc_nr" array_group="number" units="kg^{-1} s^{-1}"
+                             description="Lateral boundary tendency of rain number"/>
+
+                        <var name="lbc_ni" array_group="number" units="kg^{-1} s^{-1}"
+                             description="Lateral boundary tendency of ice number"/>
+
+                        <var name="lbc_nc" array_group="number" units="kg^{-1} s^{-1}"
+                             description="Lateral boundary tendency of droplet number"/>
                 </var_array>
 
         </var_struct>
@@ -1092,6 +1129,30 @@
                 <var name="sh_fg" name_in_code="sh" type="real" dimensions="nFGLevels nCells Time" units="kg kg^{-1}"
                      description="First guess specific humidity"
                      packages="first_guess_field"/>
+
+                <var name="qc_fg" name_in_code="qc" type="real" dimensions="nFGLevels nCells Time" units="kg kg^{-1}"
+                     description="First guess cloud mixing ratio"/>
+
+                <var name="qr_fg" name_in_code="qr" type="real" dimensions="nFGLevels nCells Time" units="kg kg^{-1}"
+                     description="First guess Rain Mixing Ratio"/>
+
+                <var name="qi_fg" name_in_code="qi" type="real" dimensions="nFGLevels nCells Time" units="kg kg^{-1}"
+                     description="First guess Cloud Ice Mixing Ratio"/>
+
+                <var name="qs_fg" name_in_code="qs" type="real" dimensions="nFGLevels nCells Time" units="kg kg^{-1}"
+                     description="First guess Snow Mixing Ratio"/>
+
+                <var name="qg_fg" name_in_code="qg" type="real" dimensions="nFGLevels nCells Time" units="kg kg^{-1}"
+                     description="First guess Graupel Mixing Ratio"/>
+
+                <var name="qnc_fg" name_in_code="qnc" type="real" dimensions="nFGLevels nCells Time" units="kg^{-1}"
+                     description="First guess Number Concentration of Cloud Droplets"/>
+
+                <var name="qni_fg" name_in_code="qni" type="real" dimensions="nFGLevels nCells Time" units="kg^{-1}"
+                     description="First guess Number Concentration of Cloud Ice"/>
+
+                <var name="qnr_fg" name_in_code="qnr" type="real" dimensions="nFGLevels nCells Time" units="kg^{-1}"
+                     description="First guess  Specific Number Concentration of Rain"/>
 
                 <var name="soilz_fg" name_in_code="soilz" type="real" dimensions="nCells Time" units="m"
                      description="First guess soil height"
