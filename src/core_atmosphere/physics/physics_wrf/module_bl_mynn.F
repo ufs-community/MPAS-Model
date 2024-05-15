@@ -1658,7 +1658,7 @@ CONTAINS
             alp6                 !< for mass-flux/
 
     !THE FOLLOWING LIMITS DO NOT DIRECTLY AFFECT THE ACTUAL PBLH.
-    !THEY ONLY IMPOSE LIMITS ON THE CALCULATION OF THE MIXING LENGTH 
+    !THEY ONLY IMPOSE LIMITS ON THE CALCULATION OF THE MIXING LENGTH
     !SCALES SO THAT THE BOULAC MIXING LENGTH (IN FREE ATMOS) DOES
     !NOT ENCROACH UPON THE BOUNDARY LAYER MIXING LENGTH (els, elb & elt).
     real(kind_phys), parameter :: minpblh     = 300.  !< min mixed-layer height
@@ -2255,7 +2255,7 @@ CONTAINS
                     else
                        tl=0.
                     endif
-                 endif            
+                 endif
                  dlu(iz)=zzz-dzt+tl
                  !print*,"  FOUND Dup:",dlu(iz)," z=",zw(izz)," tl=",tl
                  found =1
@@ -2269,7 +2269,7 @@ CONTAINS
           ENDDO
 
         endif
-                   
+
         !----------------------------------
         ! FIND DISTANCE DOWN
         !----------------------------------
@@ -2282,8 +2282,8 @@ CONTAINS
         if (iz .gt. kts) then  !cant integrate downwards from lowest level
 
           found = 0
-          izz=iz       
-          DO WHILE (found .EQ. 0) 
+          izz=iz
+          DO WHILE (found .EQ. 0)
 
             if (izz .gt. kts) then
               dzt=dz(izz-1)
@@ -2304,7 +2304,7 @@ CONTAINS
                     else
                        tl=0.
                     endif
-                 endif            
+                 endif
                  dld(iz)=zzz-dzt+tl
                  !print*,"  FOUND Ddown:",dld(iz)," z=",zw(izz)," tl=",tl
                  found = 1
@@ -3277,11 +3277,11 @@ CONTAINS
        DO k = kts,kte-1
           b2l = b2*0.5*( el(k+1)+el(k) )
           bp(k) = 2.*qkw(k) / b2l
-          rp(k) = pdc(k+1) + pdc(k) 
+          rp(k) = pdc(k+1) + pdc(k)
        END DO
-       
+
 !zero gradient for tqcov at bottom and top
-       
+
 !!       a(1)=0.
 !!       b(1)=1.
 !!       c(1)=-1.
@@ -3319,7 +3319,7 @@ CONTAINS
 !          cov(k)=d(k-kts+1)
           cov(k)=x(k)
        ENDDO
-       
+
     ELSE
 
        !Not level 3 - default to level 2 diagnostic
@@ -3336,7 +3336,7 @@ CONTAINS
        
        tsq(kte)=tsq(kte-1)
        cov(kte)=cov(kte-1)
-      
+
     END IF
 
 #ifdef HARDCODE_VERTICAL
@@ -3345,7 +3345,7 @@ CONTAINS
 #endif
 
   END SUBROUTINE mym_predict
-  
+
 ! ==================================================================
 !     SUBROUTINE  mym_condensation:
 !
@@ -5233,10 +5233,10 @@ ENDIF
 
 !! to solve system of linear eqs on tridiagonal matrix n times n
 !! after Peaceman and Rachford, 1955
-!! a,b,c,d - are vectors of order n 
+!! a,b,c,d - are vectors of order n
 !! a,b,c - are coefficients on the LHS
 !! d - is initially RHS on the output becomes a solution vector
-    
+
 !-------------------------------------------------------------------
 
     integer, intent(in):: n
@@ -5250,13 +5250,13 @@ ENDIF
     c(n)=0.
     q(1)=-c(1)/b(1)
     d(1)=d(1)/b(1)
-    
+
     DO i=2,n
        p=1./(b(i)+a(i)*q(i-1))
        q(i)=-c(i)*p
        d(i)=(d(i)-a(i)*d(i-1))*p
     ENDDO
-    
+
     DO i=n-1,1,-1
        d(i)=d(i)+q(i)*d(i+1)
     ENDDO

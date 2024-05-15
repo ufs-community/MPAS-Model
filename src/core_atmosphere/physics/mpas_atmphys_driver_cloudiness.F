@@ -286,6 +286,7 @@
 
     case("cld_fraction")
       call mpas_timer_start('calc_cldfraction')
+      !print*, minval(cldfrac_p), minval(t_p), minval(pres_p), minval(qvrad_p), minval(qcrad_p), minval(qirad_p)
       call calc_cldfraction(cldfrac_p,t_p,pres_p,qvrad_p,qcrad_p,qirad_p,qs_p,its,ite)
       call mpas_timer_stop('calc_cldfraction')
 

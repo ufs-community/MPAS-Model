@@ -75,6 +75,7 @@ include 'mpif.h'
 
    integer, parameter, public :: IO_NODE = 0
    integer, parameter, public :: BUFSIZE = 6000
+   integer, public :: numprocs = 1
 
 #ifdef _MPI
    public :: MPI_COMM_SELF
@@ -265,9 +266,7 @@ include 'mpif.h'
 #ifdef _MPI
       integer :: mpi_rank, mpi_size
       integer :: mpi_ierr
-#ifdef MPAS_OPENMP
       integer :: desiredThreadLevel, threadLevel
-#endif
 
       if ( present(external_comm) ) then
          dminfo % initialized_mpi = .false.
@@ -283,6 +282,7 @@ include 'mpif.h'
          call MPI_Init_thread(desiredThreadLevel, threadLevel, mpi_ierr)
 #else
          call MPI_Init(mpi_ierr)
+!         call MPI_Init_thread(MPI_THREAD_MULTIPLE, threadLevel, mpi_ierr)
 #endif
          call MPI_Comm_dup(MPI_COMM_WORLD, dminfo % comm, mpi_ierr)
       end if
@@ -291,6 +291,7 @@ include 'mpif.h'
       call MPI_Comm_rank(dminfo % comm, mpi_rank, mpi_ierr)
       call MPI_Comm_size(dminfo % comm, mpi_size, mpi_ierr)
 
+      numprocs = mpi_size
       dminfo % nprocs = mpi_size
       dminfo % my_proc_id = mpi_rank
 

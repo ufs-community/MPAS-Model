@@ -201,7 +201,7 @@ module atm_core_interface
       !least one physics parameterization is called (using the logical moist_physics):
       call physics_namelist_check(configs)
 
-      local_ierr = atmphys_setup_packages(configs, packages, iocontext)
+      local_ierr = atmphys_setup_packages(configs, streamInfo, packages, iocontext)
       if (local_ierr /= 0) then
          ierr = ierr + 1
          call mpas_log_write('Package setup failed for atmphys in core_atmosphere', messageType=MPAS_LOG_ERR)

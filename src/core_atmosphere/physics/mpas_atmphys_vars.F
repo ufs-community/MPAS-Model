@@ -201,14 +201,18 @@
     qr_p,             &!rain mixing ratio                                                   [kg/kg]
     qi_p,             &!cloud ice mixing ratio                                              [kg/kg]
     qs_p,             &!snow mixing ratio                                                   [kg/kg]
-    qg_p               !graupel mixing ratio                                                [kg/kg]
+    qg_p,             &!graupel mixing ratio                                                [kg/kg]
+    qh_p               !hail mixing ratio                                                   [kg/kg]
 
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
     nc_p,             &!
     ni_p,             &!
     nr_p,             &!
+    ns_p, ng_p, nh_p, nccn_p, &
+    volg_p, volh_p,   &
+  &!
     nwfa_p,           &!
-    nifa_p             !
+    nifa_p,             zrw_p, zgw_p, zhw_p
 
 !... arrays located at w (vertical velocity) points, or at interface between layers:
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
@@ -252,7 +256,8 @@
     f_qi,             &!parameter set to true to include the cloud ice mixing ratio.
     f_qs,             &!parameter set to true to include the snow minxg ratio.
     f_qg,             &!parameter set to true to include the graupel mixing ratio.
-    f_qoz              !parameter set to true to include the ozone mixing ratio.
+    f_qoz,            &!parameter set to true to include the ozone mixing ratio.
+    f_qh
 
  logical:: &
     f_nc,             &!parameter set to true to include the cloud water number concentration.
@@ -290,7 +295,8 @@
     reice_p,          &!
     resnow_p,         &!
     refl10cm_p         !
-
+ real(kind=RKIND),dimension(:,:),allocatable:: &
+    refl10cm_1km_p
 !=================================================================================================================
 !... variables and arrays related to parameterization of convection:
 !=================================================================================================================
@@ -451,6 +457,10 @@
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
     pattern_spp_pbl    !stochastic forcing for the MYMM PBL and surface layer schemes.
 
+!... MYJ PBL scheme (module_bl_myjpbl.F):
+ real(kind=RKIND),dimension(:,:),allocatable:: &
+    chlowq_p,         &!
+    mixht_p            !
 !=================================================================================================================
 !... variables and arrays related to parameterization of gravity wave drag over orography:
 !=================================================================================================================
@@ -560,6 +570,34 @@
     sm3d_p,           &!stability function for moisture                                                        [-]
     elpbl_p            !length scale from PBL                                                                  [m]
 
+!... arrays only in myj surface layer scheme (module_sf_myjsfc.F):
+ real(kind=RKIND),dimension(:,:),allocatable:: &
+    thz0_p,           &!potential temperature at roughness length                                              [K]
+    uz0_p,            &!u at roughness length                                                                [m/s]
+    vz0_p,            &!v at roughness length                                                                [m/s]
+    akhs_p,           &!surface exchange coefficient for heat                                                  [-]
+    akms_p,           &!surface exchange coefficient for moisture                                              [-]
+    ct_p,             &!countergradient term                                                                   [-]
+    tshltr_p,         &!shelter potential temperature                                                          [K]
+    qshltr_p,         &!shelter specific humidity                                                              [-]
+    pshltr_p,         &!shelter pressure                                                                      [Pa]
+    th10_p,           &!potential temperature at 10 m                                                          [K]
+    q10_p,            &!specific humidity at 10 m                                                              [-]
+    thz0_sea,         &!potential temperature at roughness length (ice)                                        [K]
+    qz0_sea,          &!specific humidity at roughness length (ice)                                            [-]
+    uz0_sea,          &!u at roughness length (ice)                                                          [m/s]
+    vz0_sea,          &!v at roughness length (ice)                                                          [m/s]
+    akhs_sea,         &!surface exchange coefficient for heat (ice)                                            [-]
+    akms_sea,         &!surface exchange coefficient for moisture (ice)                                        [-]
+    ct_sea,           &!countergradient term (ice)                                                             [-]
+    tshltr_sea,       &!shelter potential temperature (ice)                                                    [K]
+    qshltr_sea,       &!shelter specific humidity (ice)                                                        [-]
+    pshltr_sea,       &!shelter pressure (ice)                                                                [Pa]
+    th10_sea,         &!potential temperature at 10 m (ice)                                                    [K]
+    q10_sea            !specific humidity at 10 m (ice)                                                        [-]
+
+ integer,dimension(:,:),allocatable:: &
+  lowlyr_p            !index of lowest model layer above ground                                                [-]
 !=================================================================================================================
 !... variables and arrays related to parameterization of seaice:
 !... the options set for seaice_albedo_opt, seaice_thickness_opt, and seaicesnowdepth_opt must not be changed

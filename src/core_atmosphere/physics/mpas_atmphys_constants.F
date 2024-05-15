@@ -91,6 +91,14 @@
 
  REAL(kind=RKIND), PARAMETER :: p1000mb      = 100000.    ! pressure at 1000 hPa (pa)
 
+!constants specific to MYJ surface layer scheme
+ real(kind=RKIND),parameter :: pq0=379.90516     !
+ real(kind=RKIND),parameter :: epsq2=0.2         ! initial TKE for camuw PBL scheme                      [m2 s^-2]
+ real(kind=RKIND),parameter :: a2=17.2693882
+ real(kind=RKIND),parameter :: a3=273.16
+ real(kind=RKIND),parameter :: a4=35.86
+ real(kind=RKIND),parameter :: p608=rvord-1.
+
  contains
 
 !=================================================================================================================

@@ -17,6 +17,7 @@
 ! use bl_mynn,only: bl_mynn_init
  use module_bl_mynn_driver,only: mynn_bl_driver
  use module_bl_ysu
+ use module_bl_myjpbl
 
  implicit none
  private
@@ -93,6 +94,7 @@
 !local pointers:
  character(len=StrKIND),pointer:: pbl_scheme
 
+ integer :: i, j
 !-----------------------------------------------------------------------------------------------------------------
 
  call mpas_pool_get_config(configs,'config_pbl_scheme',pbl_scheme)
@@ -201,7 +203,8 @@
 !local pointers:
  character(len=StrKIND),pointer:: pbl_scheme
 
-!-----------------------------------------------------------------------------------------------------------------
+ integer :: i, j, k
+!n-----------------------------------------------------------------------------------------------------------------
 
  call mpas_pool_get_config(configs,'config_pbl_scheme',pbl_scheme)
 
@@ -293,6 +296,25 @@
        !deallocation of additional arrays:
        if(allocated(pattern_spp_pbl)) deallocate(pattern_spp_pbl)
 
+    case("bl_myj")
+       if(allocated(ht_p)         ) deallocate(ht_p      )
+       if(allocated(chlowq_p)     ) deallocate(chlowq_p  )
+       if(allocated(thz0_p)       ) deallocate(thz0_p    )
+       if(allocated(uz0_p)        ) deallocate(uz0_p     )
+       if(allocated(vz0_p)        ) deallocate(vz0_p     )
+       if(allocated(qz0_p)        ) deallocate(qz0_p     )
+       if(allocated(tsk_p)        ) deallocate(tsk_p     )
+       if(allocated(xice_p)       ) deallocate(xice_p    )
+       if(allocated(snow_p)       ) deallocate(snow_p    )
+       if(allocated(tkepbl_p)     ) deallocate(tkepbl_p  )
+       if(allocated(elpbl_p)      ) deallocate(elpbl_p   )
+       if(allocated(akhs_p)       ) deallocate(akhs_p    )
+       if(allocated(akms_p)       ) deallocate(akms_p    )
+       if(allocated(ct_p)         ) deallocate(ct_p      )
+       if(allocated(lowlyr_p)     ) deallocate(lowlyr_p  )
+       if(allocated(mixht_p)      ) deallocate(mixht_p   )
+       if(allocated(lh_p)         ) deallocate(lh_p      )
+       if(allocated(qsfc_p)       ) deallocate(qsfc_p    )
     case default
 
  end select pbl_select
@@ -329,12 +351,16 @@
 !local pointers for MYNN scheme:
  real(kind=RKIND),pointer:: len_disp
  real(kind=RKIND),dimension(:),pointer  :: meshDensity
- real(kind=RKIND),dimension(:),pointer  :: ch,qsfc,rmol,skintemp
+ real(kind=RKIND),dimension(:),pointer  :: ch,qsfc,qcg,rmol,skintemp
  real(kind=RKIND),dimension(:,:),pointer:: cov,qke,qsq,tsq,sh3d,sm3d,tke_pbl,qke_adv,el_pbl
- real(kind=RKIND),dimension(:,:),pointer:: cldfrac_bl,qc_bl,qi_bl
+  real(kind=RKIND),dimension(:,:),pointer:: cldfrac_bl,qc_bl,qi_bl
  real(kind=RKIND),dimension(:,:),pointer:: edmf_a,edmf_ent,edmf_qc,edmf_qt,edmf_thl,edmf_w
  real(kind=RKIND),dimension(:,:),pointer:: sub_thl,sub_qv,det_thl,det_qv
 
+!local pointers for MYJ scheme:
+ real(kind=RKIND),dimension(:),pointer   :: chlowq,thz0,qz0,uz0,vz0,ct,akhs,akms,lh,mixht
+ real(kind=RKIND),dimension(:,:),pointer :: zgrid
+ integer,dimension(:),pointer            :: lowlyr
 !-----------------------------------------------------------------------------------------------------------------
 
  call mpas_pool_get_config(configs,'config_pbl_scheme',pbl_scheme)
@@ -499,6 +525,52 @@
        enddo
        enddo
 
+    case("bl_myj")
+       !input variables:
+       call mpas_pool_get_array(mesh        ,'zgrid' ,zgrid)
+       call mpas_pool_get_array(diag_physics, 'lowlyr', lowlyr)
+       call mpas_pool_get_array(diag_physics, 'chlowq', chlowq)
+       call mpas_pool_get_array(diag_physics, 'lh', lh)
+       call mpas_pool_get_array(sfc_input   ,'skintemp',skintemp)
+       !inout
+       call mpas_pool_get_array(diag_physics, 'thz0', thz0)
+       call mpas_pool_get_array(diag_physics, 'uz0', uz0)
+       call mpas_pool_get_array(diag_physics, 'vz0', vz0)
+       call mpas_pool_get_array(diag_physics, 'qz0', qz0)
+       call mpas_pool_get_array(diag_physics, 'akhs', akhs)
+       call mpas_pool_get_array(diag_physics, 'akms', akms)
+       call mpas_pool_get_array(diag_physics,'tke_pbl',tke_pbl  )
+       call mpas_pool_get_array(diag_physics,'qsfc',qsfc)
+       !out
+       call mpas_pool_get_array(diag_physics, 'ct', ct)
+       call mpas_pool_get_array(diag_physics, 'mixht', mixht)
+
+       do j = jts, jte
+       do k = kts, kte
+       do i = its, ite
+          if(k == kts) then
+             !input variables:
+             ht_p(i,j) = zgrid(1,i)
+             lowlyr_p(i,j) = lowlyr(i)
+             chlowq_p(i,j) = chlowq(i)
+             lh_p(i,j) = lh(i)
+             tsk_p(i,j) = skintemp(i)
+             !inout variables
+             thz0_p(i,j) = thz0(i)
+             qz0_p(i,j) = qz0(i)
+             uz0_p(i,j) = uz0(i)
+             vz0_p(i,j) = vz0(i)
+             akms_p(i,j) = akms(i)
+             akhs_p(i,j) = akhs(i)
+             qsfc_p(i,j) = qsfc(i)
+             !out variables
+             ct_p(i,j) = 0._RKIND
+             mixht_p(i,j) = 0._RKIND
+          endif
+          tkepbl_p(i,k,j) = tke_pbl(k,i)
+       enddo
+       enddo
+       enddo
     case default
 
  end select pbl_select
@@ -558,6 +630,12 @@
  real(kind=RKIND),dimension(:,:),pointer:: cldfrac_bl,qc_bl,qi_bl
  real(kind=RKIND),dimension(:,:),pointer:: edmf_a,edmf_ent,edmf_qc,edmf_qt,edmf_thl,edmf_w
  real(kind=RKIND),dimension(:,:),pointer:: sub_thl,sub_qv,det_thl,det_qv
+
+!local pointers for MYJ scheme:
+ real(kind=RKIND),dimension(:),pointer   :: thz0,qz0,uz0,vz0,akhs,akms,ct,mixht,qsfc,ust,znt
+
+!local pointers for MYJ scheme:
+ real(kind=RKIND),dimension(:),pointer   :: thz0,qz0,uz0,vz0,akhs,akms,ct,mixht,qsfc,ust,znt
 
 !-----------------------------------------------------------------------------------------------------------------
 
@@ -681,6 +759,55 @@
           qdiss(k,i)      = qdiss_p(i,k,j)
           qshear(k,i)     = qshear_p(i,k,j)
           qwt(k,i)        = qwt_p(i,k,j)
+
+          rqsblten(k,i)   = rqsblten_p(i,k,j)
+          rniblten(k,i)   = rniblten_p(i,k,j)
+       enddo
+       enddo
+       enddo
+
+    case("bl_myj")
+       !inout
+       call mpas_pool_get_array(diag_physics, 'thz0', thz0)
+       call mpas_pool_get_array(diag_physics, 'uz0', uz0)
+       call mpas_pool_get_array(diag_physics, 'vz0', vz0)
+       call mpas_pool_get_array(diag_physics, 'qz0', qz0)
+       call mpas_pool_get_array(diag_physics, 'akhs', akhs)
+       call mpas_pool_get_array(diag_physics, 'akms', akms)
+       call mpas_pool_get_array(diag_physics, 'tke_pbl', tke_pbl)
+       call mpas_pool_get_array(diag_physics, 'qsfc', qsfc)
+       call mpas_pool_get_array(diag_physics, 'ust', ust)
+       call mpas_pool_get_array(diag_physics, 'znt', znt)
+       !out
+       call mpas_pool_get_array(diag_physics, 'ct', ct)
+       call mpas_pool_get_array(diag_physics, 'mixht', mixht)
+       call mpas_pool_get_array(diag_physics,'el_pbl'  ,el_pbl  )
+       do j = jts, jte
+       do k = kts,kte
+       do i = its, ite
+          if (k==kts) then
+             !inout variables
+             thz0(i) = thz0_p(i,j)
+             qz0(i) = qz0_p(i,j)
+             uz0(i) = uz0_p(i,j)
+             vz0(i) = vz0_p(i,j)
+             akms(i) = akms_p(i,j)
+             akhs(i) = akhs_p(i,j)
+             qsfc(i) = qsfc_p(i,j)
+             ust(i) = ust_p(i,j)
+             znt(i) = znt_p(i,j)
+             !out variables
+             ct(i) = ct_p(i,j)
+             mixht(i) = mixht_p(i,j)
+          endif
+          tke_pbl(k,i)  = tkepbl_p(i,k,j)
+          qke_adv(k,i)  = qkeadv_p(i,k,j)
+          !... outputs:
+          dqke(k,i)     = dqke_p(i,k,j)
+          qbuoy(k,i)    = qbuoy_p(i,k,j)
+          qdiss(k,i)    = qdiss_p(i,k,j)
+          qshear(k,i)   = qshear_p(i,k,j)
+          qwt(k,i)      = qwt_p(i,k,j)
 
           rqsblten(k,i)   = rqsblten_p(i,k,j)
           rniblten(k,i)   = rniblten_p(i,k,j)
@@ -929,6 +1056,184 @@
        call mpas_timer_stop('bl_mynn')
 !      call mpas_log_write('--- exit subroutine mynn_bl_driver:')
 !      call mpas_log_write(' ')
+
+    case("bl_myj")
+       if (initflag==1) then
+          do i = its,ite
+          do k = kts,kte
+          do j = jts,jte
+             tkepbl_p(i,k,j) = epsq2
+          enddo
+          enddo
+          enddo
+       endif
+       call mpas_timer_start('MYJ_pbl')
+       call mpas_log_write('dt_pbl = $r',realArgs=(/dt_pbl/))
+!       call mpas_log_write("BEFORE MYJPBL")
+! call mpas_dmpar_min_real(domain % dminfo, minval(ht_p), scalar_min)
+! call mpas_dmpar_min_real(domain % dminfo, maxval(ht_p), scalar_max)
+!call mpas_log_write('MIN/MAX ht_p = $r, $r', realArgs=(/scalar_min,scalar_max/)
+!
+! call mpas_dmpar_min_real(domain % dminfo, minval(qsfc_p), scalar_min)
+! call mpas_dmpar_min_real(domain % dminfo, maxval(qsfc_p), scalar_max)
+!call mpas_log_write('MIN/MAX qsfc_p = $r, $r', realArgs=(/scalar_min,scalar_max/)
+!
+! call mpas_dmpar_min_real(domain % dminfo, minval(thz0_p), scalar_min)
+! call mpas_dmpar_min_real(domain % dminfo, maxval(thz0_p), scalar_max)
+!call mpas_log_write('MIN/MAX thz0_p = $r, $r',realArgs=(/scalar_min,scalar_max/)
+!
+! call mpas_dmpar_min_real(domain % dminfo, minval(qz0_p), scalar_min)
+! call mpas_dmpar_min_real(domain % dminfo, maxval(qz0_p), scalar_max)
+!call mpas_log_write('MIN/MAX qz0_p = $r, $r',realArgs=(/scalar_min,scalar_max/)
+!
+! call mpas_dmpar_min_real(domain % dminfo, minval(uz0_p), scalar_min)
+! call mpas_dmpar_min_real(domain % dminfo, maxval(uz0_p), scalar_max)
+!call mpas_log_write('MIN/MAX uz0_p = $r, $r', realArgs=(/scalar_min,scalar_max/)
+!
+! call mpas_dmpar_min_real(domain % dminfo, minval(vz0_p), scalar_min)
+! call mpas_dmpar_min_real(domain % dminfo, maxval(vz0_p), scalar_max)
+!call mpas_log_write('MIN/MAX vz0_p = $r, $r',realArgs=(/scalar_min,scalar_max/)
+!
+! call mpas_dmpar_min_real(domain % dminfo, minval(tkepbl_p), scalar_min)
+! call mpas_dmpar_min_real(domain % dminfo, maxval(tkepbl_p), scalar_max)
+!call mpas_log_write('MIN/MAX tkepbl_p = $r, $r',realArgs=(/scalar_min,scalar_max/)
+!
+! call mpas_dmpar_min_real(domain % dminfo, minval(kzh_p), scalar_min)
+! call mpas_dmpar_min_real(domain % dminfo, maxval(kzh_p), scalar_max)
+!call mpas_log_write('MIN/MAX kzh_p = $r, $r',realArgs=(/scalar_min,scalar_max/)
+!
+! call mpas_dmpar_min_real(domain % dminfo, minval(ust_p), scalar_min)
+! call mpas_dmpar_min_real(domain % dminfo, maxval(ust_p), scalar_max)
+!call mpas_log_write('MIN/MAX ust_p = $r, $r', realArgs=(/scalar_min,scalar_max/)
+!
+! call mpas_dmpar_min_real(domain % dminfo, minval(znt_p), scalar_min)
+! call mpas_dmpar_min_real(domain % dminfo, maxval(znt_p), scalar_max)
+!call mpas_log_write('MIN/MAX znt_p = $r, $r',realArgs=(/scalar_min,scalar_max/)
+!
+! call mpas_dmpar_min_real(domain % dminfo, minval(ct_p), scalar_min)
+! call mpas_dmpar_min_real(domain % dminfo, maxval(ct_p), scalar_max)
+!call mpas_log_write('MIN/MAX ct_p = $r, $r',realArgs=(/scalar_min,scalar_max/)
+!
+! call mpas_dmpar_min_real(domain % dminfo, minval(akhs_p), scalar_min)
+! call mpas_dmpar_min_real(domain % dminfo, maxval(akhs_p), scalar_max)
+!call mpas_log_write('MIN/MAX akhs_p = $r, $r', realArgs=(/scalar_min,scalar_max/)
+!
+! call mpas_dmpar_min_real(domain % dminfo, minval(akms_p), scalar_min)
+! call mpas_dmpar_min_real(domain % dminfo, maxval(akms_p), scalar_max)
+!call mpas_log_write('MIN/MAX akms_p = $r, $r', realArgs=(/scalar_min,scalar_max/)
+
+       call myjpbl ( &
+                dt       = dt_pbl    , stepbl   = 1          , ht       = ht_p       , &
+                pmid     = pres_hyd_p, pint     = pres2_hyd_p, th       = th_p       , &
+                t        = t_p       , exner    = pi_p       , qv       = qv_p       , &
+                qcw      = qc_p      , qci      = qi_p       , qcs      = qs_p       , &
+                qcr      = qr_p      , qcg      = qg_p       , u        = u_p        , &
+                v        = v_p       , rho      = rho_p      , tsk      = tsk_p      , &
+                qsfc     = qsfc_p    , chklowq   = chlowq_p   , thz0     = thz0_p     , &
+                qz0      = qz0_p     , uz0      = uz0_p      , vz0      = vz0_p      , &
+                lowlyr   = lowlyr_p  , xland    = xland_p    , sice     = xice_p     , &
+                snow     = snow_p    , tke_myj  = tkepbl_p   , exch_h   = kzh_p      , &
+                ustar    = ust_p     , znt      = znt_p      , el_myj   = elpbl_p    , &
+                pblh     = hpbl_p    , kpbl     = kpbl_p     , ct       = ct_p       , &
+                akhs     = akhs_p    , akms     = akms_p     , elflx    = lh_p       , &
+                mixht    = mixht_p   , rublten  = rublten_p  , rvblten  = rvblten_p  , &
+                rthblten = rthblten_p, rqvblten = rqvblten_p , rqcblten = rqcblten_p , &
+                rqiblten = rqiblten_p, dz       = dz_p       ,                         &
+                ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde, &
+                ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme, &
+                its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte  &
+                            )
+       call mpas_timer_stop('MYJ_pbl')
+         
+
+    case("bl_myj")
+       if (initflag==1) then
+          do i = its,ite
+          do k = kts,kte
+          do j = jts,jte
+             tkepbl_p(i,k,j) = epsq2
+          enddo
+          enddo
+          enddo
+       endif
+       call mpas_timer_start('MYJ_pbl')
+       call mpas_log_write('dt_pbl = $r',realArgs=(/dt_pbl/))
+!       call mpas_log_write("BEFORE MYJPBL")
+! call mpas_dmpar_min_real(domain % dminfo, minval(ht_p), scalar_min)
+! call mpas_dmpar_min_real(domain % dminfo, maxval(ht_p), scalar_max)
+!call mpas_log_write('MIN/MAX ht_p = $r, $r', realArgs=(/scalar_min,scalar_max/)
+!
+! call mpas_dmpar_min_real(domain % dminfo, minval(qsfc_p), scalar_min)
+! call mpas_dmpar_min_real(domain % dminfo, maxval(qsfc_p), scalar_max)
+!call mpas_log_write('MIN/MAX qsfc_p = $r, $r', realArgs=(/scalar_min,scalar_max/)
+!
+! call mpas_dmpar_min_real(domain % dminfo, minval(thz0_p), scalar_min)
+! call mpas_dmpar_min_real(domain % dminfo, maxval(thz0_p), scalar_max)
+!call mpas_log_write('MIN/MAX thz0_p = $r, $r',realArgs=(/scalar_min,scalar_max/)
+!
+! call mpas_dmpar_min_real(domain % dminfo, minval(qz0_p), scalar_min)
+! call mpas_dmpar_min_real(domain % dminfo, maxval(qz0_p), scalar_max)
+!call mpas_log_write('MIN/MAX qz0_p = $r, $r',realArgs=(/scalar_min,scalar_max/)
+!
+! call mpas_dmpar_min_real(domain % dminfo, minval(uz0_p), scalar_min)
+! call mpas_dmpar_min_real(domain % dminfo, maxval(uz0_p), scalar_max)
+!call mpas_log_write('MIN/MAX uz0_p = $r, $r', realArgs=(/scalar_min,scalar_max/)
+!
+! call mpas_dmpar_min_real(domain % dminfo, minval(vz0_p), scalar_min)
+! call mpas_dmpar_min_real(domain % dminfo, maxval(vz0_p), scalar_max)
+!call mpas_log_write('MIN/MAX vz0_p = $r, $r',realArgs=(/scalar_min,scalar_max/)
+!
+! call mpas_dmpar_min_real(domain % dminfo, minval(tkepbl_p), scalar_min)
+! call mpas_dmpar_min_real(domain % dminfo, maxval(tkepbl_p), scalar_max)
+!call mpas_log_write('MIN/MAX tkepbl_p = $r, $r',realArgs=(/scalar_min,scalar_max/)
+!
+! call mpas_dmpar_min_real(domain % dminfo, minval(kzh_p), scalar_min)
+! call mpas_dmpar_min_real(domain % dminfo, maxval(kzh_p), scalar_max)
+!call mpas_log_write('MIN/MAX kzh_p = $r, $r',realArgs=(/scalar_min,scalar_max/)
+!
+! call mpas_dmpar_min_real(domain % dminfo, minval(ust_p), scalar_min)
+! call mpas_dmpar_min_real(domain % dminfo, maxval(ust_p), scalar_max)
+!call mpas_log_write('MIN/MAX ust_p = $r, $r', realArgs=(/scalar_min,scalar_max/)
+!
+! call mpas_dmpar_min_real(domain % dminfo, minval(znt_p), scalar_min)
+! call mpas_dmpar_min_real(domain % dminfo, maxval(znt_p), scalar_max)
+!call mpas_log_write('MIN/MAX znt_p = $r, $r',realArgs=(/scalar_min,scalar_max/)
+!
+! call mpas_dmpar_min_real(domain % dminfo, minval(ct_p), scalar_min)
+! call mpas_dmpar_min_real(domain % dminfo, maxval(ct_p), scalar_max)
+!call mpas_log_write('MIN/MAX ct_p = $r, $r',realArgs=(/scalar_min,scalar_max/)
+!
+! call mpas_dmpar_min_real(domain % dminfo, minval(akhs_p), scalar_min)
+! call mpas_dmpar_min_real(domain % dminfo, maxval(akhs_p), scalar_max)
+!call mpas_log_write('MIN/MAX akhs_p = $r, $r', realArgs=(/scalar_min,scalar_max/)
+!
+! call mpas_dmpar_min_real(domain % dminfo, minval(akms_p), scalar_min)
+! call mpas_dmpar_min_real(domain % dminfo, maxval(akms_p), scalar_max)
+!call mpas_log_write('MIN/MAX akms_p = $r, $r', realArgs=(/scalar_min,scalar_max/)
+
+       call myjpbl ( &
+                dt       = dt_pbl    , stepbl   = 1          , ht       = ht_p       , &
+                pmid     = pres_hyd_p, pint     = pres2_hyd_p, th       = th_p       , &
+                t        = t_p       , exner    = pi_p       , qv       = qv_p       , &
+                qcw      = qc_p      , qci      = qi_p       , qcs      = qs_p       , &
+                qcr      = qr_p      , qcg      = qg_p       , u        = u_p        , &
+                v        = v_p       , rho      = rho_p      , tsk      = tsk_p      , &
+                qsfc     = qsfc_p    , chklowq   = chlowq_p   , thz0     = thz0_p     , &
+                qz0      = qz0_p     , uz0      = uz0_p      , vz0      = vz0_p      , &
+                lowlyr   = lowlyr_p  , xland    = xland_p    , sice     = xice_p     , &
+                snow     = snow_p    , tke_myj  = tkepbl_p   , exch_h   = kzh_p      , &
+                ustar    = ust_p     , znt      = znt_p      , el_myj   = elpbl_p    , &
+                pblh     = hpbl_p    , kpbl     = kpbl_p     , ct       = ct_p       , &
+                akhs     = akhs_p    , akms     = akms_p     , elflx    = lh_p       , &
+                mixht    = mixht_p   , rublten  = rublten_p  , rvblten  = rvblten_p  , &
+                rthblten = rthblten_p, rqvblten = rqvblten_p , rqcblten = rqcblten_p , &
+                rqiblten = rqiblten_p, dz       = dz_p       ,                         &
+                ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde, &
+                ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme, &
+                its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte  &
+                            )
+       call mpas_timer_stop('MYJ_pbl')
+         
 
     case default
 

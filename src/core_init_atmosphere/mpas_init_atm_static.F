@@ -125,6 +125,8 @@
  character(len=StrKIND), pointer :: config_maxsnowalbedo_data
  character(len=StrKIND), pointer :: config_soilcat_data
  character(len=StrKIND), pointer :: config_lai_data
+ character(len=StrKIND), pointer :: config_soilcat_data
+ character(len=StrKIND), pointer :: config_lai_data
  character(len=StrKIND+1) :: geog_data_path      ! same as config_geog_data_path, but guaranteed to have a trailing slash
  character(len=StrKIND+1) :: geog_sub_path       ! subdirectory names in config_geog_data_path, with trailing slash
 
@@ -1646,6 +1648,7 @@ else
     integer :: nans_1, nans_2, nans_3
 
     ierr = mgr % init(trim(geog_data_path))
+
     if (ierr /= 0) then
         call mpas_log_write("Error occurred initializing interpolation for "//trim(geog_data_path), messageType=MPAS_LOG_CRIT)
         return ! Program execution should not reach this statement since the preceding message is a critical error

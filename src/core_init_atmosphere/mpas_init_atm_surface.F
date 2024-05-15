@@ -346,6 +346,23 @@
                  lat1 = real(field % startlat,RKIND), &
                  lon1 = real(field % startlon,RKIND))
 !   call mpas_log_write('--- The projection is PROJ_PS.')
+ else if (field % iproj == PROJ_LC) then
+    call map_set(PROJ_LC, proj, &
+                 truelat1 = real(field % truelat1, kind=RKIND), &
+                 truelat2 = real(field % truelat2, kind=RKIND), &
+                 lat1 = real(field % startlat, kind=RKIND), &
+                 lon1 = real(field % startlon, kind=RKIND), &
+                 knowni = 1.0_RKIND, &
+                 knownj = 1.0_RKIND, &
+                 stdlon = real(field % xlonc, kind=RKIND), &
+                 dx = real(field % dx, kind=RKIND))
+ else
+    call mpas_log_write('********************************************************************************', &
+                        messageType=MPAS_LOG_ERR)
+    call mpas_log_write('Unhandled projection in interp_to_MPAS', &
+                        messageType=MPAS_LOG_ERR)
+    call mpas_log_write('********************************************************************************', &
+                        messageType=MPAS_LOG_CRIT)
  end if
 
  nInterpPoints = nCells

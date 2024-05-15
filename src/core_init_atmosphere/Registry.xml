@@ -45,6 +45,10 @@
                      description="The number of landuse categories used in the land surface model"/>
                 <dim name="nscat" definition="16" definition:"namelist:config_nsoilcat"
                      description="The number of soil categories used in the land surface model"/>
+		<dim name="nlcat" definition="namelist:config_landuse_data" calculation='20 + 4 * merge(1,0,config_landuse_data(1:4)=="USGS")'
+                     description="The number of landuse categories used in the land surface model"/>
+                <dim name="nscat" definition="16" definition:"namelist:config_nsoilcat"
+                     description="The number of soil categories used in the land surface model"/>
         </dims>
 
 
@@ -101,7 +105,7 @@
 
                 <nml_option name="config_interface_projection" type="character"     default_value="linear_interpolation"
                      units="-"
-                     description="projecting layer values to the interface, linear vertical interpolation or integral" 
+                     description="projecting layer values to the interface, linear vertical interpolation or integral"
                      possible_values="'linear_interpolation' or 'layer_integral' (layer average value)"/>
 
         </nml_record>
@@ -365,6 +369,8 @@
                 <package name="mp_kessler_in" description="parameterization of kessler microphysics."/>
                 <package name="mp_thompson_in" description="parameterization of Thompson cloud microphysics."/>
                 <package name="mp_wsm6_in" description="parameterization of WSM6 cloud microphysics."/>
+                <package name="mp_nssl2m_in" description="parameterization of NSSL 2-moment microphysics."/>
+                <package name="nssl3m_in" description="variables for NSSL 3-moment microphysics."/>
                 <package name="first_guess_field" description="3-d atmospheric or land-surface fields on first-guess levels"/>
         </packages>
 
@@ -534,8 +540,8 @@
                         <var name="isice_lu"/>
                         <var name="iswater_lu"/>
                         <var name="ivgtyp"/>
-			<var name="landusef"/>
-			<var name="soilf"/>
+                        <var name="landusef"/>
+                        <var name="soilf"/>
                         <var name="isltyp"/>
                         <var name="snoalb"/>
                         <var name="soiltemp"/>
@@ -611,6 +617,9 @@
                         <var name="q2" packages="met_stage_out"/>
                         <var name="rh2" packages="met_stage_out"/>
                         <var name="t2m" packages="met_stage_out"/>
+                        <var name="refl10cm" packages="met_stage_out"/>
+                        <var name="uReconstructZonal" packages="met_stage_out"/>
+                        <var name="uReconstructMeridional" packages="met_stage_out"/>
 		</stream>
 
 		<stream name="surface"
@@ -1029,6 +1038,9 @@
                         <var name="qg" array_group="moist" units="kg kg^{-1}"
                              description="Graupel mixing ratio"/>
 
+                        <var name="qh" array_group="moist" units="kg kg^{-1}"
+                             description="hail mixing ratio"/>
+
                         <var name="ni" array_group="number" units="nb kg^{-1}"
                              description="Cloud ice number concentration"/>
 
@@ -1037,6 +1049,12 @@
 
                         <var name="nc" array_group="number" units="nb kg^{-1}"
                              description="Cloud droplet number concentration"/>
+
+                        <var name="ns" array_group="number" units="nb kg^{-1}"
+                             description="Snow number concentration"/>
+
+                        <var name="ng" array_group="number" units="nb kg^{-1}"
+                             description="Graupel number concentration"/>
                 </var_array>
 
                 <!-- Climatology for ocean mixed-layer depth -->
@@ -1071,30 +1089,51 @@
 
                         <var name="lbc_qr" array_group="moist" units="kg kg^{-1}"
                              description="Rain water mixing ratio on lateral boundary cells"/>
-			
-			<var name="lbc_nwfa" array_group="passive" units="kg^{-1}"
+
+                        <var name="lbc_nwfa" array_group="passive" units="kg^{-1}"
                              description="Number of water-friendly aerosols for microphysics on LBCs"/>
 
-			<var name="lbc_nifa" array_group="passive" units="kg^{-1}"
+			         <var name="lbc_nifa" array_group="passive" units="kg^{-1}"
                              description="Number of ice-friendly aerosols for microphysics on LBCs"/>
 
-                        <var name="lbc_qi" array_group="moist" units="kg kg^{-1} s^{-1}"
+                        <var name="lbc_qi" array_group="moist" units="kg kg^{-1}"
                              description="Lateral boundary tendency of ice mixing ratio"/>
 
-                        <var name="lbc_qs" array_group="moist" units="kg kg^{-1} s^{-1}"
+                        <var name="lbc_qs" array_group="moist" units="kg kg^{-1}"
                              description="Lateral boundary tendency of snow mixing ratio"/>
 
-                        <var name="lbc_qg" array_group="moist" units="kg kg^{-1} s^{-1}"
+                        <var name="lbc_qg" array_group="moist" units="kg kg^{-1}"
                              description="Lateral boundary tendency of graupel mixing ratio"/>
 
-                        <var name="lbc_nr" array_group="number" units="kg^{-1} s^{-1}"
-                             description="Lateral boundary tendency of rain number"/>
+                       <var name="lbc_qh" array_group="moist"  units="kg kg^{-1} s^{-1}"
+                             description="Lateral boundary tendency of hail mixing ratio"/>
 
-                        <var name="lbc_ni" array_group="number" units="kg^{-1} s^{-1}"
-                             description="Lateral boundary tendency of ice number"/>
+                        <var name="lbc_nr" array_group="number" units="kg^{-1}"
+                             description="Lateral boundary tendency of rain number concentration"/>
 
-                        <var name="lbc_nc" array_group="number" units="kg^{-1} s^{-1}"
-                             description="Lateral boundary tendency of droplet number"/>
+                        <var name="lbc_ni" array_group="number" units="kg^{-1}"
+                             description="Lateral boundary tendency of ice number concentration"/>
+
+                        <var name="lbc_nc" array_group="number" units="kg^{-1}"
+                             description="Lateral boundary tendency of droplet number concentration"/>
+
+                        <var name="lbc_ns" array_group="number" units="kg^{-1}"
+                             description="Lateral boundary tendency of snow number concentration"/>
+
+                        <var name="lbc_ng" array_group="number" units="kg^{-1}"
+                             description="Lateral boundary tendency of graupel number concentration"/>
+
+                        <var name="lbc_nh" array_group="number" units="m^{-3} s^{-1}"
+                             description="Lateral boundary tendency of hail number concentration"/>
+
+                        <var name="lbc_nccn" array_group="number" units="m^{-3} s^{-1}"
+                             description="Lateral boundary tendency of CCN number concentration"/>
+
+                        <var name="lbc_volg" array_group="volume" units="m^{3} s^{-1}"
+                             description="Lateral boundary tendency of graupel particle volume"/>
+
+                        <var name="lbc_volh" array_group="volume" units="m^{3} s^{-1}"
+                             description="Lateral boundary tendency of hail particle volume"/>
                 </var_array>
 
         </var_struct>
@@ -1396,5 +1435,10 @@
                 <var name="precipw" type="real" dimensions="nCells Time" units="kg m^{-2}"
                      description="precipitable water"
                      packages="met_stage_out"/>
-        </var_struct>
+
+                <var name="refl10cm" type="real" dimensions="nVertLevels nCells Time" units="dBZ"
+                     description="10 cm radar reflectivity"
+                     packages="met_stage_out"/>
+</var_struct>
+
 </registry>

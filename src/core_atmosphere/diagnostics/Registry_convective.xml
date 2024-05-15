@@ -47,13 +47,85 @@
              description="Dewpoint temperature at midpoint of lowest model layer"/>
 
         <var name="updraft_helicity_max"   type="real"     dimensions="nCells Time" units="m^2 s^{-2}"
-             description="Maximum updraft helicity since last output"/>
+             description="Maximum 2-5km updraft helicity since last output"/>
+
+	<var name="updraft_helicity_max_01"   type="real"     dimensions="nCells Time" units="m^2 s^{-2}"
+             description="Maximum 0-1km updraft helicity since last output"/>
+
+        <var name="updraft_helicity_max_16"   type="real"     dimensions="nCells Time" units="m^2 s^{-2}"
+             description="Maximum 1-6km updraft helicity since last output"/>
+
+        <var name="updraft_helicity_max0_15"   type="real"     dimensions="nCells Time" units="m^2 s^{-2}"
+             description="Maximum 0-1.5km updraft helicity since last output"/>
+
+        <var name="updraft_helicity_max05_15"   type="real"     dimensions="nCells Time" units="m^2 s^{-2}"
+             description="Maximum 0.5-1.5km updraft helicity since last output"/>
+
+        <var name="updraft_helicity_max_02"   type="real"     dimensions="nCells Time" units="m^2 s^{-2}"
+             description="Maximum 0-2km updraft helicity since last output"/>
+
+        <var name="updraft_helicity_max_03"   type="real"     dimensions="nCells Time" units="m^2 s^{-2}"
+             description="Maximum 0-3km updraft helicity since last output"/>
+
+        <var name="updraft_helicity_min"   type="real"     dimensions="nCells Time" units="m^2 s^{-2}"
+             description="Minimum 2-5km updraft helicity since last output"/>
+
+        <var name="updraft_helicity_min_01"   type="real"     dimensions="nCells Time" units="m^2 s^{-2}"
+             description="Minimum 0-1km updraft helicity since last output"/>
+
+        <var name="updraft_helicity_min_16"   type="real"     dimensions="nCells Time" units="m^2 s^{-2}"
+             description="Minimum 1-6km updraft helicity since last output"/>
+
+        <var name="updraft_helicity_min0_15"   type="real"     dimensions="nCells Time" units="m^2 s^{-2}"
+             description="Minimum 0-1.5km updraft helicity since last output"/>
+
+        <var name="updraft_helicity_min05_15"   type="real"     dimensions="nCells Time" units="m^2 s^{-2}"
+             description="Minimum 0.5-1.5km updraft helicity since last output"/>
+
+        <var name="updraft_helicity_min_02"   type="real"     dimensions="nCells Time" units="m^2 s^{-2}"
+             description="Minimum 0-2km updraft helicity since last output"/>
+
+        <var name="updraft_helicity_min_03"   type="real"     dimensions="nCells Time" units="m^2 s^{-2}"
+             description="Minimum 0-3km updraft helicity since last output"/>
 
         <var name="w_velocity_max"         type="real"     dimensions="nCells Time" units="m s^{-1}"
              description="Maximum column w velocity since last output"/>
 
+         <var name="w_velocity_min"         type="real"     dimensions="nCells Time" units="m s^{-1}"
+             description="Minimum column w velocity since last output"/>
+
+         <var name="w_velocity_mean"         type="real"     dimensions="nCells Time" units="m s^{-1}"
+             description="Minimum column w velocity since last output"/>
+
         <var name="wind_speed_level1_max"  type="real"     dimensions="nCells Time" units="m s^{-1}"
              description="Maximum wind speed in lowest model level since last output"/>
+
+        <var name="wind02_max"  type="real"     dimensions="nCells Time" units="m s^{-1}"
+             description="Maximum wind speed between 0 and 2km since last output"/>
+
+        <var name="wind02_integral_max"  type="real"     dimensions="nCells Time" units="m^2 s^{-1}"
+             description="Maximum integrated wind speed between 0 and 2km since last output"/>
+
+        <var name="wind_speed_10m_max"  type="real"     dimensions="nCells Time" units="m s^{-1}"
+             description="Maximum 10 m wind speed since last output"/>
+
+        <var name="wind_speed_10m_mean"  type="real"     dimensions="nCells Time" units="m s^{-1}"
+             description="Mean 10 m wind speed since last output"/>
+
+        <var name="u10m_mean"  type="real"     dimensions="nCells Time" units="m s^{-1}"
+             description="Mean 10 m zonal wind speed since last output"/>
+
+        <var name="v10m_mean"  type="real"     dimensions="nCells Time" units="m s^{-1}"
+             description="Mean 10 m meridional wind speed since last output"/>
+
+	<var name="prec_acc_nc"  type="real"   dimensions="nCells Time" units="mm"
+	     description="Accumulated grid scale precipitation over prec_acc_dt periods of time"/>
+
+	<var name="prec_acc_c"  type="real"   dimensions="nCells Time" units="mm"
+	    description="Accumulated cumulus precipitation over prec_acc_dt periods of time"/>
+
+	<var name="snow_acc_nc"  type="real"  dimensions="nCells Time"  units="mm"
+	    description="Accumulated snow water equivalent over prec_acc_dt periods of time"/>
 
 </var_struct>
 

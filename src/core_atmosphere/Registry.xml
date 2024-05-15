@@ -52,6 +52,10 @@
 		    description="Number of landuse categories in the input data"/>
 		<dim name="nscat"
                     description="Number of soil categories in the input data"/>
+		<dim name="nlcat"
+		    description="Number of landuse categories in the input data"/>
+		<dim name="nscat"
+                    description="Number of soil categories in the input data"/>
 #endif
         </dims>
 
@@ -402,11 +406,14 @@
                 <package name="mp_kessler_in" description="parameterization of kessler microphysics."/>
                 <package name="mp_thompson_in" description="parameterization of Thompson cloud microphysics."/>
                 <package name="mp_wsm6_in" description="parameterization of WSM6 cloud microphysics."/>
+                <package name="mp_nssl2m_in" description="parameterization of NSSL 2-moment microphysics."/>
+                <package name="nssl3m_in" description="variables for NSSL 3-moment microphysics."/>
                 <package name="cu_grell_freitas_in" description="parameterization of Grell-Freitas convection."/>
                 <package name="cu_kain_fritsch_in" description="parameterization of Kain-Fritsch convection."/>
                 <package name="cu_ntiedtke_in" description="parameterization of Tiedtke convection."/>
                 <package name="bl_ysu_in" description="parameterization of YSU Planetary Boundary Layer."/>
                 <package name="bl_mynn_in" description="parameterization of MYNN Planetary Boundary Layer."/>
+		      <package name="bl_myj_in" description="parameterization of MYJ Planetary Boundary Layer."/>
                 <package name="lsm_ruc_in" description="parameterization of the RUC land surface."/>
                 <package name="lsm_noah_in" description="parameterization of the Noah land surface."/>
 
@@ -572,11 +579,11 @@
 #endif
 		</stream>
 
-		<stream name="restart" 
-                        type="input;output" 
-                        filename_template="restart.$Y-$M-$D_$h.$m.$s.nc" 
-                        input_interval="initial_only" 
-                        output_interval="1_00:00:00" 
+		<stream name="restart"
+                        type="input;output"
+                        filename_template="restart.$Y-$M-$D_$h.$m.$s.nc"
+                        input_interval="initial_only"
+                        output_interval="1_00:00:00"
                         immutable="true">
 
 			<stream name="invariant" packages="no_invariant_stream"/>
@@ -600,6 +607,8 @@
 			<var name="rho"/>
 			<var name="theta"/>
 			<var name="relhum"/>
+ 			<var name="uReconstructZonal"/>
+                        <var name="uReconstructMeridional"/>
 			<var name="circulation"/>
 			<var name="exner"/>
 			<var name="exner_base"/>
@@ -868,9 +877,9 @@
 #endif
 		</stream>
 
-		<stream name="output" 
-                        type="output" 
-                        filename_template="history.$Y-$M-$D_$h.$m.$s.nc" 
+		<stream name="output"
+                        type="output"
+                        filename_template="history.$Y-$M-$D_$h.$m.$s.nc"
                         output_interval="6:00:00"
                         runtime_format="separate_file">
 
@@ -1003,9 +1012,9 @@
 #endif
 		</stream>
 
-		<stream name="diagnostics" 
-                        type="output" 
-                        filename_template="diag.$Y-$M-$D_$h.$m.$s.nc" 
+		<stream name="diagnostics"
+                        type="output"
+                        filename_template="diag.$Y-$M-$D_$h.$m.$s.nc"
                         output_interval="3:00:00"
                         runtime_format="separate_file">
 
@@ -1118,7 +1127,31 @@
                         <var name="temperature_surface"/>
                         <var name="dewpoint_surface"/>
 			<var name="updraft_helicity_max"/>
+			<var name="updraft_helicity_max_01"/>
+                        <var name="updraft_helicity_max_16"/>
+                        <var name="updraft_helicity_max0_15"/>
+                        <var name="updraft_helicity_max05_15"/>
+                        <var name="updraft_helicity_max_02"/>
+                        <var name="updraft_helicity_max_03"/>
+                        <var name="updraft_helicity_min"/>
+                        <var name="updraft_helicity_min_01"/>
+                        <var name="updraft_helicity_min_16"/>
+                        <var name="updraft_helicity_min0_15"/>
+                        <var name="updraft_helicity_min05_15"/>
+                        <var name="updraft_helicity_min_02"/>
+                        <var name="updraft_helicity_min_03"/>
 			<var name="w_velocity_max"/>
+			<var name="w_velocity_min"/>
+                        <var name="w_velocity_mean"/>
+                        <var name="wind02_max"/>
+                        <var name="wind02_integral_max"/>
+                        <var name="wind_speed_10m_max"/>
+                        <var name="wind_speed_10m_mean"/>
+                        <var name="u10m_mean"/>
+                        <var name="v10m_mean"/>
+                        <var name="prec_acc_nc"/>
+                        <var name="prec_acc_c"/>
+                        <var name="snow_acc_nc"/>
 			<var name="wind_speed_level1_max"/>
                         <!-- End convective diagnostics defined in diagnostics/Registry_convective.xml -->
 
@@ -1133,9 +1166,9 @@
 #endif
 		</stream>
 
-		<stream name="surface" 
-                        type="input" 
-                        filename_template="x1.40962.sfc_update.nc" 
+		<stream name="surface"
+                        type="input"
+                        filename_template="x1.40962.sfc_update.nc"
                         input_interval="none"
                         filename_interval="none"
                         runtime_format="separate_file">
@@ -1146,9 +1179,9 @@
 #endif
 		</stream>
 
-	        <stream name="iau" 
-                        type="input" 
-                        filename_template="x1.40962.AmB.$Y-$M-$D_$h.$m.$s.nc" 
+	        <stream name="iau"
+                        type="input"
+                        filename_template="x1.40962.AmB.$Y-$M-$D_$h.$m.$s.nc"
                         input_interval="initial_only"
                         filename_interval="none"
                         immutable="true"
@@ -1162,7 +1195,7 @@
                         type="input"
                         filename_template="lbc.$Y-$M-$D_$h.$m.$s.nc"
                         filename_interval="input_interval"
-                        input_interval="3:00:00" 
+                        input_interval="3:00:00"
                         runtime_format="single_file"
                         immutable="true"
                         packages="limited_area">
@@ -1512,43 +1545,89 @@
 
                         <var name="qc" array_group="moist" units="kg kg^{-1}"
                              description="Cloud water mixing ratio"
-                             packages="bl_mynn_in;bl_ysu_in;cu_ntiedtke_in;mp_kessler_in;mp_thompson_in;mp_wsm6_in"/>
+                             packages="bl_mynn_in;bl_ysu_in;bl_myj_in;cu_ntiedtke_in;mp_kessler_in;mp_thompson_in;mp_wsm6_in;mp_nssl2m_in"/>
 
                         <var name="qr" array_group="moist" units="kg kg^{-1}"
                              description="Rain water mixing ratio"
-                             packages="mp_kessler_in;mp_thompson_in;mp_wsm6_in"/>
+                             packages="mp_kessler_in;mp_thompson_in;mp_wsm6_in;mp_nssl2m_in"/>
 
                         <var name="qi" array_group="moist" units="kg kg^{-1}"
                              description="Ice mixing ratio"
-                             packages="bl_mynn_in;bl_ysu_in;cu_ntiedtke_in;mp_thompson_in;mp_wsm6_in"/>
+                             packages="bl_mynn_in;bl_ysu_in;bl_myj_in;cu_ntiedtke_in;mp_thompson_in;mp_wsm6_in;mp_nssl2m_in"/>
 
                         <var name="qs" array_group="moist" units="kg kg^{-1}"
                              description="Snow mixing ratio"
-                             packages="bl_mynn_in;mp_thompson_in;mp_wsm6_in"/>
+                             packages="bl_mynn_in;mp_thompson_in;mp_wsm6_in;mp_nssl2m_in"/>
 
                         <var name="qg" array_group="moist" units="kg kg^{-1}"
                              description="Graupel mixing ratio"
-                             packages="mp_thompson_in;mp_wsm6_in"/>
+                             packages="mp_thompson_in;mp_wsm6_in;mp_nssl2m_in"/>
+
+                        <var name="qh" array_group="moist" units="kg kg^{-1}"
+                             description="Hail mixing ratio"
+                             packages="mp_nssl2m_in"/>
 
                         <var name="ni" array_group="number" units="nb kg^{-1}"
                              description="Cloud ice number concentration"
-                             packages="bl_mynn_in;mp_thompson_in"/>
+                             packages="bl_mynn_in;mp_thompson_in;mp_nssl2m_in"/>
 
                         <var name="nc" array_group="number" units="nb kg^{-1}"
                              description="Cloud number concentration"
-                             packages="mp_thompson_in"/>
+                             packages="mp_thompson_in; mp_nssl12m_in"/>
 
                         <var name="nr" array_group="number" units="nb kg^{-1}"
                              description="Rain number concentration"
-                             packages="mp_thompson_in"/>
-			
-			<var name="nwfa" array_group="passive" units="nb kg^{-1}"
+                             packages="mp_thompson_in;mp_nssl2m_in"/>
+                        
+                        <var name="nwfa" array_group="passive" units="nb kg^{-1}"
                              description="Number of water-friendly aerosols for microphysics"
                              packages="mp_thompson_in"/>
 
-			<var name="nifa" array_group="passive" units="nb kg^{-1}"
+			         <var name="nifa" array_group="passive" units="nb kg^{-1}"
                              description="Number of ice-friendly aerosols for microphysics"
                              packages="mp_thompson_in"/>
+
+                        <var name="nc" array_group="number" units="nb kg^{-1}"
+                             description="Cloud droplet number concentration"
+                             packages="mp_thompson_in;mp_nssl2m_in"/>
+
+                        <var name="ns" array_group="number" units="nb kg^{-1}"
+                             description="Snow number concentration"
+                             packages="mp_nssl2m_in"/>
+
+                        <var name="ng" array_group="number" units="nb kg^{-1}"
+                             description="Graupel number concentration"
+                             packages="mp_nssl2m_in"/>
+
+                        <var name="nh" array_group="number" units="nb kg^{-1}"
+                             description="Hail number concentration"
+                             packages="mp_nssl2m_in"/>
+
+                        <var name="nccn" array_group="number" units="nb kg^{-1}"
+                             description="Cloud condensation nuclei concentration"
+                             packages="mp_nssl2m_in"/>
+
+                        <var name="volg" array_group="volume" units="m^{3} kg^{-1}"
+                             description="Graupel particle volume"
+                             packages="mp_nssl2m_in"/>
+
+                        <var name="volh" array_group="volume" units="m^{3} kg^{-1}"
+                             description="Hail particle volume"
+                             packages="mp_nssl2m_in"/>
+
+                        <var name="zrw" array_group="reflectivity" units="nb kg^{-1}"
+                             description="Rain reflectivity moment"
+                             packages="nssl3m_in"/>
+
+                        <var name="zgw" array_group="reflectivity" units="nb kg^{-1}"
+                             description="Graupel reflectivity moment"
+                             packages="nssl3m_in"/>
+
+                        <var name="zhw" array_group="reflectivity" units="nb kg^{-1}"
+                             description="Hail reflectivity moment"
+                             packages="nssl3m_in"/>
+
+
                 </var_array>
 #endif
 
@@ -1799,7 +1878,7 @@
 
         <var_struct name="tend" time_levs="1">
 
-                
+
                 <!-- tendencies for prognostic variables -->
                 <var name="tend_u" name_in_code="u" type="real" dimensions="nVertLevels nEdges Time" units="m s^{-2}"
                      description="Tendency of u from dynamics"/>
@@ -1846,43 +1925,83 @@
 
                         <var name="tend_qc" name_in_code="qc" array_group="moist" units="kg m^{-3} s^{-1}"
                              description="Tendency of cloud water mass per unit volume divided by d(zeta)/dz"
-                             packages="bl_mynn_in;bl_ysu_in;cu_ntiedtke_in;mp_kessler_in;mp_thompson_in;mp_wsm6_in"/>
+                             packages="bl_mynn_in;bl_ysu_in;bl_myj_in;cu_ntiedtke_in;mp_kessler_in;mp_thompson_in;mp_wsm6_in;mp_nssl2m_in"/>
 
                         <var name="tend_qr" name_in_code="qr" array_group="moist" units="kg m^{-3} s^{-1}"
                              description="Tendency of rain water mass per unit volume divided by d(zeta)/dz"
-                             packages="mp_kessler_in;mp_thompson_in;mp_wsm6_in"/>
+                             packages="mp_kessler_in;mp_thompson_in;mp_wsm6_in;mp_nssl2m_in"/>
 
                         <var name="tend_qi" name_in_code="qi" array_group="moist" units="kg m^{-3} s^{-1}"
                              description="Tendency of ice mass per unit volume divided by d(zeta)/dz"
-                             packages="bl_mynn_in;bl_ysu_in;cu_ntiedtke_in;mp_thompson_in;mp_wsm6_in"/>
+                             packages="bl_mynn_in;bl_ysu_in;bl_myj_in;cu_ntiedtke_in;mp_thompson_in;mp_wsm6_in;mp_nssl2m_in"/>
 
                         <var name="tend_qs" name_in_code="qs" array_group="moist" units="kg m^{-3} s^{-1}"
                              description="Tendency of snow mass per unit volume divided by d(zeta)/dz"
-                             packages="bl_mynn_in;mp_thompson_in;mp_wsm6_in"/>
+                             packages="bl_mynn_in;mp_thompson_in;mp_wsm6_in;mp_nssl2m_in"/>
 
                         <var name="tend_qg" name_in_code="qg" array_group="moist" units="kg m^{-3} s^{-1}"
                              description="Tendency of graupel mass per unit volume divided by d(zeta)/dz"
-                             packages="mp_thompson_in;mp_wsm6_in"/>
+                             packages="mp_thompson_in;mp_wsm6_in;mp_nssl2m_in"/>
+
+                        <var name="tend_qh" name_in_code="qh" array_group="moist" units="kg m^{-3} s^{-1}"
+                             description="Tendency of hail mass per unit volume divided by d(zeta)/dz"
+                             packages="mp_nssl2m_in"/>
 
                         <var name="tend_ni" name_in_code="ni" array_group="number" units="nb m^{-3} s^{-1}"
                              description="Tendency of cloud ice number concentration multiplied by dry air density divided by d(zeta)/dz"
-                             packages="bl_mynn_in;mp_thompson_in"/>
+                             packages="bl_mynn_in;mp_thompson_in;mp_nssl2m_in"/>
 
-			<var name="tend_nc" name_in_code="nc" array_group="number" units="nb m^{-3} s^{-1}" 
+			         <var name="tend_nc" name_in_code="nc" array_group="number" units="nb m^{-3} s^{-1}" 
                              description="Tendency of cloud number concentration multiplied by dry air density divided by d(zeta)/dz"
-                             packages="mp_thompson_in"/>
+                             packages="mp_thompson_in;mp_nssl12m_in"/>
 			
                         <var name="tend_nr" name_in_code="nr" array_group="number" units="nb m^{-3} s^{-1}" 
                              description="Tendency of rain number concentration multiplied by dry air density divided by d(zeta)/dz"
-                             packages="mp_thompson_in"/>
+                             packages="mp_thompson_in;mp_nssl2m_in"/>
 
-			<var name="tend_nwfa" name_in_code="nwfa" array_group="passive" units="nb m^{-3} s^{-1}" 
+                        <var name="tend_nwfa" name_in_code="nwfa" array_group="passive" units="nb m^{-3} s^{-1}" 
                              description="Tendency of water-friendly aerosols multiplied by dry air density divided by d(zeta)/dz"
                              packages="mp_thompson_in"/>
 
-			<var name="tend_nifa" name_in_code="nifa" array_group="passive" units="nb m^{-3} s^{-1}" 
+			         <var name="tend_nifa" name_in_code="nifa" array_group="passive" units="nb m^{-3} s^{-1}" 
                              description="Tendency of ice-friendly aerosols multiplied by dry air density divided by d(zeta)/dz"
                              packages="mp_thompson_in"/>
+
+                        <var name="tend_ns" name_in_code="ns" array_group="number" units="nb m^{-3} s^{-1}"
+                             description="Tendency of snow number concentration multiplied by dry air density divided by d(zeta)/dz"
+                             packages="mp_nssl2m_in"/>
+
+                        <var name="tend_ng" name_in_code="ng" array_group="number" units="nb m^{-3} s^{-1}"
+                             description="Tendency of graupel number concentration multiplied by dry air density divided by d(zeta)/dz"
+                             packages="mp_nssl2m_in"/>
+
+                        <var name="tend_nh" name_in_code="nh" array_group="number" units="nb m^{-3} s^{-1}"
+                             description="Tendency of hail number concentration multiplied by dry air density divided by d(zeta)/dz"
+                             packages="mp_nssl2m_in"/>
+
+                        <var name="tend_nccn" name_in_code="nccn" array_group="number" units="nb m^{-3} s^{-1}"
+                             description="Tendency of CCN number concentration multiplied by dry air density divided by d(zeta)/dz"
+                             packages="mp_nssl2m_in"/>
+
+                        <var name="tend_volg" name_in_code="volg" array_group="volume" units="m^{3} s^{-1}"
+                             description="Tendency of graupel volume multiplied by dry air density divided by d(zeta)/dz"
+                             packages="mp_nssl2m_in"/>
+
+                        <var name="tend_volh" name_in_code="volh" array_group="volume" units="m^{3} s^{-1}"
+                             description="Tendency of hail volume multiplied by dry air density divided by d(zeta)/dz"
+                             packages="mp_nssl2m_in"/>
+
+                        <var name="tend_zrw" name_in_code="zrw" array_group="reflectivity" units="m^6 m^{-3} s^{-1}"
+                             description="Tendency of rain reflectivity multiplied by dry air density divided by d(zeta)/dz"
+                             packages="nssl3m_in"/>
+
+                        <var name="tend_zgw" name_in_code="zgw" array_group="reflectivity" units="m^6 m^{-3} s^{-1}"
+                             description="Tendency of graupel reflectivity multiplied by dry air density divided by d(zeta)/dz"
+                             packages="nssl3m_in"/>
+
+                        <var name="tend_zhw" name_in_code="zhw" array_group="reflectivity" units="m^6 m^{-3} s^{-1}"
+                             description="Tendency of hail reflectivity multiplied by dry air density divided by d(zeta)/dz"
+                             packages="nssl3m_in"/>
                 </var_array>
 #endif
         </var_struct>
@@ -1921,29 +2040,50 @@
                         <var name="lbc_qv" name_in_code="qv" array_group="moist" units="kg kg^{-1} s^{-1}"
                              description="Lateral boundary tendency of water vapor mixing ratio"/>
 
-                        <var name="lbc_qc" name_in_code="qc" array_group="moist"  packages="bl_mynn_in;cu_ntiedtke_in;mp_kessler_in;mp_thompson_in;mp_wsm6_in" units="kg kg^{-1} s^{-1}"
+                        <var name="lbc_qc" name_in_code="qc" array_group="moist"  packages="bl_mynn_in;cu_ntiedtke_in;mp_kessler_in;mp_thompson_in;mp_wsm6_in;mp_nssl2m_in" units="kg kg^{-1} s^{-1}"
                              description="Lateral boundary tendency of cloud water mixing ratio"/>
 
-                        <var name="lbc_qr" name_in_code="qr" array_group="moist"  packages="mp_kessler_in;mp_thompson_in;mp_wsm6_in" units="kg kg^{-1} s^{-1}"
+                        <var name="lbc_qr" name_in_code="qr" array_group="moist"  packages="mp_kessler_in;mp_thompson_in;mp_wsm6_in;mp_nssl2m_in" units="kg kg^{-1} s^{-1}"
                              description="Lateral boundary tendency of rain water mixing ratio"/>
 
-                        <var name="lbc_qi" name_in_code="qi" array_group="moist"  packages="bl_mynn_in;cu_ntiedtke_in;mp_thompson_in;mp_wsm6_in" units="kg kg^{-1} s^{-1}"
+                        <var name="lbc_qi" name_in_code="qi" array_group="moist"  packages="bl_mynn_in;cu_ntiedtke_in;mp_thompson_in;mp_wsm6_in;mp_nssl2m_in" units="kg kg^{-1} s^{-1}"
                              description="Lateral boundary tendency of ice mixing ratio"/>
 
-                        <var name="lbc_qs" name_in_code="qs" array_group="moist"  packages="mp_thompson_in;mp_wsm6_in" units="kg kg^{-1} s^{-1}"
+                        <var name="lbc_qs" name_in_code="qs" array_group="moist"  packages="mp_thompson_in;mp_wsm6_in;mp_nssl2m_in" units="kg kg^{-1} s^{-1}"
                              description="Lateral boundary tendency of snow mixing ratio"/>
 
-                        <var name="lbc_qg" name_in_code="qg" array_group="moist"  packages="mp_thompson_in;mp_wsm6_in" units="kg kg^{-1} s^{-1}"
+                        <var name="lbc_qg" name_in_code="qg" array_group="moist"  packages="mp_thompson_in;mp_wsm6_in;mp_nssl2m_in" units="kg kg^{-1} s^{-1}"
                              description="Lateral boundary tendency of graupel mixing ratio"/>
 
-                        <var name="lbc_nc" name_in_code="nc" array_group="number" packages="mp_thompson_in" units="m^{-3} s^{-1}"
-                             description="Lateral boundary tendency of cloud number concentration"/>
-			
-                        <var name="lbc_nr" name_in_code="nr" array_group="number" packages="mp_thompson_in" units="m^{-3} s^{-1}"
+                        <var name="lbc_qh" name_in_code="qh" array_group="moist"  packages="mp_nssl2m_in" units="kg kg^{-1} s^{-1}"
+                             description="Lateral boundary tendency of hail mixing ratio"/>
+
+                        <var name="lbc_nr" name_in_code="nr" array_group="number" packages="mp_thompson_in;mp_nssl2m_in" units="m^{-3} s^{-1}"
                              description="Lateral boundary tendency of rain number concentration"/>
 
-                        <var name="lbc_ni" name_in_code="ni" array_group="number" packages="bl_mynn_in;mp_thompson_in" units="m^{-3} s^{-1}"
+                        <var name="lbc_ni" name_in_code="ni" array_group="number" packages="bl_mynn_in;mp_thompson_in;mp_nssl2m_in" units="m^{-3} s^{-1}"
                              description="Lateral boundary tendency of ice number concentration"/>
+
+                        <var name="lbc_nc" name_in_code="nc" array_group="number" packages="mp_nssl2m_in;mp_thompson_in" units="m^{-3} s^{-1}"
+                             description="Lateral boundary tendency of cloud number concentration"/>
+
+                        <var name="lbc_ns" name_in_code="ns" array_group="number" packages="mp_nssl2m_in" units="m^{-3} s^{-1}"
+                             description="Lateral boundary tendency of snow number concentration"/>
+
+                        <var name="lbc_ng" name_in_code="ng" array_group="number" packages="mp_nssl2m_in" units="m^{-3} s^{-1}"
+                             description="Lateral boundary tendency of graupel number concentration"/>
+
+                        <var name="lbc_nh" name_in_code="nh" array_group="number" packages="mp_nssl2m_in" units="m^{-3} s^{-1}"
+                             description="Lateral boundary tendency of hail number concentration"/>
+
+                        <var name="lbc_nccn" name_in_code="nccn" array_group="number" packages="mp_nssl2m_in" units="m^{-3} s^{-1}"
+                             description="Lateral boundary tendency of CCN number concentration"/>
+
+                        <var name="lbc_volg" name_in_code="volg" array_group="volume" packages="mp_nssl2m_in" units="m^{3} s^{-1}"
+                             description="Lateral boundary tendency of graupel particle volume"/>
+
+                        <var name="lbc_volh" name_in_code="volh" array_group="volume" packages="mp_nssl2m_in" units="m^{3} s^{-1}"
+                             description="Lateral boundary tendency of hail particle volume"/>
 
                         <var name="lbc_nwfa" name_in_code="nwfa" array_group="passive" packages="mp_thompson_in" units="m^{-3} s^{-1}"
                              description="Lateral boundary tendency of wfa"/>
@@ -2007,7 +2147,7 @@
                      possible_values="Positive integers"/>
 
                 <!-- NAMELIST VARIABLES ADDED FOR PHYSICS CONFIGURATION: -->
-                
+
                 <nml_option name="config_frac_seaice" type="logical" default_value="true" in_defaults="false"
                      units="-"
                      description="logical for configuration of fractional sea-ice"
@@ -2101,7 +2241,12 @@
                 <nml_option name="config_microp_scheme" type="character" default_value="suite" in_defaults="false"
                      units="-"
                      description="configuration for cloud microphysics schemes"
-                     possible_values="`suite',`mp_wsm6',`mp_thompson',`mp_kessler',`off'"/>
+                     possible_values="`suite',`mp_wsm6',`mp_thompson',`mp_kessler',`mp_nssl2m',`off'"/>
+
+                <nml_option name="config_nssl_moments" type="character" default_value="nssl2m" in_defaults="false"
+                     units="-"
+                     description="Whether to activate the 3moment version of NSSL"
+                     possible_values="`nssl2m',`nssl3m'"/>
 
                 <nml_option name="config_convection_scheme" type="character" default_value="suite" in_defaults="false"
                      units="-"
@@ -2121,7 +2266,7 @@
                 <nml_option name="config_pbl_scheme" type="character" default_value="suite" in_defaults="false"
                      units="-"
                      description="configuration for planetary boundary layer schemes"
-                     possible_values="`suite',`bl_ysu',`bl_mynn',`off'"/>
+                     possible_values="`suite',`bl_ysu',`bl_mynn',`bl_myj',`off'"/>
 
                 <nml_option name="config_gwdo_scheme" type="character" default_value="suite" in_defaults="false"
                      units="-"
@@ -2146,7 +2291,7 @@
                 <nml_option name="config_sfclayer_scheme" type="character" default_value="suite" in_defaults="false"
                      units="-"
                      description="configuration for surface layer-scheme"
-                     possible_values="`suite',`sf_monin_obukhov',`sf_mynn',`off'"/>
+                     possible_values="`suite',`sf_monin_obukhov','sf_monin_obukhov_rev',`sf_mynn',`sf_myj', `off'"/>
 
                 <nml_option name="config_gfconv_closure_deep" type="integer" default_value="0" in_defaults="false"
                      units="-"
@@ -2289,7 +2434,7 @@
 
                 <nml_option name="config_oml_hml0" type="real" default_value="30.0" in_defaults="false"
                      units="m"
-                     description="If greater than zero, provides the constant, initial mixed-layer depth; if zero, initial mixed-layer depth will be taken from the `oml_initial` field." 
+                     description="If greater than zero, provides the constant, initial mixed-layer depth; if zero, initial mixed-layer depth will be taken from the `oml_initial` field."
                      possible_values="Non-negative real values"/>
 
                 <nml_option name="config_oml_gamma" type="real" default_value="0.14" in_defaults="false"
@@ -2335,67 +2480,71 @@
 
 		<var name="refl10cm" type="real" dimensions="nVertLevels nCells Time" units="dBZ"
                      description="10 cm radar reflectivity"
-                     packages="mp_thompson_in;mp_wsm6_in"/>
+                     packages="mp_thompson_in;mp_wsm6_in;mp_nssl12m_in"/>
+
 
                 <var name="refl10cm_max" type="real" dimensions="nCells Time" units="dBZ"
                      description="10 cm maximum radar reflectivity"
-                     packages="mp_thompson_in;mp_wsm6_in"/>
+                     packages="mp_thompson_in;mp_wsm6_in;mp_nssl2m_in"/>
 
                 <var name="refl10cm_1km" type="real" dimensions="nCells Time" units="dBZ"
                      description="diagnosed 10 cm radar reflectivity at 1 km AGL"
-                     packages="mp_thompson_in;mp_wsm6_in"/>
+                     packages="mp_thompson_in;mp_wsm6_in;mp_nssl2m_in"/>
 
                 <var name="refl10cm_1km_max" type="real" dimensions="nCells Time" units="dBZ"
                      description="maximum diagnosed 10 cm radar reflectivity at 1 km AGL since last output time"
-                     packages="mp_thompson_in;mp_wsm6_in"/>
+                     packages="mp_thompson_in;mp_wsm6_in;mp_nssl2m_in"/>
+
+		<var name="do_diag_dbz" type="integer" dimensions="" units = ""
+		    description="flag for whether to compute refelctivity at every time step for use in computing output-time-max 1km reflectivity"/>
 
                 <var name="i_rainnc" type="integer" dimensions="nCells Time" units="unitless"
                      description="incidence of accumulated grid-scale precipitation greater than config_bucket_rainnc"
-                     packages="mp_kessler_in;mp_thompson_in;mp_wsm6_in"/>
+                     packages="mp_kessler_in;mp_thompson_in;mp_wsm6_in;mp_nssl2m_in"/>
 
                 <var name="rainncv" type="real" dimensions="nCells Time" units="mm"
                      description="time-step total grid-scale precipitation"
-                     packages="mp_kessler_in;mp_thompson_in;mp_wsm6_in"/>
+                     packages="mp_kessler_in;mp_thompson_in;mp_wsm6_in;mp_nssl2m_in"/>
 
                 <var name="snowncv" type="real" dimensions="nCells Time" units="mm"
                      description="time-step grid-scale precipitation of snow"
-                     packages="mp_thompson_in;mp_wsm6_in"/>
+                     packages="mp_thompson_in;mp_wsm6_in;mp_nssl2m_in;lsm_ruc_in"/>
 
                 <var name="graupelncv" type="real" dimensions="nCells Time" units="mm"
                      description="time-step grid-scale precipitation of graupel"
-                     packages="mp_thompson_in;mp_wsm6_in"/>
+                     packages="mp_thompson_in;mp_wsm6_in;mp_nssl2m_in;lsm_ruc_in"/>
 
                 <var name="rainnc" type="real" dimensions="nCells Time" units="mm"
                      description="accumulated total grid-scale precipitation"
-                     packages="mp_kessler_in;mp_thompson_in;mp_wsm6_in"/>
+                     packages="mp_kessler_in;mp_thompson_in;mp_wsm6_in;mp_nssl2m_in"/>
 
                 <var name="snownc" type="real" dimensions="nCells Time" units="mm"
                      description="accumulated grid-scale precipitation of snow"
-                     packages="mp_thompson_in;mp_wsm6_in"/>
+                     packages="mp_thompson_in;mp_wsm6_in;mp_nssl2m_in"/>
 
                 <var name="graupelnc" type="real" dimensions="nCells Time" units="mm"
                      description="accumulated grid-scale precipitation of graupel"
-                     packages="mp_thompson_in;mp_wsm6_in"/>
+                     packages="mp_thompson_in;mp_wsm6_in;mp_nssl2m_in"/>
 
                 <var name="rainprod" type="real" dimensions="nVertLevels nCells Time" units="s^{-1}"
                      description="rain production rate"
-                     packages="mp_thompson_in"/>
+                     packages="mp_thompson_in;mp_nssl2m_in"/>
 
                 <var name="evapprod" type="real" dimensions="nVertLevels nCells Time" units="s^{-1}"
                      description="rain evaporation rate"
-                     packages="mp_thompson_in"/>
+                     packages="mp_thompson_in;mp_nssl2m_in"/>
 
                 <var name="re_cloud" type="real" dimensions="nVertLevels nCells Time" units="m"
                      description="effective radius of cloud water droplets"
-                     packages="mp_thompson_in;mp_wsm6_in"/>
+                     packages="mp_thompson_in;mp_wsm6_in;mp_nssl2m_in"/>
 
                 <var name="re_ice"  type="real" dimensions="nVertLevels nCells Time"  units="m"
                      description="effective radius of cloud ice crystals"
-                     packages="mp_thompson_in;mp_wsm6_in"/>
+                     packages="mp_thompson_in;mp_wsm6_in;mp_nssl2m_in"/>
 
                 <var name="re_snow" type="real" dimensions="nVertLevels nCells Time"  units="m"
                      description="effective radius of snow crystals"
-                     packages="mp_thompson_in;mp_wsm6_in"/>
+                     packages="mp_thompson_in;mp_wsm6_in;mp_nssl2m_in"/>
 
                 <var name="nt_c" type="real" dimensions="nCells" units="nb kg^{-1}"
                      description="one-moment constant cloud water droplet concentration"
@@ -2493,23 +2642,31 @@
 
                 <var name="kpbl" type="integer" dimensions="nCells Time" units="unitless"
                      description="index level of PBL top"
-                     packages="bl_mynn_in;bl_ysu_in"/>
+                     packages="bl_mynn_in;bl_ysu_in;bl_myj_in"/>
 
                 <var name="hpbl" type="real" dimensions="nCells Time" units="m"
                      description="Planetary Boundary Layer (PBL) height"
-                     packages="bl_mynn_in;bl_ysu_in"/>
+                     packages="bl_mynn_in;bl_ysu_in;bl_myj_in"/>
+
+                <var name="delta" type="real" dimensions="nCells Time" units="m"
+                     description="entrainment layer depth from PBL scheme"
+                     packages="bl_mynn_in;bl_ysu_in;bl_myj_in"/>
+
+                <var name="wstar" type="real" dimensions="nCells Time" units="m s^{-1}"
+                     description="mixed velocity scale from PBL scheme"
+                     packages="bl_mynn_in;bl_ysu_in;bl_myj_in"/>
 
 		<var name="kzh" type="real" dimensions="nVertLevels nCells Time" units="m^{2} s^{-1}"
                      description="vertical diffusion coefficient of potential temperature"
-                     packages="bl_mynn_in;bl_ysu_in"/>
+                     packages="bl_mynn_in;bl_ysu_in;bl_myj_in"/>
 
 		<var name="kzm" type="real" dimensions="nVertLevels nCells Time" units="m^{2} s^{-1}"
                      description="vertical diffusion coefficient of mommentum"
-                     packages="bl_mynn_in;bl_ysu_in"/>
+                     packages="bl_mynn_in;bl_ysu_in;bl_myj_in"/>
 
 		<var name="kzq" type="real" dimensions="nVertLevels nCells Time" units="m^{2} s^{-1}"
                      description="vertical diffusion coefficient of water vapor and cloud condensates"
-                     packages="bl_mynn_in;bl_ysu_in"/>
+                     packages="bl_mynn_in;bl_ysu_in;bl_myj_in"/>
 
 
                 <!-- YSU PBL SCHEME: -->
@@ -2545,7 +2702,7 @@
 
                 <var name="el_pbl" type="real" dimensions="nVertLevels nCells Time" units="m"
                      description="mixing length from PBL scheme"
-                     packages="bl_mynn_in"/>
+                     packages="bl_mynn_in;bl_myj_in"/>
 
                 <var name="qke" type="real" dimensions="nVertLevels nCells Time" units="m^{2} s^{-2}"
                      description="twice turbulent kinetic energy"
@@ -2565,7 +2722,7 @@
 
                 <var name="tke_pbl" type="real" dimensions="nVertLevels nCells Time" units="m^{2} s^{-2}"
                      description="turbulent kinetic energy from PBL"
-                     packages="bl_mynn_in"/>
+                     packages="bl_mynn_in;bl_myj_in"/>
 
                 <var name="dqke" type="real" dimensions="nVertLevels nCells Time" units="m^{2} s^{-2}"
                      description="TKE change"
@@ -2587,6 +2744,14 @@
                      description="TKE vertical distribution"
                      packages="bl_mynn_in"/>
 
+		<!-- MYJ PBL SCHEME: -->
+		<var name="chlowq" type="real" dimensions="nCells Time" units=""
+		     description=""
+		     packages="bl_myj_in"/>
+
+		<var name="mixht" type="real" dimensions="nCells Time" units="m"
+		     desciption="Mixing height"
+		     packages="bl_myj_in"/>
                 <var name="edmf_a" type="real" dimensions="nVertLevels nCells Time" units="unitless"
                      description="EDMF relative updraft area of moist updrafts in the MYNN PBL scheme"
                      packages="bl_mynn_in"/>
@@ -2645,111 +2810,111 @@
 
                 <var name="hfx" type="real" dimensions="nCells Time" units="W m^{-2}"
                      description="upward heat flux at the surface"
-                     packages="bl_mynn_in;bl_ysu_in"/>
+                     packages="bl_mynn_in;bl_ysu_in;bl_myj_in"/>
 
                 <var name="mavail" type="real" dimensions="nCells Time" units="unitless"
                      description="surface moisture availability (between 0 and 1)"
-                     packages="bl_mynn_in;bl_ysu_in;lsm_ruc_in"/>
+                     packages="bl_mynn_in;bl_ysu_in;bl_myj_in;lsm_ruc_in"/>
 
                 <var name="mol" type="real" dimensions="nCells Time" units="K"
                      description="T* in similarity theory"
-                     packages="bl_mynn_in;bl_ysu_in"/>
+                     packages="bl_mynn_in;bl_ysu_in;bl_myj_in"/>
 
                 <var name="qfx" type="real" dimensions="nCells Time" units="kg m^{-2} s^{-1}"
                      description="upward moisture flux at the surface"
-                     packages="bl_mynn_in;bl_ysu_in"/>
+                     packages="bl_mynn_in;bl_ysu_in;bl_myj_in"/>
 
                 <var name="qsfc" type="real"  dimensions="nCells Time" units="kg kg^{-1}"
                      description="specific humidity at lower boundary"
-                     packages="bl_mynn_in;bl_ysu_in"/>
+                     packages="bl_mynn_in;bl_ysu_in;bl_myj_in"/>
 
                 <var name="ust" type="real" dimensions="nCells Time" units="m s^{-1}"
                      description="U* in similarity theory"
-                     packages="bl_mynn_in;bl_ysu_in"/>
+                     packages="bl_mynn_in;bl_ysu_in;bl_myj_in"/>
 
                 <var name="ustm" type="real" dimensions="nCells Time" units="m s^{-1}"
                      description="U* in similarity theory without vconv"
-                     packages="bl_mynn_in;bl_ysu_in"/>
+                     packages="bl_mynn_in;bl_ysu_in;bl_myj_in"/>
 
                 <var name="zol" type="real" dimensions="nCells Time" units="unitless"
                      description="z/L height over Monin-Obukhov length"
-                     packages="bl_mynn_in;bl_ysu_in"/>
+                     packages="bl_mynn_in;bl_ysu_in;bl_myj_in"/>
 
                 <var name="br" type="real" dimensions="nCells Time" units="unitless"
                      description="Richardson number"
-                     packages="bl_mynn_in;bl_ysu_in"/>
+                     packages="bl_mynn_in;bl_ysu_in;bl_myj_in"/>
 
                 <var name="cd" type="real" dimensions="nCells Time" units="unitless"
                      description="drag coefficient at 10-meter"
-                     packages="bl_mynn_in;bl_ysu_in"/>
+                     packages="bl_mynn_in;bl_ysu_in;bl_myj_in"/>
 
                 <var name="cda" type="real" dimensions="nCells Time" units="unitless"
                      description="drag coefficient at lowest model level"
-                     packages="bl_mynn_in;bl_ysu_in"/>
+                     packages="bl_mynn_in;bl_ysu_in;bl_myj_in"/>
 
                 <var name="chs" type="real" dimensions="nCells Time" units="m s^{-1}"
                      description="surface exchange coefficient for heat and moisture"
-                     packages="bl_mynn_in;bl_ysu_in"/>
+                     packages="bl_mynn_in;bl_ysu_in;bl_myj_in"/>
 
                 <var name="chs2" type="real" dimensions="nCells Time" units="m s^{-1}"
                      description="surface exchange coefficient for heat at 2-meter"
-                     packages="bl_mynn_in;bl_ysu_in"/>
+                     packages="bl_mynn_in;bl_ysu_in;bl_myj_in"/>
 
                 <var name="cqs2" type="real" dimensions="nCells Time" units="m s^{-1}"
                      description="surface exchange coefficient for moisture at 2-meter"
-                     packages="bl_mynn_in;bl_ysu_in"/>
+                     packages="bl_mynn_in;bl_ysu_in;bl_myj_in"/>
 
                 <var name="ck" type="real" dimensions="nCells Time" units="unitless"
                      description="enthalpy exchange coeff at 10-meter"
-                     packages="bl_mynn_in;bl_ysu_in"/>
+                     packages="bl_mynn_in;bl_ysu_in;bl_myj_in"/>
 
                 <var name="cka" type="real" dimensions="nCells Time" units="unitless"
                      description="enthalpy exchange coefficient at lowest model level"
-                     packages="bl_mynn_in;bl_ysu_in"/>
+                     packages="bl_mynn_in;bl_ysu_in;bl_myj_in"/>
 
                 <var name="cpm" type="real" dimensions="nCells Time" units="J K^{-1} kg^{-1}"
                      description="specific heat of dry air at constant pressure at lowest model level"
-                     packages="bl_mynn_in;bl_ysu_in"/>
+                     packages="bl_mynn_in;bl_ysu_in;bl_myj_in"/>
 
                 <var name="flhc" type="real" dimensions="nCells Time" units="W m^{-2} K^{-1}"
                      description="exchange coefficient for heat"
-                     packages="bl_mynn_in;bl_ysu_in;lsm_ruc_in"/>
+                     packages="bl_mynn_in;bl_ysu_in;bl_myj_in;lsm_ruc_in"/>
 
                 <var name="flqc" type="real" dimensions="nCells Time" units="kg m^{-2} s^{-1}"
                      description="exchange coefficient for moisture"
-                     packages="bl_mynn_in;bl_ysu_in;lsm_ruc_in"/>
+                     packages="bl_mynn_in;bl_ysu_in;bl_myj_in;lsm_ruc_in"/>
 
                 <var name="gz1oz0" type="real" dimensions="nCells Time" units="unitless"
                      description="log(z/z0) where z0 is roughness length"
-                     packages="bl_mynn_in;bl_ysu_in"/>
+                     packages="bl_mynn_in;bl_ysu_in;bl_myj_in"/>
 
                 <var name="lh" type="real" dimensions="nCells Time" units="W m^{-2}"
                      description="latent heat flux at the surface"
-                     packages="bl_mynn_in;bl_ysu_in"/>
+                     packages="bl_mynn_in;bl_ysu_in;bl_myj_in"/>
 
                 <var name="psim" type="real" dimensions="nCells Time" units="unitless"
                      description="similarity stability function for momentum"
-                     packages="bl_mynn_in;bl_ysu_in"/>
+                     packages="bl_mynn_in;bl_ysu_in;bl_myj_in"/>
 
                 <var name="psih" type="real" dimensions="nCells Time" units="unitless"
                      description="similarity stability function for heat"
-                     packages="bl_mynn_in;bl_ysu_in"/>
+                     packages="bl_mynn_in;bl_ysu_in;bl_myj_in"/>
 
                 <var name="qgh" type="real" dimensions="nCells Time" units="kg kg^{-1}"
                      description="lowest level saturation mixing ratio"
-                     packages="bl_mynn_in;bl_ysu_in"/>
+                     packages="bl_mynn_in;bl_ysu_in;bl_myj_in"/>
 
                 <var name="regime" type="real" dimensions="nCells Time" units="unitless"
                      description="flag indicating the PBL regime (stable,unstable,...)"
-                     packages="bl_mynn_in;bl_ysu_in"/>
+                     packages="bl_mynn_in;bl_ysu_in;bl_myj_in"/>
 
                 <var name="rmol" type="real" dimensions="nCells Time" units="unitless"
                      description="1./L Monin Obukhov length"
-                     packages="bl_mynn_in;bl_ysu_in"/>
+                     packages="bl_mynn_in;bl_ysu_in;bl_myj_in"/>
 
                 <var name="wspd" type="real" dimensions="nCells Time" units="m s^{-1}"
                      description="wind speed at lowest model level"
-                     packages="bl_mynn_in;bl_ysu_in"/>
+                     packages="bl_mynn_in;bl_ysu_in;bl_myj_in"/>
 
 
                 <!-- ... MONIN-OBUKHOV (SFCLAY): -->
@@ -2774,26 +2939,78 @@
                 <var name="sh3d" type="real" dimensions="nVertLevels nCells Time" units="unitless"
                      description="stability function for heat"
                      packages="bl_mynn_in"/>
+	
+		<!-- ... MYJ: -->
+		<var name="qz0" type="real" dimensions="nCells Time" units="K"
+		     description="specific humidity at roughness length"
+                     packages="bl_myj_in"/>
 
+		<var name="thz0" type="real" dimensions="nCells Time" units="K"
+		     description="potential temperature at roughness length"
+		     packages="bl_myj_in"/>
+
+		<var name="uz0" type="real" dimensions="nCells Time" units="m s^{-1}"
+                     description="zonal wind at roughness length"
+                     packages="bl_myj_in"/>
+
+		<var name="vz0" type="real" dimensions="nCells Time" units="m s^{-1}"
+                     description="meridional wind at roughness length"
+                     packages="bl_myj_in"/>
+
+		<var name="lowlyr" type="integer" dimensions="nCells Time" units=""
+                     description="index of lowest model layer above ground"
+                     packages="bl_myj_in"/>
+
+		<var name="akhs" type="real" dimensions="nCells Time" units=""
+                     description="sfc exchange coefficient of heat"
+                     packages="bl_myj_in"/>
+
+                <var name="akms" type="real" dimensions="nCells Time" units=""
+                     description="sfc exchange coefficient of moisture"
+                     packages="bl_myj_in"/>
+
+		<var name="ct" type="real" dimensions="nCells Time" units=""
+                     description="countergradient term"
+                     packages="bl_myj_in"/>
+
+		<var name="th10" type="real" dimensions="nCells Time" units="K"
+                     description="10 meter potential temperature"
+                     packages="bl_myj_in"/>
+
+		<var name="q10" type="real" dimensions="nCells Time" units=""
+                     description="10 meter specific humidity"
+                     packages="bl_myj_in"/>
+
+		<var name="tshltr" type="real" dimensions="nCells Time" units="K"
+                     description="shelter potential temperature"
+                     packages="bl_myj_in"/>
+
+		<var name="pshltr" type="real" dimensions="nCells Time" units="Pa"
+                     description="shelter pressure"
+                     packages="bl_myj_in"/>
+
+		<var name="qshltr" type="real" dimensions="nCells Time" units=""
+                     description="shelter specific humidity"
+                     packages="bl_myj_in"/>
                 <var name="sm3d" type="real" dimensions="nVertLevels nCells Time" units="unitless"
                      description="stability function for moisture"
                      packages="bl_mynn_in"/>
 
 
                 <!-- DIAGNOSTICS: -->
-                <var name="u10" type="real" dimensions="nCells Time" packages="bl_mynn_in;bl_ysu_in" units="m s^{-1}"
+                <var name="u10" type="real" dimensions="nCells Time" packages="bl_mynn_in;bl_ysu_in;bl_myj_in" units="m s^{-1}"
                      description="10-meter zonal wind"/>
 
-                <var name="v10" type="real" dimensions="nCells Time" packages="bl_mynn_in;bl_ysu_in" units="m s^{-1}"
+                <var name="v10" type="real" dimensions="nCells Time" packages="bl_mynn_in;bl_ysu_in;bl_myj_in" units="m s^{-1}"
                      description="10-meter meridional wind"/>
 
-                <var name="q2" type="real" dimensions="nCells Time" packages="bl_mynn_in;bl_ysu_in" units="kg kg^{-1}"
+                <var name="q2" type="real" dimensions="nCells Time" packages="bl_mynn_in;bl_ysu_in;bl_myj_in" units="kg kg^{-1}"
                      description="2-meter specific humidity"/>
 
-                <var name="t2m" type="real" dimensions="nCells Time" packages="bl_mynn_in;bl_ysu_in" units="K"
+                <var name="t2m" type="real" dimensions="nCells Time" packages="bl_mynn_in;bl_ysu_in;bl_myj_in" units="K"
                      description="2-meter temperature"/>
 
-                <var name="th2m" type="real" dimensions="nCells Time" packages="bl_mynn_in;bl_ysu_in" units="K"
+                <var name="th2m" type="real" dimensions="nCells Time" packages="bl_mynn_in;bl_ysu_in;bl_myj_in" units="K"
                      description="2-meter potential temperature"/>
 
 
@@ -3317,33 +3534,37 @@
 
                 <var name="rublten" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1} s^{-1}"
                      description="tendency of zonal wind due to pbl processes"
-                     packages="bl_mynn_in;bl_ysu_in"/>
+                     packages="bl_mynn_in;bl_ysu_in;bl_myj_in"/>
 
                 <var name="rvblten" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1} s^{-1}"
                      description="tendency of meridional wind due to pbl processes"
-                     packages="bl_mynn_in;bl_ysu_in"/>
+                     packages="bl_mynn_in;bl_ysu_in;bl_myj_in"/>
 
                 <var name="rthblten" type="real" dimensions="nVertLevels nCells Time" units="K s^{-1}"
                      description="tendency of potential temperature due to pbl processes"
-                     packages="bl_mynn_in;bl_ysu_in"/>
+                     packages="bl_mynn_in;bl_ysu_in;bl_myj_in"/>
 
                 <var name="rqvblten" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1} s^{-1}"
                      description="tendency of water vapor mixing ratio due to pbl processes"
-                     packages="bl_mynn_in;bl_ysu_in"/>
+                     packages="bl_mynn_in;bl_ysu_in;bl_myj_in"/>
 
                 <var name="rqcblten" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1} s^{-1}"
                      description="tendency of cloud water mixing ratio due to pbl processes"
-                     packages="bl_mynn_in;bl_ysu_in"/>
+                     packages="bl_mynn_in;bl_ysu_in;bl_myj_in"/>
 
-                <var name="rqiblten" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1} s^{-1}"
+		<var name="rqiblten" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1} s^{-1}"
                      description="tendency of cloud ice mixing ratio due to pbl processes"
-                     packages="bl_mynn_in;bl_ysu_in"/>
+                     packages="bl_mynn_in;bl_ysu_in;bl_myj_in"/>
 
                 <var name="rqsblten" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1} s^{-1}"
                      description="tendency of snow mixing ratio due to pbl processes"
                      packages="bl_mynn_in"/>
 
-                <var name="rniblten" type="real" dimensions="nVertLevels nCells Time" units="nb kg^{-1} s^{-1}"
+                <var name="rqsblten" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1} s^{-1}"
+                     description="tendency of snow mixing ratio due to pbl processes"
+                     packages="bl_mynn_in"/>
+
+		 <var name="rniblten" type="real" dimensions="nVertLevels nCells Time" units="nb kg^{-1} s^{-1}"
                      description="tendency of cloud ice number concentration due to pbl processes"
                      packages="bl_mynn_in"/>
 
@@ -3375,7 +3596,6 @@
                 <var name="ozmixm" type="real" dimensions="nMonths nOznLevels nCells" units="mol mol^{-1}"
                      description="monthly-mean climatological ozone defined at fixed pressure levels"/>
         </var_struct>
-
 
         <var_struct name="sfc_input" time_levs="1">
 
@@ -3517,7 +3737,7 @@
 #endif
 
         <var_struct name="tend_iau" time_levs="1" packages="iau">
-			
+
                 <!-- analysis increments; read from iau input -->
                 <var name="u_amb"     name_in_code="u" type="real" dimensions="nVertLevels nEdges Time" units="m s^{-1}"
                      description="Horizontal normal velocity increment"/>
@@ -3532,20 +3752,23 @@
                      <var name="qv_amb"  name_in_code="qv" array_group="moist" units="kg kg^{-1}"
                           description="Water vapor mixing ratio increment"/>
 
-                     <var name="qc_amb"  name_in_code="qc" array_group="moist" packages="bl_mynn_in;bl_ysu_in;cu_ntiedtke_in;mp_kessler_in;mp_thompson_in;mp_wsm6_in" units="kg kg^{-1}"
+                     <var name="qc_amb"  name_in_code="qc" array_group="moist" packages="bl_mynn_in;bl_ysu_in;bl_myj_in;cu_ntiedtke_in;mp_kessler_in;mp_thompson_in;mp_wsm6_in;mp_nssl2m_in" units="kg kg^{-1}"
                           description="Cloud water mixing ratio increment"/>
 
-                     <var name="qr_amb"  name_in_code="qr" array_group="moist" packages="mp_kessler_in;mp_thompson_in;mp_wsm6_in" units="kg kg^{-1}"
+                     <var name="qr_amb"  name_in_code="qr" array_group="moist" packages="mp_kessler_in;mp_thompson_in;mp_wsm6_in;mp_nssl2m_in" units="kg kg^{-1}"
                           description="Rain water mixing ratio increment"/>
 
-                     <var name="qi_amb"  name_in_code="qi" array_group="moist" packages="bl_mynn_in;bl_ysu_in;cu_ntiedtke_in;mp_thompson_in;mp_wsm6_in" units="kg kg^{-1}"
+                     <var name="qi_amb"  name_in_code="qi" array_group="moist" packages="bl_mynn_in;bl_ysu_in;bl_myj_in;cu_ntiedtke_in;mp_thompson_in;mp_wsm6_in;mp_nssl2m_in" units="kg kg^{-1}"
                           description="Ice mixing ratio increment"/>
 
-                     <var name="qs_amb"  name_in_code="qs" array_group="moist" packages="mp_thompson_in;mp_wsm6_in" units="kg kg^{-1}"
+                     <var name="qs_amb"  name_in_code="qs" array_group="moist" packages="mp_thompson_in;mp_wsm6_in;mp_nssl2m_in" units="kg kg^{-1}"
                           description="Snow mixing ratio increment"/>
 
-                     <var name="qg_amb"  name_in_code="qg" array_group="moist" packages="mp_thompson_in;mp_wsm6_in" units="kg kg^{-1}"
+                     <var name="qg_amb"  name_in_code="qg" array_group="moist" packages="mp_thompson_in;mp_wsm6_in;mp_nssl2m_in" units="kg kg^{-1}"
                           description="Graupel mixing ratio increment"/>
+
+                     <var name="qh_amb"  name_in_code="qh" array_group="moist" packages="mp_nssl2m_in" units="kg kg^{-1}"
+                          description="Hail mixing ratio increment"/>
                 </var_array>
          </var_struct>
 

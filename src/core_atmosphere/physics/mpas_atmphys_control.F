@@ -169,6 +169,7 @@
  if(.not. (config_microp_scheme .eq. 'off'         .or. &
            config_microp_scheme .eq. 'mp_kessler'  .or. &
            config_microp_scheme .eq. 'mp_thompson' .or. &
+           config_microp_scheme .eq. 'mp_nssl2m'  .or. &
            config_microp_scheme .eq. 'mp_wsm6')) then
 
     write(mpas_err_message,'(A,A10)') 'illegal value for config_microp_scheme:', &
@@ -193,7 +194,8 @@
 !pbl scheme:
  if(.not. (config_pbl_scheme .eq. 'off'     .or. &
            config_pbl_scheme .eq. 'bl_mynn' .or. &
-           config_pbl_scheme .eq. 'bl_ysu')) then
+           config_pbl_scheme .eq. 'bl_ysu'  .or. &
+           config_pbl_scheme .eq. 'bl_myj')) then
 
     write(mpas_err_message,'(A,A10)') 'illegal value for pbl_scheme: ', &
           trim(config_pbl_scheme)
@@ -260,10 +262,11 @@
  endif
 
 !surface-layer scheme:
- if(.not. (config_sfclayer_scheme .eq. 'off'              .or. &
-           config_sfclayer_scheme .eq. 'sf_mynn'          .or. &
+ if(.not. (config_sfclayer_scheme .eq. 'off'     .or. &
+           config_sfclayer_scheme .eq. 'sf_mynn' .or. &
            config_sfclayer_scheme .eq. 'sf_monin_obukhov' .or. &
-           config_sfclayer_scheme .eq. 'sf_monin_obukhov_rev')) then
+           config_sfclayer_scheme .eq. 'sf_monin_obukhov_rev' .or. &
+           config_sfclayer_scheme .eq. 'sf_myj' )) then
  
     write(mpas_err_message,'(A,A10)') 'illegal value for surface layer scheme: ', &
           trim(config_sfclayer_scheme)
@@ -272,12 +275,14 @@
     if(config_pbl_scheme == 'bl_mynn') then
        config_sfclayer_scheme = 'sf_mynn'
     elseif(config_pbl_scheme == 'bl_ysu') then
-       if(config_sfclayer_scheme /= 'sf_monin_obukhov' .and. &
-          config_sfclayer_scheme /= 'sf_monin_obukhov_rev') then
-          write(mpas_err_message,'(A,A10)') 'wrong choice for surface layer scheme with YSU PBL: ', &
+       if ( .not. (config_sfclayer_scheme .eq. 'sf_monin_obukhov' .or. &
+                   config_sfclayer_scheme .eq. 'sf_monin_obukhov_rev')) then
+           write(mpas_err_message,'(A,A10)') 'wrong choice for surface layer scheme with YSU PBL: ', &
                 trim(config_sfclayer_scheme)
-          call physics_error_fatal(mpas_err_message)
+           call physics_error_fatal(mpas_err_message)
        endif
+    elseif(config_pbl_scheme == 'bl_myj') then
+       config_sfclayer_scheme = 'sf_myj'
     endif
  endif
 
