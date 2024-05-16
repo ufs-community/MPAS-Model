@@ -1102,32 +1102,22 @@ subroutine compute_hourly_max_radar_reflectivity(configs,diag_physics,its,ite)
 
        do j = jts,jte
        do i = its,ite
-          do k = 17,17
-             p1d(k) = pres_p(i,k,j)
-             t1d(k) = th_p(i,k,j) * pi_p(i,k,j)
-             qv1d(k)  = qv_p(i,k,j)
-             qc1d(k)  = qc_p(i,k,j)
-             qr1d(k)  = qr_p(i,k,j)
-             qs1d(k)  = qs_p(i,k,j)
-             qg1d(k)  = qg_p(i,k,j)
-             nr1d(k)  = nr_p(i,k,j)
+          do k = kts,kte
              dBZ1d(k) = -35._RKIND
              zp(k) = z_p(i,k,j) - z_p(i,1,j)+0.5*dz_p(i,1,j) ! height AGL
           enddo
 
-          call calc_refl10cm(qv1d,qc1d,qr1d,nr1d,qs1d,qg1d,t1d,p1d,dBZ1d,kts,kte,i,j,17,17)
-
-          !kp = 1
-          do k = 17,17
-             dBZ1d(k) = max(-35._RKIND,dBZ1d(k))
-             !refl10cm_p(i,k,j) = dBZ1d(k)
-             !if(zp(k) .lt. 1000.) kp = k
+          kp = 1
+          do k = kts,kte
+             dBZ1d(k) = max(-35._RKIND,refl10cm_p(i,k,j))
+             if(zp(k) .lt. 1000.) kp = k
           enddo
+
           !refl10cm_max(i) = maxval(dBZ1d(:))
           !w1 = (zp(kp+1)-1000.)/(zp(kp+1)-zp(kp))
           !w2 = 1.0 - w1
           !refl10cm_1km(i) = w1*dBZ1d(kp) + w2*dBZ1d(kp+1)
-          refl10cm_1km_max(i) = max(refl10cm_1km_max(i),dBZ1d(17))
+          refl10cm_1km_max(i) = max(refl10cm_1km_max(i),refl10cm_1km_p(i,j))
        enddo
        enddo
 
