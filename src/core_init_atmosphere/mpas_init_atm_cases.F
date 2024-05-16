@@ -6667,21 +6667,21 @@ call mpas_log_write('Done with soil consistency check')
                 scalars(index_ng,k,iCell) = calcnfromq(qhw=scalars(index_qg,k,iCell),dn=rho_zz(k,iCell) )
               ENDIF
             ENDIF
-            IF ( index_qr > 0 .and. index_nr > 0 ) THEN
-              IF ( scalars(index_qr,k,iCell) > 0.0 .and. scalars(index_nr,k,iCell) == 0.0 ) THEN
-                scalars(index_nr,k,iCell) = calcnfromq(qrw=scalars(index_qr,k,iCell),dn=rho_zz(k,iCell) )
-              ENDIF
-            ENDIF
-            IF ( index_qc > 0 .and. index_nc > 0 ) THEN
-              IF ( scalars(index_qc,k,iCell) > 0.0 .and. scalars(index_nc,k,iCell) == 0.0 ) THEN
-                scalars(index_nc,k,iCell) = calcnfromq(qcw=scalars(index_qc,k,iCell),dn=rho_zz(k,iCell) )
-              ENDIF
-            ENDIF
-            IF ( index_qi > 0 .and. index_ni > 0 ) THEN
-              IF ( scalars(index_qi,k,iCell) > 0.0 .and. scalars(index_ni,k,iCell) == 0.0 ) THEN
-                scalars(index_ni,k,iCell) = calcnfromq(qci=scalars(index_qi,k,iCell),dn=rho_zz(k,iCell) )
-              ENDIF
-            ENDIF
+          !  IF ( index_qr > 0 .and. index_nr > 0 ) THEN
+          !    IF ( scalars(index_qr,k,iCell) > 0.0 .and. scalars(index_nr,k,iCell) == 0.0 ) THEN
+          !      scalars(index_nr,k,iCell) = calcnfromq(qrw=scalars(index_qr,k,iCell),dn=rho_zz(k,iCell) )
+          !    ENDIF
+          !  ENDIF
+          !  IF ( index_qc > 0 .and. index_nc > 0 ) THEN
+          !    IF ( scalars(index_qc,k,iCell) > 0.0 .and. scalars(index_nc,k,iCell) == 0.0 ) THEN
+          !      scalars(index_nc,k,iCell) = calcnfromq(qcw=scalars(index_qc,k,iCell),dn=rho_zz(k,iCell) )
+          !    ENDIF
+          !  ENDIF
+          !  IF ( index_qi > 0 .and. index_ni > 0 ) THEN
+          !    IF ( scalars(index_qi,k,iCell) > 0.0 .and. scalars(index_ni,k,iCell) == 0.0 ) THEN
+          !      scalars(index_ni,k,iCell) = calcnfromq(qci=scalars(index_qi,k,iCell),dn=rho_zz(k,iCell) )
+          !    ENDIF
+          !  ENDIF
          end do
 
       end do

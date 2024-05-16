@@ -413,7 +413,7 @@
                 <package name="cu_ntiedtke_in" description="parameterization of Tiedtke convection."/>
                 <package name="bl_ysu_in" description="parameterization of YSU Planetary Boundary Layer."/>
                 <package name="bl_mynn_in" description="parameterization of MYNN Planetary Boundary Layer."/>
-		      <package name="bl_myj_in" description="parameterization of MYJ Planetary Boundary Layer."/>
+		<package name="bl_myj_in" description="parameterization of MYJ Planetary Boundary Layer."/>
                 <package name="lsm_ruc_in" description="parameterization of the RUC land surface."/>
                 <package name="lsm_noah_in" description="parameterization of the Noah land surface."/>
 
@@ -1570,10 +1570,6 @@
                         <var name="ni" array_group="number" units="nb kg^{-1}"
                              description="Cloud ice number concentration"
                              packages="bl_mynn_in;mp_thompson_in;mp_nssl2m_in"/>
-
-                        <var name="nc" array_group="number" units="nb kg^{-1}"
-                             description="Cloud number concentration"
-                             packages="mp_thompson_in; mp_nssl12m_in"/>
 
                         <var name="nr" array_group="number" units="nb kg^{-1}"
                              description="Rain number concentration"

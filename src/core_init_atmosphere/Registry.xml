@@ -41,9 +41,6 @@
                      description="The number of atmospheric levels, always one more than the number of layers"/>
                 <dim name="nMonths" definition="namelist:config_months"
                      description="The number of months in a year"/>
-		<dim name="nlcat" definition="namelist:config_landuse_data" calculation='20 + 4 * merge(1,0,config_landuse_data(1:4)=="USGS")'
-                     description="The number of landuse categories used in the land surface model"/>
-                <dim name="nscat" definition="16" definition:"namelist:config_nsoilcat"
                      description="The number of soil categories used in the land surface model"/>
 		<dim name="nlcat" definition="namelist:config_landuse_data" calculation='20 + 4 * merge(1,0,config_landuse_data(1:4)=="USGS")'
                      description="The number of landuse categories used in the land surface model"/>
@@ -1093,7 +1090,7 @@
                         <var name="lbc_nwfa" array_group="passive" units="kg^{-1}"
                              description="Number of water-friendly aerosols for microphysics on LBCs"/>
 
-			         <var name="lbc_nifa" array_group="passive" units="kg^{-1}"
+			<var name="lbc_nifa" array_group="passive" units="kg^{-1}"
                              description="Number of ice-friendly aerosols for microphysics on LBCs"/>
 
                         <var name="lbc_qi" array_group="moist" units="kg kg^{-1}"
