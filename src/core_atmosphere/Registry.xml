@@ -1949,7 +1949,7 @@
 
 			<var name="tend_nc" name_in_code="nc" array_group="number" units="nb m^{-3} s^{-1}" 
                              description="Tendency of cloud number concentration multiplied by dry air density divided by d(zeta)/dz"
-                             packages="mp_thompson_in;mp_nssl12m_in"/>
+                             packages="mp_thompson_in;mp_nssl2m_in"/>
 			
                         <var name="tend_nr" name_in_code="nr" array_group="number" units="nb m^{-3} s^{-1}" 
                              description="Tendency of rain number concentration multiplied by dry air density divided by d(zeta)/dz"
@@ -2476,7 +2476,7 @@
 
 		<var name="refl10cm" type="real" dimensions="nVertLevels nCells Time" units="dBZ"
                      description="10 cm radar reflectivity"
-                     packages="mp_thompson_in;mp_wsm6_in;mp_nssl12m_in"/>
+                     packages="mp_thompson_in;mp_wsm6_in;mp_nssl2m_in"/>
 
                 <var name="refl10cm_max" type="real" dimensions="nCells Time" units="dBZ"
                      description="10 cm maximum radar reflectivity"
@@ -2645,7 +2645,7 @@
 
                 <var name="delta" type="real" dimensions="nCells Time" units="m"
                      description="entrainment layer depth from PBL scheme"
-                     packages="bl_mynn_in;bl_ysu_in;bl_myj_in"/>
+                     packages="bl_ysu_in;bl_myj_in"/>
 
                 <var name="wstar" type="real" dimensions="nCells Time" units="m s^{-1}"
                      description="mixed velocity scale from PBL scheme"
@@ -2665,14 +2665,6 @@
 
 
                 <!-- YSU PBL SCHEME: -->
-                <var name="delta" type="real" dimensions="nCells Time" units="m"
-                     description="entrainment layer depth from PBL scheme"
-                     packages="bl_ysu_in"/>
-
-                <var name="wstar" type="real" dimensions="nCells Time" units="m s^{-1}"
-                     description="mixed velocity scale from PBL scheme"
-                     packages="bl_ysu_in"/>
-
                 <var name="exch_h" type="real" dimensions="nVertLevels nCells Time" units="m^{2} s^{-1}"
                      description="exchange coefficient"
                      packages="bl_ysu_in"/>
@@ -3550,10 +3542,6 @@
 		<var name="rqiblten" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1} s^{-1}"
                      description="tendency of cloud ice mixing ratio due to pbl processes"
                      packages="bl_mynn_in;bl_ysu_in;bl_myj_in"/>
-
-                <var name="rqsblten" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1} s^{-1}"
-                     description="tendency of snow mixing ratio due to pbl processes"
-                     packages="bl_mynn_in"/>
 
                 <var name="rqsblten" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1} s^{-1}"
                      description="tendency of snow mixing ratio due to pbl processes"

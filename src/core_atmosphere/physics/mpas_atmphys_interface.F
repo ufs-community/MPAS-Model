@@ -713,7 +713,7 @@
  character(len=StrKIND),pointer:: nssl_moments
  integer,pointer:: index_qv,index_qc,index_qr,index_qi,index_qs,index_qg,index_qh
  integer,pointer:: index_zrw,index_zgw,index_zhw
- integer,pointer:: index_ni,index_nc,index_nr,index_nc,index_ns,index_ng,index_nh,index_nccn
+ integer,pointer:: index_ni,index_nc,index_nr,index_ns,index_ng,index_nh,index_nccn
  integer,pointer:: index_volg,index_volh,index_nwfa,index_nifa
  real(kind=RKIND),dimension(:),pointer    :: surface_pressure,tend_sfc_pressure
  real(kind=RKIND),dimension(:,:),pointer  :: zgrid
@@ -722,7 +722,7 @@
  real(kind=RKIND),dimension(:,:),pointer  :: rt_diabatic_tend
  real(kind=RKIND),dimension(:,:),pointer  :: dtheta_dt_mp
  real(kind=RKIND),dimension(:,:),pointer  :: qv,qc,qr,qi,qs,qg,qh
- real(kind=RKIND),dimension(:,:),pointer  :: ni,nr,nc,ns,ng,nh,nccn,nc,nwfa,nifa
+ real(kind=RKIND),dimension(:,:),pointer  :: ni,nr,nc,ns,ng,nh,nccn,nwfa,nifa
  real(kind=RKIND),dimension(:,:),pointer  :: volg,volh,zrw,zgw,zhw
  real(kind=RKIND),dimension(:,:),pointer  :: rainprod,evapprod,refl10cm
  real(kind=RKIND),dimension(:,:),pointer  :: re_cloud,re_ice,re_snow

@@ -634,9 +634,6 @@
 !local pointers for MYJ scheme:
  real(kind=RKIND),dimension(:),pointer   :: thz0,qz0,uz0,vz0,akhs,akms,ct,mixht,qsfc,ust,znt
 
-!local pointers for MYJ scheme:
- real(kind=RKIND),dimension(:),pointer   :: thz0,qz0,uz0,vz0,akhs,akms,ct,mixht,qsfc,ust,znt
-
 !-----------------------------------------------------------------------------------------------------------------
 
  call mpas_pool_get_config(configs,'config_pbl_scheme',pbl_scheme)
@@ -1056,95 +1053,6 @@
        call mpas_timer_stop('bl_mynn')
 !      call mpas_log_write('--- exit subroutine mynn_bl_driver:')
 !      call mpas_log_write(' ')
-
-    case("bl_myj")
-       if (initflag==1) then
-          do i = its,ite
-          do k = kts,kte
-          do j = jts,jte
-             tkepbl_p(i,k,j) = epsq2
-          enddo
-          enddo
-          enddo
-       endif
-       call mpas_timer_start('MYJ_pbl')
-       call mpas_log_write('dt_pbl = $r',realArgs=(/dt_pbl/))
-!       call mpas_log_write("BEFORE MYJPBL")
-! call mpas_dmpar_min_real(domain % dminfo, minval(ht_p), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(ht_p), scalar_max)
-!call mpas_log_write('MIN/MAX ht_p = $r, $r', realArgs=(/scalar_min,scalar_max/)
-!
-! call mpas_dmpar_min_real(domain % dminfo, minval(qsfc_p), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(qsfc_p), scalar_max)
-!call mpas_log_write('MIN/MAX qsfc_p = $r, $r', realArgs=(/scalar_min,scalar_max/)
-!
-! call mpas_dmpar_min_real(domain % dminfo, minval(thz0_p), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(thz0_p), scalar_max)
-!call mpas_log_write('MIN/MAX thz0_p = $r, $r',realArgs=(/scalar_min,scalar_max/)
-!
-! call mpas_dmpar_min_real(domain % dminfo, minval(qz0_p), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(qz0_p), scalar_max)
-!call mpas_log_write('MIN/MAX qz0_p = $r, $r',realArgs=(/scalar_min,scalar_max/)
-!
-! call mpas_dmpar_min_real(domain % dminfo, minval(uz0_p), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(uz0_p), scalar_max)
-!call mpas_log_write('MIN/MAX uz0_p = $r, $r', realArgs=(/scalar_min,scalar_max/)
-!
-! call mpas_dmpar_min_real(domain % dminfo, minval(vz0_p), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(vz0_p), scalar_max)
-!call mpas_log_write('MIN/MAX vz0_p = $r, $r',realArgs=(/scalar_min,scalar_max/)
-!
-! call mpas_dmpar_min_real(domain % dminfo, minval(tkepbl_p), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(tkepbl_p), scalar_max)
-!call mpas_log_write('MIN/MAX tkepbl_p = $r, $r',realArgs=(/scalar_min,scalar_max/)
-!
-! call mpas_dmpar_min_real(domain % dminfo, minval(kzh_p), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(kzh_p), scalar_max)
-!call mpas_log_write('MIN/MAX kzh_p = $r, $r',realArgs=(/scalar_min,scalar_max/)
-!
-! call mpas_dmpar_min_real(domain % dminfo, minval(ust_p), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(ust_p), scalar_max)
-!call mpas_log_write('MIN/MAX ust_p = $r, $r', realArgs=(/scalar_min,scalar_max/)
-!
-! call mpas_dmpar_min_real(domain % dminfo, minval(znt_p), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(znt_p), scalar_max)
-!call mpas_log_write('MIN/MAX znt_p = $r, $r',realArgs=(/scalar_min,scalar_max/)
-!
-! call mpas_dmpar_min_real(domain % dminfo, minval(ct_p), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(ct_p), scalar_max)
-!call mpas_log_write('MIN/MAX ct_p = $r, $r',realArgs=(/scalar_min,scalar_max/)
-!
-! call mpas_dmpar_min_real(domain % dminfo, minval(akhs_p), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(akhs_p), scalar_max)
-!call mpas_log_write('MIN/MAX akhs_p = $r, $r', realArgs=(/scalar_min,scalar_max/)
-!
-! call mpas_dmpar_min_real(domain % dminfo, minval(akms_p), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(akms_p), scalar_max)
-!call mpas_log_write('MIN/MAX akms_p = $r, $r', realArgs=(/scalar_min,scalar_max/)
-
-       call myjpbl ( &
-                dt       = dt_pbl    , stepbl   = 1          , ht       = ht_p       , &
-                pmid     = pres_hyd_p, pint     = pres2_hyd_p, th       = th_p       , &
-                t        = t_p       , exner    = pi_p       , qv       = qv_p       , &
-                qcw      = qc_p      , qci      = qi_p       , qcs      = qs_p       , &
-                qcr      = qr_p      , qcg      = qg_p       , u        = u_p        , &
-                v        = v_p       , rho      = rho_p      , tsk      = tsk_p      , &
-                qsfc     = qsfc_p    , chklowq   = chlowq_p   , thz0     = thz0_p     , &
-                qz0      = qz0_p     , uz0      = uz0_p      , vz0      = vz0_p      , &
-                lowlyr   = lowlyr_p  , xland    = xland_p    , sice     = xice_p     , &
-                snow     = snow_p    , tke_myj  = tkepbl_p   , exch_h   = kzh_p      , &
-                ustar    = ust_p     , znt      = znt_p      , el_myj   = elpbl_p    , &
-                pblh     = hpbl_p    , kpbl     = kpbl_p     , ct       = ct_p       , &
-                akhs     = akhs_p    , akms     = akms_p     , elflx    = lh_p       , &
-                mixht    = mixht_p   , rublten  = rublten_p  , rvblten  = rvblten_p  , &
-                rthblten = rthblten_p, rqvblten = rqvblten_p , rqcblten = rqcblten_p , &
-                rqiblten = rqiblten_p, dz       = dz_p       ,                         &
-                ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde, &
-                ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme, &
-                its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte  &
-                            )
-       call mpas_timer_stop('MYJ_pbl')
-         
 
     case("bl_myj")
        if (initflag==1) then
