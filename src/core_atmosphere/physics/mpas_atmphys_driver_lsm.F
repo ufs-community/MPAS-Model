@@ -16,7 +16,6 @@
  use mpas_atmphys_landuse, only: isurban
  use mpas_atmphys_lsm_noahinit
  use mpas_atmphys_lsm_rucinit
- use mpas_atmphys_lsm_rucinit
  use mpas_atmphys_vars
 
 !wrf physics

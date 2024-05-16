@@ -459,7 +459,6 @@
 
 !local pointers specific to mynn:
  real(kind=RKIND),dimension(:),pointer:: ch,qcg,snowh
- real(kind=RKIND),dimension(:,:),pointer:: cov,el_pbl,qsq,sh3d,tsq
 
 !local pointers specific to myj:
  real(kind=RKIND),dimension(:),pointer:: thz0, qz0, uz0, vz0, z0, akhs, akms, ct, tshltr, &
@@ -668,19 +667,6 @@
           if(config_frac_seaice) then
              ch_sea(i,j) = ch(i)
           endif
-       enddo
-       enddo
-
-       do j = jts,jte
-       do k = kts,kte
-       do i = its,ite
-          !input variables:
-          cov_p(i,k,j)      = cov(k,i)
-          qsq_p(i,k,j)      = qsq(k,i)
-          tsq_p(i,k,j)      = tsq(k,i)
-          sh3d_p(i,k,j)     = sh3d(k,i)
-          elpbl_p(i,k,j)    = el_pbl(k,i)
-       enddo
        enddo
        enddo
 
@@ -1302,38 +1288,6 @@
 
     case("sf_mynn")
        call sf_mynn_init(errmsg,errflg)
-
-    case("sf_myj") 
-       ! only lowlyr, ust, z0 inout, rest in only
-       if (.not.allocated(lowlyr_p)) allocate(lowlyr_p(ims:ime,jms:jme))
-       if (.not.allocated(ust_p)   ) allocate(ust_p(ims:ime,jms:jme)   )
-       if (.not.allocated(z0_p)    ) allocate(z0_p(ims:ime,jms:jme)    )
-       if (.not.allocated(xland_p) ) allocate(xland_p(ims:ime,jms:jme) )
-       if (.not.allocated(xice_p)  ) allocate(xice_p(ims:ime,jms:jme)  )
-       if (.not.allocated(ivgtyp_p)) allocate(ivgtyp_p(ims:ime,jms:jme))
-   
-       do j = jts,jte
-       do i = its,ite
-          !lowlyr_p(i,j) = lowlyr(i)
-          !ust_p(i,j)    = ust(i)
-          !z0_p(i,j)     = z0(i)
-          xland_p(i,j)  = xland(i)
-          xice_p(i,j)   = xice(i)
-          ivgtyp_p(i,j) = ivgtyp(i)
-       enddo
-       enddo
-
-       call MYJSFCINIT(lowlyr_p, ust_p, z0_p, xland_p, xice_p,        & 
-                       ivgtyp_p, config_do_restart, allowed_to_read,   &
-                       ids, ide, jds, jde, kds, kde, ims, ime, jms,    &
-                       jme, kms, kme, its, ite, jts, jte, kts, kte)
-       do j = jts,jte
-       do i = its,ite
-          lowlyr(i) = lowlyr_p(i,j)
-       !   ust(i)    = ust_p(i,j)
-       !   z0(i)    = z0_p(i,j)
-       enddo
-       enddo
 
     case("sf_myj") 
        ! only lowlyr, ust, z0 inout, rest in only
