@@ -400,7 +400,7 @@
 !local variables and arrays:
  integer:: istep
  integer, pointer :: do_diag_dbz
- logical :: diag_mp
+ logical :: dbz_from_mp
 
 !CCPP-compliant flags:
  character(len=StrKIND):: errmsg
@@ -408,9 +408,9 @@
 
  call mpas_pool_get_array(diag_physics,'do_diag_dbz',do_diag_dbz)
  if (do_diag_dbz==1) then
-   diag_mp = .true.
+   dbz_from_mp = .true.
  else
-   diag_mp= .false.
+   dbz_from_mp= .false.
  endif
 
 !-----------------------------------------------------------------------------------------------------------------
@@ -424,7 +424,7 @@
  call mpas_pool_get_config(configs,'config_microp_scheme',microp_scheme)
  call mpas_pool_get_config(configs,'config_thompson_aerosol_aware',thompson_aerosol_aware)
  call mpas_pool_get_config(configs,'config_thompson_hail_aware',thompson_hail_aware)
-  call mpas_pool_get_config(configs,'config_nssl_moments',nssl_moments)
+ call mpas_pool_get_config(configs,'config_nssl_moments',nssl_moments)
 
 !... allocation of microphysics arrays:
 !$OMP MASTER
@@ -548,7 +548,7 @@
                   sr        = sr_p        , rainprod   = rainprod_p   , evapprod   = evapprod_p   , &
                   re_cloud  = recloud_p   , re_ice     = reice_p      , re_snow    = resnow_p     , &
                   has_reqc  = has_reqc    , has_reqi   = has_reqi     , has_reqs   = has_reqs     , &
-                  diagflag  = l_diags     , dbz        = refl10cm_p   , diag_dbz   = diag_mp      , &
+                  diagflag  = l_diags     , dbz        = refl10cm_p   , diag_dbz   = dbz_from_mp  , &
                   ntmul      = n_microp   , ntcnt      = 1            , lastloop   = .true.       , &
                   refl_diagnostic = refl10cm_1km_p                                                , &
                   ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde           , &
@@ -571,7 +571,7 @@
                   sr        = sr_p        , rainprod   = rainprod_p   , evapprod   = evapprod_p   , &
                   re_cloud  = recloud_p   , re_ice     = reice_p      , re_snow    = resnow_p     , &
                   has_reqc  = has_reqc    , has_reqi   = has_reqi     , has_reqs   = has_reqs     , &
-                  diagflag  = l_diags     , dbz        = refl10cm_p   , diag_dbz   = diag_mp      , &
+                  diagflag  = l_diags     , dbz        = refl10cm_p   , diag_dbz   = dbz_from_mp  , &
                   ntmul      = n_microp   , ntcnt      = 1            , lastloop   = .true.       , &
                   refl_diagnostic = refl10cm_1km_p                                                , &
                   ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde           , &
@@ -607,7 +607,7 @@
 
  end if
 
- if (diag_mp) then
+ if (dbz_from_mp) then
     if(trim(microp_scheme) == "mp_wsm6"     .or. &
        trim(microp_scheme) == "mp_thompson" .or. &
        trim(microp_scheme) == "mp_nssl2m"   ) then
@@ -618,6 +618,7 @@
        call mpas_log_write('            since WSM6 or Thompson microphysics scheme was not selected')
     end if
  endif
+ 
 !... copy updated precipitation from the wrf-physics grid back to the geodesic-dynamics grid:
  call precip_to_MPAS(configs,diag_physics,its,ite)
 
@@ -989,7 +990,7 @@ subroutine compute_hourly_max_radar_reflectivity(configs,diag_physics,its,ite)
 !local pointers:
  character(len=StrKIND),pointer:: microp_scheme
  character(len=StrKIND),pointer:: nssl_moments
- real(kind=RKIND),dimension(:),pointer:: refl10cm_1km_max
+ real(kind=RKIND),dimension(:),pointer:: refl10cm_1km_max, refl10cm_1km
 
 !local variables and arrays:
  integer:: i,j,k,kp
@@ -1002,7 +1003,7 @@ subroutine compute_hourly_max_radar_reflectivity(configs,diag_physics,its,ite)
  call mpas_pool_get_config(configs,'config_nssl_moments',nssl_moments) ! not needed?
 
 ! call mpas_pool_get_array(diag_physics,'refl10cm_max',refl10cm_max)
-! call mpas_pool_get_array(diag_physics,'refl10cm_1km',refl10cm_1km)
+  call mpas_pool_get_array(diag_physics,'refl10cm_1km',refl10cm_1km)
   call mpas_pool_get_array(diag_physics,'refl10cm_1km_max',refl10cm_1km_max)
 
  microp_select: select case(microp_scheme)
@@ -1091,48 +1092,9 @@ subroutine compute_hourly_max_radar_reflectivity(configs,diag_physics,its,ite)
        if(allocated(zp)   ) deallocate(zp   )
 
     case ("mp_thompson")
-       if(.not.allocated(p1d)  ) allocate(p1d(kts:kte)  )
-       if(.not.allocated(t1d)  ) allocate(t1d(kts:kte)  )
-       if(.not.allocated(qv1d) ) allocate(qv1d(kts:kte) )
-       if(.not.allocated(qc1d) ) allocate(qc1d(kts:kte) )
-       if(.not.allocated(qr1d) ) allocate(qr1d(kts:kte) )
-       if(.not.allocated(qs1d) ) allocate(qs1d(kts:kte) )
-       if(.not.allocated(qg1d) ) allocate(qg1d(kts:kte) )
-       if(.not.allocated(nr1d) ) allocate(nr1d(kts:kte) )
-       if(.not.allocated(dBz1d)) allocate(dBZ1d(kts:kte))
-       if(.not.allocated(zp)   ) allocate(zp(kts:kte)   )
-
-       do j = jts,jte
        do i = its,ite
-          do k = kts,kte
-             dBZ1d(k) = -35._RKIND
-             zp(k) = z_p(i,k,j) - z_p(i,1,j)+0.5*dz_p(i,1,j) ! height AGL
-          enddo
-
-          kp = 1
-          do k = kts,kte
-             dBZ1d(k) = max(-35._RKIND,refl10cm_p(i,k,j))
-             if(zp(k) .lt. 1000.) kp = k
-          enddo
-
-          !refl10cm_max(i) = maxval(dBZ1d(:))
-          !w1 = (zp(kp+1)-1000.)/(zp(kp+1)-zp(kp))
-          !w2 = 1.0 - w1
-          !refl10cm_1km(i) = w1*dBZ1d(kp) + w2*dBZ1d(kp+1)
-          refl10cm_1km_max(i) = max(refl10cm_1km_max(i),refl10cm_1km_p(i,j))
+          refl10cm_1km_max(i) = max(refl10cm_1km_max(i),refl10cm_1km(i))
        enddo
-       enddo
-
-       if(allocated(p1d)  ) deallocate(p1d  )
-       if(allocated(t1d)  ) deallocate(t1d  )
-       if(allocated(qv1d) ) deallocate(qv1d )
-       if(allocated(qc1d) ) deallocate(qc1d )
-       if(allocated(qr1d) ) deallocate(qr1d )
-       if(allocated(qs1d) ) deallocate(qs1d )
-       if(allocated(qg1d) ) deallocate(qg1d )
-       if(allocated(nr1d) ) deallocate(nr1d )
-       if(allocated(dBz1d)) deallocate(dBZ1d)
-       if(allocated(zp)   ) deallocate(zp   )
 
     case default
 

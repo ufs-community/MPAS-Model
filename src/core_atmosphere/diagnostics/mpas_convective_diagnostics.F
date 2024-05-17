@@ -123,7 +123,7 @@ module mpas_convective_diagnostics
         is_needed_snow_acc_nc = .false.
         do_any_uh = .false.
         do_any_diags = .false.
-        do_diag_dbz = .0
+        do_diag_dbz = 0
         if (mpas_stream_inclusion_count('refl10cm_1km_max', direction=MPAS_STREAM_OUTPUT) > 0) then
             do_diag_dbz = 1
         endif
