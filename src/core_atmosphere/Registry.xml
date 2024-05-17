@@ -52,10 +52,6 @@
 		    description="Number of landuse categories in the input data"/>
 		<dim name="nscat"
                     description="Number of soil categories in the input data"/>
-		<dim name="nlcat"
-		    description="Number of landuse categories in the input data"/>
-		<dim name="nscat"
-                    description="Number of soil categories in the input data"/>
 #endif
         </dims>
 
