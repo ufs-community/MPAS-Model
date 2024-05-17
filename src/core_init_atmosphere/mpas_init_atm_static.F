@@ -125,8 +125,6 @@
  character(len=StrKIND), pointer :: config_maxsnowalbedo_data
  character(len=StrKIND), pointer :: config_soilcat_data
  character(len=StrKIND), pointer :: config_lai_data
- character(len=StrKIND), pointer :: config_soilcat_data
- character(len=StrKIND), pointer :: config_lai_data
  character(len=StrKIND+1) :: geog_data_path      ! same as config_geog_data_path, but guaranteed to have a trailing slash
  character(len=StrKIND+1) :: geog_sub_path       ! subdirectory names in config_geog_data_path, with trailing slash
 
