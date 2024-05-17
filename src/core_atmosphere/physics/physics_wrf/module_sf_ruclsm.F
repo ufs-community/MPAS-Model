@@ -1073,8 +1073,6 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
                   tso(i,k,j) = tso1d(k)
         enddo
 
-        !tso(i,nzs,j) = tbot(i,j)
-
         do k=1,nzs
              smfr3d(i,k,j) = smfrkeep(k)
            keepfr3dflag(i,k,j) = keepfr (k)
@@ -1103,8 +1101,11 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
         if(snow(i,j)==0.) emissl(i,j) = lemitbl(ivgtyp(i,j))
         emiss (i,j) = emissl(i,j)
 ! snow is in [mm], snwe is in [m]; canwat is in mm, canwatr is in m
-        snow   (i,j) = snwe*1000.
-        snowh  (i,j) = snhei
+! some points in the high terrain may have very high snow depth in the cycled model
+! because surface temperature is close to 273 K, and melting does not happen. 
+! Let's cap swe to be < 3 m, and snow depth < 7.5 m. Snow density will be 400 kg/m^3.
+        snow   (i,j) = min(3.,snwe)*1000.
+        snowh  (i,j) = min(7.5,snhei)
         canwat (i,j) = canwatr*1000.
 
         infiltr(i,j) = infiltrp
