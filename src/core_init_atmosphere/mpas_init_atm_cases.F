@@ -67,6 +67,7 @@ module init_atm_cases
       logical, pointer :: config_static_interp
       logical, pointer :: config_native_gwd_static
       logical, pointer :: config_met_interp
+      logical, pointer :: config_aerosol_climo
       logical, pointer :: config_blend_bdy_terrain
       character (len=StrKIND), pointer :: config_start_time
       character (len=StrKIND), pointer :: config_met_prefix
@@ -183,6 +184,7 @@ module init_atm_cases
             call mpas_pool_get_config(block_ptr % configs, 'config_static_interp', config_static_interp)
             call mpas_pool_get_config(block_ptr % configs, 'config_native_gwd_static', config_native_gwd_static)
             call mpas_pool_get_config(block_ptr % configs, 'config_met_interp', config_met_interp)
+            call mpas_pool_get_config(block_ptr % configs, 'config_aerosol_climo', config_aerosol_climo)
             call mpas_pool_get_config(block_ptr % configs, 'config_blend_bdy_terrain', config_blend_bdy_terrain)
 
             call mpas_pool_get_subpool(block_ptr % structs, 'mesh', mesh)
@@ -253,7 +255,7 @@ module init_atm_cases
                                    diag, diag_physics, block_ptr % dimensions, block_ptr % configs)
 
             if (config_met_interp) then
-!                call init_microphysics_aerosols(mesh, state, diag, block_ptr % configs)
+               if (config_aerosol_climo) call init_microphysics_aerosols(mesh, state, diag, block_ptr % configs)
                call physics_initialize_real(mesh, fg, domain % dminfo, block_ptr % dimensions, block_ptr % configs)
             end if
 
@@ -329,6 +331,8 @@ module init_atm_cases
                call mpas_pool_get_dimension(block_ptr % dimensions, 'nEdges', nEdges)
                call mpas_pool_get_dimension(block_ptr % dimensions, 'nVertLevels', nVertLevels)
 
+               call mpas_pool_get_config(block_ptr % configs, 'config_aerosol_climo', config_aerosol_climo)
+
                call mpas_get_time(curr_time, dateTimeString=timeString)
                xtime = timeString   ! Set field valid time, xtime, to the current time in the time loop
                time_since_start = curr_time - start_time
@@ -338,7 +342,9 @@ module init_atm_cases
                call init_atm_case_lbc(timeString, block_ptr, mesh, nCells, nEdges, nVertLevels, fg, state, &
                                       diag, lbc_state, block_ptr % dimensions, block_ptr % configs)
 
-!               call init_microphysics_aerosols_lbc(timeString, mesh, state, diag, lbc_state, nCells, nVertLevels)
+               if (config_aerosol_climo) then
+                  call init_microphysics_aerosols_lbc(timeString, mesh, state, diag, lbc_state, nCells, nVertLevels)
+               endif
                
                block_ptr => block_ptr % next
             end do
