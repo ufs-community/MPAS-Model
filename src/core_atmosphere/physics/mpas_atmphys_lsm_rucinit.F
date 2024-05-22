@@ -20,7 +20,7 @@
  use mpas_atmphys_constants
  use mpas_atmphys_utilities
 !wrf physics
- use module_sf_ruclsm
+ use module_ruc_land
 
  implicit none
  private
@@ -37,7 +37,7 @@
 ! subroutines in mpas_atmphys_lsm_noahinit:
 ! -----------------------------------------
 ! ruclsm_init_forMPAS: call lsminit from subroutine init_lsm (module mpas_atmphyse_driver_lsm.F).
-! lsminit          : main initialization subroutine for the NOAH 4-layer land surface scheme.
+! lsminit          : main initialization subroutine for the RUC 9-level land surface scheme.
 !
 ! add-ons and modifications to sourcecode:
 ! ----------------------------------------
@@ -178,13 +178,13 @@ if(.not.restart) then
    do iCell = 1, nCells
       if(isltyp(iCell) .lt. 1) then
          errflag = 1
-         write(err_message,*) "module_sf_ruclsm.F: lsminit: out of range ISLTYP ", &
+         write(err_message,*) "module_ruc_land.F: lsminit: out of range ISLTYP ", &
                               iCell,isltyp(iCell)
          call physics_message(err_message)
       endif
    enddo
    if(errflag .eq. 1) &
-      call physics_error_fatal("module_sf_ruclsm.F: lsminit: out of range value "// &
+      call physics_error_fatal("module_ruc_land.F: lsminit: out of range value "// &
                            "of ISLTYP. Is this field in the input?" )
    do iCell = 1, nCells
         znt(iCell) = z0tbl(ivgtyp(iCell))
