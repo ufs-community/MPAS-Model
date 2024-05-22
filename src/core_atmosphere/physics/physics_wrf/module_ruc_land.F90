@@ -554,10 +554,6 @@ contains
             acwaterbudget(i,j) = 0.
             smtotold(i,j)=0.
             canwatold(i,j)=0.
-
-! for ruc lsm chklowq needed for myjpbl should
-! 1 because is actual specific humidity at the surface, and
-! not the saturation value
             chklowq(i,j) = 1.
             infiltr(i,j) = 0.
             snoh  (i,j) = 0.
@@ -589,7 +585,6 @@ contains
 
 
    do j=jts,jte
-
       do i=its,ite
 
          if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
@@ -1189,7 +1184,6 @@ contains
 2999     continue ! lakes
 
       enddo ! j
-
    enddo ! i
 
 !-----------------------------------------------------------------
