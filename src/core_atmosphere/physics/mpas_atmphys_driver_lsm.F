@@ -21,7 +21,8 @@
 !wrf physics
  use module_sf_noahdrv
  use module_sf_noah_seaice_drv
- use module_sf_ruclsm
+ use module_ruc_land
+ use module_ruc_ice
  use module_sf_sfcdiags
  use module_sf_sfcdiags_ruclsm 
  implicit none
@@ -1072,7 +1073,7 @@
        call mpas_timer_start('sf_ruc')
        myjpbl = .false.
 
-       call lsmruc( spp_lsm        = spp_lsm_loc   , lakemodel    = lakemodel   , lakemask  = lakemask_p,  &
+       call ruc_land( spp_lsm      = spp_lsm_loc   , lakemodel    = lakemodel   , lakemask  = lakemask_p,  &
                     rhosnf         = rhosnf_p      , precipfr     = precipfr_p  , mosaic_lu = mosaic_lu,   &
                     qsg            = qsg_p         , qvg          = qvg_p       , dew       = dew_p,       &
                     soilt1         = soilt1_p      , tsnav        = tsnav_p     , acrunoff  = acrunoff_p,  &
@@ -1080,7 +1081,7 @@
                     graupelncv     = graupelncv_p  , snowncv      = snowncv_p   , rainncv   = rainncv_p,   &
                     qcg            = qcg_p         , flqc         = flqc_p      , flhc      = flhc_p,      &
                     landusef       = landusef_p    , nlcat        = num_landcat , soilctop  = soilf_p,     &
-                    nscat          = num_soilcat   , iswater      = iswater     , chklowq   = chklowq_p,   &         
+                    nscat          = num_soilcat   , iswater      = iswater     , chklowq   = chklowq_p,   &
                     sfcexc         = sfcexc_p      , sfcevp       = sfcevp_p    , myjpbl    = myjpbl,      &
                     dt             = dt_pbl        , ktau         = itimestep   , nsl       = num_soils,   &
                     rainbl         = rainbl_p      , snow         = snow_p      , snowh     = snowh_p,     &
@@ -1107,6 +1108,36 @@
                     ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme ,  &
                     its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte    &
                           )
+
+       call ruc_ice( spp_lsm       = spp_lsm_loc   , iswater      = iswater     , chklowq   = chklowq_p,   &
+                    rhosnf         = rhosnf_p      , precipfr     = precipfr_p  , chs       = chs_p,       &
+                    qsg            = qsg_p         , qvg          = qvg_p       , dew       = dew_p,       &
+                    soilt1         = soilt1_p      , tsnav        = tsnav_p     , acrunoff  = acrunoff_p,  &
+                    snowfallac     = snowfallac_p  , stbolt       = stbolt      , qsfc      = qsfc_p,      &
+                    graupelncv     = graupelncv_p  , snowncv      = snowncv_p   , rainncv   = rainncv_p,   &
+                    qcg            = qcg_p         , flqc         = flqc_p      , flhc      = flhc_p,      &
+                    sfcexc         = sfcexc_p      , sfcevp       = sfcevp_p    , myjpbl    = myjpbl,      &
+                    dt             = dt_pbl        , ktau         = itimestep   , nsl       = num_soils,   &
+                    rainbl         = rainbl_p      , snow         = snow_p      , snowh     = snowh_p,     &
+                    snowc          = snowc_p       , frzfrac      = sr_p        , frpcpn    = frpcpn,      &
+                    z3d            = dz_p          , p8w          = pres2_hyd_p , t3d       = t_p,         &
+                    qv3d           = qv_p          , qc3d         = qc_p        , rho3d     = rho_p,       &
+                    glw            = glw_p         , gsw          = gsw_p       , emiss     = sfc_emiss_p, &
+                    alb            = sfc_albedo_p  , znt          = znt_p       , zs        = zs_p,        &
+                    z0             = z0_p          , snoalb       = snoalb_p    , albbck    = sfc_albbck_p,&
+                    tbot           = tmn_p         , ivgtyp       = ivgtyp_p    , isltyp    = isltyp_p,    &
+                    xland          = xland_p       , isice        = isice       , xice      = xice_p,      &
+                    xice_threshold = xice_threshold, cp           = cp          , rovcp     = rcp,         &
+                    g0             = gravity       , lv           = xlv         , snom      = acsnom_p,    &
+                    tso            = tslb_p        , soilt        = tsk_p       , hfx       = hfx_p,       &
+                    qfx            = qfx_p         , lh           = lh_p        , sfcrunoff = sfcrunoff_p, &
+                    udrunoff       = udrunoff_p    , grdflx       = grdflx_p    , acsnow    = acsnow_p,    &
+                    mminlu         = mminlu        , globalCells  = globalCells,                           &
+                    ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde ,  &
+                    ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme ,  &
+                    its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte    &
+                          )
+
        call sfcdiags_ruclsm( &
                 hfx     = hfx_p  , qfx     = qfx_p   , tsk  = tsk_p       , qsfc = qsfc_p , chs = chs_p , &
                 chs2    = chs2_p , cqs2    = cqs2_p  , t2   = t2m_p       , th2  = th2m_p , q2  = q2_p  , &
