@@ -47,8 +47,7 @@ contains
               tso,soilt,soilt1,tsnav,snow,snowh,snowc,      &
               qsfc,qsg,qvg,qcg,                             &
 !-- out                   
-              hfx,qfx,lh,dew,                               &
-              sfcrunoff,udrunoff,acrunoff,sfcexc,           &
+              hfx,qfx,lh,dew,sfcrunoff,acrunoff,            &
               sfcevp,grdflx,snowfallac,acsnow,snom,         &
               globalcells,                                  &
               ids,ide, jds,jde, kds,kde,                    &
@@ -94,7 +93,6 @@ contains
 !-- emiss      surface emissivity (between 0 and 1)
 !   flqc       surface exchange coefficient for moisture (kg/m^2/s)
 !   flhc       surface exchange coefficient for heat [w/m^2/s/degreek]
-!   sfcexc     surface exchange coefficient for heat [m/s]
 !   alb        surface albedo (between 0 and 1)
 !   snoalb     maximum snow albedo (between 0 and 1)
 !   albbck     snow-free albedo (between 0 and 1)
@@ -113,7 +111,6 @@ contains
 !-- qfx        upward moisture flux at the surface (kg/m^2/s)
 !-- lh         upward latent heat flux (w/m^2)
 !   sfcrunoff  surface runoff [mm]
-!   udrunoff   underground runoff [mm]
 !   acrunoff   run-total surface runoff [mm]
 !   sfcevp     total evaporation in [kg/m^2]
 !   grdflx     soil heat flux (w/m^2: negative, if downward from surface)
@@ -192,8 +189,7 @@ contains
                                                             alb, &
                                                             znt, &
                                                              z0, &
-                                                          emiss, &
-                                                         sfcexc
+                                                          emiss
 
    real,       dimension( ims:ime , jms:jme ),                   &
                intent(in   )    ::                      frzfrac
@@ -223,7 +219,6 @@ contains
                                                              lh, &
                                                          sfcevp, &
                                                       sfcrunoff, &
-                                                       udrunoff, &
                                                        acrunoff, &
                                                          grdflx, &
                                                          acsnow, &
@@ -419,7 +414,6 @@ contains
             runoff1(i,j) = 0.
             runoff2(i,j) = 0.
             sfcrunoff(i,j) = 0.
-            udrunoff(i,j) = 0.
             acrunoff(i,j) = 0.
             emissl (i,j) = 0.
 
@@ -700,7 +694,6 @@ contains
             enddo
 
             z0       (i,j) = znt (i,j)
-            sfcexc   (i,j) = tkms
             patmb=p8w(i,1,j)*1.e-2
             q2sat=qsn(tabs,tbq)/patmb
             qsfc(i,j) = qvg(i,j)/(1.+qvg(i,j))
@@ -714,7 +707,6 @@ contains
             if ( wrf_at_debug_level(iceruc_dbg_lvl) ) then
                print *,' land, i=,j=, qfx, hfx after icetmp', i,j,lh(i,j),hfx(i,j)
             endif
-            sfcevp (i,j) = sfcevp (i,j) + qfx (i,j) * dt
             grdflx (i,j) = -1. * sflx(i,j)
 
 !--- snowc snow cover flag
