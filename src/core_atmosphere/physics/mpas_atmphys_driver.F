@@ -271,27 +271,24 @@
 
     !call to land-surface scheme:
     if(config_lsm_scheme .ne. 'off') then
-       call allocate_lsm(config_frac_seaice,config_lsm_scheme)
+       call allocate_lsm(config_lsm_scheme)
 !$OMP PARALLEL DO
        do thread=1,nThreads
           call driver_lsm(itimestep,block%configs,mesh,diag_physics,sfc_input, &
                           cellSolveThreadStart(thread), cellSolveThreadEnd(thread))
        end do
 !$OMP END PARALLEL DO
-       call deallocate_lsm(config_frac_seaice,config_lsm_scheme)
+       call deallocate_lsm(config_lsm_scheme)
 
-       if(config_lsm_scheme .ne. 'sf_ruc') then
-          call allocate_seaice
+       call allocate_seaice(config_lsm_scheme)
 !$OMP PARALLEL DO
-          do thread=1,nThreads
-             call driver_seaice(block%configs,diag_physics,sfc_input, &
-                                cellSolveThreadStart(thread),cellSolveThreadEnd(thread))
-          enddo
+       do thread=1,nThreads
+          call driver_seaice(itimestep,block%configs,diag_physics,sfc_input, &
+                             cellSolveThreadStart(thread),cellSolveThreadEnd(thread))
+       enddo
 !$OMP END PARALLEL DO
-          call deallocate_seaice
-       endif ! sf_ruc
-    endif ! lsm off
-
+       call deallocate_seaice(config_lsm_scheme)
+    endif
 
     !call to pbl schemes:
     if(config_pbl_scheme .ne. 'off' .and. config_sfclayer_scheme .ne. 'off') then
