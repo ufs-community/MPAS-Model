@@ -160,6 +160,7 @@
        if(.not.allocated(hfx_p)          ) allocate(hfx_p(ims:ime,jms:jme)              )
        if(.not.allocated(qfx_p)          ) allocate(qfx_p(ims:ime,jms:jme)              )
        if(.not.allocated(maxmfbl_p)      ) allocate(maxmfbl_p(ims:ime,jms:jme)          )
+       if(.not.allocated(qci_conv_p)     ) allocate(qci_conv_p(ims:ime,kms:kme,jms:jme) )
        if(.not.allocated(xland_p)        ) allocate(xland_p(ims:ime,jms:jme)            )
 
        if(.not.allocated(rthblten_p)     ) allocate(rthblten_p(ims:ime,kms:kme,jms:jme) )
@@ -306,6 +307,7 @@
        if(allocated(hfx_p)          ) deallocate(hfx_p          )
        if(allocated(qfx_p)          ) deallocate(qfx_p          )
        if(allocated(maxmfbl_p)      ) deallocate(maxmfbl_p      )
+       if(allocated(qci_conv_p)     ) deallocate(qci_conv_p     )
        if(allocated(xland_p)        ) deallocate(xland_p        )
        if(allocated(rthblten_p)     ) deallocate(rthblten_p     )
        if(allocated(rthdynten_p)    ) deallocate(rthdynten_p    )
@@ -514,6 +516,7 @@
              ishallow_g3     = ishallow                                                 , &
              pbl_scheme      = pbl_scheme             , maxmf         = maxmfbl_p       , &
              qc3d            = qc_p                   , qi3d          = qi_p            , &
+             qci_conv        = qci_conv_p                                               , &
              ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde      , &
              ims = ims , ime = ime , jms = jms , jme = jme , kms = kds , kme = kme      , &
              its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte        &

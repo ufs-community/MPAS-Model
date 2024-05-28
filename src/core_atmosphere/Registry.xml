@@ -802,6 +802,7 @@
 			<var name="xmb_shallow"/>
 			<var name="qc_cu"/>
 			<var name="qi_cu"/>
+			<var name="qci_conv"/>
 			<var name="rthcuten"/>
 			<var name="rqvcuten"/>
 			<var name="rqccuten"/>
@@ -2614,6 +2615,10 @@
 
                 <var name="qi_cu" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1}"
                      description="in-cloud cloud ice mixing ratio in Grell-Freitas cloud model"
+                     packages="cu_grell_freitas_in"/>
+
+                <var name="qci_conv" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1}"
+                     description="convective cloud condensate after rainout in Grell-Freitas cloud model"
                      packages="cu_grell_freitas_in"/>
 
 

@@ -338,6 +338,9 @@
 !... grell-freitas specific parameters and arrays:
     integer, parameter:: ishallow  = 1 !shallow convection used with grell scheme.
 
+ real(kind=RKIND),dimension(:,:,:),allocatable:: &
+    qci_conv_p
+
  integer,dimension(:,:),allocatable:: &
     k22_shallow_p,    &!
     kbcon_shallow_p,  &!

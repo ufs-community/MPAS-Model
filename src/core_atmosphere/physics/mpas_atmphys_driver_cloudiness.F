@@ -75,6 +75,7 @@
  if(.not.allocated(qcrad_p)  ) allocate(qcrad_p(ims:ime,kms:kme,jms:jme)  )
  if(.not.allocated(qirad_p)  ) allocate(qirad_p(ims:ime,kms:kme,jms:jme)  )
  if(.not.allocated(qsrad_p)  ) allocate(qsrad_p(ims:ime,kms:kme,jms:jme)  )
+ if(.not.allocated(qci_conv_p)) allocate(qci_conv_p(ims:ime,kms:kme,jms:jme))
 
  cld_fraction_select: select case (trim(radt_cld_scheme))
 
@@ -105,6 +106,7 @@
  if(allocated(qcrad_p)  ) deallocate(qcrad_p  )
  if(allocated(qirad_p)  ) deallocate(qirad_p  )
  if(allocated(qsrad_p)  ) deallocate(qsrad_p  )
+ if(allocated(qci_conv_p)) deallocate(qci_conv_p)
 
  cld_fraction_select: select case (trim(radt_cld_scheme))
 
@@ -143,6 +145,7 @@
  real(kind=RKIND),dimension(:),pointer:: xland
 
  real(kind=RKIND),dimension(:,:),pointer:: cldfrac_bl,qi_bl,qc_bl
+ real(kind=RKIND),dimension(:,:),pointer:: qci_conv
 
  character(len=StrKIND),pointer:: radt_cld_scheme
 
@@ -155,6 +158,7 @@
 
  call mpas_pool_get_array(sfc_input,'xland',xland)
  call mpas_pool_get_config(configs,'config_radt_cld_scheme',radt_cld_scheme)
+ call mpas_pool_get_array(diag_physics,'qci_conv',qci_conv)
 
  do j = jts,jte
     do i = its,ite
@@ -170,6 +174,7 @@
        qcrad_p(i,k,j)   = qc_p(i,k,j)
        qirad_p(i,k,j)   = qi_p(i,k,j)
        qsrad_p(i,k,j)   = qs_p(i,k,j)
+       qci_conv_p(i,k,j) = qci_conv(k,i)
        cldfrac_p(i,k,j) = 0._RKIND
     enddo
     enddo
@@ -287,7 +292,7 @@
     case("cld_fraction")
       call mpas_timer_start('calc_cldfraction')
       !print*, minval(cldfrac_p), minval(t_p), minval(pres_p), minval(qvrad_p), minval(qcrad_p), minval(qirad_p)
-      call calc_cldfraction(cldfrac_p,t_p,pres_p,qvrad_p,qcrad_p,qirad_p,qs_p,its,ite)
+      call calc_cldfraction(cldfrac_p,t_p,pres_p,qvrad_p,qcrad_p,qirad_p,qs_p,qci_conv_p,its,ite)
       call mpas_timer_stop('calc_cldfraction')
 
     case("cld_fraction_thompson")
@@ -368,12 +373,12 @@
  end subroutine calc_cldincidence
 
 !=================================================================================================================
- subroutine calc_cldfraction(cldfrac,t_p,pres_p,qv,qc,qi,qs,its,ite)
+ subroutine calc_cldfraction(cldfrac,t_p,pres_p,qv,qc,qi,qs,qci_conv,its,ite)
 !=================================================================================================================
 
 !input arguments:
  integer,intent(in):: its,ite
- real(kind=RKIND),intent(in),dimension(ims:ime,kms:kme,jms:jme):: qv,qc,qi,qs
+ real(kind=RKIND),intent(in),dimension(ims:ime,kms:kme,jms:jme):: qv,qc,qi,qs,qci_conv
  real(kind=RKIND),intent(in),dimension(ims:ime,kms:kme,jms:jme):: t_p,pres_p
 
 !output arguments:
@@ -419,7 +424,7 @@
     qvsw = ep_2 * esw / (pres_p(i,k,j) - esw)
     qvsi = ep_2 * esi / (pres_p(i,k,j) - esi)
 
-    qcld = qc(i,k,j) + qi(i,k,j) + qs(i,k,j)
+    qcld = qc(i,k,j) + qi(i,k,j) + qs(i,k,j) + qci_conv(i,k,j)
     if(qcld .lt. qcldmin) then
        weight = 0.
     else

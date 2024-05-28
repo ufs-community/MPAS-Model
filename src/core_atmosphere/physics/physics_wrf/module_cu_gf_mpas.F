@@ -61,7 +61,7 @@ CONTAINS
               ,xmb_total,xmb_shallow,raincv,pratec,gdc,gdc2     &
               ,rthcuten,rqvcuten,rqccuten,rqicuten              &
               ,rucuten,rvcuten                                  &
-              ,pbl_scheme, maxmf, qc3d, qi3d                    &
+              ,pbl_scheme, maxmf, qc3d, qi3d, qci_conv          &
               ,ims, ime, jms, jme, kms,kme                      &
               ,ids, ide, jds, jde, kds,kde                      &
               ,its, ite, jts, jte, kts,kte)
@@ -114,7 +114,7 @@ CONTAINS
 
  real,dimension(ims:ime,jms:jme),intent(inout):: hbot,htop,raincv,pratec,xmb_total,xmb_shallow
  real,dimension(ims:ime,kms:kme,jms:jme),intent(inout):: rthcuten,rqvcuten,rqccuten,rqicuten
- real,dimension(ims:ime,kms:kme,jms:jme),intent(inout):: rucuten,rvcuten
+ real,dimension(ims:ime,kms:kme,jms:jme),intent(inout):: rucuten,rvcuten,qci_conv
  real,dimension(ims:ime,kms:kme,jms:jme),intent(inout),optional:: gdc,gdc2
 
 !local variables:
@@ -134,7 +134,7 @@ CONTAINS
  real,dimension(its:ite):: xlandi,hfxi,qfxi
  real,dimension(its:ite):: xmb,xmbm,xmbs,xmb_dumm
  real,dimension(its:ite):: ccn
- real,dimension(its:ite):: cuten,psur,pret,pretm,prets,ter11,zqexec,ztexec,pmean,umean,vmean
+ real,dimension(its:ite):: psur,pret,pretm,prets,ter11,zqexec,ztexec,pmean,umean,vmean
  real,dimension(its:ite,kts:kte):: zo,t2d,q2d,po,p2d,us,vs,qc,qi,rhoi,tn,qo,tshall,qshall
  real,dimension(its:ite,kts:kte):: outt,outq,outqc,phh,cupclw,outu,outv
  real,dimension(its:ite,kts:kte):: outtm,outqm,outqcm,cupclwm,outum,outvm
@@ -162,6 +162,8 @@ CONTAINS
  real,dimension (its:ite,10)       :: forcing,forcingm
  real,dimension (its:ite)          :: edto,edtd,edtm,frh_out,frhm
  real,dimension (its:ite,kts:kte)  :: zuo,zdo,zum,zus,zdm,zdd,cnvwt,cnvwtm,cnvwts
+ real,dimension (its:ite)          :: tun_rad_mid,tun_rad_shall,tun_rad_deep
+ real,dimension (its:ite)          :: cuten,cutens,cutenm
   
  itf = min(ite,ide-1)
  ktf = min(kte,kde-1)
@@ -180,6 +182,11 @@ CONTAINS
  ishallow = ishallow_g3
  if (dx_loc(its)<6500.) imid = 0
  if (trim(pbl_scheme)=="bl_mynn") ishallow = 0
+
+!Set tuning constants for radiation coupling
+     tun_rad_shall(:)=.01
+     tun_rad_mid(:)=.3 !.02
+     tun_rad_deep(:)=.3 !.065
 
  do j = jts, jte
     do i = its, ite
@@ -275,13 +282,15 @@ CONTAINS
 
        ccn(i)      = 1500.
 
-       cuten(i)    = 0.
+       cutens(i)   = 0.
+       cutenm(i)   = 0.
+       cuten (i)   = 0.
        umean(i)    = 0.
        vmean(i)    = 0.
        pmean(i)    = 0.
-       pret(i)     = 0.
-       pretm(i)     = 0.
-       prets(i)     = 0.
+       pret (i)    = 0.
+       pretm(i)    = 0.
+       prets(i)    = 0.
        zqexec(i)   = 0.
        ztexec(i)   = 0.
     enddo
@@ -323,6 +332,7 @@ CONTAINS
           dhdt(i,k)    = cp*rthblten(i,k,j)*pi(i,k,j) + xlv*rqvblten(i,k,j)
 
           cupclws(i,k) = 0.
+          cupclwm(i,k) = 0.
           outqcs(i,k)  = 0.
           outqcm(i,k)  = 0.
           outqs(i,k)   = 0.
@@ -508,6 +518,7 @@ CONTAINS
                do k=kts,kte
                  qcheck(i,k)=q2d(i,k)+outqm(i,k)*dt
                enddo
+               if(pretm(i).gt.0.) cutenm(i)=1.
              enddo
            endif
    call cu_gf_deep_run(        &
@@ -584,6 +595,9 @@ CONTAINS
 
       call neg_check('deep',j,dt,qcheck,outq,outt,outu,outv,outqc,pret    &
                      ,its,ite,kts,kte,itf,ktf,ktop)
+        do i = its,ite
+          if(pret(i).gt.0.) cuten(i)=1.
+        enddo
 !    !... shallow convection:
     if(ishallow == 1 )then
 !       call cup_gf_sh( &
@@ -616,6 +630,7 @@ CONTAINS
           k22_shallow(i,j)   = k22m(i)
           kbcon_shallow(i,j) = kbconm(i)
           ktop_shallow(i,j)  = ktopm(i)
+          if(xmbs(i).gt.0.) cutens(i)=1.
        enddo
    endif
 
@@ -637,8 +652,9 @@ CONTAINS
        do i = its, itf
           rthcuten(i,k,j) = (outts(i,k) + outt(i,k)+outtm(i,k))/pi(i,k,j)
           rqvcuten(i,k,j) = outqs(i,k) + outq(i,k)+outqm(i,k)
-          rucuten(i,k,j) = outu(i,k)+outum(i,k)+outus(i,k)
-          rvcuten(i,k,j) = outv(i,k)+outvm(i,k)+outvs(i,k)
+          rucuten (i,k,j) = outu(i,k)+outum(i,k)+outus(i,k)
+          rvcuten (i,k,j) = outv(i,k)+outvm(i,k)+outvs(i,k)
+          qci_conv(i,k,j) = max(0.,tun_rad_mid(i)*cupclwm(i,k)*cutenm(i)+cupclw(i,k)*cuten(i)+tun_rad_shall(i)*cupclws(i,k)*cutens(i))
 
           if(t2d(i,k) .lt. tcrit) then
              rqccuten(i,k,j) = 0.
