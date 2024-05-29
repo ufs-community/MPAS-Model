@@ -538,7 +538,6 @@ contains
            smelt(i,j) = 0.
            snom (i,j) = 0.
            snowfallac(i,j) = 0.
-           acsnow(i,j) = 0.
            precipfr(i,j) = 0.
            rhosnf(i,j) = -1.e3 ! non-zero flag
            snflx(i,j) = 0.
@@ -2141,7 +2140,6 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
 
       snowfallac = snowfallac + newsn * 1.e3    ! accumulated snow depth [mm], using variable snow den
       !snowfallac = snowfallac + max(0.,(newsn - rhowater/rhonewsn*smelt*delt*newsnowratio))
-      acsnow = snowfallac
 
    else
 !--- no snow
