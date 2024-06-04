@@ -56,7 +56,10 @@ use mpas_log, only: mpas_log_write
                         czil_data
 
         character*256  :: err_message
-        integer :: targetcell=1230989
+        integer :: targetcell=1719976
+      !-- option to turn on/off irrigation: 0 - no irrigation, 1 - irrigation
+      !-- based on LAI, 2 - irrigation based on the greenness fraction.
+        integer, parameter :: irrig_opt=0
 
       !-- options for snow conductivity: 1 - constant, 2 - Sturm et al.,1997
       !   integer, parameter :: isncond_opt = 1
@@ -520,15 +523,16 @@ contains
            patmb=p8w(i,kms,j)*1.e-2
            qsg  (i,j) = qsn(soilt(i,j),tbq)/patmb
            if((qcg(i,j) < 0.) .or. (qcg(i,j) > 0.1)) then
-             qcg  (i,j) = qc3d(i,1,j)
+             qcg  (i,j) = 0.
              if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
                write ( message , fmt='(a,3f8.3,2i6)' ) &
-                'qvg is initialized in ruclsm ', qvg(i,j),mavail(i,j),qsg(i,j),i,j
+                'qvg is initialized in ruclsm ', qcg(i,j),mavail(i,j),qsg(i,j),i,j
              endif
            endif ! qcg
 
            if((qvg(i,j) .le. 0.) .or. (qvg(i,j) .gt.0.1)) then
-             qvg  (i,j) = qsg(i,j)*mavail(i,j)
+             qvg  (i,j) = qv3d(i,1,j)
+             !qvg  (i,j) = qsg(i,j)*mavail(i,j)
              if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
                write ( message , fmt='(a,3f8.3,2i6)' ) &
                 'qvg is initialized in ruclsm ', qvg(i,j),mavail(i,j),qsg(i,j),i,j
@@ -1003,7 +1007,54 @@ contains
 ! this change violates lsm moisture budget, but
 ! can be considered as a compensation for irrigation not included into lsm.
 
-    if(mosaic_lu == 1) then
+ if(mosaic_lu == 1) then
+
+   if(irrig_opt == 1) then
+     IF (lufrac(crop) > 0 .and. lai(i,j) > 1.1) THEN
+!    IF (ivgtyp(i,j) == crop .and. lai(i,j) > 1.1) THEN
+! cropland
+        do k=1,nroot
+             cropsm=1.1*wilt - qmin
+          if(soilm1d(k) < cropsm*lufrac(crop)) then
+   IF ( wrf_at_debug_level(LSMRUC_DBG_LVL) ) THEN
+!    IF (globalcells(I)==targetCell) then
+print * ,'Soil moisture is below wilting in cropland category at time step',ktau  &
+              ,'i,j,lufrac(crop),k,soilm1d(k),wilt,cropsm',                       &
+                i,j,lufrac(crop),k,soilm1d(k),wilt,cropsm
+    ENDIF
+             soilm1d(k) = cropsm*lufrac(crop)
+    IF ( wrf_at_debug_level(LSMRUC_DBG_LVL) ) THEN
+    !IF (globalcells(I)==targetCell) then
+      print * ,'Added soil water to cropland category, i,j,k,soilm1d(k)',i,j,k,soilm1d(k)
+    ENDIF
+          endif
+        enddo
+
+     ELSEIF (ivgtyp(i,j) == natural .and. lai(i,j) > 0.7) THEN
+! grassland: assume that 40% of grassland is irrigated cropland
+        do k=1,nroot
+             cropsm=1.2*wilt - qmin
+          if(soilm1d(k) < cropsm*lufrac(natural)*0.4) then
+    IF ( wrf_at_debug_level(LSMRUC_DBG_LVL) ) THEN
+    !IF (globalcells(I)==targetCell) then
+print * ,'Soil moisture is below wilting in mixed grassland/cropland category at time step',ktau &
+              ,'i,j,lufrac(natural),k,soilm1d(k),wilt',                       &
+                i,j,lufrac(natural),k,soilm1d(k),wilt
+print*, "natural = ", natural
+print*, "ivgtyp = ", ivgtyp(i,j)
+print*, "lufrac = ", lufrac
+    ENDIF
+             soilm1d(k) = cropsm * lufrac(natural)*0.4
+    IF ( wrf_at_debug_level(LSMRUC_DBG_LVL) ) THEN
+!    IF (globalcells(I)==targetCell) then
+      print * ,'Added soil water to grassland category, i,j,k,soilm1d(k)',i,j,k,soilm1d(k)
+    ENDIF
+          endif
+      enddo
+
+     endif
+
+   elseif(irrig_opt == 2) then
       ! greenness factor: between 0 for min greenness and 1 for max greenness.
       factor = max(0.,min(1.,(vegfra(i,j)-shdmin(i,j))/max(1.,(shdmax(i,j)-shdmin(i,j)))))
 
@@ -1028,7 +1079,12 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
           endif
         enddo
       endif ! crop or natural
-    endif ! mosaic_lu
+   ELSE
+      if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
+         print * ,'No irrigation'
+      endif
+   ENDIF ! irrig_opt
+  endif ! mosaic_lu
 
 ! fill in field_sf to pass perturbed field of hydraulic cond. up to model driver and output
 #if (em_core==1)
@@ -2656,7 +2712,7 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
 !      endif
         alfa=1.
 ! field capacity
-        fc=max(qmin,ref*0.5)
+        fc=ref
         fex_fc=1.
       if((soilmois(1)+qmin) > fc .or. (qvatm-qvg) > 0.) then
         soilres = 1.
@@ -3571,7 +3627,7 @@ print * ,'soil moisture is below wilting in cropland category at time step',ktau
 
 !  check if all snow can evaporate during dt
          beta=1.
-         epdt = epot * ras *delt*umveg
+         epdt = epot * ras *delt
          if(epdt.gt.0. .and. snwepr.le.epdt) then
             beta=snwepr/max(1.e-8,epdt)
             snwe=0.
@@ -5239,7 +5295,7 @@ print *, 'snowtemp: snhei,snth,soilt1: ',snhei,snth,soilt1,soilt
         ett1=0.
         epot=-qkms*(qvatm-qgold)
         rhcs=cap(1)
-        h=1.
+        h=mavail !1.
         trans=transum*drycan/zshalf(nroot+1)
         can=wetcan+trans
         umveg=1.-vegfrac
@@ -5604,7 +5660,7 @@ print *, 'snowtemp: snhei,snth,soilt1: ',snhei,snth,soilt1,soilt
 
       if(smelt.gt.0..and.rsm.gt.0.) then
        if(snwe.le.rsm) then
-    if ( 1==1 ) then
+    if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
      print *,'snwe<rsm snwe,rsm,smelt*delt,epot*ras*delt,beta', &
                      snwe,rsm,smelt*delt,epot*ras*delt,beta
     endif
