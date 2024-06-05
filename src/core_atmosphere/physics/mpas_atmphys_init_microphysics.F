@@ -15,7 +15,7 @@
  use mpas_atmphys_vars
  use mpas_atmphys_constants
  use mpas_atmphys_utilities
- use module_mp_thompson_params, only: Nt_c_l, Nt_c_o
+ use module_mp_thompson_params, only: Nt_c_l, Nt_c_o, aero_max, nwfa_default
  use module_mp_thompson_utils, only: make_hydrometeor_number_concentrations
 !use module_mp_thompson, only: is_aerosol_aware,naCCN0,naCCN1,naIN0,naIN1,ntb_arc,ntb_arw,ntb_art,ntb_arr, &
 !                              ntb_ark,tnccn_act
@@ -61,14 +61,16 @@
 
  logical,pointer:: thompson_aerosol_aware
 
- real(kind=RKIND),dimension(:),pointer:: nt_c,mu_c
- real(kind=RKIND),dimension(:,:),pointer:: pressure_b, pressure_p, theta_m, exner
+ real(kind=RKIND),dimension(:),pointer:: nt_c,mu_c,nwfa_emissions
+ real(kind=RKIND),dimension(:,:),pointer:: pressure_b, pressure_p, theta_m, exner, zgrid
  real(kind=RKIND),dimension(:,:),pointer  :: qv,qc,qr,qi,nc,nr,ni,nwfa
  real(kind=RKIND),dimension(:,:,:),pointer:: scalars
 
  ! local variables:
  integer:: i,k,j,iCell
  logical:: do_init_number_concentrations
+ integer,parameter:: k_sfc = 1
+ real(kind=RKIND):: deltaz
 
  do_init_number_concentrations = .false.
 !-----------------------------------------------------------------------------------------------------------------
@@ -78,6 +80,21 @@
  call mpas_pool_get_config(configs,'config_thompson_aerosol_aware',thompson_aerosol_aware)
 
  call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
+
+ call mpas_pool_get_array(mesh,'zgrid',zgrid)
+ call mpas_pool_get_array(state,'scalars',scalars)
+ call mpas_pool_get_dimension(state,'index_nwfa',index_nwfa)
+ call mpas_pool_get_array(diag_physics,'nwfa_emissions',nwfa_emissions)
+ 
+ do iCell = 1, nCellsSolve
+    deltaz = zgrid(k_sfc+1,i)-zgrid(k_sfc,i)
+    if (deltaz < 9.0) then
+       deltaz = 9.0
+    endif
+    nwfa_emissions(iCell) = max(nwfa_default, min(aero_max, scalars(index_nwfa,k_sfc,iCell))) * &
+         0.000196 * 50.0 / deltaz
+ enddo
+ call physics_message('Setting surface wfa emissions for tempo microphysics')
 
  if ((thompson_aerosol_aware) .and. (do_init_number_concentrations)) then
     call mpas_pool_get_array(state,'scalars',scalars)
