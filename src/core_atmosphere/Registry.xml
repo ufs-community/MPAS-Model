@@ -1213,7 +1213,7 @@
                         <var_array name="lbc_scalars" />
                 </stream>
 
-                <stream name="ugwp_oro_data"
+                <stream name="ugwp_oro_data_in"
                         type="input"
                         filename_template="x1.40962.ugwp_oro_data.nc"
                         input_interval="initial_only"
