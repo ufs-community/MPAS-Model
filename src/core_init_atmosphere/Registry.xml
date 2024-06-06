@@ -466,26 +466,6 @@
                         <var name="ol2" packages="vertical_stage_in;met_stage_in"/>
                         <var name="ol3" packages="vertical_stage_in;met_stage_in"/>
                         <var name="ol4" packages="vertical_stage_in;met_stage_in"/>
-                        <var name="var2dls" packages="vertical_stage_in;met_stage_in"/>
-                        <var name="conls" packages="vertical_stage_in;met_stage_in"/>
-                        <var name="oa1ls" packages="vertical_stage_in;met_stage_in"/>
-                        <var name="oa2ls" packages="vertical_stage_in;met_stage_in"/>
-                        <var name="oa3ls" packages="vertical_stage_in;met_stage_in"/>
-                        <var name="oa4ls" packages="vertical_stage_in;met_stage_in"/>
-                        <var name="ol1ls" packages="vertical_stage_in;met_stage_in"/>
-                        <var name="ol2ls" packages="vertical_stage_in;met_stage_in"/>
-                        <var name="ol3ls" packages="vertical_stage_in;met_stage_in"/>
-                        <var name="ol4ls" packages="vertical_stage_in;met_stage_in"/>
-                        <var name="var2dss" packages="vertical_stage_in;met_stage_in"/>
-                        <var name="conss" packages="vertical_stage_in;met_stage_in"/>
-                        <var name="oa1ss" packages="vertical_stage_in;met_stage_in"/>
-                        <var name="oa2ss" packages="vertical_stage_in;met_stage_in"/>
-                        <var name="oa3ss" packages="vertical_stage_in;met_stage_in"/>
-                        <var name="oa4ss" packages="vertical_stage_in;met_stage_in"/>
-                        <var name="ol1ss" packages="vertical_stage_in;met_stage_in"/>
-                        <var name="ol2ss" packages="vertical_stage_in;met_stage_in"/>
-                        <var name="ol3ss" packages="vertical_stage_in;met_stage_in"/>
-                        <var name="ol4ss" packages="vertical_stage_in;met_stage_in"/>
                         <var name="deriv_two" packages="gwd_stage_in;gwd_gsl_stage_in;vertical_stage_in;met_stage_in"/>
                         <var name="defc_a" packages="gwd_stage_in;gwd_gsl_stage_in;vertical_stage_in;met_stage_in"/>
                         <var name="defc_b" packages="gwd_stage_in;gwd_gsl_stage_in;vertical_stage_in;met_stage_in"/>
@@ -589,26 +569,6 @@
                         <var name="ol2" packages="gwd_stage_out;vertical_stage_out;met_stage_out"/>
                         <var name="ol3" packages="gwd_stage_out;vertical_stage_out;met_stage_out"/>
                         <var name="ol4" packages="gwd_stage_out;vertical_stage_out;met_stage_out"/>
-                        <var name="var2dls" packages="gwd_gsl_stage_out;vertical_stage_out;met_stage_out"/>
-                        <var name="conls" packages="gwd_gsl_stage_out;vertical_stage_out;met_stage_out"/>
-                        <var name="oa1ls" packages="gwd_gsl_stage_out;vertical_stage_out;met_stage_out"/>
-                        <var name="oa2ls" packages="gwd_gsl_stage_out;vertical_stage_out;met_stage_out"/>
-                        <var name="oa3ls" packages="gwd_gsl_stage_out;vertical_stage_out;met_stage_out"/>
-                        <var name="oa4ls" packages="gwd_gsl_stage_out;vertical_stage_out;met_stage_out"/>
-                        <var name="ol1ls" packages="gwd_gsl_stage_out;vertical_stage_out;met_stage_out"/>
-                        <var name="ol2ls" packages="gwd_gsl_stage_out;vertical_stage_out;met_stage_out"/>
-                        <var name="ol3ls" packages="gwd_gsl_stage_out;vertical_stage_out;met_stage_out"/>
-                        <var name="ol4ls" packages="gwd_gsl_stage_out;vertical_stage_out;met_stage_out"/>
-                        <var name="var2dss" packages="gwd_gsl_stage_out;vertical_stage_out;met_stage_out"/>
-                        <var name="conss" packages="gwd_gsl_stage_out;vertical_stage_out;met_stage_out"/>
-                        <var name="oa1ss" packages="gwd_gsl_stage_out;vertical_stage_out;met_stage_out"/>
-                        <var name="oa2ss" packages="gwd_gsl_stage_out;vertical_stage_out;met_stage_out"/>
-                        <var name="oa3ss" packages="gwd_gsl_stage_out;vertical_stage_out;met_stage_out"/>
-                        <var name="oa4ss" packages="gwd_gsl_stage_out;vertical_stage_out;met_stage_out"/>
-                        <var name="ol1ss" packages="gwd_gsl_stage_out;vertical_stage_out;met_stage_out"/>
-                        <var name="ol2ss" packages="gwd_gsl_stage_out;vertical_stage_out;met_stage_out"/>
-                        <var name="ol3ss" packages="gwd_gsl_stage_out;vertical_stage_out;met_stage_out"/>
-                        <var name="ol4ss" packages="gwd_gsl_stage_out;vertical_stage_out;met_stage_out"/>
                         <var name="deriv_two"/>
                         <var name="defc_a"/>
                         <var name="defc_b"/>
@@ -671,8 +631,38 @@
                         <var name="uReconstructMeridional" packages="met_stage_out"/>
 		</stream>
 
-		<stream name="surface"
+                <stream name="ugwp_oro_data"
                         type="output"
+                        filename_template="x1.40962.ugwp_oro_data.nc"
+                        output_interval="initial_only"
+                        immutable="true">
+
+                        <var name="var2dls"/>
+                        <var name="conls"/>
+                        <var name="oa1ls"/>
+                        <var name="oa2ls"/>
+                        <var name="oa3ls"/>
+                        <var name="oa4ls"/>
+                        <var name="ol1ls"/>
+                        <var name="ol2ls"/>
+                        <var name="ol3ls"/>
+                        <var name="ol4ls"/>
+                        <var name="var2dss"/>
+                        <var name="conss"/>
+                        <var name="oa1ss"/>
+                        <var name="oa2ss"/>
+                        <var name="oa3ss"/>
+                        <var name="oa4ss"/>
+                        <var name="ol1ss"/>
+                        <var name="ol2ss"/>
+                        <var name="ol3ss"/>
+                        <var name="ol4ss"/>
+
+                </stream>
+
+
+		<stream name="surface" 
+                        type="output" 
                         filename_template="x1.40962.sfc_update.nc"
                         output_interval="86400"
                         filename_interval="none"
