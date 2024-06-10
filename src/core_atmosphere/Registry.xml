@@ -1247,6 +1247,10 @@
                         output_interval="6:00:00"
                         runtime_format="separate_file">
 
+                        <var name="initial_time"/>
+                        <var name="xtime"/>
+                        <var name="Time"/>
+
                         <var name="dtaux3d_ls" />
                         <var name="dtauy3d_ls" />
                         <var name="dtaux3d_bl" />
