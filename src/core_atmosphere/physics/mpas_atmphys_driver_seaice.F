@@ -642,10 +642,10 @@
 !call mpas_log_write('--- enter subroutine driver_seaice: xice_threshold = $r',realArgs=(/xice_threshold/))
 
  call mpas_pool_get_config(configs,'config_lsm_scheme',lsm_scheme)
- !call mpas_pool_get_array(sfc_input,'mminlu',mminlu)
- !call mpas_pool_get_array(sfc_input,'isice' ,isice )
- !call mpas_pool_get_array(sfc_input,'iswater',iswater)
- !call mpas_pool_get_array(diag_physics,'spp_lsm_loc', spp_lsm_loc)
+ call mpas_pool_get_array(sfc_input,'mminlu',mminlu)
+ call mpas_pool_get_array(sfc_input,'isice' ,isice )
+ call mpas_pool_get_array(sfc_input,'iswater',iswater)
+ call mpas_pool_get_array(diag_physics,'spp_lsm_loc', spp_lsm_loc)
 
 !copy MPAS arrays to local arrays:
  call seaice_from_MPAS(configs,diag_physics,sfc_input,its,ite)
