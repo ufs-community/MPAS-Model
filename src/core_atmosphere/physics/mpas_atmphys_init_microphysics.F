@@ -87,7 +87,7 @@
  call mpas_pool_get_array(diag_physics,'nwfa_emissions',nwfa_emissions)
  
  do iCell = 1, nCellsSolve
-    deltaz = zgrid(k_sfc+1,i)-zgrid(k_sfc,i)
+    deltaz = zgrid(k_sfc+1,iCell)-zgrid(k_sfc,iCell)
     if (deltaz < 9.0) then
        deltaz = 9.0
     endif
