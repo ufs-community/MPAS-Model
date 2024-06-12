@@ -12,7 +12,6 @@
  use mpas_timer, only : mpas_timer_start, mpas_timer_stop
 
  use mpas_atmphys_constants
- use mpas_atmphys_lsm_shared,only: correct_tsk_over_seaice
  use mpas_atmphys_landuse, only: isurban
  use mpas_atmphys_lsm_noahinit
  use mpas_atmphys_lsm_rucinit
@@ -20,7 +19,6 @@
 
 !wrf physics
  use module_sf_noahdrv
- use module_sf_noah_seaice_drv
  use module_ruc_land
  use module_sf_sfcdiags
  implicit none
@@ -597,28 +595,6 @@
  enddo
  enddo
 
-
-
-    !calculate sea-surface and sea-ice temperatures over sea-ice grid cells:
-    call correct_tsk_over_seaice(ims,ime,jms,jme,its,ite,jts,jte,xice_threshold,xice_p, &
-                                 tsk_p,tsk_sea,tsk_ice)
-
-    do j = jts,jte
-    do i = its,ite
-       tsk_p(i,j) = tsk_ice(i,j)
-    enddo
-    enddo
-
-    !initialize the surface albedo, the surface albedo over snow-covered seaice, and the
-    !seaice thickness.
-    do j = jts,jte
-    do i = its,ite
-       albsi_p(i,j)    = seaice_albedo_default
-       icedepth_p(i,j) = seaice_thickness_default
-       snowsi_p(i,j)   = seaice_snowdepth_min
-    enddo
-    enddo
-
  do j = jts,jte
  do i = its,ite
     sr_p(i,j)     = 0._RKIND
@@ -1043,6 +1019,7 @@
                     its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte    &
                           )
 
+       call mpas_timer_stop('sf_ruc')
     case default
 
  end select lsm_select
