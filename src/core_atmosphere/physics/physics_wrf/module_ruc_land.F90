@@ -783,9 +783,9 @@ contains
 
             if (globalcells(i) == targetcell) then
                print *,'nlcat,iland,lufrac,emissl(i,j),pc(i,j),znt(i,j),lai(i,j)', &
-                        nlcat,iland,lufrac,emissl(i,j),pc(i,j),znt(i,j),lai(i,j),i,j
+                        nlcat,iland,lufrac,emissl(i,j),pc(i,j),znt(i,j),lai(i,j),i,globalcells(i)
                print *,'nscat,soilfrac,qwrtz,rhocs,bclh,dqm,ksat,psis,qmin,ref,wilt',&
-                        nscat,soilfrac,qwrtz,rhocs,bclh,dqm,ksat,psis,qmin,ref,wilt,i,j
+                        nscat,soilfrac,qwrtz,rhocs,bclh,dqm,ksat,psis,qmin,ref,wilt,i,globalcells(i)
             endif
          endif
 
@@ -863,8 +863,8 @@ contains
                enddo
 
                if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
-                  print*,'  water point, i=',i, &
-                  'j=',j, 'soilt=', soilt(i,j)
+                  print*,'  water point, i,globalcells(i)=',i,globalcells(i) &
+                        ,'  soilt=', soilt(i,j)
                endif
                ! do not do water point 
                cycle
@@ -879,8 +879,7 @@ contains
                if(seaice(i,j).gt.0.5)then
 !-- sea-ice parameters
                   if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
-                     print*,' sea-ice at water point, i=',i, &
-                    'j=',j
+                     print*,' sea-ice at i,globalcells(i)=',i,globalcells(i)
                   endif
                   iland = isice
                   isoil = 16
