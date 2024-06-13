@@ -479,7 +479,7 @@ contains
 !--- sea ice point
          if ( wrf_at_debug_level(iceruc_dbg_lvl) ) then
          !if (globalcells(i)==targetcell) then
-            print *,' sea ice point: i,globalcells(i)', i,globalcells(i),xice(i,j)
+            print *,' sea ice point: i,globalcells(i),xice(i,j)', i,globalcells(i),xice(i,j)
             print *,' in lsmruc ','ims,ime,jms,jme,its,ite,jts,jte,nzs', &
                                    ims,ime,jms,jme,its,ite,jts,jte,nzs
             print *,' soilt,qvg,p8w',soilt(i,j),qvg(i,j),p8w(i,1,j)
