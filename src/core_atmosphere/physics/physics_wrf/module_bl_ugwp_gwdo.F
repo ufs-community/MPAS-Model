@@ -18,7 +18,7 @@
                  dtaux3d_ls,dtauy3d_ls,dtaux3d_bl,dtauy3d_bl,                 &
                  dtaux3d_ss,dtauy3d_ss,dtaux3d_fd,dtauy3d_fd,                 &
                  dusfc_ls,dvsfc_ls,dusfc_bl,dvsfc_bl,dusfc_ss,dvsfc_ss,       &
-                 dusfc_fd,dvsfc_fd,                                           &
+                 dusfc_fd,dvsfc_fd,ugwp_diags,                                &
                  var2dls,oc12dls,oa2d1ls,oa2d2ls,oa2d3ls,oa2d4ls,ol2d1ls,     &
                  ol2d2ls,ol2d3ls,ol2d4ls,var2dss,oc12dss,oa2d1ss,oa2d2ss,     &
                  oa2d3ss,oa2d4ss,ol2d1ss,ol2d2ss,ol2d3ss,ol2d4ss,             &
@@ -118,18 +118,26 @@
  real(kind=kind_phys),intent(in),dimension(ims:ime,kms:kme,jms:jme):: &
                                                                  p3di
 
+ logical,intent(in)::                                      ugwp_diags
+
 !--- output arguments:
  character(len=*),intent(out)::  errmsg
 
  integer,intent(out):: errflg
 
  real(kind=kind_phys),intent(out),dimension(ims:ime,jms:jme)::    &
-                      dusfcg,dusfc_ls,dusfc_bl,dusfc_ss,dusfc_fd, &
-                      dvsfcg,dvsfc_ls,dvsfc_bl,dvsfc_ss,dvsfc_fd
+                                                   dusfcg,dvsfcg
+
+ real(kind=kind_phys),intent(out),dimension(:,:)::                &
+                             dusfc_ls,dusfc_bl,dusfc_ss,dusfc_fd, &
+                             dvsfc_ls,dvsfc_bl,dvsfc_ss,dvsfc_fd
 
  real(kind=kind_phys),intent(out),dimension(ims:ime,kms:kme,jms:jme ):: &
-                   dtaux3d,dtaux3d_ls,dtaux3d_bl,dtaux3d_ss,dtaux3d_fd, &
-                   dtauy3d,dtauy3d_ls,dtauy3d_bl,dtauy3d_ss,dtauy3d_fd
+                                                       dtaux3d,dtauy3d
+
+ real(kind=kind_phys),intent(out),dimension(:,:,:)::                    &
+                           dtaux3d_ls,dtaux3d_bl,dtaux3d_ss,dtaux3d_fd, &
+                           dtauy3d_ls,dtauy3d_bl,dtauy3d_ss,dtauy3d_fd
 
 !--- inout arguments:
  real(kind=kind_phys),intent(inout),dimension(ims:ime,kms:kme,jms:jme):: &
@@ -150,20 +158,23 @@
     ol2d1ss_hv,ol2d2ss_hv,ol2d3ss_hv,ol2d4ss_hv
     
  real(kind=kind_phys),dimension(its:ite):: &
-    dusfcg_hv,dvsfcg_hv,dusfc_ls_hv,dvsfc_ls_hv,dusfc_bl_hv,dvsfc_bl_hv, &
+    dusfcg_hv,dvsfcg_hv
+
+ real(kind=kind_phys),dimension(:),allocatable::   &
+    dusfc_ls_hv,dvsfc_ls_hv,dusfc_bl_hv,dvsfc_bl_hv, &
     dusfc_ss_hv,dvsfc_ss_hv,dusfc_fd_hv,dvsfc_fd_hv
 
  real(kind=kind_phys),dimension(its:ite,kts:kte):: &
-     u3d_hv,v3d_hv,t3d_hv,qv3d_hv,pi3d_hv,p3d_hv,z_hv
+    u3d_hv,v3d_hv,t3d_hv,qv3d_hv,pi3d_hv,p3d_hv,z_hv
 
  real(kind=kind_phys),dimension(its:ite,kts:kte):: &
-     rublten_hv,rvblten_hv,dtaux3d_hv,dtauy3d_hv
- real(kind=kind_phys),dimension(its:ite,kts:kte):: &
-     dtaux3d_ls_hv,dtauy3d_ls_hv,dtaux3d_bl_hv,dtauy3d_bl_hv,  &
-     dtaux3d_ss_hv,dtauy3d_ss_hv,dtaux3d_fd_hv,dtauy3d_fd_hv
+    rublten_hv,rvblten_hv,dtaux3d_hv,dtauy3d_hv
+ real(kind=kind_phys),dimension(:,:),allocatable:: &
+    dtaux3d_ls_hv,dtauy3d_ls_hv,dtaux3d_bl_hv,dtauy3d_bl_hv,  &
+    dtaux3d_ss_hv,dtauy3d_ss_hv,dtaux3d_fd_hv,dtauy3d_fd_hv
 
  real(kind=kind_phys),dimension(its:ite,kms:kme):: &
-     p3di_hv
+    p3di_hv
 
 !-----------------------------------------------------------------------------------------------------------------
 
@@ -235,6 +246,26 @@
        ol2d4ss_hv(i) = ol2d4ss(i,j)
     enddo
 
+    ! Allocate ugwp_diags variables if needed
+    if (ugwp_diags) then
+       allocate (dusfc_ls_hv(its:ite))
+       allocate (dvsfc_ls_hv(its:ite))
+       allocate (dusfc_bl_hv(its:ite))
+       allocate (dvsfc_bl_hv(its:ite))
+       allocate (dusfc_ss_hv(its:ite))
+       allocate (dvsfc_ss_hv(its:ite))
+       allocate (dusfc_fd_hv(its:ite))
+       allocate (dvsfc_fd_hv(its:ite))
+       allocate (dtaux3d_ls_hv(its:ite,kts:kte))
+       allocate (dtauy3d_ls_hv(its:ite,kts:kte))
+       allocate (dtaux3d_bl_hv(its:ite,kts:kte))
+       allocate (dtauy3d_bl_hv(its:ite,kts:kte))
+       allocate (dtaux3d_ss_hv(its:ite,kts:kte))
+       allocate (dtauy3d_ss_hv(its:ite,kts:kte))
+       allocate (dtaux3d_fd_hv(its:ite,kts:kte))
+       allocate (dtauy3d_fd_hv(its:ite,kts:kte))
+    endif
+
     call bl_ugwp_run(sina=sina_hv,cosa=cosa_hv                &
                     ,rublten=rublten_hv,rvblten=rvblten_hv    &
                     ,dtaux3d=dtaux3d_hv,dtauy3d=dtauy3d_hv    &
@@ -247,6 +278,7 @@
                     ,dusfc_bl=dusfc_bl_hv,dvsfc_bl=dvsfc_bl_hv          &
                     ,dusfc_ss=dusfc_ss_hv,dvsfc_ss=dvsfc_ss_hv          &
                     ,dusfc_fd=dusfc_fd_hv,dvsfc_fd=dvsfc_fd_hv          &
+                    ,ugwp_diags=ugwp_diags                    &
                     ,uproj=u3d_hv,vproj=v3d_hv                &
                     ,t1=t3d_hv,q1=qv3d_hv                     &
                     ,prsi=p3di_hv,prsl=p3d_hv,prslk=pi3d_hv   &
@@ -276,30 +308,60 @@
           rvblten(i,k,j) = rvblten_hv(i,k)
           dtaux3d(i,k,j) = dtaux3d_hv(i,k)
           dtauy3d(i,k,j) = dtauy3d_hv(i,k)
-          dtaux3d_ls(i,k,j) = dtaux3d_ls_hv(i,k)
-          dtauy3d_ls(i,k,j) = dtauy3d_ls_hv(i,k)
-          dtaux3d_bl(i,k,j) = dtaux3d_bl_hv(i,k)
-          dtauy3d_bl(i,k,j) = dtauy3d_bl_hv(i,k)
-          dtaux3d_ss(i,k,j) = dtaux3d_ss_hv(i,k)
-          dtauy3d_ss(i,k,j) = dtauy3d_ss_hv(i,k)
-          dtaux3d_fd(i,k,j) = dtaux3d_fd_hv(i,k)
-          dtauy3d_fd(i,k,j) = dtauy3d_fd_hv(i,k)
        enddo
     enddo
+    if (ugwp_diags) then
+       do k = kts,kte
+          do i = its,ite
+             dtaux3d_ls(i,k,j) = dtaux3d_ls_hv(i,k)
+             dtauy3d_ls(i,k,j) = dtauy3d_ls_hv(i,k)
+             dtaux3d_bl(i,k,j) = dtaux3d_bl_hv(i,k)
+             dtauy3d_bl(i,k,j) = dtauy3d_bl_hv(i,k)
+             dtaux3d_ss(i,k,j) = dtaux3d_ss_hv(i,k)
+             dtauy3d_ss(i,k,j) = dtauy3d_ss_hv(i,k)
+             dtaux3d_fd(i,k,j) = dtaux3d_fd_hv(i,k)
+             dtauy3d_fd(i,k,j) = dtauy3d_fd_hv(i,k)
+          enddo
+       enddo
+    endif
 
     !  2d:
     do i = its,ite
        dusfcg(i,j) = dusfcg_hv(i)
        dvsfcg(i,j) = dvsfcg_hv(i)
-       dusfc_ls(i,j) = dusfc_ls_hv(i)
-       dvsfc_ls(i,j) = dvsfc_ls_hv(i)
-       dusfc_bl(i,j) = dusfc_bl_hv(i)
-       dvsfc_bl(i,j) = dvsfc_bl_hv(i)
-       dusfc_ss(i,j) = dusfc_ss_hv(i)
-       dvsfc_ss(i,j) = dvsfc_ss_hv(i)
-       dusfc_fd(i,j) = dusfc_fd_hv(i)
-       dvsfc_fd(i,j) = dvsfc_fd_hv(i)
     enddo
+    if (ugwp_diags) then
+       do i = its,ite
+          dusfc_ls(i,j) = dusfc_ls_hv(i)
+          dvsfc_ls(i,j) = dvsfc_ls_hv(i)
+          dusfc_bl(i,j) = dusfc_bl_hv(i)
+          dvsfc_bl(i,j) = dvsfc_bl_hv(i)
+          dusfc_ss(i,j) = dusfc_ss_hv(i)
+          dvsfc_ss(i,j) = dvsfc_ss_hv(i)
+          dusfc_fd(i,j) = dusfc_fd_hv(i)
+          dvsfc_fd(i,j) = dvsfc_fd_hv(i)
+       enddo
+    endif
+
+    ! Deallocate ugwp_diags variables if used
+    if (ugwp_diags) then
+       deallocate (dusfc_ls_hv)
+       deallocate (dvsfc_ls_hv)
+       deallocate (dusfc_bl_hv)
+       deallocate (dvsfc_bl_hv)
+       deallocate (dusfc_ss_hv)
+       deallocate (dvsfc_ss_hv)
+       deallocate (dusfc_fd_hv)
+       deallocate (dvsfc_fd_hv)
+       deallocate (dtaux3d_ls_hv)
+       deallocate (dtauy3d_ls_hv)
+       deallocate (dtaux3d_bl_hv)
+       deallocate (dtauy3d_bl_hv)
+       deallocate (dtaux3d_ss_hv)
+       deallocate (dtauy3d_ss_hv)
+       deallocate (dtaux3d_fd_hv)
+       deallocate (dtauy3d_fd_hv)
+    endif
 
  enddo ! Outer J-loop
 

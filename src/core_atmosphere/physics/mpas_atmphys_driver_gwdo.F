@@ -77,8 +77,10 @@
 
  !local variables:
  character(len=StrKIND),pointer:: gwdo_scheme
+ logical,pointer:: ugwp_diags
 
  call mpas_pool_get_config(configs,'config_gwdo_scheme',gwdo_scheme)
+ call mpas_pool_get_config(configs,'config_ugwp_diags',ugwp_diags)
 
  if(.not.allocated(cosa_p)  ) allocate(cosa_p(ims:ime,jms:jme)  )
  if(.not.allocated(sina_p)  ) allocate(sina_p(ims:ime,jms:jme)  )
@@ -127,25 +129,27 @@
     if(.not.allocated(ol2ss_p)   ) allocate(ol2ss_p(ims:ime,jms:jme)   )
     if(.not.allocated(ol3ss_p)   ) allocate(ol3ss_p(ims:ime,jms:jme)   )
     if(.not.allocated(ol4ss_p)   ) allocate(ol4ss_p(ims:ime,jms:jme)   )
-    if(.not.allocated(dusfc_ls_p)) allocate(dusfc_ls_p(ims:ime,jms:jme))
-    if(.not.allocated(dvsfc_ls_p)) allocate(dvsfc_ls_p(ims:ime,jms:jme))
-    if(.not.allocated(dusfc_bl_p)) allocate(dusfc_bl_p(ims:ime,jms:jme))
-    if(.not.allocated(dvsfc_bl_p)) allocate(dvsfc_bl_p(ims:ime,jms:jme))
-    if(.not.allocated(dusfc_ss_p)) allocate(dusfc_ss_p(ims:ime,jms:jme))
-    if(.not.allocated(dvsfc_ss_p)) allocate(dvsfc_ss_p(ims:ime,jms:jme))
-    if(.not.allocated(dusfc_fd_p)) allocate(dusfc_fd_p(ims:ime,jms:jme))
-    if(.not.allocated(dvsfc_fd_p)) allocate(dvsfc_fd_p(ims:ime,jms:jme))
     if(.not.allocated(hpbl_p)    ) allocate(hpbl_p(ims:ime,jms:jme)    )
     if(.not.allocated(br_p)      ) allocate(br_p(ims:ime,jms:jme)      )
     if(.not.allocated(xland_p )  ) allocate(xland_p(ims:ime,jms:jme)   )
-    if(.not.allocated(dtaux3d_ls_p)) allocate(dtaux3d_ls_p(ims:ime,kms:kme,jms:jme))
-    if(.not.allocated(dtauy3d_ls_p)) allocate(dtauy3d_ls_p(ims:ime,kms:kme,jms:jme))
-    if(.not.allocated(dtaux3d_bl_p)) allocate(dtaux3d_bl_p(ims:ime,kms:kme,jms:jme))
-    if(.not.allocated(dtauy3d_bl_p)) allocate(dtauy3d_bl_p(ims:ime,kms:kme,jms:jme))
-    if(.not.allocated(dtaux3d_ss_p)) allocate(dtaux3d_ss_p(ims:ime,kms:kme,jms:jme))
-    if(.not.allocated(dtauy3d_ss_p)) allocate(dtauy3d_ss_p(ims:ime,kms:kme,jms:jme))
-    if(.not.allocated(dtaux3d_fd_p)) allocate(dtaux3d_fd_p(ims:ime,kms:kme,jms:jme))
-    if(.not.allocated(dtauy3d_fd_p)) allocate(dtauy3d_fd_p(ims:ime,kms:kme,jms:jme))
+    if (ugwp_diags) then
+       if(.not.allocated(dusfc_ls_p)) allocate(dusfc_ls_p(ims:ime,jms:jme))
+       if(.not.allocated(dvsfc_ls_p)) allocate(dvsfc_ls_p(ims:ime,jms:jme))
+       if(.not.allocated(dusfc_bl_p)) allocate(dusfc_bl_p(ims:ime,jms:jme))
+       if(.not.allocated(dvsfc_bl_p)) allocate(dvsfc_bl_p(ims:ime,jms:jme))
+       if(.not.allocated(dusfc_ss_p)) allocate(dusfc_ss_p(ims:ime,jms:jme))
+       if(.not.allocated(dvsfc_ss_p)) allocate(dvsfc_ss_p(ims:ime,jms:jme))
+       if(.not.allocated(dusfc_fd_p)) allocate(dusfc_fd_p(ims:ime,jms:jme))
+       if(.not.allocated(dvsfc_fd_p)) allocate(dvsfc_fd_p(ims:ime,jms:jme))
+       if(.not.allocated(dtaux3d_ls_p)) allocate(dtaux3d_ls_p(ims:ime,kms:kme,jms:jme))
+       if(.not.allocated(dtauy3d_ls_p)) allocate(dtauy3d_ls_p(ims:ime,kms:kme,jms:jme))
+       if(.not.allocated(dtaux3d_bl_p)) allocate(dtaux3d_bl_p(ims:ime,kms:kme,jms:jme))
+       if(.not.allocated(dtauy3d_bl_p)) allocate(dtauy3d_bl_p(ims:ime,kms:kme,jms:jme))
+       if(.not.allocated(dtaux3d_ss_p)) allocate(dtaux3d_ss_p(ims:ime,kms:kme,jms:jme))
+       if(.not.allocated(dtauy3d_ss_p)) allocate(dtauy3d_ss_p(ims:ime,kms:kme,jms:jme))
+       if(.not.allocated(dtaux3d_fd_p)) allocate(dtaux3d_fd_p(ims:ime,kms:kme,jms:jme))
+       if(.not.allocated(dtauy3d_fd_p)) allocate(dtauy3d_fd_p(ims:ime,kms:kme,jms:jme))
+    endif
 
    case default
 
@@ -162,8 +166,10 @@
 
  !local variables:
  character(len=StrKIND),pointer:: gwdo_scheme
+ logical,pointer:: ugwp_diags
 
  call mpas_pool_get_config(configs,'config_gwdo_scheme',gwdo_scheme)
+ call mpas_pool_get_config(configs,'config_ugwp_diags',ugwp_diags)
 
  if(allocated(cosa_p)  ) deallocate(cosa_p  )
  if(allocated(sina_p)  ) deallocate(sina_p  )
@@ -212,25 +218,27 @@
     if(allocated(ol2ss_p)   ) deallocate(ol2ss_p   )
     if(allocated(ol3ss_p)   ) deallocate(ol3ss_p   )
     if(allocated(ol4ss_p)   ) deallocate(ol4ss_p   )
-    if(allocated(dusfc_ls_p)) deallocate(dusfc_ls_p)
-    if(allocated(dvsfc_ls_p)) deallocate(dvsfc_ls_p)
-    if(allocated(dusfc_bl_p)) deallocate(dusfc_bl_p)
-    if(allocated(dvsfc_bl_p)) deallocate(dvsfc_bl_p)
-    if(allocated(dusfc_ss_p)) deallocate(dusfc_ss_p)
-    if(allocated(dvsfc_ss_p)) deallocate(dvsfc_ss_p)
-    if(allocated(dusfc_fd_p)) deallocate(dusfc_fd_p)
-    if(allocated(dvsfc_fd_p)) deallocate(dvsfc_fd_p)
     if(allocated(hpbl_p)     ) deallocate(hpbl_p  )
     if(allocated(br_p)       ) deallocate(br_p    )
     if(allocated(xland_p)    ) deallocate(xland_p )
-    if(allocated(dtaux3d_ls_p)) deallocate(dtaux3d_ls_p)
-    if(allocated(dtauy3d_ls_p)) deallocate(dtauy3d_ls_p)
-    if(allocated(dtaux3d_bl_p)) deallocate(dtaux3d_bl_p)
-    if(allocated(dtauy3d_bl_p)) deallocate(dtauy3d_bl_p)
-    if(allocated(dtaux3d_ss_p)) deallocate(dtaux3d_ss_p)
-    if(allocated(dtauy3d_ss_p)) deallocate(dtauy3d_ss_p)
-    if(allocated(dtaux3d_fd_p)) deallocate(dtaux3d_fd_p)
-    if(allocated(dtauy3d_fd_p)) deallocate(dtauy3d_fd_p)
+    if (ugwp_diags) then
+       if(allocated(dusfc_ls_p)) deallocate(dusfc_ls_p)
+       if(allocated(dvsfc_ls_p)) deallocate(dvsfc_ls_p)
+       if(allocated(dusfc_bl_p)) deallocate(dusfc_bl_p)
+       if(allocated(dvsfc_bl_p)) deallocate(dvsfc_bl_p)
+       if(allocated(dusfc_ss_p)) deallocate(dusfc_ss_p)
+       if(allocated(dvsfc_ss_p)) deallocate(dvsfc_ss_p)
+       if(allocated(dusfc_fd_p)) deallocate(dusfc_fd_p)
+       if(allocated(dvsfc_fd_p)) deallocate(dvsfc_fd_p)
+       if(allocated(dtaux3d_ls_p)) deallocate(dtaux3d_ls_p)
+       if(allocated(dtauy3d_ls_p)) deallocate(dtauy3d_ls_p)
+       if(allocated(dtaux3d_bl_p)) deallocate(dtaux3d_bl_p)
+       if(allocated(dtauy3d_bl_p)) deallocate(dtauy3d_bl_p)
+       if(allocated(dtaux3d_ss_p)) deallocate(dtaux3d_ss_p)
+       if(allocated(dtauy3d_ss_p)) deallocate(dtauy3d_ss_p)
+       if(allocated(dtaux3d_fd_p)) deallocate(dtaux3d_fd_p)
+       if(allocated(dtauy3d_fd_p)) deallocate(dtauy3d_fd_p)
+    endif
 
    case default
 
@@ -254,6 +262,7 @@
 !local variables:
  integer:: i,k,j
  character(len=StrKIND),pointer:: gwdo_scheme
+ logical,pointer:: ugwp_diags
 
 !local pointers:
  integer,dimension(:),pointer:: kpbl
@@ -276,6 +285,7 @@
 
  call mpas_pool_get_config(configs,'config_len_disp',len_disp)
  call mpas_pool_get_config(configs,'config_gwdo_scheme',gwdo_scheme)
+ call mpas_pool_get_config(configs,'config_ugwp_diags',ugwp_diags)
  call mpas_pool_get_array(mesh,'meshDensity',meshDensity)
 
 
@@ -328,6 +338,8 @@
       call mpas_pool_get_array(sfc_input,'ol2ss'  ,ol2ss  )
       call mpas_pool_get_array(sfc_input,'ol3ss'  ,ol3ss  )
       call mpas_pool_get_array(sfc_input,'ol4ss'  ,ol4ss  )
+      call mpas_pool_get_array(diag_physics,'hpbl',hpbl   )
+      call mpas_pool_get_array(diag_physics,'br'  ,br1    )
       call mpas_pool_get_array(sfc_input,'xland'  ,xland  )
       do j = jts,jte
       do i = its,ite
@@ -351,55 +363,55 @@
          ol2ss_p(i,j)   = ol2ss(i)
          ol3ss_p(i,j)   = ol3ss(i)
          ol4ss_p(i,j)   = ol4ss(i)
+         hpbl_p(i,j)    = hpbl(i)
+         br_p(i,j)      = br1(i)
          xland_p(i,j)   = xland(i)
       enddo
       enddo
-      call mpas_pool_get_array(diag_physics,'dusfc_ls'   ,dusfc_ls   )
-      call mpas_pool_get_array(diag_physics,'dvsfc_ls'   ,dvsfc_ls   )
-      call mpas_pool_get_array(diag_physics,'dusfc_bl'   ,dusfc_bl   )
-      call mpas_pool_get_array(diag_physics,'dvsfc_bl'   ,dvsfc_bl   )
-      call mpas_pool_get_array(diag_physics,'dusfc_ss'   ,dusfc_ss   )
-      call mpas_pool_get_array(diag_physics,'dvsfc_ss'   ,dvsfc_ss   )
-      call mpas_pool_get_array(diag_physics,'dusfc_fd'   ,dusfc_fd   )
-      call mpas_pool_get_array(diag_physics,'dvsfc_fd'   ,dvsfc_fd   )
-      call mpas_pool_get_array(diag_physics,'hpbl'       ,hpbl       )
-      call mpas_pool_get_array(diag_physics,'br'         ,br1        )
-      call mpas_pool_get_array(diag_physics,'dtaux3d_ls' ,dtaux3d_ls )
-      call mpas_pool_get_array(diag_physics,'dtauy3d_ls' ,dtauy3d_ls )
-      call mpas_pool_get_array(diag_physics,'dtaux3d_bl' ,dtaux3d_bl )
-      call mpas_pool_get_array(diag_physics,'dtauy3d_bl' ,dtauy3d_bl )
-      call mpas_pool_get_array(diag_physics,'dtaux3d_ss' ,dtaux3d_ss )
-      call mpas_pool_get_array(diag_physics,'dtauy3d_ss' ,dtauy3d_ss )
-      call mpas_pool_get_array(diag_physics,'dtaux3d_fd' ,dtaux3d_fd )
-      call mpas_pool_get_array(diag_physics,'dtauy3d_fd' ,dtauy3d_fd )
-      do j = jts,jte
-      do i = its,ite
-         dusfc_ls_p(i,j) = dusfc_ls(i)
-         dvsfc_ls_p(i,j) = dvsfc_ls(i)
-         dusfc_bl_p(i,j) = dusfc_bl(i)
-         dvsfc_bl_p(i,j) = dvsfc_bl(i)
-         dusfc_ss_p(i,j) = dusfc_ss(i)
-         dvsfc_ss_p(i,j) = dvsfc_ss(i)
-         dusfc_fd_p(i,j) = dusfc_fd(i)
-         dvsfc_fd_p(i,j) = dvsfc_fd(i)
-         hpbl_p(i,j)     = hpbl(i)
-         br_p(i,j)       = br1(i)
-      enddo
-      enddo
-      do j = jts,jte
-      do k = kts,kte
-      do i = its,ite
-         dtaux3d_ls_p(i,k,j) = dtaux3d_ls(k,i)
-         dtauy3d_ls_p(i,k,j) = dtauy3d_ls(k,i)
-         dtaux3d_bl_p(i,k,j) = dtaux3d_bl(k,i)
-         dtauy3d_bl_p(i,k,j) = dtauy3d_bl(k,i)
-         dtaux3d_ss_p(i,k,j) = dtaux3d_ss(k,i)
-         dtauy3d_ss_p(i,k,j) = dtauy3d_ss(k,i)
-         dtaux3d_fd_p(i,k,j) = dtaux3d_fd(k,i)
-         dtauy3d_fd_p(i,k,j) = dtauy3d_fd(k,i)
-      enddo
-      enddo
-      enddo
+      if (ugwp_diags) then
+         call mpas_pool_get_array(diag_physics,'dusfc_ls'   ,dusfc_ls   )
+         call mpas_pool_get_array(diag_physics,'dvsfc_ls'   ,dvsfc_ls   )
+         call mpas_pool_get_array(diag_physics,'dusfc_bl'   ,dusfc_bl   )
+         call mpas_pool_get_array(diag_physics,'dvsfc_bl'   ,dvsfc_bl   )
+         call mpas_pool_get_array(diag_physics,'dusfc_ss'   ,dusfc_ss   )
+         call mpas_pool_get_array(diag_physics,'dvsfc_ss'   ,dvsfc_ss   )
+         call mpas_pool_get_array(diag_physics,'dusfc_fd'   ,dusfc_fd   )
+         call mpas_pool_get_array(diag_physics,'dvsfc_fd'   ,dvsfc_fd   )
+         call mpas_pool_get_array(diag_physics,'dtaux3d_ls' ,dtaux3d_ls )
+         call mpas_pool_get_array(diag_physics,'dtauy3d_ls' ,dtauy3d_ls )
+         call mpas_pool_get_array(diag_physics,'dtaux3d_bl' ,dtaux3d_bl )
+         call mpas_pool_get_array(diag_physics,'dtauy3d_bl' ,dtauy3d_bl )
+         call mpas_pool_get_array(diag_physics,'dtaux3d_ss' ,dtaux3d_ss )
+         call mpas_pool_get_array(diag_physics,'dtauy3d_ss' ,dtauy3d_ss )
+         call mpas_pool_get_array(diag_physics,'dtaux3d_fd' ,dtaux3d_fd )
+         call mpas_pool_get_array(diag_physics,'dtauy3d_fd' ,dtauy3d_fd )
+         do j = jts,jte
+         do i = its,ite
+            dusfc_ls_p(i,j) = dusfc_ls(i)
+            dvsfc_ls_p(i,j) = dvsfc_ls(i)
+            dusfc_bl_p(i,j) = dusfc_bl(i)
+            dvsfc_bl_p(i,j) = dvsfc_bl(i)
+            dusfc_ss_p(i,j) = dusfc_ss(i)
+            dvsfc_ss_p(i,j) = dvsfc_ss(i)
+            dusfc_fd_p(i,j) = dusfc_fd(i)
+            dvsfc_fd_p(i,j) = dvsfc_fd(i)
+         enddo
+         enddo
+         do j = jts,jte
+         do k = kts,kte
+         do i = its,ite
+            dtaux3d_ls_p(i,k,j) = dtaux3d_ls(k,i)
+            dtauy3d_ls_p(i,k,j) = dtauy3d_ls(k,i)
+            dtaux3d_bl_p(i,k,j) = dtaux3d_bl(k,i)
+            dtauy3d_bl_p(i,k,j) = dtauy3d_bl(k,i)
+            dtaux3d_ss_p(i,k,j) = dtaux3d_ss(k,i)
+            dtauy3d_ss_p(i,k,j) = dtauy3d_ss(k,i)
+            dtaux3d_fd_p(i,k,j) = dtaux3d_fd(k,i)
+            dtauy3d_fd_p(i,k,j) = dtauy3d_fd(k,i)
+         enddo
+         enddo
+         enddo
+      endif
 
    case default
 
@@ -453,6 +465,7 @@
 !local variables:
  integer:: i,k,j
  character(len=StrKIND),pointer:: gwdo_scheme
+ logical,pointer:: ugwp_diags
 
 !local pointers:
  real(kind=RKIND),dimension(:),pointer  :: dusfcg,dvsfcg
@@ -470,6 +483,7 @@
 !-----------------------------------------------------------------------------------------------------------------
 
  call mpas_pool_get_config(configs,'config_gwdo_scheme',gwdo_scheme)
+ call mpas_pool_get_config(configs,'config_ugwp_diags',ugwp_diags)
  call mpas_pool_get_array(diag_physics,'dusfcg'  ,dusfcg  )
  call mpas_pool_get_array(diag_physics,'dvsfcg'  ,dvsfcg  )
  call mpas_pool_get_array(diag_physics,'dtaux3d' ,dtaux3d )
@@ -483,48 +497,50 @@
  gwdo_select: select case (trim(gwdo_scheme))
 
    case("bl_ugwp_gwdo")
-      call mpas_pool_get_array(diag_physics,'dusfc_ls'  ,dusfc_ls  )
-      call mpas_pool_get_array(diag_physics,'dvsfc_ls'  ,dvsfc_ls  )
-      call mpas_pool_get_array(diag_physics,'dusfc_bl'  ,dusfc_bl  )
-      call mpas_pool_get_array(diag_physics,'dvsfc_bl'  ,dvsfc_bl  )
-      call mpas_pool_get_array(diag_physics,'dusfc_ss'  ,dusfc_ss  )
-      call mpas_pool_get_array(diag_physics,'dvsfc_ss'  ,dvsfc_ss  )
-      call mpas_pool_get_array(diag_physics,'dusfc_fd'  ,dusfc_fd  )
-      call mpas_pool_get_array(diag_physics,'dvsfc_fd'  ,dvsfc_fd  )
-      call mpas_pool_get_array(diag_physics,'dtaux3d_ls' ,dtaux3d_ls )
-      call mpas_pool_get_array(diag_physics,'dtauy3d_ls' ,dtauy3d_ls )
-      call mpas_pool_get_array(diag_physics,'dtaux3d_bl' ,dtaux3d_bl )
-      call mpas_pool_get_array(diag_physics,'dtauy3d_bl' ,dtauy3d_bl )
-      call mpas_pool_get_array(diag_physics,'dtaux3d_ss' ,dtaux3d_ss )
-      call mpas_pool_get_array(diag_physics,'dtauy3d_ss' ,dtauy3d_ss )
-      call mpas_pool_get_array(diag_physics,'dtaux3d_fd' ,dtaux3d_fd )
-      call mpas_pool_get_array(diag_physics,'dtauy3d_fd' ,dtauy3d_fd )
-      do j = jts,jte
-      do i = its,ite
-         dusfc_ls(i) = dusfc_ls_p(i,j)
-         dvsfc_ls(i) = dvsfc_ls_p(i,j)
-         dusfc_bl(i) = dusfc_bl_p(i,j)
-         dvsfc_bl(i) = dvsfc_bl_p(i,j)
-         dusfc_ss(i) = dusfc_ss_p(i,j)
-         dvsfc_ss(i) = dvsfc_ss_p(i,j)
-         dusfc_fd(i) = dusfc_fd_p(i,j)
-         dvsfc_fd(i) = dvsfc_fd_p(i,j)
-      enddo
-      enddo
-      do j = jts,jte
-      do k = kts,kte
-      do i = its,ite
-         dtaux3d_ls(k,i) = dtaux3d_ls_p(i,k,j)
-         dtauy3d_ls(k,i) = dtauy3d_ls_p(i,k,j)
-         dtaux3d_bl(k,i) = dtaux3d_bl_p(i,k,j)
-         dtauy3d_bl(k,i) = dtauy3d_bl_p(i,k,j)
-         dtaux3d_ss(k,i) = dtaux3d_ss_p(i,k,j)
-         dtauy3d_ss(k,i) = dtauy3d_ss_p(i,k,j)
-         dtaux3d_fd(k,i) = dtaux3d_fd_p(i,k,j)
-         dtauy3d_fd(k,i) = dtauy3d_fd_p(i,k,j)
-      enddo
-      enddo
-      enddo
+      if (ugwp_diags) then
+         call mpas_pool_get_array(diag_physics,'dusfc_ls'  ,dusfc_ls  )
+         call mpas_pool_get_array(diag_physics,'dvsfc_ls'  ,dvsfc_ls  )
+         call mpas_pool_get_array(diag_physics,'dusfc_bl'  ,dusfc_bl  )
+         call mpas_pool_get_array(diag_physics,'dvsfc_bl'  ,dvsfc_bl  )
+         call mpas_pool_get_array(diag_physics,'dusfc_ss'  ,dusfc_ss  )
+         call mpas_pool_get_array(diag_physics,'dvsfc_ss'  ,dvsfc_ss  )
+         call mpas_pool_get_array(diag_physics,'dusfc_fd'  ,dusfc_fd  )
+         call mpas_pool_get_array(diag_physics,'dvsfc_fd'  ,dvsfc_fd  )
+         call mpas_pool_get_array(diag_physics,'dtaux3d_ls' ,dtaux3d_ls )
+         call mpas_pool_get_array(diag_physics,'dtauy3d_ls' ,dtauy3d_ls )
+         call mpas_pool_get_array(diag_physics,'dtaux3d_bl' ,dtaux3d_bl )
+         call mpas_pool_get_array(diag_physics,'dtauy3d_bl' ,dtauy3d_bl )
+         call mpas_pool_get_array(diag_physics,'dtaux3d_ss' ,dtaux3d_ss )
+         call mpas_pool_get_array(diag_physics,'dtauy3d_ss' ,dtauy3d_ss )
+         call mpas_pool_get_array(diag_physics,'dtaux3d_fd' ,dtaux3d_fd )
+         call mpas_pool_get_array(diag_physics,'dtauy3d_fd' ,dtauy3d_fd )
+         do j = jts,jte
+         do i = its,ite
+            dusfc_ls(i) = dusfc_ls_p(i,j)
+            dvsfc_ls(i) = dvsfc_ls_p(i,j)
+            dusfc_bl(i) = dusfc_bl_p(i,j)
+            dvsfc_bl(i) = dvsfc_bl_p(i,j)
+            dusfc_ss(i) = dusfc_ss_p(i,j)
+            dvsfc_ss(i) = dvsfc_ss_p(i,j)
+            dusfc_fd(i) = dusfc_fd_p(i,j)
+            dvsfc_fd(i) = dvsfc_fd_p(i,j)
+         enddo
+         enddo
+         do j = jts,jte
+         do k = kts,kte
+         do i = its,ite
+            dtaux3d_ls(k,i) = dtaux3d_ls_p(i,k,j)
+            dtauy3d_ls(k,i) = dtauy3d_ls_p(i,k,j)
+            dtaux3d_bl(k,i) = dtaux3d_bl_p(i,k,j)
+            dtauy3d_bl(k,i) = dtauy3d_bl_p(i,k,j)
+            dtaux3d_ss(k,i) = dtaux3d_ss_p(i,k,j)
+            dtauy3d_ss(k,i) = dtauy3d_ss_p(i,k,j)
+            dtaux3d_fd(k,i) = dtaux3d_fd_p(i,k,j)
+            dtauy3d_fd(k,i) = dtauy3d_fd_p(i,k,j)
+         enddo
+         enddo
+         enddo
+      endif
 
    case default
 
@@ -570,6 +586,7 @@
 
 !local variables:
  character(len=StrKIND),pointer:: gwdo_scheme
+ logical,pointer:: ugwp_diags
 
  integer:: i,iCell,iEdge
  real(kind=RKIND),dimension(:),allocatable:: dx_max
@@ -587,6 +604,7 @@
  errflg = 0
 
  call mpas_pool_get_config(configs,'config_gwdo_scheme',gwdo_scheme)
+ call mpas_pool_get_config(configs,'config_ugwp_diags',ugwp_diags)
 
 !copy MPAS arrays to local arrays:
  call gwdo_from_MPAS(configs,mesh,sfc_input,diag_physics,tend_physics,its,ite)
@@ -640,7 +658,7 @@
                   dusfc_fd = dusfc_fd_p , dvsfc_fd = dvsfc_fd_p  , dtaux3d_ls = dtaux3d_ls_p,      &
                   dtauy3d_ls = dtauy3d_ls_p, dtaux3d_bl = dtaux3d_bl_p, dtauy3d_bl = dtauy3d_bl_p, &
                   dtaux3d_ss = dtaux3d_ss_p, dtauy3d_ss = dtauy3d_ss_p, dtaux3d_fd = dtaux3d_fd_p, &
-                  dtauy3d_fd = dtauy3d_fd_p,                                                       &
+                  dtauy3d_fd = dtauy3d_fd_p, ugwp_diags = ugwp_diags,                              &
                   errmsg    = errmsg      , errflg    = errflg       ,                       &
                   ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde ,    &
                   ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme ,    &
