@@ -20,7 +20,9 @@ use mpas_log, only: mpas_log_write
 #define fatal_error(m) call wrf_error_fatal( m )
 #endif
 
-use module_ruc_land
+use module_ruc_land, only: vilka, qsn
+
+   integer :: targetcell=16932
 
 
 contains
@@ -347,6 +349,17 @@ contains
       enddo
    endif
 #endif
+   do j=jts,jte
+      do i=its,ite
+      !-- check if ice fraction is higher than threshold
+         if(xice(i,j).ge.xice_threshold) then
+            seaice(i,j)=1.
+         else
+            seaice(i,j)=0.
+         endif
+      enddo
+   enddo   
+
 
 !---- table tbq is for resolution of balance equation in vilka
    cq=173.15-.05
@@ -375,6 +388,9 @@ contains
 !--- initialize ice/snow variables at the first time step
       do j=jts,jte
          do i=its,ite
+
+          if(seaice(i,j).gt.0.5)then
+!--- Sea ice point
 !--- initializing snow fraction, thereshold = 32 mm of snow water or ~100 mm of snow height
 ! call physics_message('!--- initializing inside snow temp if it is not defined')
             if((soilt1(i,j) .lt. 170.) .or. (soilt1(i,j) .gt.400.)) then
@@ -431,6 +447,12 @@ contains
             smf   (i,j) = 0.
             evapl (i,j) = 0.
             prcpl (i,j) = 0.
+          else
+             if ( wrf_at_debug_level(iceruc_dbg_lvl) ) then
+                print *,'leave ruc_ice, globalcells(i)=',globalcells(i)
+             endif
+             return
+          endif ! sea ice point
          enddo
       enddo
 
@@ -450,11 +472,14 @@ contains
    prcpcufr = 0.
 
 
+   call mpas_log_write('--- in ruc_ice before main loop:')
    do j=jts,jte
       do i=its,ite
-
+        if(seaice(i,j).gt.0.5)then
+!--- sea ice point
          if ( wrf_at_debug_level(iceruc_dbg_lvl) ) then
-!        if (globalcells(i)==targetcell) then
+         !if (globalcells(i)==targetcell) then
+            print *,' sea ice point: i,globalcells(i)', i,globalcells(i),xice(i,j)
             print *,' in lsmruc ','ims,ime,jms,jme,its,ite,jts,jte,nzs', &
                                    ims,ime,jms,jme,its,ite,jts,jte,nzs
             print *,' soilt,qvg,p8w',soilt(i,j),qvg(i,j),p8w(i,1,j)
@@ -572,7 +597,7 @@ contains
          nzs1=nzs-1
 !-----
          if ( wrf_at_debug_level(iceruc_dbg_lvl) ) then
-!        if (globalcells(i) == targetcell) then
+         !if (globalcells(i) == targetcell) then
             print *,' dt,nzs1, zsmain, zshalf --->', dt,nzs1,zsmain,zshalf
          endif
 
@@ -605,20 +630,6 @@ contains
             rhosn = 300.
          endif
 
-         if ( wrf_at_debug_level(iceruc_dbg_lvl) ) then
-            if(ktau.eq.1 .and.(i.eq.358.and.j.eq.260)) &
-              print *,'before soilvegin - z0,znt(195,254)',z0(i,j),znt(i,j)
-         endif
-
-         !-- check if ice fraction is higher than threshold
-         if(xice(i,j).ge.xice_threshold) then
-            seaice(i,j)=1.
-         else
-            seaice(i,j)=0.
-         endif
-
-         if(seaice(i,j).gt.0.5)then
-!--- sea ice
             iland = isice
             isoil = 16
             znt(i,j) = 0.011
@@ -640,8 +651,9 @@ contains
             enddo
 
             if ( wrf_at_debug_level(iceruc_dbg_lvl) ) then
-               print *,'land, i,j,tso1d,patm,tabs,qvatm,qcatm,rho',  &
-                              i,j,tso1d,patm,tabs,qvatm,qcatm,rho
+               print *,'globalcells(i)= ',globalcells(i),i
+               print *,'ice, i,j,tso1d,patm,tabs,qvatm,qcatm,rho',  &
+                             i,j,tso1d,patm,tabs,qvatm,qcatm,rho
                print *,'conflx =',conflx
             endif
 
@@ -728,7 +740,7 @@ contains
                print *,'land, qfx, hfx after icetmp', i,j,lh(i,j),hfx(i,j)
             endif
 
-         endif ! sea ice point is done
+        endif ! sea ice point is done
 
       enddo
    enddo
