@@ -27,6 +27,9 @@
 
  logical,parameter:: frpcpn   = .false.
 
+ logical,parameter:: myjpbl   = .false.
+ logical,parameter:: frpcpn_ruc  = .true.
+
 !urban physics: MPAS does not plan to run the urban physics option.
  integer,parameter:: sf_urban_physics = 0 !activate urban canopy model (=0: no urban canopy)
 
@@ -125,6 +128,9 @@
     if(.not.allocated(zs_p)       )  allocate(zs_p(1:num_soils)            )
     if(.not.allocated(tmn_p)      )  allocate(tmn_p(ims:ime,jms:jme)       )
     if(.not.allocated(xland_p)    )  allocate(xland_p(ims:ime,jms:jme)     )
+    if(.not.allocated(field_sf)   )  allocate(field_sf(ims:ime,1:num_soils,jms:jme))
+    if(.not.allocated(pattern_spp_lsm))  allocate(pattern_spp_lsm(ims:ime,1:num_soils,jms:jme))
+
  endif
 
 
@@ -215,6 +221,9 @@
     if(allocated(cqs_p)       ) deallocate(cqs_p       )
     if(allocated(tmn_p)       ) deallocate(tmn_p       )
     if(allocated(xland_p)     ) deallocate(xland_p     )
+    if(allocated(field_sf)    ) deallocate(field_sf    )
+    if(allocated(pattern_spp_lsm)) deallocate(pattern_spp_lsm)
+
  endif
 
 
@@ -353,6 +362,8 @@
        !--- inout variables:
        do n = 1,num_soils
           tslb_p(i,n,j) = tslb(n,i)
+          pattern_spp_lsm(i,n,j) = 0._RKIND
+          field_sf(i,n,j) = 0._RKIND
        enddo
        z0_p(i,j)        = z0(i)
        snow_p(i,j)      = snow(i)
@@ -541,6 +552,7 @@
                      its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte             &
                     )
     case("sf_ruc")
+       call mpas_log_write('--- call subroutine sfcdiags_ruclsm:')
        call sfcdiags_ruclsm( &
                      hfx     = hfx_p  , qfx     = qfx_p   , tsk  = tsk_p       , qsfc = qsfc_p , chs = chs_p , &
                      chs2    = chs2_p , cqs2    = cqs2_p  , t2   = t2m_p       , th2  = th2m_p , q2  = q2_p  , &
@@ -613,11 +625,12 @@
  end subroutine seaice_to_MPAS
 
 !=================================================================================================================
- subroutine driver_seaice(itimestep,configs,diag_physics,sfc_input,its,ite)
+ subroutine driver_seaice(itimestep,configs,mesh,diag_physics,sfc_input,its,ite)
 !=================================================================================================================
 
  use mpas_pool_routines,only: mpas_pool_get_array,mpas_pool_get_config,mpas_pool_type
 !input arguments:
+ type(mpas_pool_type),intent(in):: mesh
  type(mpas_pool_type),intent(in):: configs
  integer,intent(in):: its,ite
  integer,intent(in):: itimestep
@@ -646,6 +659,8 @@
  call mpas_pool_get_array(sfc_input,'isice' ,isice )
  call mpas_pool_get_array(sfc_input,'iswater',iswater)
  call mpas_pool_get_array(diag_physics,'spp_lsm_loc', spp_lsm_loc)
+ call mpas_pool_get_array(mesh,'indexToCellID',globalCells)
+
 
 !copy MPAS arrays to local arrays:
  call seaice_from_MPAS(configs,diag_physics,sfc_input,its,ite)
@@ -686,6 +701,7 @@
                  )
     case("sf_ruc")
 
+       call mpas_log_write('--- call subroutine ruc_ice:')
        call ruc_ice( spp_lsm       = spp_lsm_loc   , iswater      = iswater     , chklowq   = chklowq_p,   &
                     rhosnf         = rhosnf_p      , precipfr     = precipfr_p  , chs       = chs_p,       &
                     qsg            = qsg_p         , qvg          = qvg_p       , dew       = dew_p,       &
@@ -695,7 +711,7 @@
                     qcg            = qcg_p         , flqc         = flqc_p      , flhc      = flhc_p,      &
                     dt             = dt_pbl        , ktau         = itimestep   , nsl       = num_soils,   &
                     rainbl         = rainbl_p      , snow         = snow_p      , snowh     = snowh_p,     &
-                    snowc          = snowc_p       , frzfrac      = sr_p        , frpcpn    = .true.,      &
+                    snowc          = snowc_p       , frzfrac      = sr_p        , frpcpn    = frpcpn_ruc,  &
                     z3d            = dz_p          , p8w          = pres2_hyd_p , t3d       = t_p,         &
                     qv3d           = qv_p          , qc3d         = qc_p        , rho3d     = rho_p,       &
                     glw            = glw_p         , gsw          = gsw_p       , emiss     = sfc_emiss_p, &
@@ -708,7 +724,8 @@
                     tso            = tslb_p        , soilt        = tsk_p       , hfx       = hfx_p,       &
                     qfx            = qfx_p         , lh           = lh_p        , sfcrunoff = sfcrunoff_p, &
                     grdflx         = grdflx_p      , acsnow       = acsnow_p    , sfcevp    = sfcevp_p,    &
-                    myjpbl         =.false.        , mminlu       = mminlu      , globalCells=globalCells, &
+                    myjpbl         = myjpbl        , mminlu       = mminlu      , globalCells=globalCells, &
+                    field_sf       = field_sf      , pattern_spp_lsm            = pattern_spp_lsm,         &
                     ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde ,  &
                     ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme ,  &
                     its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte    &
