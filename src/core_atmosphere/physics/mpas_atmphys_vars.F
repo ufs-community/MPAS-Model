@@ -276,7 +276,8 @@
     snowncv_p,        &!
     graupelnc_p,      &!
     graupelncv_p,     &!
-    sr_p
+    sr_p,             &!
+    nwfa2d_p
 
 !... added for the thompson and wsm6 cloud microphysics:
  integer:: & 

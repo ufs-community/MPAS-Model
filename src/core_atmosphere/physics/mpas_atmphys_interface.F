@@ -491,7 +491,7 @@
  integer,pointer:: index_nwfa,index_nifa
  integer,pointer:: index_ni,index_nr,index_nc,index_ns,index_ng,index_nh,index_nccn
  integer,pointer:: index_volg,index_volh
- real(kind=RKIND),dimension(:),pointer    :: nt_c,mu_c
+ real(kind=RKIND),dimension(:),pointer    :: nt_c,mu_c,nwfa_emissions
  real(kind=RKIND),dimension(:,:),pointer  :: zgrid,w
  real(kind=RKIND),dimension(:,:),pointer  :: zz,exner,pressure_b
  real(kind=RKIND),dimension(:,:),pointer  :: rho_zz,theta_m,pressure_p
@@ -519,6 +519,7 @@
 
  call mpas_pool_get_array(diag_physics,'nt_c'    ,nt_c    )
  call mpas_pool_get_array(diag_physics,'mu_c'    ,mu_c    )
+ call mpas_pool_get_array(diag_physics,'nwfa_emissions' ,nwfa_emissions )
  call mpas_pool_get_array(diag_physics,'rainprod',rainprod)
  call mpas_pool_get_array(diag_physics,'evapprod',evapprod)
  call mpas_pool_get_array(diag_physics,'refl10cm',refl10cm)
@@ -611,11 +612,14 @@
           nr   => scalars(index_nr,:,:)
           nwfa   => scalars(index_nwfa,:,:)
           nifa   => scalars(index_nifa,:,:)
-
+          ng   => scalars(index_ng,:,:)
+          volg => scalars(index_volg,:,:)
+          
           do j = jts,jte
           do i = its,ite
              muc_p(i,j) = mu_c(i)
              ntc_p(i,j) = nt_c(i)
+             nwfa2d_p(i,j) = nwfa_emissions(i)
           enddo
           enddo
           do j = jts, jte
@@ -629,6 +633,8 @@
              rainprod_p(i,k,j) = rainprod(k,i)
              evapprod_p(i,k,j) = evapprod(k,i)
              refl10cm_p(i,k,j) = refl10cm(k,i)
+             volg_p(i,k,j) = volg(k,i)
+             ng_p(i,k,j) = ng(k,i)
           enddo
           enddo
           enddo
@@ -874,7 +880,9 @@
           nr   => scalars(index_nr,:,:)
           nwfa   => scalars(index_nwfa,:,:)
           nifa   => scalars(index_nifa,:,:)
-
+          ng   => scalars(index_ng,:,:)
+          volg => scalars(index_volg,:,:)
+          
           do j = jts, jte
           do k = kts, kte
           do i = its, ite
@@ -883,6 +891,8 @@
              nr(k,i) = nr_p(i,k,j)
              nwfa(k,i) = nwfa_p(i,k,j)
              nifa(k,i) = nifa_p(i,k,j)
+             ng(k,i) = ng_p(i,k,j)
+             volg(k,i) = volg_p(i,k,j)
              rainprod(k,i) = rainprod_p(i,k,j)
              evapprod(k,i) = evapprod_p(i,k,j)
              refl10cm(k,i) = refl10cm_p(i,k,j)

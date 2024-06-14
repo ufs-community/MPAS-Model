@@ -160,6 +160,7 @@
           !number concentrations:
           if(.not.allocated(ntc_p)) allocate(ntc_p(ims:ime,jms:jme))
           if(.not.allocated(muc_p)) allocate(muc_p(ims:ime,jms:jme))
+          if(.not.allocated(nwfa2d_p) ) allocate(nwfa2d_p(ims:ime,jms:jme))
           if(.not.allocated(ni_p) ) allocate(ni_p(ims:ime,kms:kme,jms:jme))
           if(.not.allocated(nc_p) ) allocate(nc_p(ims:ime,kms:kme,jms:jme))
           if(.not.allocated(nr_p) ) allocate(nr_p(ims:ime,kms:kme,jms:jme))
@@ -170,6 +171,8 @@
           if(.not.allocated(evapprod_p)) allocate(evapprod_p(ims:ime,kms:kme,jms:jme))
           if(.not.allocated(refl10cm_p)) allocate(refl10cm_p(ims:ime,kms:kme,jms:jme))
           if(.not.allocated(refl10cm_1km_p)) allocate(refl10cm_1km_p(ims:ime,jms:jme))
+          if(.not.allocated(ng_p) ) allocate(ng_p(ims:ime,kms:kme,jms:jme))
+          if(.not.allocated(volg_p)) allocate(volg_p(ims:ime,kms:kme,jms:jme))
           
        case("mp_nssl2m")
           if(.not.allocated(qh_p)        ) allocate(qh_p(ims:ime,kms:kme,jms:jme))
@@ -267,6 +270,7 @@
           !number concentrations:
           if(allocated(ntc_p)) deallocate(ntc_p)
           if(allocated(muc_p)) deallocate(muc_p)
+          if(allocated(nwfa2d_p) ) deallocate(nwfa2d_p )
           if(allocated(ni_p) ) deallocate(ni_p )
           if(allocated(nc_p) ) deallocate(nc_p )
           if(allocated(nr_p) ) deallocate(nr_p )
@@ -277,6 +281,8 @@
           if(allocated(evapprod_p)) deallocate(evapprod_p)
           if(allocated(refl10cm_p)) deallocate(refl10cm_p)
           if(allocated(refl10cm_1km_p)) deallocate(refl10cm_1km_p)
+          if(allocated(ng_p) ) deallocate(ng_p )
+          if(allocated(volg_p) ) deallocate(volg_p )
           
        case("mp_nssl2m")
           if(allocated(qh_p)         ) deallocate(qh_p         )
@@ -354,7 +360,11 @@
 
      case("mp_thompson")
         call thompson_init(l_mp_tables, thompson_hail_aware, thompson_aerosol_aware)
-        call init_thompson_clouddroplets_forMPAS(mesh,sfc_input,diag,diag_physics,state,configs)
+        if (thompson_aerosol_aware) then
+           call init_thompson_nwfa_emissions(mesh,state,diag_physics)
+        else
+           call init_thompson_clouddroplets_forMPAS(mesh,sfc_input,diag_physics)
+        endif
 
      case("mp_wsm6")
         call mp_wsm6_init(den0=rho_a,denr=rho_r,dens=rho_s,cl=cliq,cpv=cpv, &
@@ -467,7 +477,9 @@
                   th        = th_p        , qv         = qv_p         , qc         = qc_p         , &
                   qr        = qr_p        , qi         = qi_p         , qs         = qs_p         , &
                   qg        = qg_p        , ni         = ni_p         , nr         = nr_p         , &
+                  ng        = ng_p        , qb         = volg_p       ,                             &
                   nc        = nc_p        , nwfa       = nwfa_p       , nifa       = nifa_p       , &
+                  nwfa2d    = nwfa2d_p                                                            , &
                   pii       = pi_p        , p          = pres_p       , dz         = dz_p         , &
                   w         = w_p         , dt_in      = dt_microp    , itimestep  = itimestep    , &
                   rainnc    = rainnc_p    , rainncv    = rainncv_p    , snownc     = snownc_p     , &
