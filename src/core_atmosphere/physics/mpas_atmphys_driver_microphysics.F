@@ -356,7 +356,11 @@
 
      case("mp_thompson")
         call thompson_init(l_mp_tables, thompson_hail_aware, thompson_aerosol_aware)
-        call init_thompson_clouddroplets_forMPAS(mesh,sfc_input,diag,diag_physics,state,configs)
+        if (thompson_aerosol_aware) then
+           call init_thompson_nwfa_emissions(mesh,state,diag_physics)
+        else
+           call init_thompson_clouddroplets_forMPAS(mesh,sfc_input,diag_physics)
+        endif
 
      case("mp_wsm6")
         call mp_wsm6_init(den0=rho_a,denr=rho_r,dens=rho_s,cl=cliq,cpv=cpv, &
