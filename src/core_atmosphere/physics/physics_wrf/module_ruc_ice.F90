@@ -472,7 +472,7 @@ contains
    prcpcufr = 0.
 
 
-   call mpas_log_write('--- in ruc_ice before main loop:')
+   !call mpas_log_write('--- in ruc_ice before main loop:')
    do j=jts,jte
       do i=its,ite
         if(seaice(i,j).gt.0.5)then
