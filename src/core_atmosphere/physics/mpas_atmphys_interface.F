@@ -611,7 +611,9 @@
           nr   => scalars(index_nr,:,:)
           nwfa   => scalars(index_nwfa,:,:)
           nifa   => scalars(index_nifa,:,:)
-
+          ng   => scalars(index_ng,:,:)
+          volg => scalars(index_volg,:,:)
+          
           do j = jts,jte
           do i = its,ite
              muc_p(i,j) = mu_c(i)
@@ -629,6 +631,8 @@
              rainprod_p(i,k,j) = rainprod(k,i)
              evapprod_p(i,k,j) = evapprod(k,i)
              refl10cm_p(i,k,j) = refl10cm(k,i)
+             volg_p(i,k,j) = volg(k,i)
+             ng_p(i,k,j) = ng(k,i)
           enddo
           enddo
           enddo
@@ -874,7 +878,9 @@
           nr   => scalars(index_nr,:,:)
           nwfa   => scalars(index_nwfa,:,:)
           nifa   => scalars(index_nifa,:,:)
-
+          ng   => scalars(index_ng,:,:)
+          volg => scalars(index_volg,:,:)
+          
           do j = jts, jte
           do k = kts, kte
           do i = its, ite
@@ -883,6 +889,8 @@
              nr(k,i) = nr_p(i,k,j)
              nwfa(k,i) = nwfa_p(i,k,j)
              nifa(k,i) = nifa_p(i,k,j)
+             ng(k,i) = ng_p(i,k,j)
+             volg(k,i) = volg_p(i,k,j)
              rainprod(k,i) = rainprod_p(i,k,j)
              evapprod(k,i) = evapprod_p(i,k,j)
              refl10cm(k,i) = refl10cm_p(i,k,j)

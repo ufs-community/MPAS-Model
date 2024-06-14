@@ -170,6 +170,8 @@
           if(.not.allocated(evapprod_p)) allocate(evapprod_p(ims:ime,kms:kme,jms:jme))
           if(.not.allocated(refl10cm_p)) allocate(refl10cm_p(ims:ime,kms:kme,jms:jme))
           if(.not.allocated(refl10cm_1km_p)) allocate(refl10cm_1km_p(ims:ime,jms:jme))
+          if(.not.allocated(ng_p) ) allocate(ng_p(ims:ime,kms:kme,jms:jme))
+          if(.not.allocated(volg_p)) allocate(volg_p(ims:ime,kms:kme,jms:jme))
           
        case("mp_nssl2m")
           if(.not.allocated(qh_p)        ) allocate(qh_p(ims:ime,kms:kme,jms:jme))
@@ -277,6 +279,8 @@
           if(allocated(evapprod_p)) deallocate(evapprod_p)
           if(allocated(refl10cm_p)) deallocate(refl10cm_p)
           if(allocated(refl10cm_1km_p)) deallocate(refl10cm_1km_p)
+          if(allocated(ng_p) ) deallocate(ng_p )
+          if(allocated(volg_p) ) deallocate(volg_p )
           
        case("mp_nssl2m")
           if(allocated(qh_p)         ) deallocate(qh_p         )
@@ -467,6 +471,7 @@
                   th        = th_p        , qv         = qv_p         , qc         = qc_p         , &
                   qr        = qr_p        , qi         = qi_p         , qs         = qs_p         , &
                   qg        = qg_p        , ni         = ni_p         , nr         = nr_p         , &
+                  ng        = ng_p        , qb         = volg_p       ,                             &
                   nc        = nc_p        , nwfa       = nwfa_p       , nifa       = nifa_p       , &
                   pii       = pi_p        , p          = pres_p       , dz         = dz_p         , &
                   w         = w_p         , dt_in      = dt_microp    , itimestep  = itimestep    , &
