@@ -457,6 +457,9 @@
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
     pattern_spp_pbl    !stochastic forcing for the MYMM PBL and surface layer schemes.
 
+ real(kind=RKIND),dimension(:,:,:),allocatable:: &
+    pattern_spp_lsm, field_sf    !stochastic forcing for the RUC LSM
+
 !... MYJ PBL scheme (module_bl_myjpbl.F):
  real(kind=RKIND),dimension(:,:),allocatable:: &
     chlowq_p,         &!

@@ -283,7 +283,7 @@
        call allocate_seaice(config_lsm_scheme)
 !$OMP PARALLEL DO
        do thread=1,nThreads
-          call driver_seaice(itimestep,block%configs,diag_physics,sfc_input, &
+          call driver_seaice(itimestep,block%configs,mesh,diag_physics,sfc_input, &
                              cellSolveThreadStart(thread),cellSolveThreadEnd(thread))
        enddo
 !$OMP END PARALLEL DO

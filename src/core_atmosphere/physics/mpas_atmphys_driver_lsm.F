@@ -216,11 +216,13 @@
     if(.not.allocated(sfcevp_p)   )  allocate(sfcevp_p(ims:ime,jms:jme)    )
     if(.not.allocated(lakemask_p) )  allocate(lakemask_p(ims:ime,jms:jme)  )
     if(.not.allocated(mavail_p)   )  allocate(mavail_p(ims:ime,jms:jme)    )
-    if(.not.allocated(smfr3d_p)   )  allocate(smfr3d_p(ims:ime,1:num_soils,jms:jme)       )
-    if(.not.allocated(landusef_p) )  allocate(landusef_p(ims:ime,1:num_landcat,jms:jme)   )
-    if(.not.allocated(soilf_p)    )  allocate(soilf_p(ims:ime,1:num_soilcat,jms:jme)      )
-    if(.not.allocated(keepfr3d_p) )  allocate(keepfr3d_p(ims:ime,1:num_soils,jms:jme)     )
+    if(.not.allocated(smfr3d_p)   )  allocate(smfr3d_p(ims:ime,1:num_soils,jms:jme))
+    if(.not.allocated(landusef_p) )  allocate(landusef_p(ims:ime,1:num_landcat,jms:jme))
+    if(.not.allocated(soilf_p)    )  allocate(soilf_p(ims:ime,1:num_soilcat,jms:jme))
+    if(.not.allocated(keepfr3d_p) )  allocate(keepfr3d_p(ims:ime,1:num_soils,jms:jme))
     if(.not.allocated(cqs_p)      )  allocate(cqs_p(ims:ime,jms:jme)       )
+    if(.not.allocated(field_sf)   )  allocate(field_sf(ims:ime,1:num_soils,jms:jme))
+    if(.not.allocated(pattern_spp_lsm))  allocate(pattern_spp_lsm(ims:ime,1:num_soils,jms:jme))
  endif
 
  end subroutine allocate_lsm
@@ -330,6 +332,9 @@
     if(allocated(smfr3d_p)    ) deallocate(smfr3d_p    )
     if(allocated(keepfr3d_p)  ) deallocate(keepfr3d_p  )
     if(allocated(cqs_p)       ) deallocate(cqs_p       )
+    if(allocated(field_sf)    ) deallocate(field_sf    )
+    if(allocated(pattern_spp_lsm)) deallocate(pattern_spp_lsm )
+
  endif
 
  end subroutine deallocate_lsm
@@ -480,6 +485,8 @@
     if(config_lsm_scheme .eq. "sf_ruc") then
         smfr3d_p(i,n,j) = smfr3d(n,i)
         keepfr3d_p(i,n,j) = keepfr3d(n,i)
+        pattern_spp_lsm(i,n,j) = 0._RKIND
+        field_sf(i,n,j) = 0._RKIND
     endif
  enddo
  enddo
@@ -983,6 +990,7 @@
        call mpas_timer_start('sf_ruc')
        myjpbl = .false.
 
+       call mpas_log_write('--- enter subroutine ruc_land:')
        call ruc_land( spp_lsm      = spp_lsm_loc   , lakemodel    = lakemodel   , lakemask  = lakemask_p,  &
                     rhosnf         = rhosnf_p      , precipfr     = precipfr_p  , mosaic_lu = mosaic_lu,   &
                     qsg            = qsg_p         , qvg          = qvg_p       , dew       = dew_p,       &
@@ -1013,11 +1021,13 @@
                     udrunoff       = udrunoff_p    , grdflx       = grdflx_p    , acsnow    = acsnow_p,    &
                     snom           = acsnom_p      , shdmin       = shdmin_p    , rdlai2d   = rdlai2d,     &
                     mosaic_soil    = mosaic_soil   , zs           = zs_p        , smfr3d    = smfr3d_p,    &
-                    shdmax         = shdmax_p      , globalCells  = globalCells,                           &
+                    field_sf       = field_sf      , pattern_spp_lsm =          pattern_spp_lsm,           &
+                    shdmax         = shdmax_p      , globalCells     =          globalCells,               &
                     ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde ,  &
                     ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme ,  &
                     its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte    &
                           )
+                  call mpas_log_write('--- end subroutine ruc_land:')
 
        call mpas_timer_stop('sf_ruc')
     case default
