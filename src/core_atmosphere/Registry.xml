@@ -2505,6 +2505,10 @@
                      description="time-step grid-scale precipitation of graupel"
                      packages="mp_thompson_in;mp_wsm6_in;mp_nssl2m_in;lsm_ruc_in"/>
 
+		<var name="nwfa_emissions" type="real" dimensions="nCells Time" units="nb kg^{-1} s^{-1}"
+                     description="Surface emissions of water-friendly aerosols for microphysics"
+                     packages="mp_thompson_in"/>
+
                 <var name="rainnc" type="real" dimensions="nCells Time" units="mm"
                      description="accumulated total grid-scale precipitation"
                      packages="mp_kessler_in;mp_thompson_in;mp_wsm6_in;mp_nssl2m_in"/>

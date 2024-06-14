@@ -491,7 +491,7 @@
  integer,pointer:: index_nwfa,index_nifa
  integer,pointer:: index_ni,index_nr,index_nc,index_ns,index_ng,index_nh,index_nccn
  integer,pointer:: index_volg,index_volh
- real(kind=RKIND),dimension(:),pointer    :: nt_c,mu_c
+ real(kind=RKIND),dimension(:),pointer    :: nt_c,mu_c,nwfa_emissions
  real(kind=RKIND),dimension(:,:),pointer  :: zgrid,w
  real(kind=RKIND),dimension(:,:),pointer  :: zz,exner,pressure_b
  real(kind=RKIND),dimension(:,:),pointer  :: rho_zz,theta_m,pressure_p
@@ -519,6 +519,7 @@
 
  call mpas_pool_get_array(diag_physics,'nt_c'    ,nt_c    )
  call mpas_pool_get_array(diag_physics,'mu_c'    ,mu_c    )
+ call mpas_pool_get_array(diag_physics,'nwfa_emissions' ,nwfa_emissions )
  call mpas_pool_get_array(diag_physics,'rainprod',rainprod)
  call mpas_pool_get_array(diag_physics,'evapprod',evapprod)
  call mpas_pool_get_array(diag_physics,'refl10cm',refl10cm)
@@ -618,6 +619,7 @@
           do i = its,ite
              muc_p(i,j) = mu_c(i)
              ntc_p(i,j) = nt_c(i)
+             nwfa2d_p(i,j) = nwfa_emissions(i)
           enddo
           enddo
           do j = jts, jte
