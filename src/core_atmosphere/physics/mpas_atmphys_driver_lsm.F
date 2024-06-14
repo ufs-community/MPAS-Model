@@ -990,7 +990,7 @@
        call mpas_timer_start('sf_ruc')
        myjpbl = .false.
 
-       call mpas_log_write('--- enter subroutine ruc_land:')
+       call mpas_log_write('--- call subroutine ruc_land:')
        call ruc_land( spp_lsm      = spp_lsm_loc   , lakemodel    = lakemodel   , lakemask  = lakemask_p,  &
                     rhosnf         = rhosnf_p      , precipfr     = precipfr_p  , mosaic_lu = mosaic_lu,   &
                     qsg            = qsg_p         , qvg          = qvg_p       , dew       = dew_p,       &
@@ -1029,7 +1029,6 @@
                           )
                   call mpas_log_write('--- end subroutine ruc_land:')
 
-       call mpas_timer_stop('sf_ruc')
     case default
 
  end select lsm_select
