@@ -1092,7 +1092,9 @@
                         <!-- End isobaric diagnostics defined in diagnostics/Registry_isobaric.xml -->
 
 #ifdef DO_PHYSICS
-			<var name="olrtoa"/>
+                        <var name="olrtoa"/>
+                        <var name="swdnb"/>
+                        <var name="swupt"/>
 			<var name="rainc"/>
 			<var name="rainnc"/>
 			<var name="refl10cm"/>
@@ -1105,6 +1107,13 @@
 			<var name="q2"/>
 			<var name="t2m"/>
 			<var name="th2m"/>
+                        <var name="cldfrac_bl"/>
+                        <var name="qc_bl"/>
+                        <var name="qi_bl"/>
+                        <var name="maxmf"/>
+                        <var name="maxwidth"/>
+                        <var name="ztop_plume"/>
+                        <var name="hpbl"/>
 #endif
 
                         <!-- Begin convective diagnostics defined in diagnostics/Registry_convective.xml -->

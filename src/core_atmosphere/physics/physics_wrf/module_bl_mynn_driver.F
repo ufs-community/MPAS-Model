@@ -27,7 +27,7 @@
                   do_restart        , do_DAcycling      , icloud_bl          , delt               , &
                   dx                , xland             , ps                 , ts                 , &
                   qsfc              , ust               , ch                 , hfx                , &
-                  qfx               , rmol              , wspd               , znt                , &
+                  qfx               , wspd              , znt                ,                      &
                   uoce              , voce              , dz                 , u                  , &
                   v                 , w                 , th                 , tt                 , &
                   p                 , exner             , rho                , qv                 , &
@@ -121,7 +121,6 @@
     ch,                 &!
     hfx,                &!
     qfx,                &!
-    rmol,               &!
     wspd,               &!
     uoce,               &!
     voce,               &!
@@ -269,7 +268,7 @@
 
  real(kind=kind_phys):: &
     dx_v,xland_v,ps_v,ts_v,qsfc_v,ust_v,ch_v,hfx_v,qfx_v, &
-    rmol_v,wspd_v,uoce_v,voce_v,znt_v
+    wspd_v,uoce_v,voce_v,znt_v
 
  real(kind=kind_phys),dimension(kts:kte):: &
     dz_v,u_v,v_v,th_v,tt_v,p_v,exner_v,rho_v,qv_v,rthraten_v
@@ -356,7 +355,6 @@
     ch_v    = ch(i,j)
     hfx_v   = hfx(i,j)
     qfx_v   = qfx(i,j)
-    rmol_v  = rmol(i,j)
     wspd_v  = wspd(i,j)
     uoce_v  = uoce(i,j)
     voce_v  = voce(i,j)
@@ -518,8 +516,8 @@
             tk1             = tt_v          , xland       = xland_v       , ts          = ts_v         , &
             qsfc            = qsfc_v        , ps          = ps_v          , ust         = ust_v        , &
             ch              = ch_v          , hfx         = hfx_v         , qfx         = qfx_v        , &
-            rmol            = rmol_v        , wspd        = wspd_v        , uoce        = uoce_v       , &
-            voce            = voce_v        , qke1        = qke_v         , qke_adv1    = qkeadv_v     , &
+            wspd            = wspd_v        , uoce        = uoce_v        , voce        = voce_v       , &
+            qke1            = qke_v         , qke_adv1    = qkeadv_v      ,                              &
             tsq1            = tsq_v         , qsq1        = qsq_v         , cov1        = cov_v        , &
             rthraten1       = rthraten_v    , du1         = rublten_v     , dv1         = rvblten_v    , &
             dth1            = rthblten_v    , dqv1        = rqvblten_v    , dqc1        = rqcblten_v   , &
