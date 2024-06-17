@@ -176,7 +176,7 @@
           if (thompson_hail_aware) then
              if(.not.allocated(ng_p) ) allocate(ng_p(ims:ime,kms:kme,jms:jme))
              if(.not.allocated(volg_p)) allocate(volg_p(ims:ime,kms:kme,jms:jme))
-
+          endif
        case("mp_nssl2m")
           if(.not.allocated(qh_p)        ) allocate(qh_p(ims:ime,kms:kme,jms:jme))
           !number concentrations:
@@ -289,7 +289,7 @@
           if (thompson_hail_aware) then
              if(allocated(ng_p) ) deallocate(ng_p )
              if(allocated(volg_p) ) deallocate(volg_p )
-          
+          endif
        case("mp_nssl2m")
           if(allocated(qh_p)         ) deallocate(qh_p         )
           !number concentrations:
