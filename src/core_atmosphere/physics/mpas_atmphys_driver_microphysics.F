@@ -107,7 +107,7 @@
 !local pointers:
  character(len=StrKIND),pointer:: microp_scheme
  character(len=StrKIND),pointer:: nssl_moments
- character(len=StrKIND),pointer:: thompson_hail_aware
+ logical,pointer:: thompson_hail_aware
 
 !-----------------------------------------------------------------------------------------------------------------
 
@@ -221,7 +221,7 @@
 !local pointers:
  character(len=StrKIND),pointer:: microp_scheme
  character(len=StrKIND),pointer:: nssl_moments
- character(len=StrKIND),pointer:: thompson_hail_aware
+ logical,pointer:: thompson_hail_aware
 
 !-----------------------------------------------------------------------------------------------------------------
 
