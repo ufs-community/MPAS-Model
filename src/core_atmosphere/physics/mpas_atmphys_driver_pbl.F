@@ -146,7 +146,6 @@
        if(.not.allocated(dx_p)          ) allocate(dx_p(ims:ime,jms:jme)                )
        if(.not.allocated(ch_p)          ) allocate(ch_p(ims:ime,jms:jme)                )
        if(.not.allocated(qsfc_p)        ) allocate(qsfc_p(ims:ime,jms:jme)              )
-       if(.not.allocated(rmol_p)        ) allocate(rmol_p(ims:ime,jms:jme)              )
        if(.not.allocated(tsk_p)         ) allocate(tsk_p(ims:ime,jms:jme)               )
        if(.not.allocated(maxwidthbl_p)  ) allocate(maxwidthbl_p(ims:ime,jms:jme)        )
        if(.not.allocated(maxmfbl_p)     ) allocate(maxmfbl_p(ims:ime,jms:jme)           )
@@ -255,7 +254,6 @@
        if(allocated(dx_p)          ) deallocate(dx_p          )
        if(allocated(ch_p)          ) deallocate(ch_p          )
        if(allocated(qsfc_p)        ) deallocate(qsfc_p        )
-       if(allocated(rmol_p)        ) deallocate(rmol_p        )
        if(allocated(tsk_p)         ) deallocate(tsk_p         )
        if(allocated(maxwidthbl_p)  ) deallocate(maxwidthbl_p  )
        if(allocated(maxmfbl_p)     ) deallocate(maxmfbl_p     )
@@ -351,7 +349,7 @@
 !local pointers for MYNN scheme:
  real(kind=RKIND),pointer:: len_disp
  real(kind=RKIND),dimension(:),pointer  :: meshDensity
- real(kind=RKIND),dimension(:),pointer  :: ch,qsfc,qcg,rmol,skintemp
+ real(kind=RKIND),dimension(:),pointer  :: ch,qsfc,qcg,skintemp
  real(kind=RKIND),dimension(:,:),pointer:: cov,qke,qsq,tsq,sh3d,sm3d,tke_pbl,qke_adv,el_pbl
   real(kind=RKIND),dimension(:,:),pointer:: cldfrac_bl,qc_bl,qi_bl
  real(kind=RKIND),dimension(:,:),pointer:: edmf_a,edmf_ent,edmf_qc,edmf_qt,edmf_thl,edmf_w
@@ -446,7 +444,6 @@
        call mpas_pool_get_array(sfc_input,'skintemp',skintemp)
        call mpas_pool_get_array(diag_physics,'ch'        ,ch        )
        call mpas_pool_get_array(diag_physics,'qsfc'      ,qsfc      )
-       call mpas_pool_get_array(diag_physics,'rmol'      ,rmol      )
        call mpas_pool_get_array(diag_physics,'el_pbl'    ,el_pbl    )
        call mpas_pool_get_array(diag_physics,'cov'       ,cov       )
        call mpas_pool_get_array(diag_physics,'qke'       ,qke       )
@@ -475,7 +472,6 @@
           dx_p(i,j)   = len_disp / meshDensity(i)**0.25
           ch_p(i,j)   = ch(i)
           qsfc_p(i,j) = qsfc(i)
-          rmol_p(i,j) = rmol(i)
           tsk_p(i,j)  = skintemp(i)
        enddo
        enddo
@@ -521,7 +517,7 @@
           kbl_plume_p(i,j)  = 0
           maxwidthbl_p(i,j) = 0._RKIND
           maxmfbl_p(i,j)    = 0._RKIND
-          zbl_plume_p(i,j)  = 0
+          zbl_plume_p(i,j)  = 0._RKIND
        enddo
        enddo
 
@@ -622,9 +618,10 @@
 
 !local pointers for YSU scheme:
  real(kind=RKIND),dimension(:,:),pointer:: exch_h
-
-!local pointers for MYNN scheme:
  real(kind=RKIND),dimension(:),pointer  :: delta,wstar
+      
+!local pointers for MYNN scheme:
+ real(kind=RKIND),dimension(:),pointer  :: maxmf,maxwidth,ztop_plume
  real(kind=RKIND),dimension(:,:),pointer:: cov,qke,qsq,tsq,sh3d,sm3d,tke_pbl,qke_adv,el_pbl,dqke,qbuoy, &
                                            qdiss,qshear,qwt
  real(kind=RKIND),dimension(:,:),pointer:: cldfrac_bl,qc_bl,qi_bl
@@ -695,13 +692,15 @@
        enddo
 
     case("bl_mynn")
+       call mpas_pool_get_array(diag_physics,'maxmf'     ,maxmf     )
+       call mpas_pool_get_array(diag_physics,'maxwidth'  ,maxwidth  )
+       call mpas_pool_get_array(diag_physics,'ztop_plume',ztop_plume)
        call mpas_pool_get_array(diag_physics,'el_pbl'    ,el_pbl    )
        call mpas_pool_get_array(diag_physics,'cov'       ,cov       )
        call mpas_pool_get_array(diag_physics,'qke'       ,qke       )
        call mpas_pool_get_array(diag_physics,'qke_adv'   ,qke_adv   )
        call mpas_pool_get_array(diag_physics,'qsq'       ,qsq       )
        call mpas_pool_get_array(diag_physics,'tsq'       ,tsq       )
-       call mpas_pool_get_array(diag_physics,'tke_pbl'   ,tke_pbl   )
        call mpas_pool_get_array(diag_physics,'sh3d'      ,sh3d      )
        call mpas_pool_get_array(diag_physics,'sm3d'      ,sm3d      )
        call mpas_pool_get_array(diag_physics,'dqke'      ,dqke      )
@@ -727,6 +726,14 @@
        call mpas_pool_get_array(tend_physics,'rniblten'  ,rniblten  )
 
        do j = jts,jte
+       do i = its,ite
+          maxmf(i)      = maxmfbl_p(i,j)
+          maxwidth(i)   = maxwidthbl_p(i,j)
+          ztop_plume(i) = zbl_plume_p(i,j)
+       enddo
+       enddo
+
+       do j = jts,jte
        do k = kts,kte
        do i = its,ite
           el_pbl(k,i)     = elpbl_p(i,k,j)
@@ -736,7 +743,6 @@
           tsq(k,i)        = tsq_p(i,k,j)
           sh3d(k,i)       = sh3d_p(i,k,j)
           sm3d(k,i)       = sm3d_p(i,k,j)
-          tke_pbl(k,i)    = tkepbl_p(i,k,j)
           qke_adv(k,i)    = qkeadv_p(i,k,j)
           cldfrac_bl(k,i) = cldfrabl_p(i,k,j)
           qc_bl(k,i)      = qcbl_p(i,k,j)
@@ -1003,7 +1009,7 @@
                   icloud_bl  = icloud_bl    , delt     = dt_pbl     , dx          = dx_p             , &
                   xland      = xland_p      , ps       = psfc_p     , ts          = tsk_p            , &
                   qsfc       = qsfc_p       , ust      = ust_p      , ch          = ch_p             , &
-                  hfx        = hfx_p        , qfx      = qfx_p      , rmol        = rmol_p           , &
+                  hfx        = hfx_p        , qfx      = qfx_p      ,                                  &
                   wspd       = wspd_p       , znt      = znt_p      , uoce        = uoce_p           , &
                   voce       = voce_p       , dz       = dz_p       , u           = u_p              , &
                   v          = v_p          , w        = w_p        , th          = th_p             , &
