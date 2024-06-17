@@ -107,11 +107,13 @@
 !local pointers:
  character(len=StrKIND),pointer:: microp_scheme
  character(len=StrKIND),pointer:: nssl_moments
+ character(len=StrKIND),pointer:: thompson_hail_aware
 
 !-----------------------------------------------------------------------------------------------------------------
 
  call mpas_pool_get_config(configs,'config_microp_scheme',microp_scheme)
  call mpas_pool_get_config(configs,'config_nssl_moments',nssl_moments)
+ call mpas_pool_get_config(configs,'config_thompson_hail_aware',thompson_hail_aware)
 
 !sounding variables:
  if(.not.allocated(rho_p)    ) allocate(rho_p(ims:ime,kms:kme,jms:jme) )
@@ -171,9 +173,10 @@
           if(.not.allocated(evapprod_p)) allocate(evapprod_p(ims:ime,kms:kme,jms:jme))
           if(.not.allocated(refl10cm_p)) allocate(refl10cm_p(ims:ime,kms:kme,jms:jme))
           if(.not.allocated(refl10cm_1km_p)) allocate(refl10cm_1km_p(ims:ime,jms:jme))
-          if(.not.allocated(ng_p) ) allocate(ng_p(ims:ime,kms:kme,jms:jme))
-          if(.not.allocated(volg_p)) allocate(volg_p(ims:ime,kms:kme,jms:jme))
-          
+          if (thompson_hail_aware) then
+             if(.not.allocated(ng_p) ) allocate(ng_p(ims:ime,kms:kme,jms:jme))
+             if(.not.allocated(volg_p)) allocate(volg_p(ims:ime,kms:kme,jms:jme))
+
        case("mp_nssl2m")
           if(.not.allocated(qh_p)        ) allocate(qh_p(ims:ime,kms:kme,jms:jme))
           !number concentrations:
@@ -218,11 +221,13 @@
 !local pointers:
  character(len=StrKIND),pointer:: microp_scheme
  character(len=StrKIND),pointer:: nssl_moments
+ character(len=StrKIND),pointer:: thompson_hail_aware
 
 !-----------------------------------------------------------------------------------------------------------------
 
  call mpas_pool_get_config(configs,'config_microp_scheme',microp_scheme)
  call mpas_pool_get_config(configs,'config_nssl_moments',nssl_moments)
+ call mpas_pool_get_config(configs,'config_thompson_hail_aware',thompson_hail_aware)
 
 !sounding variables:
  if(allocated(rho_p)     ) deallocate(rho_p     )
@@ -281,8 +286,9 @@
           if(allocated(evapprod_p)) deallocate(evapprod_p)
           if(allocated(refl10cm_p)) deallocate(refl10cm_p)
           if(allocated(refl10cm_1km_p)) deallocate(refl10cm_1km_p)
-          if(allocated(ng_p) ) deallocate(ng_p )
-          if(allocated(volg_p) ) deallocate(volg_p )
+          if (thompson_hail_aware) then
+             if(allocated(ng_p) ) deallocate(ng_p )
+             if(allocated(volg_p) ) deallocate(volg_p )
           
        case("mp_nssl2m")
           if(allocated(qh_p)         ) deallocate(qh_p         )
@@ -473,7 +479,8 @@
        do while (istep .le. n_microp)
 
        if (thompson_aerosol_aware) then
-          call thompson_3d_to_1d_driver( &
+          if (thompson_hail_aware) then
+             call thompson_3d_to_1d_driver( &
                   th        = th_p        , qv         = qv_p         , qc         = qc_p         , &
                   qr        = qr_p        , qi         = qi_p         , qs         = qs_p         , &
                   qg        = qg_p        , ni         = ni_p         , nr         = nr_p         , &
@@ -492,6 +499,26 @@
                   ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme           , &
                   its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte             &
                   )
+          else
+             call thompson_3d_to_1d_driver( &
+                  th        = th_p        , qv         = qv_p         , qc         = qc_p         , &
+                  qr        = qr_p        , qi         = qi_p         , qs         = qs_p         , &
+                  qg        = qg_p        , ni         = ni_p         , nr         = nr_p         , &
+                  nc        = nc_p        , nwfa       = nwfa_p       , nifa       = nifa_p       , &
+                  nwfa2d    = nwfa2d_p                                                            , &
+                  pii       = pi_p        , p          = pres_p       , dz         = dz_p         , &
+                  w         = w_p         , dt_in      = dt_microp    , itimestep  = itimestep    , &
+                  rainnc    = rainnc_p    , rainncv    = rainncv_p    , snownc     = snownc_p     , &
+                  snowncv   = snowncv_p   , graupelnc  = graupelnc_p  , graupelncv = graupelncv_p , &
+                  sr        = sr_p        , rainprod   = rainprod_p   , evapprod   = evapprod_p   , &
+                  re_cloud  = recloud_p   , re_ice     = reice_p      , re_snow    = resnow_p     , &
+                  has_reqc  = has_reqc    , has_reqi   = has_reqi     , has_reqs   = has_reqs     , &
+                  ntc       = ntc_p       , muc        = muc_p        , refl_10cm  = refl10cm_p   , &
+                  ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde           , &
+                  ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme           , &
+                  its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte             &
+                  )
+          endif
        else
           call thompson_3d_to_1d_driver( &
                   th        = th_p        , qv         = qv_p         , qc         = qc_p         , &
