@@ -60,10 +60,10 @@ core_microphysics: core_physics_init core_physics_mmm
 	(cd TEMPO; cp ./drivers/mpas/module_mp_thompson.F90 .; $(MAKE) all COREDEF="$(COREDEF)")
 
 core_GSL_gwd_physics: core_physics_init
-        (cd GSL_gwd_physics; $(MAKE) all)
+	(cd GSL_gwd_physics; $(MAKE) all)
 
 core_physics_wrf: core_physics_init core_physics_mmm core_GSL_gwd_physics
-        (cd physics_wrf; $(MAKE) all COREDEF="$(COREDEF)")
+	(cd physics_wrf; $(MAKE) all COREDEF="$(COREDEF)")
 
 core_physics_init: $(OBJS_init)
 	ar -ru libphys.a $(OBJS_init)
