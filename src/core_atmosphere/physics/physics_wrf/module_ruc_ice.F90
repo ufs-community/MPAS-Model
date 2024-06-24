@@ -20,9 +20,7 @@ use mpas_log, only: mpas_log_write
 #define fatal_error(m) call wrf_error_fatal( m )
 #endif
 
-use module_ruc_land, only: vilka, qsn
-
-   integer :: targetcell=16932
+   integer :: targetcell= 0 !45415
 
 
 contains
@@ -409,14 +407,20 @@ contains
             tsnav(i,j) =0.5*(soilt(i,j)+tso(i,1,j))-273.15
             patmb=p8w(i,kms,j)*1.e-2
             qsg  (i,j) = qsn(soilt(i,j),tbq)/patmb
-            qvg  (i,j) = qsg(i,j)
             if((qcg(i,j) < 0.) .or. (qcg(i,j) > 0.1)) then
-               qcg  (i,j) = qc3d(i,1,j)
+               qcg  (i,j) = 0.
                if ( wrf_at_debug_level(iceruc_dbg_lvl) ) then
                    write ( message , fmt='(a,3f8.3,2i6)' ) &
-                   'qvg is initialized in ruc_ice ', qvg(i,j),qsg(i,j),i,j
+                   'qcg is initialized in ruc_ice ', qvg(i,j),qsg(i,j),i,j
                endif
             endif ! qcg
+            if((qvg(i,j) .le. 0.) .or. (qvg(i,j) .gt.0.1)) then
+               qvg  (i,j) = qsg(i,j)
+               if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
+                  write ( message , fmt='(a,3f8.3,2i6)' ) &
+                  'qvg is initialized in rucice ', qvg(i,j)
+               endif
+            endif
             qsfc(i,j) = qvg(i,j)/(1.+qvg(i,j))
             smelt(i,j) = 0.
             snom (i,j) = 0.
@@ -447,11 +451,6 @@ contains
             smf   (i,j) = 0.
             evapl (i,j) = 0.
             prcpl (i,j) = 0.
-          else
-             if ( wrf_at_debug_level(iceruc_dbg_lvl) ) then
-                print *,'leave ruc_ice, globalcells(i)=',globalcells(i)
-             endif
-             return
           endif ! sea ice point
          enddo
       enddo
@@ -477,20 +476,16 @@ contains
       do i=its,ite
         if(seaice(i,j).gt.0.5)then
 !--- sea ice point
-         if ( wrf_at_debug_level(iceruc_dbg_lvl) ) then
-         !if (globalcells(i)==targetcell) then
-            print *,' sea ice point: i,globalcells(i),xice(i,j)', i,globalcells(i),xice(i,j)
-            print *,' in lsmruc ','ims,ime,jms,jme,its,ite,jts,jte,nzs', &
-                                   ims,ime,jms,jme,its,ite,jts,jte,nzs
-            print *,' soilt,qvg,p8w',soilt(i,j),qvg(i,j),p8w(i,1,j)
-            print *, 'lsmruc, i,j,xland, qfx,hfx from sfclay',i,j,xland(i,j), &
-                                         qfx(i,j),hfx(i,j)
-            print *, ' gsw, glw =',gsw(i,j),glw(i,j)
-            print *, 'soilt, tso start of time step =',soilt(i,j),(tso(i,k,j),k=1,nsl)
-            print *, ' i,j=, after sfclay chs,flhc ',i,j,chs(i,j),flhc(i,j)
-            print *, 'lsmruc, ivgtyp,isltyp,alb = ', ivgtyp(i,j),isltyp(i,j),alb(i,j),i,j
-            print *, 'lsmruc  i,j,dt,rainbl =',i,j,dt,rainbl(i,j)
-            print *, 'xland ---->, ivgtype,isoiltyp,i,j',xland(i,j),ivgtyp(i,j),isltyp(i,j),i,j
+         !if ( wrf_at_debug_level(iceruc_dbg_lvl) ) then
+         if (globalcells(i)==targetcell) then
+            print *,' sea ice point: ktau,globalcells(i),xice(i,j)', ktau,globalcells(i),xice(i,j)
+            print *,' soilt,p8w',soilt(i,j),p8w(i,1,j)
+            print *,' xland, qfx,hfx,chs,flhc from sfclay',xland(i,j),qfx(i,j),hfx(i,j),chs(i,j),flhc(i,j)
+            print *,' gsw, glw =',gsw(i,j),glw(i,j)
+            print *,' soilt, tso start of time step =',soilt(i,j),(tso(i,k,j),k=1,nsl)
+            print *,' ivgtyp,isltyp,alb = ', ivgtyp(i,j),isltyp(i,j),alb(i,j)
+            print *,' dt,rainbl =',dt,rainbl(i,j)
+            print *,' snow, snowh, snowc =',snow(i,j), snowh(i,j), snowc(i,j)
          endif
 
          iland     = isice
@@ -650,10 +645,11 @@ contains
                tso1d  (k) = tso(i,k,j)
             enddo
 
-            if ( wrf_at_debug_level(iceruc_dbg_lvl) ) then
+            !if ( wrf_at_debug_level(iceruc_dbg_lvl) ) then
+            if (globalcells(i)==targetcell) then
                print *,'globalcells(i)= ',globalcells(i),i
-               print *,'ice, i,j,tso1d,patm,tabs,qvatm,qcatm,rho',  &
-                             i,j,tso1d,patm,tabs,qvatm,qcatm,rho
+               print *,'ice, tso1d,patm,tabs,qvatm,qcatm,rho,qvg',  &
+                             tso1d,patm,tabs,qvatm,qcatm,rho,qvg(i,j)
                print *,'conflx =',conflx
             endif
 
@@ -943,8 +939,9 @@ contains
 !-----------------------------------------------------------------
    integer,   parameter      ::      ilsnow=99
 
-   if ( wrf_at_debug_level(iceruc_dbg_lvl) ) then
-      print *,' in icetmp',i,j,nzs,nddzs,snwe,rhosn,snom,smelt,ts1d
+   !if ( wrf_at_debug_level(iceruc_dbg_lvl) ) then
+   if (globalcellid==targetcell) then
+      print *,' in icetmp nzs,nddzs,snwe,rhosn,snom,ts1d ',nzs,nddzs,snwe,rhosn,snom,ts1d
    endif
 
    !-- snow fraction options
@@ -1010,7 +1007,8 @@ contains
    albice = min(alb_snow_free,max(alb_snow_free - 0.05,   &
                 alb_snow_free - 0.1*(tice(1)+10.)/10. ))
 
-   if ( wrf_at_debug_level(iceruc_dbg_lvl) ) then
+   !if ( wrf_at_debug_level(iceruc_dbg_lvl) ) then
+   if (globalcellid==targetcell) then
       print *,'alb_snow_free',alb_snow_free
       print *,'gsw,gswnew,glw,soilt,emiss,alb,albice,snwe',&
                gsw,gswnew,glw,soilt,emiss,alb,albice,snwe
@@ -1089,7 +1087,8 @@ contains
          snow_mosaic = 0.
       endif
 
-      if ( wrf_at_debug_level(iceruc_dbg_lvl) ) then
+      !if ( wrf_at_debug_level(iceruc_dbg_lvl) ) then
+      if (globalcellid==targetcell) then
          print *,'snhei_crit,snowfrac,snhei_crit_newsn,snowfracnewsn', &
                   snhei_crit,snowfrac,snhei_crit_newsn,snowfracnewsn
       endif
@@ -1106,8 +1105,9 @@ contains
            (emissn - emiss_snowfree) * snowfrac), emissn))
       endif
 
-      if ( wrf_at_debug_level(iceruc_dbg_lvl) ) then
-         print *,'snow on ice snow_mosaic,albsn,emiss',i,j,albsn,emiss,snow_mosaic
+      !if ( wrf_at_debug_level(iceruc_dbg_lvl) ) then
+      if (globalcellid==targetcell) then
+         print *,'snow on ice snow_mosaic,albsn,emiss',albsn,emiss,snow_mosaic
       endif
 !-- alb dependence on snow temperature. when snow temperature is
 !-- below critical value of -10c - no change to albedo.
@@ -1131,7 +1131,8 @@ contains
          upflux  = t3 *soilt
          xinet   = emiss_snowfree*(glw-upflux)
          rnet    = gswnew + xinet
-         if ( wrf_at_debug_level(iceruc_dbg_lvl) ) then
+         !if ( wrf_at_debug_level(iceruc_dbg_lvl) ) then
+         if (globalcellid==targetcell) then
             print *,'fractional snow - snowfrac=',snowfrac
             print *,'snowfrac<1 gswin,gswnew -',gswin,gswnew,'soilt, rnet',soilt,rnet
          endif
@@ -1150,7 +1151,7 @@ contains
 !--- input variables
               i,j,iland,isoil,delt,ktau,conflx,nzs,nddzs,         &
               prcpms,rainf,patm,qvatm,qcatm,glw,gswnew,           &
-              0.98,rnet,qkms,tkms,rho,myj,                        &
+              0.98,rnet,qkms,tkms,rho,myj,globalcellid,           &
 !--- sea ice parameters
               tice,rhosice,capice,thdifice,                       &
               zsmain,zshalf,dtdzs,dtdzs2,tbq,                     &
@@ -1167,7 +1168,8 @@ contains
          runoff2 = 0.
          infiltr=0.
 
-         if ( wrf_at_debug_level(iceruc_dbg_lvl) ) then
+         !if ( wrf_at_debug_level(iceruc_dbg_lvl) ) then
+         if (globalcellid==targetcell) then
             print *,'incoming gswnew snowfrac<1 -',gswnew
          endif
 
@@ -1181,7 +1183,8 @@ contains
       upflux  = t3 *soilt
       xinet   = emiss*(glw-upflux)
       rnet    = gswnew + xinet
-      if ( wrf_at_debug_level(iceruc_dbg_lvl) ) then
+      !if ( wrf_at_debug_level(iceruc_dbg_lvl) ) then
+      if (globalcellid==targetcell) then
          print *,'rnet=',rnet
          print *,'snow - i,j,newsn,snwe,snhei,gsw,gswnew,glw,upflux,alb',&
                          i,j,newsn,snwe,snhei,gsw,gswnew,glw,upflux,alb
@@ -1199,7 +1202,7 @@ contains
            iland,prcpms,rainf,newsn,snhei,snwe,snfr,           &
            rhosn,patm,qvatm,qcatm,                             &
            glw,gswnew,emiss,rnet,                              &
-           qkms,tkms,rho,myj,                                  &
+           qkms,tkms,rho,myj,globalcellid,                     &
 !--- sea ice parameters
            alb,znt,                                            &
            tice,rhosice,capice,thdifice,                       &
@@ -1275,9 +1278,6 @@ contains
       t3      = stbolt*soilt*soilt*soilt
       upflux  = t3 *soilt
       xinet   = emiss*(glw-upflux)
-      if ( wrf_at_debug_level(iceruc_dbg_lvl) ) then
-         print *,'no snow on the ground gswnew -',gswnew,'rnet=',rnet
-      endif
 
 !--- if current ice albedo is not the same as from the previous time step, then
 !--- update gsw, alb and rnet for surface energy budget
@@ -1285,11 +1285,17 @@ contains
       alb=albice
       rnet    = gswnew + xinet
 
+      !if ( wrf_at_debug_level(iceruc_dbg_lvl) ) then
+      if (globalcellid==targetcell) then
+         print *,'globalcellid =',globalcellid
+         print *,'no snow on the ground gswnew -',gswnew,'rnet=',rnet
+      endif
+
       call sice(                                               &
 !--- input variables
            i,j,iland,isoil,delt,ktau,conflx,nzs,nddzs,         &
            prcpms,rainf,patm,qvatm,qcatm,glw,gswnew,           &
-           emiss,rnet,qkms,tkms,rho,myj,                       &
+           emiss,rnet,qkms,tkms,rho,myj,globalcellid,          &
 !--- sea ice parameters
            tice,rhosice,capice,thdifice,                       &
            zsmain,zshalf,dtdzs,dtdzs2,tbq,                     &
@@ -1316,7 +1322,7 @@ contains
 !--- input variables
               i,j,iland,isoil,delt,ktau,conflx,nzs,nddzs,       &
               prcpms,rainf,patm,qvatm,qcatm,glw,gsw,            &
-              emiss,rnet,qkms,tkms,rho,myj,                     &
+              emiss,rnet,qkms,tkms,rho,myj,globalcellid,        &
 !--- sea ice parameters
               tice,rhosice,capice,thdifice,                     &
               zsmain,zshalf,dtdzs,dtdzs2,tbq,                   &
@@ -1338,7 +1344,7 @@ contains
 !--- input variables
 
    integer,  intent(in   )   ::  ktau,nzs, nddzs
-   integer,  intent(in   )   ::  i,j,iland,isoil
+   integer,  intent(in   )   ::  i,j,iland,isoil,globalcellid
    real,     intent(in   )   ::  delt,conflx
    logical,  intent(in   )   ::  myj
 !--- 3-d atmospheric variables
@@ -1475,7 +1481,8 @@ contains
    aa1=aa
    pp=patm*1.e3
    aa1=aa1/pp
-   if ( wrf_at_debug_level(iceruc_dbg_lvl) ) then
+   !if ( wrf_at_debug_level(iceruc_dbg_lvl) ) then
+   if (globalcellid==targetcell) then
        print *,' vilka-seaice1'
        print *,'d10,tabs,r21,tn,qvatm,fkq',                          &
                 d10,tabs,r21,tn,qvatm,fkq
@@ -1568,7 +1575,8 @@ contains
    endif
 
    fltot=rnet-xls*eeta-hft-s-x-icemelt
-   if ( wrf_at_debug_level(iceruc_dbg_lvl) ) then
+   !if ( wrf_at_debug_level(iceruc_dbg_lvl) ) then
+   if (globalcellid==targetcell) then
       print *,'sice - fltot,rnet,hft,qfx,s,snoh,x=', &
                       fltot,rnet,hft,xls*eeta,s,icemelt,x
    endif
@@ -1583,7 +1591,7 @@ contains
               iland,prcpms,rainf,newsnow,snhei,snwe,snowfrac,   &
               rhosn,patm,qvatm,qcatm,                           &
               glw,gsw,emiss,rnet,                               &
-              qkms,tkms,rho,myj,                                &
+              qkms,tkms,rho,myj,globalcellid,                   &
 !--- sea ice parameters
               alb,znt,                                          &
               tice,rhosice,capice,thdifice,                     &
@@ -1608,7 +1616,7 @@ contains
 
    integer,  intent(in   )   ::  ktau,nzs     ,                  &
                                  nddzs                         !nddzs=2*(nzs-2)
-   integer,  intent(in   )   ::  i,j,isoil
+   integer,  intent(in   )   ::  i,j,isoil,globalcellid
 
    real,     intent(in   )   ::  delt,conflx,prcpms            , &
                                  rainf,newsnow,rhonewsn,         &
@@ -1968,7 +1976,8 @@ contains
 !18apr08  - the iteration start point
  212 continue
    bb=bb-snoh/tdenom
-   if ( wrf_at_debug_level(iceruc_dbg_lvl) ) then
+   !if ( wrf_at_debug_level(iceruc_dbg_lvl) ) then
+   if (globalcellid==targetcell) then
       print *,'vilka-snow on seaice'
       print *,'tn,aa1,bb,pp,fkq,r210',                          &
                tn,aa1,bb,pp,fkq,r210
@@ -1984,7 +1993,8 @@ contains
 !--- soilt - skin temperature
    soilt=ts1
 
-   if ( wrf_at_debug_level(iceruc_dbg_lvl) ) then
+   !if ( wrf_at_debug_level(iceruc_dbg_lvl) ) then
+   if (globalcellid==targetcell) then
       print *,' after vilka-snow on seaice'
       print *,' ts1,qs1: ', ts1,qs1
    endif
@@ -2072,7 +2082,8 @@ contains
                -soh-x+rainf*cvw*prcpms*                               &
                (max(273.15,tabs)-soiltfrac)
 
-      if ( wrf_at_debug_level(iceruc_dbg_lvl) ) then
+      !if ( wrf_at_debug_level(iceruc_dbg_lvl) ) then
+      if (globalcellid==targetcell) then
          print *,'snowseaice melt i,j,snoh,rnet,qfx,hfx,soh,x',       &
                                   i,j,snoh,rnet,qfx,hfx,soh,x
          print *,'rainf*cvw*prcpms*(max(273.15,tabs)-soiltfrac)',     &
@@ -2104,7 +2115,8 @@ contains
  
       snoh=snohgnew
 
-      if ( wrf_at_debug_level(iceruc_dbg_lvl) ) then
+      !if ( wrf_at_debug_level(iceruc_dbg_lvl) ) then
+      if (globalcellid==targetcell) then
          print*,'soiltfrac,soilt,snohgnew,snodif=', &
              i,j,soiltfrac,soilt,snohgnew,snodif
          print *,'snoh,snodif',snoh,snodif
@@ -2121,7 +2133,8 @@ contains
 !18apr08 rsm is part of melted water that stays in snow as liquid
       smelt=amax1(0.,smelt-rsm/delt)
 
-      if ( wrf_at_debug_level(iceruc_dbg_lvl) ) then
+      !if ( wrf_at_debug_level(iceruc_dbg_lvl) ) then
+      if (globalcellid==targetcell) then
          print *,'4-smelt i,j,smelt,rsm,snwepr,rsmfrac', &
                           i,j,smelt,rsm,snwepr,rsmfrac
       endif
@@ -2149,7 +2162,8 @@ contains
 
    if(smelt > 0..and.  rsm > 0.) then
       if(snwe.le.rsm) then
-         if ( wrf_at_debug_level(iceruc_dbg_lvl) ) then
+         !if ( wrf_at_debug_level(iceruc_dbg_lvl) ) then
+         if (globalcellid==targetcell) then
             print *,'seaice snwe<rsm snwe,rsm,smelt*delt,epot*ras*delt,beta', &
                             snwe,rsm,smelt*delt,epot*ras*delt,beta
          endif
@@ -2174,7 +2188,8 @@ contains
 ! 4 nov 07                    +vegfrac*cst
    snheiprint=snweprint*1.e3 / rhosn
 
-   if ( wrf_at_debug_level(iceruc_dbg_lvl) ) then
+   !if ( wrf_at_debug_level(iceruc_dbg_lvl) ) then
+   if (globalcellid==targetcell) then
       print *, 'snweprint : ',snweprint
       print *, 'd9sn,soilt,tsob : ', d9sn,soilt,tsob
    endif
@@ -2263,7 +2278,8 @@ contains
 !
    x= (r21+d9sn*r22sn)*(soilt-tnold) +                            &
        xlvm*r210*(qsg-qgold)
-   if ( wrf_at_debug_level(iceruc_dbg_lvl) ) then
+   !if ( wrf_at_debug_level(iceruc_dbg_lvl) ) then
+   if (globalcellid==targetcell) then
       print *,'snowseaice storage ',i,j,x
       print *,'r21,d9sn,r22sn,soiltfrac,tnold,qsg,qgold,snprim',  &
                r21,d9sn,r22sn,soiltfrac,tnold,qsg,qgold,snprim
@@ -2279,7 +2295,8 @@ contains
    endif
 
    fltot=rnet-hft-xlvm*eeta-s-snoh-x-icemelt
-   if ( wrf_at_debug_level(iceruc_dbg_lvl) ) then
+   !if ( wrf_at_debug_level(iceruc_dbg_lvl) ) then
+   if (globalcellid==targetcell) then
       print *,'i,j,snhei,qsg,soilt,soilt1,tso,tabs,qvatm', &
                i,j,snhei,qsg,soilt,soilt1,tso,tabs,qvatm
       print *,'snowseaice - fltot,rnet,hft,qfx,s,snoh,icemelt,snodif,x,soilt=' &
@@ -2295,6 +2312,70 @@ contains
 
 !------------------------------------------------------------------------
    end subroutine snowseaice
+!------------------------------------------------------------------------
+
+   subroutine vilka(tn,d1,d2,pp,qs,ts,tt,nstep,ii,j,iland,isoil)
+!--------------------------------------------------------------
+!--- vilka finds the solution of energy budget at the surface
+!--- using table t,qs computed from clausius-klapeiron
+!--------------------------------------------------------------
+   real,     dimension(1:5001),  intent(in   )   ::  tt
+   real,     intent(in  )   ::  tn,d1,d2,pp
+   integer,  intent(in  )   ::  nstep,ii,j,iland,isoil
+
+   real,     intent(out  )  ::  qs, ts
+
+   real    ::  f1,t1,t2,rn
+   integer ::  i,i1
+
+       i=(tn-1.7315e2)/.05+1
+       t1=173.1+float(i)*.05
+       f1=t1+d1*tt(i)-d2
+       i1=i-f1/(.05+d1*(tt(i+1)-tt(i)))
+       i=i1
+       if(i.gt.5000.or.i.lt.1) goto 1
+  10   i1=i
+       t1=173.1+float(i)*.05
+       f1=t1+d1*tt(i)-d2
+       rn=f1/(.05+d1*(tt(i+1)-tt(i)))
+       i=i-int(rn)
+       if(i.gt.5000.or.i.lt.1) goto 1
+       if(i1.ne.i) goto 10
+       ts=t1-.05*rn
+       qs=(tt(i)+(tt(i)-tt(i+1))*rn)/pp
+       goto 20
+!   1   print *,'crash in surface energy budget - stop'
+!   1   print *,'     avost in vilka     table index= ',i
+    1   print *,d1,d2,pp,tt(i),tt(i+1)
+    !   write(0,*),'i,j=',ii,j,'lu_index = ',iland, 'psfc[hpa] = ',pp, 'tsfc = ',tn,&
+    !             'tti=',tt(i),'ttip1=',tt(i+1),'d1=',d1
+       fatal_error ('  crash in surface energy budget  ' )
+   20  continue
+!----------------------------------------------------------------
+   end subroutine vilka
+!----------------------------------------------------------------   
+
+   function qsn(tn,t)
+!----------------------------------------------------------------   
+   real,     dimension(1:5001),  intent(in   )   ::  t
+   real,     intent(in  )   ::  tn
+
+   real    qsn, r,r1,r2
+   integer i
+
+       r=(tn-173.15)/.05+1.
+       i=int(r)
+       if(i.ge.1) goto 10
+       i=1
+       r=1.
+  10   if(i.le.5000) goto 20
+       i=5000
+       r=5001.
+  20   r1=t(i)
+       r2=r-i
+       qsn=(t(i+1)-r1)*r2 + r1
+!-----------------------------------------------------------------------
+   end function qsn
 !------------------------------------------------------------------------
 
 end module module_ruc_ice
