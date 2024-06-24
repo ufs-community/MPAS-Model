@@ -449,10 +449,11 @@
  end subroutine seaice_from_MPAS
 
 !=================================================================================================================
- subroutine seaice_to_MPAS(configs,diag_physics,sfc_input,its,ite)
+ subroutine seaice_to_MPAS(configs,mesh,diag_physics,sfc_input,its,ite)
 !=================================================================================================================
 
 !input and inout arguments:
+ type(mpas_pool_type),intent(in):: mesh
  type(mpas_pool_type),intent(in):: configs
  type(mpas_pool_type),intent(inout):: diag_physics
  type(mpas_pool_type),intent(inout):: sfc_input
@@ -471,6 +472,8 @@
 ! RUC lsm variables
  real(kind=RKIND),dimension(:),pointer  :: dew,qcg,qsg,qvg,snowfallac,soilt1,tsnav
 
+ integer,pointer:: globalCells(:)
+
 !local variables and arrays:
  integer:: i,j,n
 
@@ -478,6 +481,7 @@
 !call mpas_log_write('--- enter subroutine seaice_to_MPAS:')
 
  call mpas_pool_get_config(configs,'config_lsm_scheme',lsm_scheme)
+ call mpas_pool_get_array(mesh,'indexToCellID',globalCells)
 
  if (lsm_scheme .eq. "sf_ruc") then
    call mpas_pool_get_array(diag_physics,'dew'       ,dew       )
@@ -558,6 +562,7 @@
                      chs2    = chs2_p , cqs2    = cqs2_p  , t2   = t2m_p       , th2  = th2m_p , q2  = q2_p  , &
                      psfc2d  = psfc_p , t3d  = t_p , qv3d  = qv_p , dz  = dz_p , cp   = cp     , R_d = R_d   , &
                      rovcp   = rcp    , rho3d   = rho_p   , p3d  = pres2_hyd_p , snow = snow_p , cqs = cqs_p,  &
+                     globalCells = globalCells,                                                                &
                      ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde ,                   &
                      ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme ,                   &
                      its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte                     &
@@ -736,7 +741,7 @@
  end select lsm_select
 
 !copy local arrays to MPAS grid:
- call seaice_to_MPAS(configs,diag_physics,sfc_input,its,ite)
+ call seaice_to_MPAS(configs,mesh,diag_physics,sfc_input,its,ite)
 
 !call mpas_log_write('--- end subroutine driver_seaice:')
 
