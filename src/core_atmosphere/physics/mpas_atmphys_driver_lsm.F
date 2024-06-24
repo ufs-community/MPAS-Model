@@ -1027,7 +1027,7 @@
                     ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme ,  &
                     its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte    &
                           )
-                  call mpas_log_write('--- end subroutine ruc_land:')
+       call mpas_timer_stop('sf_ruc')
 
     case default
 
