@@ -486,6 +486,7 @@
 !local pointers:
  character(len=StrKIND),pointer:: microp_scheme
  character(len=StrKIND),pointer:: nssl_moments
+ logical,pointer:: thompson_hail_aware
  integer,pointer:: index_qv,index_qc,index_qr,index_qi,index_qs,index_qg,index_qh
  integer,pointer:: index_zrw,index_zgw,index_zhw
  integer,pointer:: index_nwfa,index_nifa
@@ -509,6 +510,7 @@
 
  call mpas_pool_get_config(configs,'config_microp_scheme',microp_scheme)
  call mpas_pool_get_config(configs,'config_nssl_moments',nssl_moments)
+ call mpas_pool_get_config(configs,'config_thompson_hail_aware',thompson_hail_aware)
 
  call mpas_pool_get_array(mesh,'zgrid',zgrid)
  call mpas_pool_get_array(mesh,'zz'   ,zz   )
@@ -612,9 +614,10 @@
           nr   => scalars(index_nr,:,:)
           nwfa   => scalars(index_nwfa,:,:)
           nifa   => scalars(index_nifa,:,:)
-          ng   => scalars(index_ng,:,:)
-          volg => scalars(index_volg,:,:)
-          
+          if (thompson_hail_aware) then
+             ng   => scalars(index_ng,:,:)
+             volg => scalars(index_volg,:,:)
+          endif
           do j = jts,jte
           do i = its,ite
              muc_p(i,j) = mu_c(i)
@@ -633,8 +636,10 @@
              rainprod_p(i,k,j) = rainprod(k,i)
              evapprod_p(i,k,j) = evapprod(k,i)
              refl10cm_p(i,k,j) = refl10cm(k,i)
-             volg_p(i,k,j) = volg(k,i)
-             ng_p(i,k,j) = ng(k,i)
+             if (thompson_hail_aware) then
+                volg_p(i,k,j) = volg(k,i)
+                ng_p(i,k,j) = ng(k,i)
+             endif
           enddo
           enddo
           enddo
@@ -717,6 +722,7 @@
 !local pointers:
  character(len=StrKIND),pointer:: microp_scheme
  character(len=StrKIND),pointer:: nssl_moments
+ logical,pointer:: thompson_hail_aware
  integer,pointer:: index_qv,index_qc,index_qr,index_qi,index_qs,index_qg,index_qh
  integer,pointer:: index_zrw,index_zgw,index_zhw
  integer,pointer:: index_ni,index_nc,index_nr,index_ns,index_ng,index_nh,index_nccn
@@ -743,6 +749,7 @@
 
  call mpas_pool_get_config(configs,'config_microp_scheme',microp_scheme)
  call mpas_pool_get_config(configs,'config_nssl_moments',nssl_moments)
+ call mpas_pool_get_config(configs,'config_thompson_hail_aware',thompson_hail_aware)
 
  call mpas_pool_get_array(mesh,'zz'   ,zz   )
  call mpas_pool_get_array(mesh,'zgrid',zgrid)
@@ -880,9 +887,10 @@
           nr   => scalars(index_nr,:,:)
           nwfa   => scalars(index_nwfa,:,:)
           nifa   => scalars(index_nifa,:,:)
-          ng   => scalars(index_ng,:,:)
-          volg => scalars(index_volg,:,:)
-          
+          if (thompson_hail_aware) then
+             ng   => scalars(index_ng,:,:)
+             volg => scalars(index_volg,:,:)
+          endif
           do j = jts, jte
           do k = kts, kte
           do i = its, ite
@@ -891,8 +899,10 @@
              nr(k,i) = nr_p(i,k,j)
              nwfa(k,i) = nwfa_p(i,k,j)
              nifa(k,i) = nifa_p(i,k,j)
-             ng(k,i) = ng_p(i,k,j)
-             volg(k,i) = volg_p(i,k,j)
+             if (thompson_hail_aware) then
+                ng(k,i) = ng_p(i,k,j)
+                volg(k,i) = volg_p(i,k,j)
+             endif
              rainprod(k,i) = rainprod_p(i,k,j)
              evapprod(k,i) = evapprod_p(i,k,j)
              refl10cm(k,i) = refl10cm_p(i,k,j)
