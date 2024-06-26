@@ -220,7 +220,6 @@
     if(.not.allocated(landusef_p) )  allocate(landusef_p(ims:ime,1:num_landcat,jms:jme))
     if(.not.allocated(soilf_p)    )  allocate(soilf_p(ims:ime,1:num_soilcat,jms:jme))
     if(.not.allocated(keepfr3d_p) )  allocate(keepfr3d_p(ims:ime,1:num_soils,jms:jme))
-    if(.not.allocated(cqs_p)      )  allocate(cqs_p(ims:ime,jms:jme)       )
     if(.not.allocated(field_sf)   )  allocate(field_sf(ims:ime,1:num_soils,jms:jme))
     if(.not.allocated(pattern_spp_lsm))  allocate(pattern_spp_lsm(ims:ime,1:num_soils,jms:jme))
  endif
@@ -331,7 +330,6 @@
     if(allocated(soilf_p)     ) deallocate(soilf_p     )
     if(allocated(smfr3d_p)    ) deallocate(smfr3d_p    )
     if(allocated(keepfr3d_p)  ) deallocate(keepfr3d_p  )
-    if(allocated(cqs_p)       ) deallocate(cqs_p       )
     if(allocated(field_sf)    ) deallocate(field_sf    )
     if(allocated(pattern_spp_lsm)) deallocate(pattern_spp_lsm )
 
@@ -597,7 +595,6 @@
         sfcevp_p(i,j) = sfcevp(i)
         lakemask_p(i,j) = 0
         mavail_p(i,j) = mavail(i)
-        cqs_p(i,j) = flqc(i) / (mavail(i) * rho_p(i,kts,j))
     endif
  enddo
  enddo
