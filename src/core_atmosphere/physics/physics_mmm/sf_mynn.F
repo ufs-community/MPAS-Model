@@ -130,7 +130,7 @@
   subroutine sf_mynn_run(                                &
                      u1d,v1d,t1d,qv1d,p1d,dz8w1d,rho1d,  &
                      u1d2,v1d2,dz2w1d,cp,g,rovcp,r,xlv,  &
-                     psfcpa,chs,chs2,cqs2,cpm,pblh,rmol, &
+                     psfcpa,chs,chs2,cqs,cqs2,cpm,pblh,rmol,&
                      znt,ust,mavail,zol,mol,regime,psim, &
                      psih,xland,hfx,qfx,tsk,u10,v10,th2, &
                      t2,q2,flhc,flqc,snowh,qgh,qsfc,lh,  &
@@ -207,6 +207,7 @@
                                                          cpm, &
                                                         chs2, &
                                                         cqs2, &
+                                                         cqs, &
                                                          chs, &
                                                           ch, &
                                                         flhc, &
@@ -819,6 +820,7 @@
        lh(i)   = 0.                                                             
        chs(i)  = 0.                                                             
        ch(i)   = 0.                                                             
+       cqs(i)  = 0.                                                             
        chs2(i) = 0.                                                              
        cqs2(i) = 0.                                                              
        if(present(ck)  .and. present(cd) .and. &
@@ -873,6 +875,7 @@
       ch(i)=flhc(i)/( cpm(i)*rho1d(i) )
 
       !these are used for 2-m diagnostics only
+      cqs(i) =ust(i)*karman/psiq
       cqs2(i)=ust(i)*karman/psiq2
       chs2(i)=ust(i)*karman/psit2
 
