@@ -2,12 +2,12 @@
 !
 module module_sf_sfcdiags_ruclsm
 
-       integer :: targetcell= 81442 !99975 !81442 !107619
+       integer :: targetcell= 99975 !99975 !81442 !107619
 
 contains
 
    subroutine sfcdiags_ruclsm(hfx,qfx,tsk,qsfc,cqs,cqs2,chs,chs2,t2,th2,q2,  &
-                     t3d,qv3d,dz,rho3d,p3d,psfc2d,snow,                      &
+                     t3d,qv3d,dz,rho3d,p3d,psfc2d,                           &
                      cp,r_d,rovcp,globalcells,                               &
                      ids,ide, jds,jde, kds,kde,                              &
                      ims,ime, jms,jme, kms,kme,                              &        
@@ -22,7 +22,6 @@ contains
       real,     dimension( ims:ime, jms:jme )                    , &
                 intent(in)                  ::                hfx, &
                                                               qfx, &
-                                                             snow, &
                                                               tsk, &
                                                              qsfc
       real,     dimension( ims:ime, jms:jme )                    , &
@@ -93,10 +92,12 @@ contains
           qsfcmr = qsfc(i,j)/(1.-qsfc(i,j))
 
           if (globalcells(i)==targetcell) then          
+            print *,' globalcells(i) =',globalcells(i)
+            print *,'cqs,cqs2',cqs(i,j),cqs2(i,j)
             print *,'qsfc,qsfcmr,qsfcprox,qlev1',qsfc(i,j),qsfcmr,qsfcprox,qlev1
             print *,'(qsfcprox-qsfcmr)/qsfcmr =', (qsfcprox-qsfcmr)/qsfcmr
           endif
-
+ 
           if ( flux ) then
             if(cqs2(I,J).lt.1.E-5) then
             ! - under very stable conditions use first level for 2-m mixing ratio
@@ -111,9 +112,9 @@ contains
           endif  ! flux
 
           if (globalcells(i)==targetcell) then
-              print *,'qsfc,qsfcmr,qsfcprox,q2(i,j),qlev1', &
-                               qsfc(i,j),qsfcmr,qsfcprox,q2(i,j),qlev1
-              print *,'(q2-qlev1)/qlev1 =', (q2(i,j)-qlev1)/qlev1
+             print *,' globalcells(i) =',globalcells(i)
+             print *,'q2(i,j),qlev1', q2(i,j),qlev1
+             print *,'(q2-qlev1)/qlev1 =', (q2(i,j)-qlev1)/qlev1
           endif
 
 ! Alternative logarithmic diagnostics:
@@ -142,8 +143,9 @@ contains
              q2_alt(i,j) = q2(i,j)
           endif
           if (globalcells(i)==targetcell) then
-              print *,'q2(i,j),q2_alt', q2(i,j),q2_alt(i,j)
-              print *,'t2(i,j),t2_alt', t2(i,j),t2_alt(i,j)
+             print *,' globalcells(i) =',globalcells(i)
+             print *,'dq,q2(i,j),q2_alt',dq, q2(i,j),q2_alt(i,j)
+             print *,'dt,t2(i,j),t2_alt',dt, t2(i,j),t2_alt(i,j)
           endif
 
 ! Use alternative diagnostics for stable stratification
@@ -169,8 +171,11 @@ contains
           endif
           q2(i,j) = min(qsat, q2(i,j))
           if (globalcells(i)==targetcell) then
-              print *,'FINAL - qsfc,qsfcmr,qsfcprox,q2(i,j),qlev1', &
-                               qsfc(i,j),qsfcmr,qsfcprox,q2(i,j),qlev1
+             print *,' globalcells(i) =',globalcells(i)
+             print *,'FINAL - qsfc,qsfcmr,q2(i,j),qlev1', &
+                              qsfc(i,j),qsfcmr,qsfcprox,q2(i,j),qlev1
+             print *,'FINAL - tsk,t2(i,j),tlev1', &
+                              tsk(i,j),t2(i,j),t3d(i,1,j)
           endif
 
 
