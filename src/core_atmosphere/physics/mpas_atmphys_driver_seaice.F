@@ -130,8 +130,6 @@
     if(.not.allocated(zs_p)       )  allocate(zs_p(1:num_soils)            )
     if(.not.allocated(tmn_p)      )  allocate(tmn_p(ims:ime,jms:jme)       )
     if(.not.allocated(xland_p)    )  allocate(xland_p(ims:ime,jms:jme)     )
-    if(.not.allocated(field_sf)   )  allocate(field_sf(ims:ime,1:num_soils,jms:jme))
-    if(.not.allocated(pattern_spp_lsm))  allocate(pattern_spp_lsm(ims:ime,1:num_soils,jms:jme))
 
  endif
 
@@ -224,8 +222,6 @@
     if(allocated(zs_p)        ) deallocate(zs_p        )
     if(allocated(tmn_p)       ) deallocate(tmn_p       )
     if(allocated(xland_p)     ) deallocate(xland_p     )
-    if(allocated(field_sf)    ) deallocate(field_sf    )
-    if(allocated(pattern_spp_lsm)) deallocate(pattern_spp_lsm)
 
  endif
 
@@ -371,8 +367,8 @@
        !--- inout variables:
        do n = 1,num_soils
           tslb_p(i,n,j) = tslb(n,i)
-          pattern_spp_lsm(i,n,j) = 0._RKIND
-          field_sf(i,n,j) = 0._RKIND
+          !pattern_spp_lsm(i,n,j) = 0._RKIND
+          !field_sf(i,n,j) = 0._RKIND
        enddo
        z0_p(i,j)        = z0(i)
        snow_p(i,j)      = snow(i)
@@ -756,7 +752,6 @@
                     qfx            = qfx_p         , lh           = lh_p        , sfcrunoff = sfcrunoff_p, &
                     grdflx         = grdflx_p      , acsnow       = acsnow_p    , sfcevp    = sfcevp_p,    &
                     myjpbl         = myjpbl        , mminlu       = mminlu      , globalCells=globalCells, &
-                    field_sf       = field_sf      , pattern_spp_lsm            = pattern_spp_lsm,         &
                     ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde ,  &
                     ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme ,  &
                     its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte    &
