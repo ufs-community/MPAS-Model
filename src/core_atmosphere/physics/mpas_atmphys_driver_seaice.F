@@ -251,7 +251,7 @@
 
  integer,dimension(:),pointer:: isltyp,ivgtyp
 
- real(kind=RKIND),dimension(:),pointer  :: acsnom,acsnow,chs,chs2,chklowq,cqs,cqs2,glw,             &
+ real(kind=RKIND),dimension(:),pointer  :: acsnom,acsnow,cpm,chs,chs2,chklowq,cqs,cqs2,glw,     &
                                            grdflx,gsw,hfx,lh,noahres,potevp,qfx,qgh,qsfc,       &
                                            br,sfc_albedo,sfc_emiss,sfcrunoff,snopcx,sr,z0,znt
   real(kind=RKIND),dimension(:),pointer  :: rhosnf,precipfr,qsg,qvg,dew,soilt1,tsnav,acrunoff,  &
@@ -480,8 +480,9 @@
  character(len=StrKIND),pointer:: microp_scheme, &
                                   lsm_scheme
 
- real(kind=RKIND),dimension(:),pointer:: acsnom,acsnow,chs,chs2,cqs,cqs2,qgh,qsfc,grdflx,hfx, qfx,lh,noahres, &
-                                         potevp,sfc_albedo,sfc_emiss,sfcrunoff,snopcx,z0,znt
+ real(kind=RKIND),dimension(:),pointer:: acsnom,acsnow,cpm,chs,chs2,cqs,cqs2,qgh,qsfc, &
+                                         grdflx,hfx, qfx,lh,noahres,snopcx,z0,znt,     &
+                                         potevp,sfc_albedo,sfc_emiss,sfcrunoff
  real(kind=RKIND),dimension(:),pointer:: snow,snowc,snowh,skintemp,xice
  real(kind=RKIND),dimension(:),pointer:: t2m,th2m,q2
  real(kind=RKIND),dimension(:,:),pointer:: tslb
@@ -513,6 +514,7 @@
  call mpas_pool_get_array(diag_physics,'acsnom'    ,acsnom    )
  call mpas_pool_get_array(diag_physics,'acsnow'    ,acsnow    )
  call mpas_pool_get_array(diag_physics,'chs'       ,chs       )
+ call mpas_pool_get_array(diag_physics,'cpm'       ,cpm       )
  call mpas_pool_get_array(diag_physics,'chs2'      ,chs2      )
  call mpas_pool_get_array(diag_physics,'cqs2'      ,cqs2      )
  call mpas_pool_get_array(diag_physics,'cqs'       ,cqs       )
