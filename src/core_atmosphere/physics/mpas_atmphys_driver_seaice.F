@@ -33,7 +33,7 @@
 !urban physics: MPAS does not plan to run the urban physics option.
  integer,parameter:: sf_urban_physics = 0 !activate urban canopy model (=0: no urban canopy)
 
- integer :: targetcell= 99975 !99975 !81442 !107619
+ integer :: targetcell= 0 !99975 !81442 !107619
 
 !MPAS driver for parameterization of surface processes over seaice points.
 !Laura D. Fowler (laura@ucar.edu) / 2024-03-13.
