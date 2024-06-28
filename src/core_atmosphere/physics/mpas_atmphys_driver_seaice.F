@@ -56,6 +56,7 @@
  if(.not.allocated(br_p)        ) allocate(br_p(ims:ime,jms:jme)        )
  if(.not.allocated(chs_p)       ) allocate(chs_p(ims:ime,jms:jme)       )
  if(.not.allocated(chs2_p)      ) allocate(chs2_p(ims:ime,jms:jme)      )
+ if(.not.allocated(cpm_p)       ) allocate(cpm_p(ims:ime,jms:jme)       )
  if(.not.allocated(chklowq_p)   ) allocate(chklowq_p(ims:ime,jms:jme)   )
  if(.not.allocated(cqs2_p)      ) allocate(cqs2_p(ims:ime,jms:jme)      )
  if(.not.allocated(cqs_p)       ) allocate(cqs_p(ims:ime,jms:jme)       )
@@ -92,6 +93,7 @@
  if(.not.allocated(th2m_p)      ) allocate(th2m_p(ims:ime,jms:jme)      )
 
  if(.not.allocated(tsk_sea)     ) allocate(tsk_sea(ims:ime,jms:jme)     )
+ if(.not.allocated(cpm_sea)     ) allocate(cpm_sea(ims:ime,jms:jme)     )
  if(.not.allocated(chs_sea)     ) allocate(chs_sea(ims:ime,jms:jme)     )
  if(.not.allocated(chs2_sea)    ) allocate(chs2_sea(ims:ime,jms:jme)    )
  if(.not.allocated(cqs2_sea)    ) allocate(cqs2_sea(ims:ime,jms:jme)    )
@@ -146,6 +148,7 @@
  if(allocated(acsnow_p)    ) deallocate(acsnow_p    )
  if(allocated(albsi_p)     ) deallocate(albsi_p     )
  if(allocated(br_p)        ) deallocate(br_p        )
+ if(allocated(cpm_p)       ) deallocate(cpm_p       )
  if(allocated(chs_p)       ) deallocate(chs_p       )
  if(allocated(chs2_p)      ) deallocate(chs2_p      )
  if(allocated(chklowq_p)   ) deallocate(chklowq_p   )
@@ -186,6 +189,7 @@
  if(allocated(t2m_p)       ) deallocate(t2m_p       )
  if(allocated(th2m_p)      ) deallocate(th2m_p      )
 
+ if(allocated(cpm_sea)     ) deallocate(cpm_sea     )
  if(allocated(chs_sea)     ) deallocate(chs_sea     )
  if(allocated(chs2_sea)    ) deallocate(chs2_sea    )
  if(allocated(cqs2_sea)    ) deallocate(cqs2_sea    )
@@ -276,6 +280,7 @@
  call mpas_pool_get_array(diag_physics,'br'               ,br               )
  call mpas_pool_get_array(diag_physics,'chs'              ,chs              )
  call mpas_pool_get_array(diag_physics,'chs2'             ,chs2             )
+ call mpas_pool_get_array(diag_physics,'cpm'              ,cpm              )
  call mpas_pool_get_array(diag_physics,'chklowq'          ,chklowq          )
  call mpas_pool_get_array(diag_physics,'cqs2'             ,cqs2             )
  call mpas_pool_get_array(diag_physics,'cqs'              ,cqs              )
@@ -346,6 +351,7 @@
        qgh_p(i,j)       = qgh(i)
        snoalb_p(i,j)    = snoalb(i)
        br_p(i,j)        = br(i)
+       cpm_p(i,j)       = cpm(i)
        chs_p(i,j)       = chs(i)
        swdown_p(i,j)    = gsw(i)/(1._RKIND-sfc_albedo(i))
        gsw_p(i,j)       = gsw(i)
@@ -539,6 +545,7 @@
  do j = jts,jte
     do i = its,ite
        if(xice_p(i,j).ge.xice_threshold .and. xice_p(i,j).le.1._RKIND) then
+          cpm_p(i,j)  = xice_p(i,j)*cpm_p(i,j)  + (1._RKIND-xice_p(i,j))*cpm_sea(i,j)
           chs_p(i,j)  = xice_p(i,j)*chs_p(i,j)  + (1._RKIND-xice_p(i,j))*chs_sea(i,j)
           chs2_p(i,j) = xice_p(i,j)*chs2_p(i,j) + (1._RKIND-xice_p(i,j))*chs2_sea(i,j)
           cqs2_p(i,j) = xice_p(i,j)*cqs2_p(i,j) + (1._RKIND-xice_p(i,j))*cqs2_sea(i,j)
@@ -618,6 +625,7 @@
        !--- output optional variables:
        noahres(i)   = noahres_p(i,j)
 
+       cpm(i)  = cpm_p(i,j)
        chs(i)  = chs_p(i,j)
        chs2(i) = chs2_p(i,j)
        cqs2(i) = cqs2_p(i,j)
