@@ -1093,7 +1093,9 @@
                         <!-- End isobaric diagnostics defined in diagnostics/Registry_isobaric.xml -->
 
 #ifdef DO_PHYSICS
-			<var name="olrtoa"/>
+                        <var name="olrtoa"/>
+                        <var name="swdnb"/>
+                        <var name="swupt"/>
 			<var name="rainc"/>
 			<var name="rainnc"/>
 			<var name="refl10cm"/>
@@ -1106,6 +1108,13 @@
 			<var name="q2"/>
 			<var name="t2m"/>
 			<var name="th2m"/>
+                        <var name="cldfrac_bl"/>
+                        <var name="qc_bl"/>
+                        <var name="qi_bl"/>
+                        <var name="maxmf"/>
+                        <var name="maxwidth"/>
+                        <var name="ztop_plume"/>
+                        <var name="hpbl"/>
 #endif
 
                         <!-- Begin convective diagnostics defined in diagnostics/Registry_convective.xml -->
@@ -1590,7 +1599,7 @@
 
                         <var name="ng" array_group="number" units="nb kg^{-1}"
                              description="Graupel number concentration"
-                             packages="mp_nssl2m_in"/>
+                             packages="mp_nssl2m_in;mp_thompson_in"/>
 
                         <var name="nh" array_group="number" units="nb kg^{-1}"
                              description="Hail number concentration"
@@ -1602,7 +1611,7 @@
 
                         <var name="volg" array_group="volume" units="m^{3} kg^{-1}"
                              description="Graupel particle volume"
-                             packages="mp_nssl2m_in"/>
+                             packages="mp_nssl2m_in;mp_thompson_in"/>
 
                         <var name="volh" array_group="volume" units="m^{3} kg^{-1}"
                              description="Hail particle volume"
@@ -1966,7 +1975,7 @@
 
                         <var name="tend_ng" name_in_code="ng" array_group="number" units="nb m^{-3} s^{-1}"
                              description="Tendency of graupel number concentration multiplied by dry air density divided by d(zeta)/dz"
-                             packages="mp_nssl2m_in"/>
+                             packages="mp_nssl2m_in;mp_thompson_in"/>
 
                         <var name="tend_nh" name_in_code="nh" array_group="number" units="nb m^{-3} s^{-1}"
                              description="Tendency of hail number concentration multiplied by dry air density divided by d(zeta)/dz"
@@ -1978,7 +1987,7 @@
 
                         <var name="tend_volg" name_in_code="volg" array_group="volume" units="m^{3} s^{-1}"
                              description="Tendency of graupel volume multiplied by dry air density divided by d(zeta)/dz"
-                             packages="mp_nssl2m_in"/>
+                             packages="mp_nssl2m_in;mp_thompson_in"/>
 
                         <var name="tend_volh" name_in_code="volh" array_group="volume" units="m^{3} s^{-1}"
                              description="Tendency of hail volume multiplied by dry air density divided by d(zeta)/dz"
@@ -2063,7 +2072,7 @@
                         <var name="lbc_ns" name_in_code="ns" array_group="number" packages="mp_nssl2m_in" units="m^{-3} s^{-1}"
                              description="Lateral boundary tendency of snow number concentration"/>
 
-                        <var name="lbc_ng" name_in_code="ng" array_group="number" packages="mp_nssl2m_in" units="m^{-3} s^{-1}"
+                        <var name="lbc_ng" name_in_code="ng" array_group="number" packages="mp_nssl2m_in;mp_thompson_in" units="m^{-3} s^{-1}"
                              description="Lateral boundary tendency of graupel number concentration"/>
 
                         <var name="lbc_nh" name_in_code="nh" array_group="number" packages="mp_nssl2m_in" units="m^{-3} s^{-1}"
@@ -2072,7 +2081,7 @@
                         <var name="lbc_nccn" name_in_code="nccn" array_group="number" packages="mp_nssl2m_in" units="m^{-3} s^{-1}"
                              description="Lateral boundary tendency of CCN number concentration"/>
 
-                        <var name="lbc_volg" name_in_code="volg" array_group="volume" packages="mp_nssl2m_in" units="m^{3} s^{-1}"
+                        <var name="lbc_volg" name_in_code="volg" array_group="volume" packages="mp_nssl2m_in;mp_thompson_in" units="m^{3} s^{-1}"
                              description="Lateral boundary tendency of graupel particle volume"/>
 
                         <var name="lbc_volh" name_in_code="volh" array_group="volume" packages="mp_nssl2m_in" units="m^{3} s^{-1}"
