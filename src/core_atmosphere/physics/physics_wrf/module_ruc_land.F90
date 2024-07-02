@@ -4748,8 +4748,8 @@ print *, 'd9sn,soilt,tsob : ', d9sn,soilt,tsob
           q2=x2-hydro(kn+1)*dtdzs2(kn-1)
           denom=1.+x2+x4-q2*cosmc(k)
           cosmc(k+1)=q4/denom
-!    if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
-          if (globalid==186483) then
+          if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
+          !if (globalid==targetcell) then
              print *,'kn,k1,soilmois(kn),diffu(kn),diffu(kn-1),dtdzs(k1+1),dtdzs(k1),hydro(kn+1),hydro(kn-1)' &
                      ,kn,k1,soilmois(kn),diffu(kn),diffu(kn-1),dtdzs(k1+1),dtdzs(k1),hydro(kn+1),hydro(kn-1)
           endif
