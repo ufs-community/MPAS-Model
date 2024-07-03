@@ -805,15 +805,6 @@
           endif
           tke_pbl(k,i)  = tkepbl_p(i,k,j)
           qke_adv(k,i)  = qkeadv_p(i,k,j)
-          !... outputs:
-          dqke(k,i)     = dqke_p(i,k,j)
-          qbuoy(k,i)    = qbuoy_p(i,k,j)
-          qdiss(k,i)    = qdiss_p(i,k,j)
-          qshear(k,i)   = qshear_p(i,k,j)
-          qwt(k,i)      = qwt_p(i,k,j)
-
-          rqsblten(k,i)   = rqsblten_p(i,k,j)
-          rniblten(k,i)   = rniblten_p(i,k,j)
        enddo
        enddo
        enddo
