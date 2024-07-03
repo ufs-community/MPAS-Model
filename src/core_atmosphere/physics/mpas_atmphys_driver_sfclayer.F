@@ -1527,7 +1527,8 @@
                    rho3d    = rho_p      , dz8w      = dz_p     , cp       = cp          , &
                    g        = gravity    , rovcp     = rcp      , R        = R_d         , &
                    xlv      = xlv        , chs       = chs_p    , chs2     = chs2_p      , &
-                   cqs = cqs_p,cqs2     = cqs2_p     , cpm       = cpm_p    , znt      = znt_p       , &
+                   cqs      = cqs_p      ,cqs2       = cqs2_p   , cpm      = cpm_p       , &
+                   znt      = znt_p                                                      , &
                    ust      = ust_p      , pblh      = hpbl_p   , mavail   = mavail_p    , &
                    zol      = zol_p      , mol       = mol_p    , regime   = regime_p    , &
                    psim     = psim_p     , psih      = psih_p   , xland    = xland_p     , &
@@ -1558,7 +1559,8 @@
                       rho3d    = rho_p      , dz8w      = dz_p     , cp       = cp          , &
                       g        = gravity    , rovcp     = rcp      , R        = R_d         , &
                       xlv      = xlv        , chs       = chs_sea  , chs2     = chs2_sea    , &
-                      cqs=cqs_sea,cqs2     = cqs2_sea   , cpm       = cpm_sea  , znt      = znt_sea     , &
+                      cqs      = cqs_sea    , cqs2      = cqs2_sea , cpm      = cpm_sea     , &
+                      znt      = znt_sea                                                    , &
                       ust      = ust_sea    , pblh      = hpbl_p   , mavail   = mavail_sea  , &
                       zol      = zol_sea    , mol       = mol_sea  , regime   = regime_sea  , &
                       psim     = psim_sea   , psih      = psih_sea , xland    = xland_sea   , &
