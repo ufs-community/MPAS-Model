@@ -653,7 +653,7 @@
        call mpas_log_write('Computing hourly max reflectivity')
        call compute_hourly_max_radar_reflectivity(configs,diag_physics,its,ite)
     else
-       call mpas_log_write('*** NOTICE: NOT computing simulated radar reflectivity')
+       call mpas_log_write('*** NOTICE: NOT computing hourly simulated radar reflectivity')
        call mpas_log_write('            since WSM6 or Thompson microphysics scheme was not selected')
     end if
  endif
@@ -1083,54 +1083,7 @@ subroutine compute_hourly_max_radar_reflectivity(configs,diag_physics,its,ite)
 
        !if(allocated(dBz1d)) deallocate(dBZ1d)
        !if(allocated(zp)   ) deallocate(zp   )
-    case ("mp_wsm6")
-       if(.not.allocated(p1d)  ) allocate(p1d(kts:kte)  )
-       if(.not.allocated(t1d)  ) allocate(t1d(kts:kte)  )
-       if(.not.allocated(qv1d) ) allocate(qv1d(kts:kte) )
-       if(.not.allocated(qr1d) ) allocate(qr1d(kts:kte) )
-       if(.not.allocated(qs1d) ) allocate(qs1d(kts:kte) )
-       if(.not.allocated(qg1d) ) allocate(qg1d(kts:kte) )
-       if(.not.allocated(dBz1d)) allocate(dBZ1d(kts:kte))
-       if(.not.allocated(zp)   ) allocate(zp(kts:kte)   )
-
-       do j = jts,jte
-       do i = its,ite
-          do k = 17,17
-             p1d(k) = pres_p(i,k,j)
-             t1d(k) = th_p(i,k,j) * pi_p(i,k,j)
-             qv1d(k)  = qv_p(i,k,j)
-             qr1d(k)  = qr_p(i,k,j)
-             qs1d(k)  = qs_p(i,k,j)
-             qg1d(k)  = qg_p(i,k,j)
-             dBZ1d(k) = -35._RKIND
-             zp(k) = z_p(i,k,j) - z_p(i,1,j)+0.5*dz_p(i,1,j) ! height AGL
-          enddo
-
-          call refl10cm_wsm6(qv1d,qr1d,qs1d,qg1d,t1d,p1d,dBZ1d,17,17)
-
-          !kp = 1
-          do k = 17,17
-             dBZ1d(k) = max(-35._RKIND,dBZ1d(k))
-          !   if(zp(k) .lt. 1000.) kp = k
-          enddo
-          !refl10cm_max(i) = maxval(dBZ1d(:))
-          !w1 = (zp(kp+1)-1000.)/(zp(kp+1)-zp(kp))
-          !w2 = 1.0 - w1
-          !refl10cm_1km(i) = w1*dBZ1d(kp) + w2*dBZ1d(kp+1)
-          refl10cm_1km_max(i) = max(refl10cm_1km_max(i),dBZ1d(17))
-       enddo
-       enddo
-
-       if(allocated(p1d)  ) deallocate(p1d  )
-       if(allocated(t1d)  ) deallocate(t1d  )
-       if(allocated(qv1d) ) deallocate(qv1d )
-       if(allocated(qr1d) ) deallocate(qr1d )
-       if(allocated(qs1d) ) deallocate(qs1d )
-       if(allocated(qg1d) ) deallocate(qg1d )
-       if(allocated(dBz1d)) deallocate(dBZ1d)
-       if(allocated(zp)   ) deallocate(zp   )
-
-    case ("mp_thompson")
+    case ("mp_wsm6","mp_thompson")
        do i = its,ite
           refl10cm_1km_max(i) = max(refl10cm_1km_max(i),refl10cm_1km(i))
        enddo
