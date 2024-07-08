@@ -186,6 +186,25 @@
        !allocation of additional arrays:
        if(.not.allocated(pattern_spp_pbl)) allocate(pattern_spp_pbl(ims:ime,kms:kme,jms:jme))
 
+    case("bl_myj")
+       if(.not.allocated(ht_p)         ) allocate(ht_p(ims:ime,jms:jme)      )
+       if(.not.allocated(chlowq_p)     ) allocate(chlowq_p(ims:ime,jms:jme)  )
+       if(.not.allocated(thz0_p)       ) allocate(thz0_p(ims:ime,jms:jme)    )
+       if(.not.allocated(uz0_p)        ) allocate(uz0_p(ims:ime,jms:jme)     )
+       if(.not.allocated(vz0_p)        ) allocate(vz0_p(ims:ime,jms:jme)     )
+       if(.not.allocated(qz0_p)        ) allocate(qz0_p(ims:ime,jms:jme)     )
+       if(.not.allocated(tsk_p)        ) allocate(tsk_p(ims:ime,jms:jme)     )
+       if(.not.allocated(qsfc_p)       ) allocate(qsfc_p(ims:ime,jms:jme)    )
+       if(.not.allocated(xice_p)       ) allocate(xice_p(ims:ime,jms:jme)    )
+       if(.not.allocated(akhs_p)       ) allocate(akhs_p(ims:ime,jms:jme)    )
+       if(.not.allocated(akms_p)       ) allocate(akms_p(ims:ime,jms:jme)    )
+       if(.not.allocated(ct_p)         ) allocate(ct_p(ims:ime,jms:jme)      )
+       if(.not.allocated(lowlyr_p)     ) allocate(lowlyr_p(ims:ime,jms:jme)  )
+       if(.not.allocated(mixht_p)      ) allocate(mixht_p(ims:ime,jms:jme)   )
+       if(.not.allocated(lh_p)         ) allocate(lh_p(ims:ime,jms:jme)      ) 
+       if(.not.allocated(snow_p)       ) allocate(snow_p(ims:ime,jms:jme)   )
+       if(.not.allocated(tkepbl_p)     ) allocate(tkepbl_p(ims:ime,kms:kme,jms:jme)  )
+       if(.not.allocated(elpbl_p)      ) allocate(elpbl_p(ims:ime,kms:kme,jms:jme)   )
     case default
 
  end select pbl_select
@@ -804,7 +823,7 @@
              mixht(i) = mixht_p(i,j)
           endif
           tke_pbl(k,i)  = tkepbl_p(i,k,j)
-          qke_adv(k,i)  = qkeadv_p(i,k,j)
+          el_pbl(k,i)   = elpbl_p(i,k,j)
        enddo
        enddo
        enddo
