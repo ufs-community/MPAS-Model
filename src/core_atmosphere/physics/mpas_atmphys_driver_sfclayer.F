@@ -121,6 +121,7 @@
  if(.not.allocated(cka_p)   ) allocate(cka_p(ims:ime,jms:jme)   )
  if(.not.allocated(cpm_p)   ) allocate(cpm_p(ims:ime,jms:jme)   )
  if(.not.allocated(cqs2_p)  ) allocate(cqs2_p(ims:ime,jms:jme)  )
+ if(.not.allocated(cqs_p)   ) allocate(cqs_p(ims:ime,jms:jme)   )
  if(.not.allocated(gz1oz0_p)) allocate(gz1oz0_p(ims:ime,jms:jme))
  if(.not.allocated(flhc_p)  ) allocate(flhc_p(ims:ime,jms:jme)  )
  if(.not.allocated(flqc_p)  ) allocate(flqc_p(ims:ime,jms:jme)  )
@@ -157,6 +158,7 @@
     if(.not.allocated(chs_sea)    ) allocate(chs_sea(ims:ime,jms:jme)    )
     if(.not.allocated(chs2_sea)   ) allocate(chs2_sea(ims:ime,jms:jme)   )
     if(.not.allocated(cqs2_sea)   ) allocate(cqs2_sea(ims:ime,jms:jme)   )
+    if(.not.allocated(cqs_sea)    ) allocate(cqs_sea(ims:ime,jms:jme)    )
     if(.not.allocated(cpm_sea)    ) allocate(cpm_sea(ims:ime,jms:jme)    )
     if(.not.allocated(flhc_sea)   ) allocate(flhc_sea(ims:ime,jms:jme)   )
     if(.not.allocated(flqc_sea)   ) allocate(flqc_sea(ims:ime,jms:jme)   )
@@ -293,6 +295,7 @@
  if(allocated(cka_p)   ) deallocate(cka_p   )
  if(allocated(cpm_p)   ) deallocate(cpm_p   )
  if(allocated(cqs2_p)  ) deallocate(cqs2_p  )
+ if(allocated(cqs_p)   ) deallocate(cqs_p    )
  if(allocated(gz1oz0_p)) deallocate(gz1oz0_p)
  if(allocated(flhc_p)  ) deallocate(flhc_p  )
  if(allocated(flqc_p)  ) deallocate(flqc_p  )
@@ -449,7 +452,7 @@
  real(kind=RKIND),dimension(:),pointer:: meshDensity
  real(kind=RKIND),dimension(:),pointer:: skintemp,sst,xice,xland
  real(kind=RKIND),dimension(:),pointer:: hpbl,mavail
- real(kind=RKIND),dimension(:),pointer:: br,cpm,chs,chs2,cqs2,flhc,flqc,gz1oz0,hfx,qfx,  &
+ real(kind=RKIND),dimension(:),pointer:: br,cpm,chs,chs2,cqs,cqs2,flhc,flqc,gz1oz0,hfx,qfx,  &
                                          qgh,qsfc,lh,mol,psim,psih,regime,rmol,ust,ustm, &
                                          wspd,znt,zol
 
@@ -485,6 +488,7 @@
  call mpas_pool_get_array(diag_physics,'chs'     ,chs     )
  call mpas_pool_get_array(diag_physics,'chs2'    ,chs2    )
  call mpas_pool_get_array(diag_physics,'cqs2'    ,cqs2    )
+ call mpas_pool_get_array(diag_physics,'cqs'     ,cqs     )
  call mpas_pool_get_array(diag_physics,'flhc'    ,flhc    )
  call mpas_pool_get_array(diag_physics,'flqc'    ,flqc    )
  call mpas_pool_get_array(diag_physics,'gz1oz0'  ,gz1oz0  )
@@ -519,6 +523,7 @@
     chs_p(i,j)    = chs(i)
     chs2_p(i,j)   = chs2(i)
     cqs2_p(i,j)   = cqs2(i)
+    cqs_p(i,j)    = cqs(i)
     flhc_p(i,j)   = flhc(i)
     flqc_p(i,j)   = flqc(i)
     gz1oz0_p(i,j) = gz1oz0(i)
@@ -571,6 +576,7 @@
        chs_sea(i,j)     = chs(i)
        chs2_sea(i,j)    = chs2(i)
        cqs2_sea(i,j)    = cqs2(i)
+       cqs_sea(i,j)     = cqs(i)
        flhc_sea(i,j)    = flhc(i)
        flqc_sea(i,j)    = flqc(i)
        gz1oz0_sea(i,j)  = gz1oz0(i)
@@ -868,7 +874,7 @@
  logical,pointer:: config_frac_seaice
  character(len=StrKIND),pointer:: sfclayer_scheme
 
- real(kind=RKIND),dimension(:),pointer:: br,cpm,chs,chs2,cqs2,flhc,flqc,gz1oz0,hfx,qfx,  &
+ real(kind=RKIND),dimension(:),pointer:: br,cpm,chs,chs2,cqs,cqs2,flhc,flqc,gz1oz0,hfx,qfx,  &
                                          qgh,qsfc,lh,mol,psim,psih,regime,rmol,ust,wspd, &
                                          znt,zol
  real(kind=RKIND),dimension(:),pointer:: q2,t2m,th2m,u10,v10
@@ -897,6 +903,7 @@
  call mpas_pool_get_array(diag_physics,'chs'   ,chs   )
  call mpas_pool_get_array(diag_physics,'chs2'  ,chs2  )
  call mpas_pool_get_array(diag_physics,'cqs2'  ,cqs2  )
+ call mpas_pool_get_array(diag_physics,'cqs'   ,cqs   )
  call mpas_pool_get_array(diag_physics,'flhc'  ,flhc  )
  call mpas_pool_get_array(diag_physics,'flqc'  ,flqc  )
  call mpas_pool_get_array(diag_physics,'gz1oz0',gz1oz0)
@@ -943,6 +950,7 @@
     chs(i)    = chs_p(i,j)
     chs2(i)   = chs2_p(i,j)
     cqs2(i)   = cqs2_p(i,j)
+    cqs(i)    = cqs_p(i,j)
     flhc(i)   = flhc_p(i,j)
     flqc(i)   = flqc_p(i,j)
     gz1oz0(i) = gz1oz0_p(i,j)
@@ -1519,7 +1527,8 @@
                    rho3d    = rho_p      , dz8w      = dz_p     , cp       = cp          , &
                    g        = gravity    , rovcp     = rcp      , R        = R_d         , &
                    xlv      = xlv        , chs       = chs_p    , chs2     = chs2_p      , &
-                   cqs2     = cqs2_p     , cpm       = cpm_p    , znt      = znt_p       , &
+                   cqs      = cqs_p      ,cqs2       = cqs2_p   , cpm      = cpm_p       , &
+                   znt      = znt_p                                                      , &
                    ust      = ust_p      , pblh      = hpbl_p   , mavail   = mavail_p    , &
                    zol      = zol_p      , mol       = mol_p    , regime   = regime_p    , &
                    psim     = psim_p     , psih      = psih_p   , xland    = xland_p     , &
@@ -1550,7 +1559,8 @@
                       rho3d    = rho_p      , dz8w      = dz_p     , cp       = cp          , &
                       g        = gravity    , rovcp     = rcp      , R        = R_d         , &
                       xlv      = xlv        , chs       = chs_sea  , chs2     = chs2_sea    , &
-                      cqs2     = cqs2_sea   , cpm       = cpm_sea  , znt      = znt_sea     , &
+                      cqs      = cqs_sea    , cqs2      = cqs2_sea , cpm      = cpm_sea     , &
+                      znt      = znt_sea                                                    , &
                       ust      = ust_sea    , pblh      = hpbl_p   , mavail   = mavail_sea  , &
                       zol      = zol_sea    , mol       = mol_sea  , regime   = regime_sea  , &
                       psim     = psim_sea   , psih      = psih_sea , xland    = xland_sea   , &

@@ -18,7 +18,7 @@
 !=================================================================================================================
  subroutine sfclay_mynn(                                         &
                    u3d,v3d,t3d,qv3d,p3d,dz8w,                    &
-                   cp,g,rovcp,r,xlv,psfcpa,chs,chs2,cqs2,cpm,    &
+                   cp,g,rovcp,r,xlv,psfcpa,chs,chs2,cqs,cqs2,cpm, &
                    znt,ust,pblh,mavail,zol,mol,regime,psim,psih, &
                    xland,hfx,qfx,lh,tsk,flhc,flqc,qgh,qsfc,rmol, &
                    u10,v10,th2,t2,q2,snowh,                      &
@@ -194,6 +194,7 @@
     cpm,    &
     chs2,   &
     cqs2,   &
+    cqs,    &
     chs,    &
     ch,     &
     flhc,   &
@@ -221,7 +222,7 @@
                                 qcg_hv,snowh_hv,dx_hv
  real(kind=RKIND),dimension(its:ite):: regime_hv,hfx_hv,qfx_hv,lh_hv,mol_hv,rmol_hv,     &
                                 qgh_hv,qsfc_hv,znt_hv,zol_hv,ust_hv,cpm_hv,chs2_hv,     &
-                                cqs2_hv,chs_hv,ch_hv,flhc_hv,flqc_hv,gz1oz0_hv,wspd_hv, &
+                                cqs_hv,cqs2_hv,chs_hv,ch_hv,flhc_hv,flqc_hv,gz1oz0_hv,wspd_hv, &
                                 br_hv,psim_hv,psih_hv
  real(kind=RKIND),dimension(its:ite):: u10_hv,v10_hv,th2_hv,t2_hv,q2_hv,wstar_hv,qstar_hv
  real(kind=RKIND),dimension(its:ite):: cd_hv,cda_hv,ck_hv,cka_hv,ustm_hv
@@ -273,6 +274,7 @@
        cpm_hv(i)    = cpm(i,j)
        chs2_hv(i)   = chs2(i,j)
        cqs2_hv(i)   = cqs2(i,j)
+       cqs_hv(i)    = cqs(i,j)
        chs_hv(i)    = chs(i,j)
        ch_hv(i)     = ch(i,j)
        flhc_hv(i)   = flhc(i,j)
@@ -314,7 +316,7 @@
                  p1d      = p1d       , dz8w1d   = dz8w1d    , rho1d   = rho1d    , u1d2      = u1d2      , &
                  v1d2     = v1d2      , dz2w1d   = dz2w1d    , cp      = cp       , g         = g         , &
                  rovcp    = rovcp     , r        = r         , xlv     = xlv      , psfcpa    = psfcpa_hv , &
-                 chs      = chs_hv    , chs2     = chs2_hv   , cqs2    = cqs2_hv  , cpm       = cpm_hv    , &
+                 chs      = chs_hv    , chs2     = chs2_hv   , cqs2    = cqs2_hv  , cqs=cqs_hv,cpm = cpm_hv , &
                  pblh     = pblh_hv   , rmol     = rmol_hv   , znt     = znt_hv   , ust       = ust_hv    , &
                  mavail   = mavail_hv , zol      = zol_hv    , mol     = mol_hv   , regime    = regime_hv , &
                  psim     = psim_hv   , psih     = psih_hv   , xland   = xland_hv , hfx       = hfx_hv    , &
@@ -347,6 +349,7 @@
        cpm(i,j)    = cpm_hv(i)
        chs2(i,j)   = chs2_hv(i)
        cqs2(i,j)   = cqs2_hv(i)
+       cqs(i,j)    = cqs_hv(i)
        chs(i,j)    = chs_hv(i)
        ch(i,j)     = ch_hv(i)
        flhc(i,j)   = flhc_hv(i)

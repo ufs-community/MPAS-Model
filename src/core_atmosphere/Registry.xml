@@ -698,6 +698,7 @@
 			<var name="chs"/>
 			<var name="chs2"/>
 			<var name="cqs2"/>
+			<var name="cqs"/>
 			<var name="ck"/>
 			<var name="cka"/>
 			<var name="cpm"/>
@@ -2857,6 +2858,10 @@
                      packages="bl_mynn_in;bl_ysu_in;bl_myj_in"/>
 
                 <var name="cqs2" type="real" dimensions="nCells Time" units="m s^{-1}"
+                     description="surface exchange coefficient for moisture at 2-meter"
+                     packages="bl_mynn_in;bl_ysu_in;bl_myj_in"/>
+
+	        <var name="cqs" type="real" dimensions="nCells Time" units="m s^{-1}"
                      description="surface exchange coefficient for moisture at 2-meter"
                      packages="bl_mynn_in;bl_ysu_in;bl_myj_in"/>
 

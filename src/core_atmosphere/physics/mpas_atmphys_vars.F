@@ -457,6 +457,9 @@
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
     pattern_spp_pbl    !stochastic forcing for the MYMM PBL and surface layer schemes.
 
+ real(kind=RKIND),dimension(:,:,:),allocatable:: &
+    pattern_spp_lsm, field_sf    !stochastic forcing for the RUC LSM
+
 !... MYJ PBL scheme (module_bl_myjpbl.F):
  real(kind=RKIND),dimension(:,:),allocatable:: &
     chlowq_p,         &!
@@ -506,6 +509,7 @@
     ck_p,             &!enthalpy exchange coeff at 10 meters                                                   [?]
     cka_p,            &!enthalpy exchange coeff at the lowest model level                                      [?]
     cqs2_p,           &!
+    cqs_p,            &!
     gz1oz0_p,         &!log of z1 over z0                                                                      [-]
     flhc_p,           &!exchange coefficient for heat                                                          [-]
     flqc_p,           &!exchange coefficient for moisture                                                      [-]
@@ -850,7 +854,6 @@
     rhosnf_p,           &!density of snowfall                                                             [kg m-3]
     precipfr_p,         &!water equivalent of frozen precipitation                                            [mm]
     qsg_p,              &!saturated mixing ratio at the surface                                          [kg kg-1]
-    cqs_p,              &!cqs at the first model layer used in 2-m diagnostics 
     qvg_p,              &!water vapor mixing ratio at the surface                                        [kg kg-1]
     dew_p,              &!dew                                                                             [kg m-2]
     soilt1_p,           &!snow temperature at 7.5cm depth                                                      [K]
@@ -891,7 +894,7 @@
 !   is set to true. the arrays below have the same definition as the corresponding "_p" arrays:
 !=================================================================================================================
 
- real(kind=RKIND),dimension(:,:),allocatable:: br_sea,ch_sea,chs_sea,chs2_sea,cpm_sea,cqs2_sea,      &
+ real(kind=RKIND),dimension(:,:),allocatable:: br_sea,ch_sea,chs_sea,chs2_sea,cpm_sea,cqs_sea,cqs2_sea,      &
                                 flhc_sea,flqc_sea,gz1oz0_sea,hfx_sea,lh_sea,mavail_sea,mol_sea,      &
                                 psih_sea,psim_sea,fh_sea,fm_sea,qfx_sea,qgh_sea,qsfc_sea,regime_sea, &
                                 rmol_sea,ust_sea,wspd_sea,znt_sea,zol_sea,tsk_sea,xland_sea

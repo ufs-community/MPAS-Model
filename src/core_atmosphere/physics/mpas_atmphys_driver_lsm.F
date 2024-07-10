@@ -12,7 +12,6 @@
  use mpas_timer, only : mpas_timer_start, mpas_timer_stop
 
  use mpas_atmphys_constants
- use mpas_atmphys_lsm_shared,only: correct_tsk_over_seaice
  use mpas_atmphys_landuse, only: isurban
  use mpas_atmphys_lsm_noahinit
  use mpas_atmphys_lsm_rucinit
@@ -20,10 +19,8 @@
 
 !wrf physics
  use module_sf_noahdrv
- use module_sf_noah_seaice_drv
- use module_sf_ruclsm
+ use module_ruc_land
  use module_sf_sfcdiags
- use module_sf_sfcdiags_ruclsm 
  implicit none
  private
  public:: init_lsm,       &
@@ -122,9 +119,8 @@
 
 
 !=================================================================================================================
- subroutine allocate_lsm(config_frac_seaice,config_lsm_scheme)
+ subroutine allocate_lsm(config_lsm_scheme)
 !=================================================================================================================
- logical,intent(in)                         :: config_frac_seaice
  character(len=StrKIND),pointer, intent(in) :: config_lsm_scheme
 !-----------------------------------------------------------------------------------------------------------------
 
@@ -199,13 +195,6 @@
  if(.not.allocated(ust_urb_p)   ) allocate(ust_urb_p(ims:ime,jms:jme)   )
  if(.not.allocated(utype_urb_p) ) allocate(utype_urb_p(ims:ime,jms:jme) )
 
- if(config_frac_seaice) then
-    if(.not.allocated(tsk_sea)   ) allocate(tsk_sea(ims:ime,jms:jme)   )
-    if(.not.allocated(tsk_ice)   ) allocate(tsk_ice(ims:ime,jms:jme)   )
-    if(.not.allocated(albsi_p)   ) allocate(albsi_p(ims:ime,jms:jme)   )
-    if(.not.allocated(icedepth_p)) allocate(icedepth_p(ims:ime,jms:jme))
-    if(.not.allocated(snowsi_p)  ) allocate(snowsi_p(ims:ime,jms:jme)  )
- endif
 
  if(config_lsm_scheme=='sf_ruc') then
     if(.not.allocated(rhosnf_p)   )  allocate(rhosnf_p(ims:ime,jms:jme)    )
@@ -227,20 +216,20 @@
     if(.not.allocated(sfcevp_p)   )  allocate(sfcevp_p(ims:ime,jms:jme)    )
     if(.not.allocated(lakemask_p) )  allocate(lakemask_p(ims:ime,jms:jme)  )
     if(.not.allocated(mavail_p)   )  allocate(mavail_p(ims:ime,jms:jme)    )
-    if(.not.allocated(smfr3d_p)   )  allocate(smfr3d_p(ims:ime,1:num_soils,jms:jme)       )
-    if(.not.allocated(landusef_p) )  allocate(landusef_p(ims:ime,1:num_landcat,jms:jme)   )
-    if(.not.allocated(soilf_p)    )  allocate(soilf_p(ims:ime,1:num_soilcat,jms:jme)      )
-    if(.not.allocated(keepfr3d_p) )  allocate(keepfr3d_p(ims:ime,1:num_soils,jms:jme)     )
-    if(.not.allocated(cqs_p)      )  allocate(cqs_p(ims:ime,jms:jme)       )
+    if(.not.allocated(smfr3d_p)   )  allocate(smfr3d_p(ims:ime,1:num_soils,jms:jme))
+    if(.not.allocated(landusef_p) )  allocate(landusef_p(ims:ime,1:num_landcat,jms:jme))
+    if(.not.allocated(soilf_p)    )  allocate(soilf_p(ims:ime,1:num_soilcat,jms:jme))
+    if(.not.allocated(keepfr3d_p) )  allocate(keepfr3d_p(ims:ime,1:num_soils,jms:jme))
+    if(.not.allocated(field_sf)   )  allocate(field_sf(ims:ime,1:num_soils,jms:jme))
+    if(.not.allocated(pattern_spp_lsm))  allocate(pattern_spp_lsm(ims:ime,1:num_soils,jms:jme))
  endif
 
  end subroutine allocate_lsm
 
 !=================================================================================================================
- subroutine deallocate_lsm(config_frac_seaice,config_lsm_scheme)
+ subroutine deallocate_lsm(config_lsm_scheme)
 !=================================================================================================================
 
- logical,intent(in)                         :: config_frac_seaice
  character(len=StrKIND),pointer, intent(in) :: config_lsm_scheme
 
 !-----------------------------------------------------------------------------------------------------------------
@@ -316,22 +305,6 @@
  if(allocated(ust_urb_p)   ) deallocate(ust_urb_p   )
  if(allocated(utype_urb_p) ) deallocate(utype_urb_p )
 
- if(config_frac_seaice) then
-    if(allocated(chs_sea)   ) deallocate(chs_sea   )
-    if(allocated(chs2_sea)  ) deallocate(chs2_sea  )
-    if(allocated(cqs2_sea)  ) deallocate(cqs2_sea  )
-    if(allocated(cpm_sea)   ) deallocate(cpm_sea   )
-    if(allocated(hfx_sea)   ) deallocate(hfx_sea   )
-    if(allocated(qfx_sea)   ) deallocate(qfx_sea   )
-    if(allocated(qgh_sea)   ) deallocate(qgh_sea   )
-    if(allocated(qsfc_sea)  ) deallocate(qsfc_sea  )
-    if(allocated(lh_sea)    ) deallocate(lh_sea    )
-    if(allocated(tsk_sea)   ) deallocate(tsk_sea   )
-    if(allocated(tsk_ice)   ) deallocate(tsk_ice   )
-    if(allocated(albsi_p)   ) deallocate(albsi_p   )
-    if(allocated(icedepth_p)) deallocate(icedepth_p)
-    if(allocated(snowsi_p)  ) deallocate(snowsi_p  )
- endif
 
  if (config_lsm_scheme == "sf_ruc") then
     if(allocated(rhosnf_p)    ) deallocate(rhosnf_p    )
@@ -357,7 +330,9 @@
     if(allocated(soilf_p)     ) deallocate(soilf_p     )
     if(allocated(smfr3d_p)    ) deallocate(smfr3d_p    )
     if(allocated(keepfr3d_p)  ) deallocate(keepfr3d_p  )
-    if(allocated(cqs_p)       ) deallocate(cqs_p       )
+    if(allocated(field_sf)    ) deallocate(field_sf    )
+    if(allocated(pattern_spp_lsm)) deallocate(pattern_spp_lsm )
+
  endif
 
  end subroutine deallocate_lsm
@@ -374,7 +349,6 @@
  integer,intent(in):: its,ite
 
 !local pointers:
- logical, pointer              :: config_frac_seaice
  character(len=StrKIND),pointer:: config_microp_scheme,    &
                                   config_convection_scheme, &
                                   config_lsm_scheme
@@ -406,7 +380,6 @@
  call mpas_pool_get_config(configs,'config_convection_scheme',config_convection_scheme)
  call mpas_pool_get_config(configs,'config_microp_scheme'    ,config_microp_scheme    )
  call mpas_pool_get_config(configs,'config_lsm_scheme'       ,config_lsm_scheme       )
- call mpas_pool_get_config(configs,'config_frac_seaice'      ,config_frac_seaice      )
 
  call mpas_pool_get_array(diag_physics,'acsnom'           ,acsnom           )
  call mpas_pool_get_array(diag_physics,'acsnow'           ,acsnow           )
@@ -510,6 +483,8 @@
     if(config_lsm_scheme .eq. "sf_ruc") then
         smfr3d_p(i,n,j) = smfr3d(n,i)
         keepfr3d_p(i,n,j) = keepfr3d(n,i)
+        pattern_spp_lsm(i,n,j) = 0._RKIND
+        field_sf(i,n,j) = 0._RKIND
     endif
  enddo
  enddo
@@ -620,47 +595,9 @@
         sfcevp_p(i,j) = sfcevp(i)
         lakemask_p(i,j) = 0
         mavail_p(i,j) = mavail(i)
-        cqs_p(i,j) = flqc(i) / (mavail(i) * rho_p(i,kts,j))
     endif
  enddo
  enddo
-
-
-
- if(config_frac_seaice) then
-    do j = jts,jte
-    do i = its,ite
-       !modify the surface albedo and surface emissivity, and surface temperatures over sea-ice points:
-       if(xice(i).ge.xice_threshold .and. xice(i).le.1._RKIND) then
-          sfc_albedo_p(i,j) = (sfc_albedo(i) - 0.08_RKIND*(1._RKIND-xice(i))) / xice(i)
-          sfc_emiss_p(i,j)  = (sfc_emiss(i) - 0.98_RKIND*(1._RKIND-xice(i))) / xice(i)
-       else
-          sfc_albedo_p(i,j) = sfc_albedo(i)
-          sfc_emiss_p(i,j)  = sfc_emiss(i)
-       endif
-    enddo
-    enddo
-
-    !calculate sea-surface and sea-ice temperatures over sea-ice grid cells:
-    call correct_tsk_over_seaice(ims,ime,jms,jme,its,ite,jts,jte,xice_threshold,xice_p, &
-                                 tsk_p,tsk_sea,tsk_ice)
-
-    do j = jts,jte
-    do i = its,ite
-       tsk_p(i,j) = tsk_ice(i,j)
-    enddo
-    enddo
-
-    !initialize the surface albedo, the surface albedo over snow-covered seaice, and the
-    !seaice thickness.
-    do j = jts,jte
-    do i = its,ite
-       albsi_p(i,j)    = seaice_albedo_default
-       icedepth_p(i,j) = seaice_thickness_default
-       snowsi_p(i,j)   = seaice_snowdepth_min
-    enddo
-    enddo
- endif
 
  do j = jts,jte
  do i = its,ite
@@ -711,7 +648,6 @@
  integer,intent(in):: its,ite
 
 !local pointers:
- logical,pointer:: config_frac_seaice
 
  character(len=StrKIND),pointer:: config_microp_scheme, &
                                   config_lsm_scheme
@@ -740,7 +676,6 @@
 
  call mpas_pool_get_config(configs,'config_microp_scheme',config_microp_scheme)
  call mpas_pool_get_config(configs,'config_lsm_scheme',config_lsm_scheme)
- call mpas_pool_get_config(configs,'config_frac_seaice',config_frac_seaice)
 
  call mpas_pool_get_array(diag_physics,'acsnom'    ,acsnom    )
  call mpas_pool_get_array(diag_physics,'acsnow'    ,acsnow    )
@@ -909,26 +844,6 @@
 
  
 
- if(config_frac_seaice) then
-    do j = jts,jte
-    do i = its,ite
-       if(xice_p(i,j).ge.xice_threshold .and. xice_p(i,j).le.1._RKIND) then
-          chs(i)        = xice_p(i,j)*chs_p(i,j)  + (1._RKIND-xice_p(i,j))*chs_sea(i,j)
-          chs2(i)       = xice_p(i,j)*chs2_p(i,j) + (1._RKIND-xice_p(i,j))*chs2_sea(i,j)
-          cqs2(i)       = xice_p(i,j)*cqs2_p(i,j) + (1._RKIND-xice_p(i,j))*cqs2_sea(i,j)
-          cpm(i)        = xice_p(i,j)*cpm_p(i,j)  + (1._RKIND-xice_p(i,j))*cpm_sea(i,j)
-          hfx(i)        = xice_p(i,j)*hfx_p(i,j)  + (1._RKIND-xice_p(i,j))*hfx_sea(i,j)
-          lh(i)         = xice_p(i,j)*lh_p(i,j)   + (1._RKIND-xice_p(i,j))*lh_sea(i,j)
-          qfx(i)        = xice_p(i,j)*qfx_p(i,j)  + (1._RKIND-xice_p(i,j))*qfx_sea(i,j)
-          qgh(i)        = xice_p(i,j)*qgh_p(i,j)  + (1._RKIND-xice_p(i,j))*qgh_sea(i,j)
-          qsfc(i)       = xice_p(i,j)*qsfc_p(i,j) + (1._RKIND-xice_p(i,j))*qsfc_sea(i,j)
-          skintemp(i)   = xice_p(i,j)*tsk_p(i,j)  + (1._RKIND-xice_p(i,j))*tsk_sea(i,j)
-          sfc_albedo(i) = xice_p(i,j)*sfc_albedo_p(i,j) + (1._RKIND-xice_p(i,j))*0.08_RKIND
-          sfc_emiss(i)  = xice_p(i,j)*sfc_emiss_p(i,j)  + (1._RKIND-xice_p(i,j))*0.98_RKIND
-       endif
-    enddo
-    enddo
- endif
 
  if(config_microp_scheme .ne. 'off') then
     call mpas_pool_get_array(diag_physics,'sr',sr) 
@@ -1072,7 +987,8 @@
        call mpas_timer_start('sf_ruc')
        myjpbl = .false.
 
-       call lsmruc( spp_lsm        = spp_lsm_loc   , lakemodel    = lakemodel   , lakemask  = lakemask_p,  &
+       call mpas_log_write('--- call subroutine ruc_land:')
+       call ruc_land( spp_lsm      = spp_lsm_loc   , lakemodel    = lakemodel   , lakemask  = lakemask_p,  &
                     rhosnf         = rhosnf_p      , precipfr     = precipfr_p  , mosaic_lu = mosaic_lu,   &
                     qsg            = qsg_p         , qvg          = qvg_p       , dew       = dew_p,       &
                     soilt1         = soilt1_p      , tsnav        = tsnav_p     , acrunoff  = acrunoff_p,  &
@@ -1080,7 +996,7 @@
                     graupelncv     = graupelncv_p  , snowncv      = snowncv_p   , rainncv   = rainncv_p,   &
                     qcg            = qcg_p         , flqc         = flqc_p      , flhc      = flhc_p,      &
                     landusef       = landusef_p    , nlcat        = num_landcat , soilctop  = soilf_p,     &
-                    nscat          = num_soilcat   , iswater      = iswater     , chklowq   = chklowq_p,   &         
+                    nscat          = num_soilcat   , iswater      = iswater     , chklowq   = chklowq_p,   &
                     sfcexc         = sfcexc_p      , sfcevp       = sfcevp_p    , myjpbl    = myjpbl,      &
                     dt             = dt_pbl        , ktau         = itimestep   , nsl       = num_soils,   &
                     rainbl         = rainbl_p      , snow         = snow_p      , snowh     = snowh_p,     &
@@ -1102,21 +1018,14 @@
                     udrunoff       = udrunoff_p    , grdflx       = grdflx_p    , acsnow    = acsnow_p,    &
                     snom           = acsnom_p      , shdmin       = shdmin_p    , rdlai2d   = rdlai2d,     &
                     mosaic_soil    = mosaic_soil   , zs           = zs_p        , smfr3d    = smfr3d_p,    &
-                    shdmax         = shdmax_p      , globalCells  = globalCells,                           &
+                    field_sf       = field_sf      , pattern_spp_lsm =          pattern_spp_lsm,           &
+                    shdmax         = shdmax_p      , globalCells     =          globalCells,               &
                     ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde ,  &
                     ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme ,  &
                     its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte    &
                           )
-       call sfcdiags_ruclsm( &
-                hfx     = hfx_p  , qfx     = qfx_p   , tsk  = tsk_p       , qsfc = qsfc_p , chs = chs_p , &
-                chs2    = chs2_p , cqs2    = cqs2_p  , t2   = t2m_p       , th2  = th2m_p , q2  = q2_p  , &
-                psfc2d  = psfc_p , t3d  = t_p , qv3d  = qv_p , dz  = dz_p , cp   = cp     , R_d = R_d   , &
-                rovcp   = rcp    , rho3d   = rho_p   , p3d  = pres2_hyd_p , snow = snow_p , cqs = cqs_p,  &
-                ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde ,                   &
-                ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme ,                   &
-                its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte                     &
-                    ) 
-        call mpas_timer_stop('sf_ruc')
+       call mpas_timer_stop('sf_ruc')
+
     case default
 
  end select lsm_select
