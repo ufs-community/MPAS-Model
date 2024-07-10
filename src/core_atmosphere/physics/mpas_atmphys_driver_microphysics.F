@@ -653,7 +653,7 @@
        call mpas_log_write('Computing hourly max reflectivity')
        call compute_hourly_max_radar_reflectivity(configs,diag_physics,its,ite)
     else
-       call mpas_log_write('*** NOTICE: NOT computing hourly simulated radar reflectivity')
+       call mpas_log_write('*** NOTICE: NOT computing hourly max simulated radar reflectivity')
        call mpas_log_write('            since WSM6 or Thompson microphysics scheme was not selected')
     end if
  endif
