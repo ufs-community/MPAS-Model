@@ -2,6 +2,5 @@
 	path = src/core_atmosphere/physics/TEMPO
 	url = https://github.com/NCAR/TEMPO.git
 [submodule "src/core_atmosphere/physics/UGWP"]
-        path = src/core_atmosphere/physics/UGWP
-        url = https://github.com/mdtoyNOAA/UGWP.git
-        branch = main
+	path = src/core_atmosphere/physics/UGWP
+	url = https://github.com/mdtoyNOAA/UGWP.git
