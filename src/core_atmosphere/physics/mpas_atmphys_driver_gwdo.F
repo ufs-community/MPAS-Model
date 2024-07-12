@@ -645,7 +645,7 @@
                   pblh      = hpbl_p      , br1       = br_p         , xland   = xland_p   , &
                   cp        = cp          , g         = gravity      , rd      = R_d       , &
                   rv        = R_v         , ep1       = ep_1         , pi      = pii       , &
-                  sina      = sina_p      , cosa      = cosa_p       ,                       &
+                  sina      = sina_p      , cosa      = cosa_p       , dz      = dz_p      , &
                   var2dls   = var2dls_p   , oc12dls   = conls_p      , oa2d1ls = oa1ls_p   , &
                   oa2d2ls   = oa2ls_p     , oa2d3ls   = oa3ls_p      , oa2d4ls = oa4ls_p   , &
                   ol2d1ls   = ol1ls_p     , ol2d2ls   = ol2ls_p      , ol2d3ls = ol3ls_p   , &

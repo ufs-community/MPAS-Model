@@ -22,7 +22,7 @@
                  var2dls,oc12dls,oa2d1ls,oa2d2ls,oa2d3ls,oa2d4ls,ol2d1ls,     &
                  ol2d2ls,ol2d3ls,ol2d4ls,var2dss,oc12dss,oa2d1ss,oa2d2ss,     &
                  oa2d3ss,oa2d4ss,ol2d1ss,ol2d2ss,ol2d3ss,ol2d4ss,             &
-                 sina,cosa,znu,znw,p_top,                                     &
+                 sina,cosa,dz,znu,znw,p_top,                                  &
                  cp,g,rd,rv,ep1,pi,                                           &
                  dt,dx,itimestep,                                             &
                  ids,ide, jds,jde, kds,kde,                                   &
@@ -52,6 +52,7 @@
 !-- g           acceleration due to gravity (m/s^2)
 !-- rd          gas constant for dry air (j/kg/k)
 !-- z           height above sea level (m)
+!-- dz          layer thickness (m)
 !-- rv          gas constant for water vapor (j/kg/k)
 !-- dt          time step (s)
 !-- dx          model grid interval (m)
@@ -113,7 +114,8 @@
                                                                  t3d, &
                                                                  u3d, &
                                                                  v3d, &
-                                                                   z
+                                                                   z, &
+                                                                  dz
 
  real(kind=kind_phys),intent(in),dimension(ims:ime,kms:kme,jms:jme):: &
                                                                  p3di
@@ -165,7 +167,7 @@
     dusfc_ss_hv,dvsfc_ss_hv,dusfc_fd_hv,dvsfc_fd_hv
 
  real(kind=kind_phys),dimension(its:ite,kts:kte):: &
-    u3d_hv,v3d_hv,t3d_hv,qv3d_hv,pi3d_hv,p3d_hv,z_hv
+    u3d_hv,v3d_hv,t3d_hv,qv3d_hv,pi3d_hv,p3d_hv,z_hv,dz_hv
 
  real(kind=kind_phys),dimension(its:ite,kts:kte):: &
     rublten_hv,rvblten_hv,dtaux3d_hv,dtauy3d_hv
@@ -212,6 +214,7 @@
               p3d_hv(i,k) =     p3d(i,k,j)
              pi3d_hv(i,k) =    pi3d(i,k,j)
                 z_hv(i,k) =       z(i,k,j)
+               dz_hv(i,k) =      dz(i,k,j)
        enddo
     enddo
 
@@ -282,8 +285,8 @@
                     ,uproj=u3d_hv,vproj=v3d_hv                &
                     ,t1=t3d_hv,q1=qv3d_hv                     &
                     ,prsi=p3di_hv,prsl=p3d_hv,prslk=pi3d_hv   &
-                    ,zl=z_hv,hpbl=pblh_hv,kpbl=kpbl_hv        &
-                    ,br1=br1_hv,xland1=xland_hv               &
+                    ,zl=z_hv,dz=dz_hv,hpbl=pblh_hv            &
+                    ,kpbl=kpbl_hv,br1=br1_hv,xland1=xland_hv  &
                     ,var=var2dls_hv,oc1=oc12dls_hv            &
                     ,oa2d1=oa2d1ls_hv,oa2d2=oa2d2ls_hv        &
                     ,oa2d3=oa2d3ls_hv,oa2d4=oa2d4ls_hv        &
