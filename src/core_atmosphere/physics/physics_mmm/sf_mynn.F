@@ -130,7 +130,8 @@
   subroutine sf_mynn_run(                                &
                      u1d,v1d,t1d,qv1d,p1d,dz8w1d,rho1d,  &
                      u1d2,v1d2,dz2w1d,cp,g,rovcp,r,xlv,  &
-                     psfcpa,chs,chs2,cqs,cqs2,cpm,pblh,rmol,&
+                     psfcpa,chs,chs2,cqs,cqs2,           &
+                     cpm,pblh,rmol,                      &
                      znt,ust,mavail,zol,mol,regime,psim, &
                      psih,xland,hfx,qfx,tsk,u10,v10,th2, &
                      t2,q2,flhc,flqc,snowh,qgh,qsfc,lh,  &
