@@ -10,7 +10,9 @@
 ! *                 Joseph Olson, Jaymes Kenyon (NOAA/GSL),            *
 ! *                 Wayne Angevine (NOAA/CSL), Kay Suselj (NASA/JPL),  *
 ! *                 Franciano Puhales (UFSM), Laura Fowler (NCAR),     *
-! *                 Elynn Wu (UCSD), and Jordan Schnell (NOAA/GSL)     *
+! *                 Elynn Wu (UCSD), and Jordan Schnell (NOAA/GSL),    *
+! *                 Tiziani Cherubin (MKWC, Univ. Hawaii),             *
+! *                 Xia Sun (NOAA/GSL/CIRES)                           *
 ! *                                                                    *
 ! *   Contents:                                                        *
 ! *                                                                    *
@@ -304,7 +306,7 @@ MODULE module_bl_mynn
 ! Note that the following mixing-length constants are now specified in mym_length
 !     &cns=3.5, alp1=0.23, alp2=0.3, alp3=3.0, alp4=10.0, alp5=0.2
 
- real(kind_phys), parameter :: qkemin=1.e-3
+ real(kind_phys), parameter :: qkemin=1.e-5
  real(kind_phys), parameter :: tliq = 269. !all hydrometeors are liquid when T > tliq
 
 ! Constants for cloud PDF (mym_condensation)
@@ -322,7 +324,7 @@ MODULE module_bl_mynn
 
 !For calculating the b-f freq and Ri, either use the buoyancy flux functions
 !(true) or use the direct calc of thlv with resolved and sgs clouds (false).  
- logical, parameter :: use_buoy=.true.
+ logical, parameter :: use_buoy=.false.
 
 !>Use Ito et al. (2015, BLM) scale-aware (0: no, 1: yes). Note that this also has impacts
 !!on the cloud PDF and mass-flux scheme, using LES-derived similarity function.
@@ -334,7 +336,7 @@ MODULE module_bl_mynn
 !>Option to activate downdrafts, from Elynn Wu (0: deactive, 1: active)
  integer, parameter :: bl_mynn_edmf_dd = 0
 
-!>Option to activate heating due to dissipation of TKE (to activate, set to 1.0)
+!>Option to activate heating due to dissipation of TKE (1: active, 0: off)
  integer, parameter :: dheat_opt = 1
 
 !Option to activate environmental subsidence in mass-flux scheme
@@ -1660,9 +1662,9 @@ CONTAINS
     real(kind_phys), parameter :: qkw_elb_min = 0.18
 
     integer :: i,j,k
-    real(kind_phys):: afk,abk,zwk,zwk1,dzk,qdz,vflx,bv,tau_cloud,     &
-            & wstar,elb,els,elf,el_stab,el_mf,el_stab_mf,elb_mf,      &
-            & PBLH_PLUS_ENT,Uonset,Ugrid,wt_u1,wt_u2,el_les,qkw_mf
+    real(kind_phys):: afk,abk,zwk,zwk1,dzk,qdz,vflx,bv,tau_cloud,      &
+           & wstar,elb,els,elf,el_stab,el_mf,el_stab_mf,elb_mf,elt_max,&
+           & PBLH_PLUS_ENT,Uonset,Ugrid,wt_u1,wt_u2,el_les,qkw_mf
     real(kind_phys), parameter :: ctau = 1000. !constant for tau_cloud
 
 !    tv0 = 0.61*tref
@@ -1709,17 +1711,17 @@ CONTAINS
 
         elt  = alp1*elt/vsc
         vflx = ( vt(kts)+one )*flt +( vq(kts)+tv0 )*flq
-        vsc  = ( gtr*elt*MAX( vflx, 0.0 ) )**onethird
+        vsc  = ( gtr*elt*MAX( vflx, zero ) )**onethird
 
         !   **  Strictly, el(i,k=1) is not zero.  **
-        el(kts) = 0.0
+        el(kts) = zero
         zwk1    = zw(kts+1)
 
         DO k = kts+1,kte
            zwk = zw(k)              !full-sigma levels
 
            !   **  Length scale limited by the buoyancy effect  **
-           IF ( dtv(k) .GT. 0.0 ) THEN
+           IF ( dtv(k) .GT. zero ) THEN
               bv  = SQRT( gtr*dtv(k) )
               elb = alp2*qkw(k) / bv &
                   &       *( one + alp3/alp2*&
@@ -1752,13 +1754,13 @@ CONTAINS
 
         !wt_u* are for hurricane tuning, meant to reduce diffusion in hurricanes
         ugrid = sqrt(u1(kts)**2 + v1(kts)**2)
-        uonset= 15.
-        wt_u1 = one - min(max(ugrid - uonset, 0.0)/20.0, 0.50) !reduce to 0.5
-        wt_u2 = one - min(max(ugrid - uonset, 0.0)/20.0, 0.01) !reduce to 0.01
+        uonset= 20.
+        wt_u1 = one - 0.2*min(1.0, max(zero, ugrid - uonset)/50.0) !reduce to 0.8
+        wt_u2 = one - 0.4*min(1.0, max(zero, ugrid - uonset)/50.0) !reduce to 0.6
         cns   = 3.5
         alp1  = 0.23
         alp2  = 0.3
-        alp3  = 2.5 * wt_u1 !taper off bouyancy enhancement in shear-driven pbls
+        alp3  = 2.5 * wt_u2 !taper off bouyancy enhancement in shear-driven pbls
         alp4  = 5.0
         alp5  = 0.3
         alp6  = 50.
@@ -1796,7 +1798,12 @@ CONTAINS
            zwk = zw(k)
         END DO
 
-        elt = MIN( MAX( alp1*elt/vsc, 8.), 400.)
+        if ((xland-1.5).GE.zero) then !hurricane tuning, over water only
+           elt_max=350.+100.*min(one, max(zero, ugrid - 50.0)/25.0)
+        else
+           elt_max=400.
+        endif
+        elt = MIN( MAX( alp1*elt/vsc, 8.), elt_max)
         !avoid use of buoyancy flux functions which are ill-defined at the surface
         !vflx = ( vt(kts)+one )*flt + ( vq(kts)+tv0 )*flq
         vflx= fltv
@@ -1819,11 +1826,11 @@ CONTAINS
               bv     = max( sqrt( gtr*dtv(k) ), 0.001)
               elb_mf = alp6*qkw_mf/bv
               elb_mf = elb_mf / (1. + (elb_mf/100.))
-              elb    = alp2*(max(qkw(k),qkw_elb_min*wt_u2))/bv    &
+              elb    = alp2*(max(qkw(k),qkw_elb_min))/bv    &
                      &  *( one + alp3*SQRT( vsc/(bv*elt) ) )
               elb    = max(elb, elb_mf)
               elb    = MIN(elb, zwk)
-              elf    = one * max(qkw(k), qkw_elb_min*wt_u2)/bv
+              elf    = one * max(qkw(k), qkw_elb_min)/bv
               elf    = max(elf, elb_mf)
               elBLavg(k) = MAX(elBLavg(k), elb_mf)
            ELSE
@@ -1849,6 +1856,9 @@ CONTAINS
            el(k) = sqrt( els**2/(1. + (els**2/elt**2)))
            el(k) = min(el(k), elb)
            el(k) = min(el(k), elf)  !elf can be smaller than elb in upper pbl
+           if ((xland-1.5).GE.zero) then !hurricane tuning, over water only
+              el(k)=el(k)*wt_u1
+           endif
            el(k) = el(k)*(1.-wt) + alp5*elBLavg(k)*wt
 
            !if (el(k) > 1000.) then
@@ -3411,9 +3421,10 @@ CONTAINS
     real(kind_phys):: qsl,esat,qsat,dqsl,cld0,q1k,qlk,eq1,qll,           &
          &q2p,pt,rac,qt,t,xl,rsl,cpm,Fng,qww,alpha,beta,bb,              &
          &ls,wt,wt2,qpct,cld_factor,fac_damp,liq_frac,ql_ice,ql_water,   &
-         &qmq,qsat_tk,q1_rh,rh_hack,dzm1,zsl,maxqc,cldfra_ceil,rh_ceil
-    real(kind_phys), parameter :: qpct_sfc=0.025
-    real(kind_phys), parameter :: qpct_pbl=0.030
+         &qmq,qsat_tk,q1_rh,rh_hack,zsl,maxqc,cldfra_rh,cldfra_qsq,      &
+         &cldfra_rh0,cldfra_rh1,cldfra_qsq0,cldfra_qsq1
+    real(kind_phys), parameter :: qpct_sfc=0.015
+    real(kind_phys), parameter :: qpct_pbl=0.025
     real(kind_phys), parameter :: qpct_trp=0.030
     real(kind_phys), parameter :: rhcrit  =0.83 !for cloudpdf = 2
     real(kind_phys), parameter :: rhmax   =1.10 !for cloudpdf = 2
@@ -3590,11 +3601,8 @@ CONTAINS
         !Diagnostic statistical scheme of Chaboureau and Bechtold (2002), JAS
         !but with use of higher-order moments to estimate sigma
         pblh2=MAX(10._kind_phys,pblh1)
-        zagl = zero
-        dzm1 = zero
         DO k = kts,kte-1
-           zagl   = zagl + half*(dz(k) + dzm1)
-           dzm1   = dz(k)
+           zagl   = zw(k) + half*dz(k)
 
            t      = th(k)*exner(k)
            xl     = xl_blend(t)              ! obtain latent heat
@@ -3623,27 +3631,30 @@ CONTAINS
            r3sq   = max( qsq(k), zero )
            !Calculate sigma using higher-order moments:
            sgm(k) = SQRT( r3sq )
-           !Set constraints on sigma relative to saturation water vapor
+           !Set constraints on sigma relative to total water
            sgm(k) = min( sgm(k), qw(k)*onethird )
            
            !introduce vertical grid spacing dependence on min sgm
-           wt     = max(500. - max(dz(k)-100., zero), zero)/500. !=1 for dz < 100 m, =0 for dz > 600 m
-           sgm(k) = sgm(k) + sgm(k)*0.2*(one-wt) !inflate sgm for coarse dz
+           wt     = min(one, max(zero, dz(k)-100.)/500.) !=0 for dz < 100 m, =1 for dz > 600 m
+           sgm(k) = sgm(k) + sgm(k)*0.2*wt !inflate sgm for coarse dz
 
            !allow minimum sgm to vary with z.
-           wt     = min(max( zagl - (pblh2+200.), zero )/300., one) !0 in pbl, 1 aloft
+           wt     = min(one, max(zero, (zagl - (pblh2+10.)))/300.) !0 in pbl, 1 aloft
            qpct   = qpct_pbl*(one-wt) + qpct_trp*wt
-           zsl    = min(max(50., 0.1*pblh2), 150.)          !crude ekman layer
-           wt     = min(max( zagl - zsl, zero )/300., one)  !0 near sfc, 1 above 
+           zsl    = min(150., max(50., 0.1*pblh2))        !crude ekman layer
+           wt     = min(one, max(zero, zagl - zsl)/200.)  !0 near sfc, 1 above 
            qpct   = qpct_sfc*(one-wt) + qpct*wt
            sgm(k) = max( sgm(k), qw(k)*qpct )
+
+           !in saturated conditions, apply lower limit on sgm
+           if (qmq .ge. zero) sgm(k) = max(0.02*qw(k), sgm(k))
            
            q1(k)  = qmq  / sgm(k)  ! Q1, the normalized saturation
 
            !Add condition for falling/settling into low-RH layers, so at least
            !some cloud fraction is applied for all qc, qs, and qi.
            rh_hack= rh(k)
-           wt2    = min(max( zagl - pblh2, zero )/300., one) !0 in pbl, 1 aloft
+           wt2    = min(one, max(zero, zagl - pblh2)/300.) !0 in pbl, 1 aloft
            !ensure adequate RH & q1 when qi is at least 1e-9 (above the PBLH)
            if ((qi(k)+qs(k))>1.e-9 .and. (zagl .gt. pblh2)) then
               rh_hack =min(rhmax, rhcrit + wt2*0.045*(9.0 + log10(qi(k)+qs(k))))
@@ -3673,16 +3684,22 @@ CONTAINS
            !cldfra_bl1(k) = max(zero, min(one, 0.5+0.36*atan(1.8*(q1k+0.2))))
            !exp1
            !cldfra_bl1(k) = max(zero, min(one, half+0.36*atan(1.65*q1k)))
-           cldfra_bl1(k) = max(zero, min(one, half+0.36*atan(2.1*(q1k+0.3))))
-           
+
+           !For clouds within the pbl, force higher saturation to make clouds
+           wt2           = min(one, max(zero, (zagl - (pblh1-100.))/200.)) !0 in pbl, 1 aloft
+
+           cldfra_qsq0   = max(zero, min(one, half+0.36*atan(3.1*(q1k))))
+           cldfra_qsq1   = max(zero, min(one, half+0.36*atan(2.1*(q1k+0.2))))
+           cldfra_qsq    = cldfra_qsq0*(one-wt2) + cldfra_qsq1*wt2
+
            !For ceiling detection, apply minimum rh-based cloud fraction
-           wt2           = min(max( zagl - max(pblh2, 20.), zero )/200., one) !0 in pbl, 1 aloft 
-           rh_ceil       = 0.955 + 0.045*(one - wt2)
-           cldfra_ceil   = min(one, max(zero, 0.53*tanh((rh(k)-rh_ceil)/0.055)+half))
-           cldfra_bl1(k) = max(cldfra_bl1(k), cldfra_ceil)
+           cldfra_rh0    = min(one, max(zero, 0.56*tanh((rh(k)-0.976)/0.030)+half))
+           cldfra_rh1    = min(one, max(zero, 0.55*tanh((rh(k)-0.955)/0.055)+half))
+           cldfra_rh     = cldfra_rh0*(one-wt2) + cldfra_rh1*wt2
+
+           cldfra_bl1(k) = max(cldfra_qsq, cldfra_rh)
            
            ! Specify hydrometeors
-           ! JAYMES- this option added 8 May 2015
            ! The cloud water formulations are taken from CB02, Eq. 8.
            maxqc = max(qw(k) - qsat_tk, zero)
            if (q1k < zero) then        !unsaturated
@@ -3694,8 +3711,10 @@ CONTAINS
               ql_water = min(sgm(k)*q1k, maxqc)
               ql_ice   =     sgm(k)*q1k
            else                      !slightly saturated (0 > q1 < 2)
-              ql_water = min(sgm(k)*(exp(-1.) + 0.66*q1k + 0.086*q1k**2), maxqc)
-              ql_ice   =     sgm(k)*(exp(-1.) + 0.66*q1k + 0.086*q1k**2)
+              !orig: ql_water = min(sgm(k)*(exp(-1.) + 0.66*q1k + 0.086*q1k**2), maxqc)
+              !orig: ql_ice   =     sgm(k)*(exp(-1.) + 0.66*q1k + 0.086*q1k**2)
+              ql_water = min(sgm(k),0.02*qw(k))*(exp(-1.) + 0.66*q1k + 0.086*q1k**2)
+              ql_ice   = min(sgm(k),0.02*qw(k))*(exp(-1.) + 0.66*q1k + 0.086*q1k**2)
            endif
 
            !In saturated grid cells, use average of SGS and resolved values
@@ -5797,15 +5816,10 @@ ENDIF
  ! are present This function needs to be asymetric...
  maxw        = zero
  cloud_base  = 9000.0
- zagl        = zero
  do k=1,kte-1
-    if (k == 1) then
-       zagl = zagl + half*dz1(k)
-    else
-       zagl = zagl + half*(dz1(k-1)+dz1(k))
-    endif
+    zagl = zw1(k) + half*dz1(k)
 
-    if (zagl > pblh + 500.) exit
+    if (zagl > (pblh + 500.)) exit
 
     wpbl = w1(k)
     if (w1(k) < zero)wpbl = 2.*w1(k)
@@ -5817,7 +5831,7 @@ ENDIF
     !Search for cloud base
     qc_sgs = max(qc1(k), qc_bl1(k))
     if (qc_sgs> 1E-5 .and. (cldfra_bl1(k) .ge. 0.5) .and. cloud_base == 9000.0) then
-       cloud_base = zw1(k) !height at interface below cloud  mass level
+       cloud_base = zw1(k) !height at interface below cloud mass level
     endif
  enddo
 
@@ -5885,7 +5899,7 @@ ENDIF
  if ((landsea-1.5) .lt. zero) then  !land
     maxwidth_cld = min(lmax, max(0.5_kind_phys*cloud_base, 400._kind_phys))
  else                               !water
-    maxwidth_cld = min(lmax, max(0.8_kind_phys*cloud_base, 400._kind_phys))
+    maxwidth_cld = min(lmax, max(0.9_kind_phys*cloud_base, 400._kind_phys))
  endif
  ! Criteria (4)
  wspd_pbl=sqrt(max(u1(kts)**2 + v1(kts)**2, 0.01_kind_phys))

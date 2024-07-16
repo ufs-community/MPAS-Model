@@ -249,7 +249,7 @@
  real(kind=kind_phys):: pl,thcon,tvcon,e1
  real(kind=kind_phys):: dthvdz,dthvm,vconv,zol2,zol10,zolza,zolz0,zolzt
  real(kind=kind_phys):: dtg,psix,dtthx,dthdz,psix10,psit,psit2, &
-                        psiq,psiq2,psiq10,dzdt
+                        psiq,psiq2,psiq10,dzdt,psix_min
  real(kind=kind_phys):: fluxc,vsgd
  real(kind=kind_phys):: restar,visc,dqg,oldust,oldtst
 
@@ -729,9 +729,16 @@
     !------------------------------------------------------------
     !-----compute the frictional velocity:
     !------------------------------------------------------------
-    !     Za(1982) Eqs(2.60),(2.61).
-    psix=gz1oz0(i)-psim(i)
-    psix10=gz10oz0(i)-psim10(i)
+    ! over water, apply maximum cd (=3.1e-3), which corresponds to
+    ! psix10 = 7.1:
+    if ((xland(i)-1.5).lt.0.) then        !land 
+       psix=gz1oz0(i)-psim(i)
+       psix10=gz10oz0(i)-psim10(i)
+    else                                  !water
+       psix10=max(gz10oz0(i)-psim10(i),7.1)
+       psix_min=7.1*log(za(i)/zntstoch(i))/log(10./zntstoch(i))
+       psix=max(gz1oz0(i)-psim(i), psix_min)
+    endif
     ! to prevent oscillations average with old value
     oldust = ust(i)
     ust(i)=0.5*ust(i)+0.5*karman*wspd(i)/psix
@@ -802,8 +809,16 @@
 
     !For computing the diagnostics and fluxes (below), whether the fluxes
     !are turned off or on, we need the following:
-    psix=gz1oz0(i)-psim(i)
-    psix10=gz10oz0(i)-psim10(i)
+    ! over water, apply maximum cd (=3.1e-3), which corresponds to
+    ! psix = 7.1 (at 10 m):
+    if ((xland(i)-1.5).lt.0.) then    !land
+       psix=gz1oz0(i)-psim(i)
+       psix10=gz10oz0(i)-psim10(i)
+    else                              !water
+       psix10=max(gz10oz0(i)-psim10(i),7.1)
+       psix_min=7.1*log(za(i)/zntstoch(i))/log(10./zntstoch(i))
+       psix=max(gz1oz0(i)-psim(i), psix_min)
+    endif
 
     psit =max(gz1ozt(i)-psih(i), 1.0)
     psit2=max(gz2ozt(i)-psih2(i),1.0)
