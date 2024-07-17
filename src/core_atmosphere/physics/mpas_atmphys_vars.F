@@ -448,7 +448,8 @@
     detqv_p,          &!
     qcbl_p,           &!
     qibl_p,           &!
-    cldfrabl_p         !
+    cldfrabl_p,       &!
+    cldfrac_cu_p       !
 
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
     rqsblten_p,       &!tendency of snow mixing ratio due to PBL processes.

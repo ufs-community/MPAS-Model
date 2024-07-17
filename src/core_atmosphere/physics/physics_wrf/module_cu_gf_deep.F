@@ -12,6 +12,7 @@ MODULE module_cu_gf_deep
      real(kind=kind_phys), parameter:: xlv=2.5e6
      real(kind=kind_phys), parameter::r_v=461.
      real(kind=kind_phys), parameter :: tcrit=258.
+     real(kind=kind_phys), parameter ::  Kfr = 0.9, epsx = 1.e2, alpha_dd=45., pi=3.1416
 !> tuning constant for cloudwater/ice detrainment
      real(kind=kind_phys), parameter:: c1= 0.003 !.002 ! .0005
 !> parameter to turn on or off evaporation of rainwater as done in sas
@@ -36,6 +37,8 @@ MODULE module_cu_gf_deep
      real(kind=kind_phys), parameter :: dx_thresh = 6500.
 !> still 16 ensembles for clousres
      integer, parameter:: maxens3=16
+!>  which coldpool version to use
+     integer, parameter:: icoldpool=1
 
 !---meltglac-------------------------------------------------
  logical, parameter :: melt_glac      = .true.  !<- turn on/off ice phase/melting
@@ -365,7 +368,7 @@ contains
        hkbo,xhkb,                                                        &
        xmb,pwavo,ccnloss,                                                &
        pwevo,bu,bud,cap_max,                                             &
-       cap_max_increment,closure_n,psum,psumh,sig,sigd
+       cap_max_increment,closure_n,psum,psumh,sig,sigd,sig_init
      real(kind=kind_phys),    dimension (its:ite) ::                     &
         axx,edtmax,edtmin,entr_rate
      integer,    dimension (its:ite) ::                                  &
@@ -444,7 +447,12 @@ contains
 !---meltglac-------------------------------------------------
 
      real(kind=kind_phys),    dimension (its:ite,kts:kte) ::  p_liq_ice,melting_layer,melting
-!$acc declare create(p_liq_ice,melting_layer,melting)
+! coldpool
+     real(kind=kind_phys),    dimension (its:ite) ::  beta_x,vcpool, wlpool,umcl,vmcl,slope_pool
+     real(kind=kind_phys),    dimension (its:ite,kts:kte) ::  buoysrc,dellat_d
+     real(kind=kind_phys) :: aux,mcl_speed,total_dz,mx_buoy2,h_env
+
+!$acc declare create(p_liq_ice,melting_layer,melting,buoysrc,beta_x,vcpool,wlpool,umcl,vmcl)
 
      integer :: itemp
 
@@ -458,6 +466,7 @@ contains
       cumulus='deep'
       if(imid.eq.1)cumulus='mid'
       pmin=150.
+      mx_buoy2 = (cp*10.) != 10004.0 J/kg
       if(imid.eq.1)pmin=75.
 !$acc kernels
       ktopdby(:)=0
@@ -533,6 +542,8 @@ contains
       cap_maxs=75. ! 150.
 !$acc kernels
       do i=its,itf
+        sig(i)=0.
+        sig_init(i)=0.
         edto(i)=0.
         closure_n(i)=16.
         xmb_out(i)=0.
@@ -595,8 +606,9 @@ contains
          endif
          sig(i)=(1.-frh)**2
          !frh_out(i) = frh
-         if(forcing(i,7).eq.0.)sig(i)=1.
-         frh_out(i) = frh*sig(i)
+         !if(forcing(i,7).eq.0.)sig(i)=1.
+         frh_out(i) = frh !*sig(i)
+         sig_init(i)=sig(i)
       enddo
 !$acc end kernels
       sig_thresh = (1.-frh_thresh)**2
@@ -912,6 +924,7 @@ contains
           tot_clw=tot_clw+qc(i,k)+qi(i,k)
          enddo
          if(tot_clw <= 0.)sig(i)=1.
+         sig_init(i)=sig(i)
 !$acc loop independent
          do k=ktop(i)+1,kte
            zuo(i,k)=0.
@@ -1577,12 +1590,13 @@ contains
 !
       do k=kts,kte
       do i=its,itf
-        dellu  (i,k)=0.
-        dellv  (i,k)=0.
-        dellah (i,k)=0.
-        dellat (i,k)=0.
-        dellaq (i,k)=0.
-        dellaqc(i,k)=0.
+        dellu  (i,k)  =0.
+        dellv  (i,k)  =0.
+        dellah (i,k)  =0.
+        dellat (i,k)  =0.
+        dellat_d (i,k)=0.
+        dellaq (i,k)  =0.
+        dellaqc(i,k)  =0.
       enddo
       enddo
 !$acc end kernels
@@ -1706,6 +1720,8 @@ contains
          g_rain=  0.5*(pwo (i,1)+pwo (i,2))*g/dp
          e_dn  = -0.5*(pwdo(i,1)+pwdo(i,2))*g/dp*edto(i)  ! pwdo < 0 and e_dn must > 0
          dellaq(i,1) = dellaq(i,1)+ e_dn-g_rain
+         dellat_d(i,1)=zdo(i,2)*edto(i)*(hcdo(i,2)-heo_cup(i,2))*g/dp
+
          
          !--- conservation check
          !- water mass balance
@@ -1759,6 +1775,9 @@ contains
                          +(zdo(i,k+1)*(qcdo(i,k+1)-qo_cup(i,k+1) ) -                 &
                            zdo(i,k  )*(qcdo(i,k  )-qo_cup(i,k  ) ) )*g/dp*edto(i)    &
                          - c_up + e_dn
+            if(k.le.jmin(i)-1)dellat_d(i,k)= &
+               edto(i)*dd_massdetro(i,k)*(.5*(hcdo(i,k+1)+hcdo(i,k))-heo(i,k))*g/dp
+
             !- check water conservation liq+condensed (including rainfall)
             ! trash= trash+ (dellaq(i,k)+dellaqc(i,k)+ g_rain-e_dn)*dp/g
 
@@ -2040,6 +2059,30 @@ contains
             ichoice,imid,ipr,itf,ktf,                                    &
             its,ite, kts,kte,                                            &
             dicycle,xf_dicycle )
+        if (icoldpool > 0 .and. imid ==0) then
+          do i=its,itf
+            vcpool(i)=0.
+            wlpool(i)=0.
+            total_dz=0.
+            if(ierr(i).gt.0)cycle ! exit loopI
+               do k = kts,jmin(i)-1
+                 buoysrc(i,k)=beta_x(i)-dellat_d(i,k)*xmb(i)*dtime !/sig(i)*cp
+                 if(buoysrc(i,k) < epsx .or. total_dz .gt. z_detr ) cycle
+                  H_env      = heo(i,k)
+                  dz         = zo(i,k+1)-zo(i,k)
+                  total_dz   = total_dz + dz
+                  vcpool(i) = vcpool(i) + (g*dz*min(mx_buoy2,buoysrc(i,k))/H_env)
+                  wlpool(i) = wlpool(i) + (g*dz*min(mx_buoy2,buoysrc(i,k))/H_env )
+              end do
+              do k = kts,jmin(i)-1
+                 buoysrc(i,k)=-dellat_d(i,k)*xmb(i)*dtime
+              end do
+              vcpool(i) = min(20., Kfr *sqrt(vcpool(i)))
+              slope_pool(i) = alpha_dd
+              wlpool(i) = min(10.,  Kfr *sin( slope_pool(i)*pi/180. )* sqrt(wlpool(i)))
+          enddo ! i-loop
+          endif ! icoldpool
+
 
 !> - Call rain_evap_below_cloudbase() to calculate evaporation below cloud base
 
@@ -2257,6 +2300,28 @@ contains
              enddo
           endif
       enddo
+      !-----downdraft_cold_pool---------------
+      if (icoldpool > 0 .and. imid ==0) then
+      ! --- adding the gust front horizontal speed to the 2-d MCL wind
+      ! --- only magnitude is augmented, direction is kept the same
+      do i=its,itf
+          if(ierr(i) > 0 ) cycle
+           MCL_speed= sqrt( umcl(i)**2 + vmcl(i)**2 )
+           aux =  (MCL_speed + vcpool(i))/(MCL_speed+1.e-6)
+           umcl(i) = aux * umcl(i)
+           vmcl(i) = aux * vmcl(i)
+      enddo
+      ! --- gust front momentum impact
+      do i=its,itf
+          if(ierr(i) > 0 ) cycle
+           do k=kts,kdet(i)
+             dp=100.*(po_cup(i,k)-po_cup(i,k+1))
+             outu(i,k) = outu(i,k) + edto(i)*zdo(i,k+1)*(umcl(i)-us(i,k))*g/dp*xmb(i)
+             outv(i,k) = outv(i,k) + edto(i)*zdo(i,k+1)*(vmcl(i)-vs(i,k))*g/dp*xmb(i)
+           enddo
+      enddo
+     endif ! icoldpool
+
 !$acc end kernels
 ! rain evaporation as in sas
 !
@@ -2282,8 +2347,8 @@ contains
          qevap(i) = 0.
          flg(i) = .true.
          if(ierr(i).eq.0)then
-         evef = edt(i) * evfact * sig(i)**2
-         if(xland(i).gt.0.5 .and. xland(i).lt.1.5) evef = edt(i) * evfactl * sig(i)**2
+         evef = edt(i) * evfact * sig_init(i)**2
+         if(xland(i).gt.0.5 .and. xland(i).lt.1.5) evef = edt(i) * evfactl * sig_init(i)**2
 !$acc loop seq
          do k = ktop(i), 1, -1
               rain =  pwo(i,k) + edto(i) * pwdo(i,k)

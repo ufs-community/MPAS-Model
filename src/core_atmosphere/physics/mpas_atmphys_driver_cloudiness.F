@@ -65,8 +65,10 @@
  type(mpas_pool_type),intent(in)   :: configs
 !local pointer:
  character(len=StrKIND),pointer:: radt_cld_scheme
+ character(len=StrKIND),pointer:: convection_scheme
 
  call mpas_pool_get_config(configs,'config_radt_cld_scheme',radt_cld_scheme)
+ call mpas_pool_get_config(configs,'config_convection_scheme',convection_scheme)
 
  if(.not.allocated(dx_p)     ) allocate(dx_p(ims:ime,jms:jme)             ) 
  if(.not.allocated(xland_p)  ) allocate(xland_p(ims:ime,jms:jme)          )
@@ -82,6 +84,11 @@
        if(.not.allocated(qibl_p)) allocate(qibl_p(ims:ime,kms:kme,jms:jme))
        if(.not.allocated(qcbl_p)) allocate(qcbl_p(ims:ime,kms:kme,jms:jme))
     case default
+
+    if (convection_scheme=="cu_grell_freitas") then
+       if(.not.allocated(qicu_p)) allocate(qicu_p(ims:ime,kms:kme,jms:jme))
+       if(.not.allocated(qccu_p)) allocate(qccu_p(ims:ime,kms:kme,jms:jme))
+    endif
 
  end select cld_fraction_select
 
@@ -142,13 +149,15 @@
  real(kind=RKIND),dimension(:),pointer:: areaCell,meshDensity
  real(kind=RKIND),dimension(:),pointer:: xland
 
- real(kind=RKIND),dimension(:,:),pointer:: cldfrac_bl,qi_bl,qc_bl
+ real(kind=RKIND),dimension(:,:),pointer:: cldfrac_bl,qi_bl,qc_bl,cldfrac_cu,qc_cu,qi_cu
 
  character(len=StrKIND),pointer:: radt_cld_scheme
+ character(len=StrKIND),pointer:: convection_scheme
 
 !-----------------------------------------------------------------------------------------------------------------
 
  call mpas_pool_get_config(configs,'config_len_disp',len_disp)
+ call mpas_pool_get_config(configs,'config_convection_scheme',convection_scheme)
 
  call mpas_pool_get_array(mesh,'areaCell'   ,areaCell   )
  call mpas_pool_get_array(mesh,'meshDensity',meshDensity)
@@ -215,6 +224,24 @@
        enddo
 
     case default
+
+    if (convection_scheme=="cu_grell_freitas") then
+       call mpas_pool_get_array(diag_physics,'cldfrac_cu',cldfrac_cu)
+       call mpas_pool_get_array(diag_physics,'qi_cu',qi_cu)
+       call mpas_pool_get_array(diag_physics,'qc_cu',qc_cu)
+       do j = jts,jte
+       do k = kts,kte
+       do i = its,ite
+          if (cldfrac_cu(k,i) .gt. 0.001) then
+             cldfrac_p(i,k,j) = cldfrac_p(i,k,j) + cldfrac_cu(k,i)
+          endif
+          qccu_p(i,k,j) = qc_cu(k,i)
+          qicu_p(i,k,j) = qi_cu(k,i)
+       enddo
+       enddo
+       enddo
+    endif
+
  end select cld_fraction_select  
  
 
@@ -266,6 +293,7 @@
 
 !local variables and pointers:
  character(len=StrKIND),pointer:: radt_cld_scheme
+ character(len=StrKIND),pointer:: convection_scheme
 
  integer:: i,j,k
 
@@ -274,6 +302,7 @@
 !call mpas_log_write('--- enter subroutine driver_cloudiness:')
 
  call mpas_pool_get_config(configs,'config_radt_cld_scheme',radt_cld_scheme)
+ call mpas_pool_get_config(configs,'config_convection_scheme',convection_scheme)
 
 !copy MPAS arrays to local arrays:
  call cloudiness_from_MPAS(itimestep,configs,mesh,diag_physics,sfc_input,its,ite)
@@ -310,6 +339,14 @@
       call mpas_timer_stop('cal_mynncld')
 
     case default
+
+    if (convection_scheme=="cu_grell_freitas") then
+       call mpas_timer_start('cal_gfcld')
+       call cal_gfcld(cldfrac_p , qcrad_p   , qirad_p    , &
+                      qccu_p    , qicu_p    ,              &
+                      its,  ite , jts , jte , kts , kte  )
+      call mpas_timer_stop('cal_gfcld')
+    endif
 
  end select cld_fraction_select
 
@@ -490,6 +527,41 @@
  enddo
 
  end subroutine cal_mynncld
+!=================================================================================================================
+!=================================================================================================================
+ subroutine cal_gfcld(cldfrac,qc,qi,qc_cu,qi_cu,its,ite,jts,jte,kts,kte)
+!=================================================================================================================
+
+!input arguments:
+ integer,intent(in):: its,ite,jts,jte,kts,kte
+ real(kind=RKIND),intent(inout),dimension(ims:ime,kms:kme,jms:jme):: qc,qi
+ real(kind=RKIND),intent(in),   dimension(ims:ime,kms:kme,jms:jme):: qc_cu,qi_cu
+ real(kind=RKIND),intent(in),   dimension(ims:ime,kms:kme,jms:jme):: cldfrac
+
+!local variables:
+ integer:: i,j,k
+
+ real(kind=RKIND),parameter:: qc_thresh  = 1.e-06
+ real(kind=RKIND),parameter:: qi_thresh  = 1.e-09
+ real(kind=RKIND),parameter:: cld_thresh = 1.e-03
+
+ do j = jts,jte
+ do k = kts,kte
+ do i = its,ite
+
+    if (qc(i,k,j) < qc_thresh .AND. cldfrac(i,k,j) > cld_thresh) THEN
+       !call mpas_log_write("Adding in cldfra_bl to qc at $i,$i,$i", intArgs=(/i,j,k/))
+       qc(i,k,j)=qc(i,k,j) + qc_cu(i,k,j)
+    endif
+    if (qi(i,k,j) < qi_thresh .AND. cldfrac(i,k,j) > cld_thresh) THEN
+       !call mpas_log_write("Adding in cldfra_bl to qi at $i,$i,$i", intArgs=(/i,j,k/))
+       qi(i,k,j)=qi(i,k,j) + qi_cu(i,k,j)
+    endif
+ enddo
+ enddo
+ enddo
+
+ end subroutine cal_gfcld
 !=================================================================================================================
  end module mpas_atmphys_driver_cloudiness
 !=================================================================================================================
