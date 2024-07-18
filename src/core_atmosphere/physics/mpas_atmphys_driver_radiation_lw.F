@@ -9,7 +9,7 @@
  module mpas_atmphys_driver_radiation_lw
  use mpas_kind_types
  use mpas_pool_routines
- use mpas_timer, only : mpas_timer_start, mpas_timer_stop
+ use mpas_timer,only: mpas_timer_start,mpas_timer_stop
 
  use mpas_atmphys_driver_radiation_sw, only: radconst
  use mpas_atmphys_constants
@@ -94,6 +94,9 @@
 !   Laura D. Fowler (laura@ucar.edu) / 2017-02-16.
 ! * removed the variables f_qv and f_qg in the call to subroutine camrad.
 !   Laura D. Fowler (laura@ucar.edu) / 2024-02-13.
+!   Laura D. Fowler (laura@ucar.edu) / 2017-02-16.
+! * removed the variables f_qv and f_qg in the call to subroutine camrad.
+!   Laura D. Fowler (laura@ucar.edu) / 2024-02-13.
 
 
  contains
@@ -138,7 +141,6 @@
  if(.not.allocated(rthratenlw_p) ) allocate(rthratenlw_p(ims:ime,kms:kme,jms:jme) )
 
  radiation_lw_select: select case (trim(radt_lw_scheme))
-
     case("rrtmg_lw")
 
        if(.not.allocated(recloud_p)    ) allocate(recloud_p(ims:ime,kms:kme,jms:jme)       )
@@ -202,7 +204,6 @@
        endif
 
     case default
-
  end select radiation_lw_select
 
  end subroutine allocate_radiation_lw
@@ -243,7 +244,6 @@
  if(allocated(rthratenlw_p) ) deallocate(rthratenlw_p )
 
  radiation_lw_select: select case (trim(radt_lw_scheme))
-
     case("rrtmg_lw")
        if(allocated(recloud_p)    ) deallocate(recloud_p    )
        if(allocated(reice_p)      ) deallocate(reice_p      )
@@ -292,7 +292,6 @@
        if(allocated(aerosolcp_p)  ) deallocate(aerosolcp_p  )
 
     case default
-
  end select radiation_lw_select
 
  end subroutine deallocate_radiation_lw
@@ -320,9 +319,9 @@
 
 !local pointers:
  logical,pointer:: config_o3climatology
+ logical,pointer:: config_microp_re
  character(len=StrKIND),pointer:: radt_lw_scheme
  character(len=StrKIND),pointer:: microp_scheme
- logical,pointer:: config_microp_re
 
  real(kind=RKIND),dimension(:),pointer    :: latCell,lonCell
  real(kind=RKIND),dimension(:),pointer    :: skintemp,snow,xice,xland
@@ -339,10 +338,10 @@
 
 !-----------------------------------------------------------------------------------------------------------------
 
+ call mpas_pool_get_config(configs,'config_microp_re'     ,config_microp_re    )
  call mpas_pool_get_config(configs,'config_o3climatology' ,config_o3climatology)
  call mpas_pool_get_config(configs,'config_radt_lw_scheme',radt_lw_scheme      )
  call mpas_pool_get_config(configs,'config_microp_scheme' ,microp_scheme       )
- call mpas_pool_get_config(configs,'config_microp_re'     ,config_microp_re    )
 
  call mpas_pool_get_array(mesh,'latCell',latCell)
  call mpas_pool_get_array(mesh,'lonCell',lonCell)
@@ -415,10 +414,9 @@
  enddo
 
  radiation_lw_select: select case (trim(radt_lw_scheme))
-
     case("rrtmg_lw")
        microp_select: select case(microp_scheme)
-          case("mp_thompson","mp_wsm6","mp_nssl2m")
+          case("mp_thompson","mp_thompson_aerosols","mp_wsm6","mp_nssl2m")
              if(config_microp_re) then
                 call mpas_pool_get_array(diag_physics,'re_cloud',re_cloud)
                 call mpas_pool_get_array(diag_physics,'re_ice'  ,re_ice  )
@@ -610,7 +608,6 @@
        enddo
 
     case default
-
  end select radiation_lw_select
 
  end subroutine radiation_lw_from_MPAS
@@ -629,9 +626,9 @@
  integer,intent(in):: its,ite
 
 !local pointers:
+ logical,pointer:: config_microp_re
  character(len=StrKIND),pointer:: radt_lw_scheme
  character(len=StrKIND),pointer:: microp_scheme
- logical,pointer:: config_microp_re
 
  real(kind=RKIND),dimension(:),pointer :: glw,lwcf,lwdnb,lwdnbc,lwdnt,lwdntc,lwupb,lwupbc, &
                                           lwupt,lwuptc,olrtoa
@@ -645,9 +642,9 @@
 
 !-----------------------------------------------------------------------------------------------------------------
 
- call mpas_pool_get_config(configs,'config_radt_lw_scheme',radt_lw_scheme  )
- call mpas_pool_get_config(configs,'config_microp_scheme' ,microp_scheme   )
  call mpas_pool_get_config(configs,'config_microp_re'     ,config_microp_re)
+ call mpas_pool_get_config(configs,'config_microp_scheme' ,microp_scheme   )
+ call mpas_pool_get_config(configs,'config_radt_lw_scheme',radt_lw_scheme  )
 
  call mpas_pool_get_array(diag_physics,'glw'   ,glw   )
  call mpas_pool_get_array(diag_physics,'lwcf'  ,lwcf  )
@@ -690,7 +687,7 @@
     case("rrtmg_lw")
 
        microp_select: select case(microp_scheme)
-          case("mp_thompson","mp_wsm6","mp_nssl2m")
+          case("mp_thompson","mp_thompson_aerosols","mp_wsm6","mp_nssl2m")
              call mpas_pool_get_array(diag_physics,'rre_cloud',rre_cloud)
              call mpas_pool_get_array(diag_physics,'rre_ice'  ,rre_ice  )
              call mpas_pool_get_array(diag_physics,'rre_snow' ,rre_snow )
@@ -795,7 +792,6 @@
  call mpas_pool_get_config(configs,'config_radt_lw_scheme',radt_lw_scheme)
 
  radiation_lw_select: select case (trim(radt_lw_scheme))
-
     case ("rrtmg_lw")
        call rrtmg_initlw_forMPAS(dminfo)
 
@@ -803,7 +799,6 @@
        call camradinit(dminfo,mesh,atm_input,diag,diag_physics,state,time_lev)
     
     case default
-
  end select radiation_lw_select
 
  end subroutine init_radiation_lw
@@ -847,12 +842,11 @@
 
 !call to longwave radiation scheme:
  radiation_lw_select: select case (trim(radt_lw_scheme))
-
     case ("rrtmg_lw")
        o3input = 0
        if(config_o3climatology) o3input = 2
 
-       call mpas_timer_start('RRTMG_lw')
+       call mpas_timer_start('rrtmg_lwrad')
        call rrtmg_lwrad( &
             p3d        = pres_hyd_p    , p8w       = pres2_hyd_p , pi3d     = pi_p     , &
             t3d        = t_p           , t8w       = t2_p        , dz8w     = dz_p     , &
@@ -874,7 +868,7 @@
             ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme ,      &
             its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte        &
                        )
-       call mpas_timer_stop('RRTMG_lw')
+       call mpas_timer_stop('rrtmg_lwrad')
 
     case ("cam_lw")
        xtime_m = xtime_s/60.
@@ -941,7 +935,6 @@
        call mpas_timer_stop('CAMRAD_lw')
 
     case default
-
  end select radiation_lw_select
 
 !copy local arrays to MPAS grid:

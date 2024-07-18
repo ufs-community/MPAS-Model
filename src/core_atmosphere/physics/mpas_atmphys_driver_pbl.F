@@ -10,6 +10,7 @@
  use mpas_kind_types
  use mpas_pool_routines
  use mpas_timer,only: mpas_timer_start,mpas_timer_stop
+ use mpas_timer,only: mpas_timer_start,mpas_timer_stop
 
  use mpas_atmphys_constants
  use mpas_atmphys_vars
@@ -23,6 +24,7 @@
  private
  public:: allocate_pbl,   &
           deallocate_pbl, &
+          init_pbl,       &
           init_pbl,       &
           driver_pbl
 
@@ -278,42 +280,45 @@
        if(allocated(maxmfbl_p)     ) deallocate(maxmfbl_p     )
        if(allocated(zbl_plume_p)   ) deallocate(zbl_plume_p   )
 
-       if(allocated(cov_p)         ) deallocate(cov_p         )
-       if(allocated(qke_p)         ) deallocate(qke_p         )
-       if(allocated(qsq_p)         ) deallocate(qsq_p         )
-       if(allocated(tsq_p)         ) deallocate(tsq_p         )
-       if(allocated(qkeadv_p)      ) deallocate(qkeadv_p      )
-       if(allocated(elpbl_p)       ) deallocate(elpbl_p       )
-       if(allocated(tkepbl_p)      ) deallocate(tkepbl_p      )
-       if(allocated(sh3d_p)        ) deallocate(sh3d_p        )
-       if(allocated(sm3d_p)        ) deallocate(sm3d_p        )
-       if(allocated(dqke_p)        ) deallocate(dqke_p        )
-       if(allocated(qbuoy_p)       ) deallocate(qbuoy_p       )
-       if(allocated(qdiss_p)       ) deallocate(qdiss_p       )
-       if(allocated(qshear_p)      ) deallocate(qshear_p      )
-       if(allocated(qwt_p)         ) deallocate(qwt_p         )
-       if(allocated(qcbl_p)        ) deallocate(qcbl_p        )
-       if(allocated(qibl_p)        ) deallocate(qibl_p        )
-       if(allocated(cldfrabl_p)    ) deallocate(cldfrabl_p    )
-       if(allocated(edmfa_p)       ) deallocate(edmfa_p       )
-       if(allocated(edmfw_p)       ) deallocate(edmfw_p       )
-       if(allocated(edmfqt_p)      ) deallocate(edmfqt_p      )
-       if(allocated(edmfthl_p)     ) deallocate(edmfthl_p     )
-       if(allocated(edmfent_p)     ) deallocate(edmfent_p     )
-       if(allocated(edmfqc_p)      ) deallocate(edmfqc_p      )
-       if(allocated(subthl_p)      ) deallocate(subthl_p      )
-       if(allocated(subqv_p)       ) deallocate(subqv_p       )
-       if(allocated(detthl_p)      ) deallocate(detthl_p      )
-       if(allocated(detqv_p)       ) deallocate(detqv_p       )
+       if(allocated(cov_p)       ) deallocate(cov_p       )
+       if(allocated(qke_p)       ) deallocate(qke_p       )
+       if(allocated(qsq_p)       ) deallocate(qsq_p       )
+       if(allocated(tsq_p)       ) deallocate(tsq_p       )
+       if(allocated(qkeadv_p)    ) deallocate(qkeadv_p    )
+       if(allocated(elpbl_p)     ) deallocate(elpbl_p     )
+       if(allocated(tkepbl_p)    ) deallocate(tkepbl_p    )
+       if(allocated(sh3d_p)      ) deallocate(sh3d_p      )
+       if(allocated(sm3d_p)      ) deallocate(sm3d_p      )
+       if(allocated(dqke_p)      ) deallocate(dqke_p      )
+       if(allocated(qbuoy_p)     ) deallocate(qbuoy_p     )
+       if(allocated(qdiss_p)     ) deallocate(qdiss_p     )
+       if(allocated(qshear_p)    ) deallocate(qshear_p    )
+       if(allocated(qwt_p)       ) deallocate(qwt_p       )
+       if(allocated(qcbl_p)      ) deallocate(qcbl_p      )
+       if(allocated(qibl_p)      ) deallocate(qibl_p      )
+       if(allocated(cldfrabl_p)  ) deallocate(cldfrabl_p  )
+       if(allocated(edmfa_p)     ) deallocate(edmfa_p     )
+       if(allocated(edmfw_p)     ) deallocate(edmfw_p     )
+       if(allocated(edmfqt_p)    ) deallocate(edmfqt_p    )
+       if(allocated(edmfthl_p)   ) deallocate(edmfthl_p   )
+       if(allocated(edmfent_p)   ) deallocate(edmfent_p   )
+       if(allocated(edmfqc_p)    ) deallocate(edmfqc_p    )
+       if(allocated(subthl_p)    ) deallocate(subthl_p    )
+       if(allocated(subqv_p)     ) deallocate(subqv_p     )
+       if(allocated(detthl_p)    ) deallocate(detthl_p    )
+       if(allocated(detqv_p)     ) deallocate(detqv_p     )
 
        !additional tendencies:
-       if(allocated(rqsblten_p)    ) deallocate(rqsblten_p    )
-       if(allocated(rniblten_p)    ) deallocate(rniblten_p    )
+       if(allocated(rqsblten_p)  ) deallocate(rqsblten_p  )
+       if(allocated(rncblten_p)  ) deallocate(rncblten_p  )
+       if(allocated(rniblten_p)  ) deallocate(rniblten_p  )
+       if(allocated(rnifablten_p)) deallocate(rnifablten_p)
+       if(allocated(rnwfablten_p)) deallocate(rnwfablten_p)
 
        !deallocation of additional arrays:
        if(allocated(pattern_spp_pbl)) deallocate(pattern_spp_pbl)
 
-    case("bl_myj")
+   case("bl_myj")
        if(allocated(ht_p)         ) deallocate(ht_p      )
        if(allocated(chlowq_p)     ) deallocate(chlowq_p  )
        if(allocated(thz0_p)       ) deallocate(thz0_p    )
@@ -332,6 +337,7 @@
        if(allocated(mixht_p)      ) deallocate(mixht_p   )
        if(allocated(lh_p)         ) deallocate(lh_p      )
        if(allocated(qsfc_p)       ) deallocate(qsfc_p    )
+
     case default
 
  end select pbl_select
@@ -526,8 +532,11 @@
           qshear_p(i,k,j)   = 0._RKIND
           qwt_p(i,k,j)      = 0._RKIND
 
-          rqsblten_p(i,k,j) = 0._RKIND
-          rniblten_p(i,k,j) = 0._RKIND
+          rqsblten_p(i,k,j)   = 0._RKIND
+          rncblten_p(i,k,j)   = 0._RKIND
+          rniblten_p(i,k,j)   = 0._RKIND
+          rnifablten_p(i,k,j) = 0._RKIND
+          rnwfablten_p(i,k,j) = 0._RKIND
 
           pattern_spp_pbl(i,k,j) = 0._RKIND
        enddo
@@ -633,7 +642,7 @@
  real(kind=RKIND),dimension(:),pointer  :: hpbl
  real(kind=RKIND),dimension(:,:),pointer:: kzh,kzm,kzq
  real(kind=RKIND),dimension(:,:),pointer:: rublten,rvblten,rthblten,rqvblten,rqcblten,rqiblten,rqsblten
- real(kind=RKIND),dimension(:,:),pointer:: rniblten
+ real(kind=RKIND),dimension(:,:),pointer:: rncblten,rniblten,rnifablten,rnwfablten
 
 !local pointers for YSU scheme:
  real(kind=RKIND),dimension(:,:),pointer:: exch_h
@@ -827,6 +836,31 @@
        enddo
        enddo
        enddo
+
+       if(f_ni) then
+          call mpas_pool_get_array(tend_physics,'rniblten',rniblten)
+          do j = jts,jte
+             do k = kts,kte
+                do i = its,ite
+                   rniblten(k,i) = rniblten_p(i,k,j)
+                enddo
+             enddo
+          enddo
+       endif
+       if(f_nc .and. f_nifa .and. f_nwfa) then
+          call mpas_pool_get_array(tend_physics,'rncblten'  ,rncblten  )
+          call mpas_pool_get_array(tend_physics,'rnifablten',rnifablten)
+          call mpas_pool_get_array(tend_physics,'rnwfablten',rnwfablten)
+          do j = jts,jte
+             do k = kts,kte
+                do i = its,ite
+                   rncblten(k,i)   = rncblten_p(i,k,j)
+                   rnifablten(k,i) = rnifablten_p(i,k,j)
+                   rnwfablten(k,i) = rnwfablten_p(i,k,j)
+                enddo
+             enddo
+          enddo
+       endif
 
     case default
 
