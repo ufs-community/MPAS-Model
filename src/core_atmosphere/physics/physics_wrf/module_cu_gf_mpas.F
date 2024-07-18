@@ -140,9 +140,9 @@ CONTAINS
  real,dimension(its:ite,kts:kte):: zo,t2d,q2d,po,p2d,us,vs,qc,qi,rhoi,tn,qo,tshall,qshall
  real,dimension(its:ite,kts:kte):: outt,outq,outqc,phh,cupclw,outu,outv
  real,dimension(its:ite,kts:kte):: outtm,outqm,outqcm,cupclwm,outum,outvm
- real,dimension(its:ite,kts:kte):: outts,outqs,outqcs,cupclws,outus,outvs,dhdt
+ real,dimension(its:ite,kts:kte):: outts,outqs,outqcs,cupclws,outus,outvs,dhdt,gf_mfx
 
- real,dimension(its:ite,jts:jte):: gswi,edti_out,massi_flx,gf_mfx
+ real,dimension(its:ite,jts:jte):: gswi,edti_out,massi_flx
 
  real,dimension (its:ite)         :: mconv
  real,dimension(its:ite,kts:kte)  :: omeg,qcheck

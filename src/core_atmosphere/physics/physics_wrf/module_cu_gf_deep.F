@@ -38,7 +38,7 @@ MODULE module_cu_gf_deep
 !> still 16 ensembles for clousres
      integer, parameter:: maxens3=16
 !>  which coldpool version to use
-     integer, parameter:: icoldpool=1
+     integer, parameter:: icoldpool=0
 
 !---meltglac-------------------------------------------------
  logical, parameter :: melt_glac      = .true.  !<- turn on/off ice phase/melting
@@ -2060,10 +2060,12 @@ contains
             its,ite, kts,kte,                                            &
             dicycle,xf_dicycle )
         if (icoldpool > 0 .and. imid ==0) then
+          buoysrc(:,:)=0.
           do i=its,itf
             vcpool(i)=0.
             wlpool(i)=0.
             total_dz=0.
+            beta_x(i)=0.
             if(ierr(i).gt.0)cycle ! exit loopI
                do k = kts,jmin(i)-1
                  buoysrc(i,k)=beta_x(i)-dellat_d(i,k)*xmb(i)*dtime !/sig(i)*cp

@@ -233,7 +233,7 @@
        do k = kts,kte
        do i = its,ite
           if (cldfrac_cu(k,i) .gt. 0.001) then
-             cldfrac_p(i,k,j) = cldfrac_p(i,k,j) + cldfrac_cu(k,i)
+             cldfrac_p(i,k,j) = min(1._RKIND,cldfrac_p(i,k,j) + cldfrac_cu(k,i))
           endif
           qccu_p(i,k,j) = qc_cu(k,i)
           qicu_p(i,k,j) = qi_cu(k,i)

@@ -2634,7 +2634,7 @@
 
 	       <var name="cldfrac_cu" type="real" dimensions="nVertLevels nCells Time" units="unitless"
                      description="cloud fraction in the Grell-Freitas cloud scheme"
-                     packages="bl_mynn_in"/>
+                     packages="cu_grell_freitas_in"/>
 
 
                 <!-- ... KAIN_FRITSCH AND GRELL-FREITAS: -->
