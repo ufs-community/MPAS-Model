@@ -102,8 +102,10 @@
  type(mpas_pool_type),intent(in)   :: configs
 !local pointer:
  character(len=StrKIND),pointer:: radt_cld_scheme
+ character(len=StrKIND),pointer:: convection_scheme
 
  call mpas_pool_get_config(configs,'config_radt_cld_scheme',radt_cld_scheme)
+ call mpas_pool_get_config(configs,'config_convection_scheme',convection_scheme)
 
  if(allocated(dx_p)     ) deallocate(dx_p     )
  if(allocated(xland_p)  ) deallocate(xland_p  )
@@ -122,6 +124,11 @@
     case default
 
  end select cld_fraction_select
+
+ if (convection_scheme=="cu_grell_freitas") then
+    if(allocated(qicu_p)) deallocate(qicu_p)
+    if(allocated(qccu_p)) deallocate(qccu_p)
+ endif
 
 
  end subroutine deallocate_cloudiness
