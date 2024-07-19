@@ -278,7 +278,7 @@
     if(config_oml1d) call driver_oml1d(block%configs,mesh,diag,diag_physics,sfc_input)
 
     !call to land-surface scheme:
-   if(config_lsm_scheme .eq. 'sf_noah' or. config_lsm_scheme .eq. 'sf_ruc') then
+   if(config_lsm_scheme .eq. 'sf_noah' .or. config_lsm_scheme .eq. 'sf_ruc') then
        call allocate_lsm(config_lsm_scheme)
 !$OMP PARALLEL DO
           do thread=1,nThreads
