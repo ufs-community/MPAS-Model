@@ -1213,7 +1213,7 @@
                         <var name="nwfa" array_group="number" units="nb kg^{-1}"
                              description="Gocart water-friendly aerosol number concentration"
                              packages="mp_thompson_aers_in"/>
-     <!--MODEL CANNOT BE COMPILED UNTIL THIS IS RESOLVED-->
+     <!--MODEL CANNOT BE COMPILED UNTIL THIS IS RESOLVED - JMD-->
                 </var_array>
 
                 <!-- Climatology for ocean mixed-layer depth -->
@@ -1301,7 +1301,7 @@
                         <var name="lbc_nwfa" array_group="number" units="nb kg^{-1}"
                              description="Gocart water-friendly aerosol number concentration on lateral boundary cells"
                              packages="mp_thompson_aers_in"/>
-     <!--MODEL CANNOT BE COMPILED UNTIL THIS IS RESOLVED-->
+     <!--MODEL CANNOT BE COMPILED UNTIL THIS IS RESOLVED - JMD-->
                 </var_array>
 
         </var_struct>
