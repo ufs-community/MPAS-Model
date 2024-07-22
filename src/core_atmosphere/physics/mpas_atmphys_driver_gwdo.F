@@ -613,7 +613,6 @@
 
     case("bl_ysu_gwdo")
        call mpas_timer_start('bl_gwdo')
-       call mpas_timer_start('bl_gwdo')
        call gwdo ( &
                   p3d       = pres_hydd_p , p3di      = pres2_hydd_p , pi3d    = pi_p      , &
                   u3d       = u_p         , v3d       = v_p          , t3d     = t_p       , & 

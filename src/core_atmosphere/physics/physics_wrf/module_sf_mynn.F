@@ -1,12 +1,6 @@
 !=================================================================================================================
  module module_sf_mynn
- module module_sf_mynn
 !=================================================================================================================
- use mpas_kind_types,only: RKIND,StrKIND
-
- use sf_mynn,only    : sf_mynn_run
- use sf_mynn_pre,only: sf_mynn_pre_run
-
  use mpas_kind_types,only: RKIND,StrKIND
 
  use sf_mynn,only    : sf_mynn_run
@@ -461,13 +455,6 @@
        enddo
     endif
 
- enddo
-
- end subroutine sfclay_mynn
-
-!=================================================================================================================
- end module module_sf_mynn
-!=================================================================================================================
  enddo
 
  end subroutine sfclay_mynn

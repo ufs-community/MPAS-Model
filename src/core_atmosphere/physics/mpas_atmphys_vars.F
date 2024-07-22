@@ -111,7 +111,6 @@
 !   Laura D. Fowler (laura@ucar.edu) / 2017-04-19.
 ! * added the local variables cosa_p and sina_p needed in call to subroutine gwdo after updating module_bl_gwdo.F
 !   to that of WRF version 4.0.2.
-!   to that of WRF version 4.0.2.
 !   Laura D. Fowler (laura@ucar.edu) / 2019-01-30.
 ! * reverted the option seaice_albedo_opt = 2 to seaic_albedo_opt = 0 since MPAS does not currently support the
 !   input of "observed" 2D seaice albedos. In conjunction with this update, we also change the initialization of

@@ -16,10 +16,8 @@
  use mpas_atmphys_vars
 
  use module_sf_mynn,only: sfclay_mynn
- use module_sf_mynn,only: sfclay_mynn
  use module_sf_sfclay
  use module_sf_sfclayrev,only: sfclayrev
- use sf_mynn,only: sf_mynn_init
  use sf_mynn,only: sf_mynn_init
  use sf_sfclayrev,only: sf_sfclayrev_init
  use module_sf_myjsfc
