@@ -701,7 +701,7 @@
                         <var name="cldfrac_bl"/>
                         <var name="qc_bl"/>
                         <var name="qi_bl"/>
-			         <var name="maxmf"/>
+			<var name="maxmf"/>
                         <var name="maxwidth"/>
                         <var name="ztop_plume"/>
                         <var name="ch"/>
