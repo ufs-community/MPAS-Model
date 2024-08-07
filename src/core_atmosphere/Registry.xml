@@ -1143,7 +1143,7 @@
                         <var_array name="lbc_scalars" />
 
                 </stream>
-
+#ifdef DO_MPASDA
 		<stream name="da_state"
                         type="input;output"
                         filename_template="mpasout.$Y-$M-$D_$h.$m.$s.nc"
@@ -1210,6 +1210,7 @@
 			<var name="tslb"/>
 			<var name="h_oml_initial"/>
                 </stream>
+#endif
 	</streams>
 
 
@@ -3089,7 +3090,7 @@
                 <!-- ================================================================================================== -->
 
                 <var name="cldfrac" type="real" dimensions="nVertLevels nCells Time" units="unitless"
-                     description="horizontal cloud fraction"/>
+                     description="horizontal cloud fraction" packages="mp_thompson_in;mp_wsm6_in"/>
 
 
                 <!-- ================================================================================================== -->
@@ -3588,6 +3589,8 @@
 <!-- **************************************************************************************** -->
 
 #include "diagnostics/Registry_diagnostics.xml"
+#ifdef DO_PHYSICS
 #include "physics/Registry_noahmp.xml"
+#endif
 
 </registry>
