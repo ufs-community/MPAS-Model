@@ -77,10 +77,7 @@ real (kind=RKIND), dimension(:), intent(in) :: area_MPAS  ! approx area of MPAS 
 real (kind=RKIND), intent(in) :: Re
 real (kind=RKIND), dimension(:), intent(out) :: std_dev,convexity,OA1,OA2,OA3,OA4, &
                                                 OL1,OL2,OL3,OL4
-logical, intent(out) :: duplicate_oro_data  ! flag to let main program know that
-                                      ! oro_data_ls file was created by this subroutine
-                                      ! as dupliate of oro_data_ss file due to grid size
-                                      ! being below 7.5km
+logical, dimension(:), intent(out) :: duplicate_oro_data  ! flag for 'small' grid cell size
 
 integer (c_int) :: istatus
 integer :: ix, iy
@@ -92,8 +89,7 @@ character(len=StrKIND) :: filename
 character(kind=c_char), dimension(StrKIND+1) :: c_filename
 
 
-real (kind=RKIND) :: min_area      ! minimum grid area in m^2
-real (kind=RKIND) :: min_DX        ! minimum grid size in km
+real (kind=RKIND) :: DX        ! grid size in km
 
 integer :: i,j,ii,jj
 integer :: iErr
@@ -213,18 +209,12 @@ OL2(:) = 0._RKIND
 OL3(:) = 0._RKIND
 OL4(:) = 0._RKIND
 
-! Calculate the minimum coarse grid cell size as implied by the cell area
-min_area = 1.E+14
+! Determine whether grid size is less than 7.5km -- the limit for large-scale stats.
+duplicate_oro_data(:) = .false.
 do i = 1,nCells
-   min_area = min(min_area,area_MPAS(i))
+   dX = sqrt(area_MPAS(i))   ! grid size in meters
+   if ( dX .lt. 7500._RKIND ) duplicate_oro_data(i) = .true.
 end do
-
-! The square root of min_area will count as the minimum cell size
-min_DX = sqrt(min_area)/1000._RKIND  ! grid size in km
-! NOTE:  min_DX will be used after the big loop below to determine whether
-!        to copy topographic statistics to "large-scale" file
-
-call mpas_log_write('GWD oro min_DX = $r', realArgs=(/min_DX/))
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -241,7 +231,7 @@ call mpas_log_write('GWD oro min_DX = $r', realArgs=(/min_DX/))
 do i = 1,nCells
 
       ! Calculate approximate side-lengths of square lat-long "coarse" grid
-      ! cell centered on FV3 cell (units = radians)
+      ! cell centered on MPAS cell (units = radians)
       dlta_lat = sqrt(area_MPAS(i))/Re
       dlta_lon = sqrt(area_MPAS(i))/(Re*COS(lat_MPAS(i)))
 
@@ -596,19 +586,6 @@ do i = 1,nCells
       deallocate (zs)
 
 end do   ! i = 1,nCells
-
-
-! If coarse grid size below a certain value, set large-scale variables
-! equal to small-scale values
-if ( min_DX.le.7.5 ) then
-   duplicate_oro_data = .true.
-   call mpas_log_write('Will copy ss variables to ls variables')
-   print *, "Creating oro_data_ls file as duplicate of oro_data_ss"
-   print *, "Minimum grid cell size = ", min_DX, " km"
-   print *
-else
-   duplicate_oro_data = .false.
-end if
 
 
 ! Deallocate arrays

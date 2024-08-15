@@ -76,8 +76,10 @@ module mpas_init_atm_gwd_gsl
       character(len=StrKIND+1) :: geog_data_path      ! same as config_geog_data_path, but guaranteed to have a trailing slash
       real (kind=RKIND), parameter :: Re = 6371229.0_RKIND        ! Earth radius in MPAS-Atmosphere
 
-      logical :: duplicate_oro_data   ! flag for whether oro_data_ls file is a duplicate
-                                           ! of oro_data_ss due to minimum grid size being less than 7.5km
+      logical, dimension(:), allocatable :: duplicate_oro_data   ! flag for whether large-scale topographic
+                                           ! statistics are duplicated from small-scale values due to grid
+                                           ! size being less than 7.5km, i.e., not having enough 2.5 minute
+                                           ! topographic points within a grid box
 
       call mpas_pool_get_subpool(domain % blocklist % structs, 'mesh', mesh)
       call mpas_pool_get_subpool(domain % blocklist % structs, 'state', state)
@@ -138,6 +140,7 @@ module mpas_init_atm_gwd_gsl
       end if
 
       allocate(areaCell(nCells))
+      allocate(duplicate_oro_data(nCells))
 
       !
       ! Loop to compute approximate area of each MPAS horizontal grid cell
@@ -168,26 +171,29 @@ module mpas_init_atm_gwd_gsl
                                  ol1ss,ol2ss,ol3ss,ol4ss,                     &
                                  domain,duplicate_oro_data)
 
-      call mpas_log_write('duplicate_oro_data = $l', logicArgs=(/duplicate_oro_data/)) 
+      call calc_gsl_oro_data_lg_scale(nCells,latCell,lonCell,areaCell,Re,  &
+                                   var2dls,conls,oa1ls,oa2ls,oa3ls,oa4ls,  &
+                                   ol1ls,ol2ls,ol3ls,ol4ls,domain,         &
+                                   duplicate_oro_data)
 
-      if ( duplicate_oro_data ) then
-         var2dls(:) = var2dss(:)
-         conls(:) = conss(:)
-         oa1ls(:) = oa1ss(:)
-         oa2ls(:) = oa2ss(:)
-         oa3ls(:) = oa3ss(:)
-         oa4ls(:) = oa4ss(:) 
-         ol1ls(:) = ol1ss(:)
-         ol2ls(:) = ol2ss(:)
-         ol3ls(:) = ol3ss(:)
-         ol4ls(:) = ol4ss(:)
-      else
-         call calc_gsl_oro_data_lg_scale(nCells,latCell,lonCell,areaCell,Re,  &
-                                      var2dls,conls,oa1ls,oa2ls,oa3ls,oa4ls,  &
-                                      ol1ls,ol2ls,ol3ls,ol4ls,domain)
-      end if
+      do iCell=1,nCells
+      ! Re-assign large-scale statistics with small-scale values if necessary
+         if ( duplicate_oro_data(iCell) ) then
+            var2dls(iCell) = var2dss(iCell)
+            conls(iCell) = conss(iCell)
+            oa1ls(iCell) = oa1ss(iCell)
+            oa2ls(iCell) = oa2ss(iCell)
+            oa3ls(iCell) = oa3ss(iCell)
+            oa4ls(iCell) = oa4ss(iCell) 
+            ol1ls(iCell) = ol1ss(iCell)
+            ol2ls(iCell) = ol2ss(iCell)
+            ol3ls(iCell) = ol3ss(iCell)
+            ol4ls(iCell) = ol4ss(iCell)
+         endif
+      end do
 
       deallocate(areaCell)
+      deallocate(duplicate_oro_data)
 
       call mpas_log_write('End module mpas_init_atm_gwd_gsl')
 
