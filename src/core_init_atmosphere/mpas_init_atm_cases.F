@@ -2780,6 +2780,7 @@ module init_atm_cases
       logical, pointer :: config_use_spechumd
       integer, pointer :: config_nfglevels
       integer, pointer :: config_nfgsoillevels
+      integer, pointer :: config_nvegopt
       logical, pointer :: config_smooth_surfaces
       integer, pointer :: config_theta_adv_order
       real (kind=RKIND), pointer :: config_coef_3rd_order
@@ -2818,7 +2819,13 @@ module init_atm_cases
       real (kind=RKIND), dimension(:), pointer :: psfc
       real (kind=RKIND), dimension(:), pointer :: skintemp
       real (kind=RKIND), dimension(:), pointer :: snow
+      real (kind=RKIND), dimension(:), pointer :: snowh
       real (kind=RKIND), dimension(:), pointer :: snowc
+      real (kind=RKIND), dimension(:), pointer :: canwat
+      real (kind=RKIND), dimension(:), pointer :: vegfra
+      real (kind=RKIND), dimension(:), pointer :: greenfrac
+      real (kind=RKIND), dimension(:), pointer :: shdmin
+      real (kind=RKIND), dimension(:), pointer :: shdmax
       real (kind=RKIND), dimension(:,:), pointer :: u_fg
       real (kind=RKIND), dimension(:,:), pointer :: v_fg
       real (kind=RKIND), dimension(:,:), pointer :: z_fg
@@ -2869,6 +2876,7 @@ module init_atm_cases
       call mpas_pool_get_config(configs, 'config_use_spechumd', config_use_spechumd)
       call mpas_pool_get_config(configs, 'config_nfglevels', config_nfglevels)
       call mpas_pool_get_config(configs, 'config_nfgsoillevels', config_nfgsoillevels)
+      call mpas_pool_get_config(configs, 'config_nvegopt', config_nvegopt)
       call mpas_pool_get_config(configs, 'config_smooth_surfaces', config_smooth_surfaces)
       call mpas_pool_get_config(configs, 'config_theta_adv_order', config_theta_adv_order)
       call mpas_pool_get_config(configs, 'config_coef_3rd_order', config_coef_3rd_order)
@@ -2969,7 +2977,13 @@ module init_atm_cases
       call mpas_pool_get_array(fg, 'psfc', psfc)
       call mpas_pool_get_array(fg, 'skintemp', skintemp)
       call mpas_pool_get_array(fg, 'snow', snow)
+      call mpas_pool_get_array(fg, 'snowh', snowh)
       call mpas_pool_get_array(fg, 'snowc', snowc)
+      call mpas_pool_get_array(fg, 'canwat', canwat)
+      call mpas_pool_get_array(fg, 'vegfra', vegfra)
+      call mpas_pool_get_array(fg, 'greenfrac', greenfrac)
+      call mpas_pool_get_array(fg, 'shdmin', shdmin)
+      call mpas_pool_get_array(fg, 'shdmax', shdmax)
       call mpas_pool_get_array(fg, 'u', u_fg)
       call mpas_pool_get_array(fg, 'v', v_fg)
       call mpas_pool_get_array(fg, 'z', z_fg)
@@ -3467,7 +3481,7 @@ module init_atm_cases
       !seaice flag:
        sst = 0.0
        xice = 0.0
-       seaice = 0.0
+       !seaice = 0.0 !tgs seaice comes from parent model, do not set it to 0
       !ldf end.
 
       !
@@ -3609,6 +3623,12 @@ module init_atm_cases
              trim(field % field) == 'PRES' .or. &
              trim(field % field) == 'PRESSURE' .or. &
              trim(field % field) == 'SNOW' .or. &
+             trim(field % field) == 'SNOWH' .or. &
+             trim(field % field) == 'CANWAT' .or. &
+             trim(field % field) == 'VEGFRA' .or. &
+             trim(field % field) == 'GREENFRAC' .or. &
+             trim(field % field) == 'SHDMIN' .or. &
+             trim(field % field) == 'SHDMAX' .or. &
              trim(field % field) == 'SEAICE' .or. &
              trim(field % field) == 'SKINTEMP') then
 
@@ -3651,6 +3671,12 @@ module init_atm_cases
                 trim(field % field) == 'SOILT160' .or. &
                 trim(field % field) == 'SOILT300' .or. &
                 trim(field % field) == 'SNOW' .or. &
+                trim(field % field) == 'SNOWH' .or. &
+                trim(field % field) == 'CANWAT' .or. &
+                trim(field % field) == 'VEGFRA' .or. &
+                trim(field % field) == 'GREENFRAC' .or. &
+                trim(field % field) == 'SHDMIN' .or. &
+                trim(field % field) == 'SHDMAX' .or. &
                 trim(field % field) == 'SEAICE' .or. &
                 trim(field % field) == 'SKINTEMP') then
                k = 1
@@ -4712,6 +4738,86 @@ module init_atm_cases
                lonPoints => lonCell
                call mpas_pool_get_array(fg, 'snow', destField1d)
                ndims = 1
+            else if (trim(field % field) == 'SNOWH') then
+               call mpas_log_write('Interpolating SNOWH')
+
+               interp_list(1) = FOUR_POINT
+               interp_list(2) = W_AVERAGE4
+               interp_list(3) = 0
+
+               masked = 0
+               fillval = 0.0
+
+               nInterpPoints = nCells
+               latPoints => latCell
+               lonPoints => lonCell
+               call mpas_pool_get_array(fg, 'snowh', destField1d)
+               ndims = 1
+
+            else if (trim(field % field) == 'CANWAT') then
+               call mpas_log_write('Interpolating CANWAT')
+
+               interp_list(1) = FOUR_POINT
+               interp_list(2) = W_AVERAGE4
+               interp_list(3) = 0
+
+               masked = 0
+               fillval = 0.0
+
+               nInterpPoints = nCells
+               latPoints => latCell
+               lonPoints => lonCell
+               call mpas_pool_get_array(fg, 'canwat', destField1d)
+               ndims = 1
+
+            else if (trim(field % field) == 'VEGFRA') then
+               call mpas_log_write('Interpolating VEGFRA')
+
+               interp_list(1) = FOUR_POINT
+               interp_list(2) = W_AVERAGE4
+               interp_list(3) = 0
+
+               masked = 0
+               fillval = 0.0
+
+               nInterpPoints = nCells
+               latPoints => latCell
+               lonPoints => lonCell
+               call mpas_pool_get_array(fg, 'vegfra', destField1d)
+               ndims = 1
+
+            else if (trim(field % field) == 'SHDMIN') then
+               call mpas_log_write('Interpolating SHDMIN')
+
+               interp_list(1) = FOUR_POINT
+               interp_list(2) = W_AVERAGE4
+               interp_list(3) = 0
+
+               masked = 0
+               fillval = 0.0
+
+               nInterpPoints = nCells
+               latPoints => latCell
+               lonPoints => lonCell
+               call mpas_pool_get_array(fg, 'shdmin', destField1d)
+               ndims = 1
+
+            else if (trim(field % field) == 'SHDMAX') then
+               call mpas_log_write('Interpolating SHDMAX')
+
+               interp_list(1) = FOUR_POINT
+               interp_list(2) = W_AVERAGE4
+               interp_list(3) = 0
+
+               masked = 0
+               fillval = 0.0
+
+               nInterpPoints = nCells
+               latPoints => latCell
+               lonPoints => lonCell
+               call mpas_pool_get_array(fg, 'shdmax', destField1d)
+               ndims = 1
+
             else if (trim(field % field) == 'SEAICE') then
                call mpas_log_write('Interpolating SEAICE')
 
@@ -7699,7 +7805,7 @@ call mpas_log_write('Done with soil consistency check')
 
       !local variables:
       integer :: iCell, iMonth, iSoil, iCat
-      integer, pointer :: nCells, nSoilLevels, nMonths, nLandCat, nSoilCat
+      integer, pointer :: nCells, nSoilLevels, nMonths, nLandCat, nSoilCat,nVegOpt
       integer, dimension(:), pointer :: landmask, lu_index, soilcat_top
       real (kind=RKIND), dimension(:), pointer :: ter, xice, shdmin, shdmax, vegfra, sfc_albbck, xland, seaice
       real (kind=RKIND), dimension(:), pointer :: snow, snowc, snoalb, snowh, skintemp, sst, tmn
@@ -7713,6 +7819,7 @@ call mpas_log_write('Done with soil consistency check')
       call mpas_pool_get_dimension(mesh, 'nMonths', nMonths)
       call mpas_pool_get_dimension(mesh, 'nlcat', nLandCat)
       call mpas_pool_get_dimension(mesh, 'nscat', nSoilCat)
+      call mpas_pool_get_dimension(mesh, 'nveg_opt', nVegOpt)
 
       call mpas_pool_get_array(mesh, 'ter', ter)
       call mpas_pool_get_array(mesh, 'landmask', landmask)

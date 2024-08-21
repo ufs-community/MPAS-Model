@@ -548,6 +548,7 @@
 			<var name="sst"/>
 			<var name="tmn"/>
 			<var name="vegfra"/>
+			<var name="canwat"/>
 			<var name="seaice"/>
 			<var name="xice"/>
 			<var name="xland"/>
