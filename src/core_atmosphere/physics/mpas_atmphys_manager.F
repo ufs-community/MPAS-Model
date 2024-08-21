@@ -149,6 +149,7 @@
                    config_o3climatology,      &
                    config_sfc_albedo,         &
                    config_sst_update,         &
+                   config_gvf_update,         &
                    config_sstdiurn_update,    &
                    config_deepsoiltemp_update
 
@@ -194,6 +195,7 @@
  call mpas_pool_get_config(domain%blocklist%configs,'config_o3climatology'      ,config_o3climatology      )
  call mpas_pool_get_config(domain%blocklist%configs,'config_sfc_albedo'         ,config_sfc_albedo         )
  call mpas_pool_get_config(domain%blocklist%configs,'config_sst_update'         ,config_sst_update         )
+ call mpas_pool_get_config(domain%blocklist%configs,'config_gvf_update'         ,config_gvf_update         )
  call mpas_pool_get_config(domain%blocklist%configs,'config_sstdiurn_update'    ,config_sstdiurn_update    )
  call mpas_pool_get_config(domain%blocklist%configs,'config_deepsoiltemp_update',config_deepsoiltemp_update)
 
@@ -231,6 +233,7 @@
     if(mpas_is_alarm_ringing(clock,greenAlarmID,ierr=ierr)) then
        call mpas_reset_clock_alarm(clock,greenAlarmID,ierr=ierr)
        call mpas_log_write('--- time to update background surface albedo, greeness fraction.')
+       if(config_gvf_update) &
        call physics_update_surface(timeStamp,config_sfc_albedo,mesh,sfc_input,diag_physics)
     endif
 
@@ -398,6 +401,7 @@
                                   config_camrad_abs_update,      &
                                   config_greeness_update
 
+ logical,pointer:: config_gvf_update
  logical,pointer:: config_sst_update
  logical,pointer:: config_frac_seaice
  logical,pointer:: config_microp_re
@@ -433,6 +437,7 @@
  call mpas_pool_get_config(configs,'config_bucket_update'    ,config_bucket_update    )
  call mpas_pool_get_config(configs,'config_camrad_abs_update',config_camrad_abs_update)
  call mpas_pool_get_config(configs,'config_greeness_update'  ,config_greeness_update  )
+ call mpas_pool_get_config(configs,'config_gvf_update'       ,config_gvf_update       )
  call mpas_pool_get_config(configs,'config_sst_update'       ,config_sst_update       )
  call mpas_pool_get_config(configs,'config_frac_seaice'      ,config_frac_seaice      )
  call mpas_pool_get_config(configs,'config_microp_re'        ,config_microp_re        )
@@ -547,11 +552,13 @@
  endif
 
 !set alarm for updating the background surface albedo and the greeness fraction:
- call mpas_set_timeInterval(alarmTimeStep,timeString=config_greeness_update,ierr=ierr)
- alarmStartTime = startTime
- call mpas_add_clock_alarm(clock,greenAlarmID,alarmStartTime,alarmTimeStep,ierr=ierr)
+ if (config_gvf_update) then
+     call mpas_set_timeInterval(alarmTimeStep,timeString=config_greeness_update,ierr=ierr)
+     alarmStartTime = startTime
+     call mpas_add_clock_alarm(clock,greenAlarmID,alarmStartTime,alarmTimeStep,ierr=ierr)
     if(ierr /= 0) &
        call physics_error_fatal('subroutine physics_init: error creating alarm greeness')
+ endif
 
 !set alarm for updating the surface boundary conditions:
  if (config_sst_update) then
