@@ -2677,7 +2677,7 @@
                      description="maximum diagnosed 10 cm radar reflectivity at 1 km AGL since last output time"
                      packages="mp_thompson_in;mp_thompson_aers_in;mp_wsm6_in;mp_nssl2m_in;mp_tempo_in"/>
 
-		<var name="do_diag_dbz" type="integer" dimensions="" units = ""
+		<var name="do_diag_dbz" type="logical" dimensions="" units = ""
 		    description="flag for whether to compute refelctivity at every time step for use in computing output-time-max 1km reflectivity"/>
 
                 <var name="i_rainnc" type="integer" dimensions="nCells Time" units="unitless"
