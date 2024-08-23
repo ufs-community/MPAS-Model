@@ -272,11 +272,7 @@ module init_atm_cases
                                    diag, diag_physics, block_ptr % dimensions, block_ptr % configs)
 
             if (config_met_interp) then
-! CURRENT GSL/DEVELOP VERSION
-               if (config_aerosol_climo) call init_microphysics_aerosols(mesh, state, diag, block_ptr % configs)
-! INCOMING 8.2 VERSION
                call init_atm_thompson_aerosols(block_ptr, mesh, block_ptr % configs, diag, state)
-! MODEL CANNOT BE COMPILED UNTIL THIS IS RESOLVED -JMD
                call physics_initialize_real(mesh, fg, domain % dminfo, block_ptr % dimensions, block_ptr % configs)
             end if
 
@@ -363,14 +359,8 @@ module init_atm_cases
                call init_atm_case_lbc(timeString, block_ptr, mesh, nCells, nEdges, nVertLevels, fg, state, &
                                       diag, lbc_state, block_ptr % dimensions, block_ptr % configs)
 
-! CURRENT GSL/DEVELOP VERSION
-               if (config_aerosol_climo) then
-                  call init_microphysics_aerosols_lbc(timeString, mesh, state, diag, lbc_state, nCells, nVertLevels)
-               endif
-! INCOMING 8.2 VERSION
                call mpas_get_time(start_time, dateTimeString=timeStart)
                call init_atm_thompson_aerosols_lbc(timeString, timeStart, block_ptr, mesh, diag, state, lbc_state)
-! MODEL CANNOT BE COMPILED UNTIL THIS IS RESOLVED - JMD
                block_ptr => block_ptr % next
             end do
 

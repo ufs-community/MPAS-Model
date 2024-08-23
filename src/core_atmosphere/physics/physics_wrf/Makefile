@@ -29,6 +29,7 @@ OBJS = \
 	module_mp_kessler.o            \
 	module_mp_nssl_2mom.o          \
 	module_mp_radar.o              \
+	module_mp_thompson.o           \
 	module_mp_thompson_aerosols.o  \
 	module_mp_thompson_cldfra3.o   \
 	module_mp_wsm6.o               \
