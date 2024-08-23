@@ -62,8 +62,7 @@ core_physics_mmm: core_physics_init
 	(cd physics_mmm; $(MAKE) -f Makefile.mpas all)
 
 core_microphysics: core_physics_init core_physics_mmm
-	(if [ -f physics_wrf/module_mp_thompson.F ]; then rm physics_wrf/module_mp_thompson.F; else echo "No old module_mp_thompson.F file found"; fi)
-	(cd TEMPO; cp ./drivers/mpas/module_mp_thompson.F90 .; $(MAKE) all COREDEF="$(COREDEF)")
+	(cd TEMPO; cp ./drivers/mpas/module_mp_tempo.F90 .; $(MAKE) all COREDEF="$(COREDEF)")
 
 core_UGWP: core_physics_init
 	(cd UGWP; $(MAKE) all)

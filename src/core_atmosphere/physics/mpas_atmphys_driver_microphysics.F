@@ -20,7 +20,8 @@
 !wrf physics:
  use module_mp_kessler
  use module_mp_thompson
- use module_mp_thompson_utils
+ use module_mp_tempo
+ ! use module_mp_tempo_utils
  use module_mp_wsm6,only: wsm6
  use mp_wsm6,only: mp_wsm6_init,refl10cm_wsm6
  use module_mp_nssl_2mom

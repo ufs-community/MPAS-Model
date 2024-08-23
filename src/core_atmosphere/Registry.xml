@@ -2087,7 +2087,7 @@
 
                         <var name="tend_qc" name_in_code="qc" array_group="moist" units="kg m^{-3} s^{-1}"
                              description="Tendency of cloud water mass per unit volume divided by d(zeta)/dz"
-                             packages="bl_mynn_in;bl_ysu_in;bl_myj_in;cu_ntiedtke_in;mp_kessler_in;mp_tempo_in;mp_thompson_aers_in;mp_wsm6_in;mp_nssl2m_in"/>
+                             packages="bl_mynn_in;bl_ysu_in;bl_myj_in;cu_ntiedtke_in;mp_kessler_in;mp_tempo_in;mp_thompson_in;mp_thompson_aers_in;mp_wsm6_in;mp_nssl2m_in"/>
 
                         <var name="tend_qr" name_in_code="qr" array_group="moist" units="kg m^{-3} s^{-1}"
                              description="Tendency of rain water mass per unit volume divided by d(zeta)/dz"
@@ -2095,7 +2095,7 @@
 
                         <var name="tend_qi" name_in_code="qi" array_group="moist" units="kg m^{-3} s^{-1}"
                              description="Tendency of ice mass per unit volume divided by d(zeta)/dz"
-                             packages="bl_mynn_in;bl_ysu_in;bl_myj_in;cu_nntiedtke_in;mp_thompson_in;mp_thompson_aers_in;mp_wsm6_in;mp_nssl2m_in;mp_tempo_in"/>
+                             packages="bl_mynn_in;bl_ysu_in;bl_myj_in;cu_ntiedtke_in;mp_thompson_in;mp_thompson_aers_in;mp_wsm6_in;mp_nssl2m_in;mp_tempo_in"/>
 
                         <var name="tend_qs" name_in_code="qs" array_group="moist" units="kg m^{-3} s^{-1}"
                              description="Tendency of snow mass per unit volume divided by d(zeta)/dz"
@@ -2203,7 +2203,7 @@
                              units="kg kg^{-1} s^{-1}"
                              description="Lateral boundary tendency of water vapor mixing ratio"/>
 
-                        <var name="lbc_qc" name_in_code="qc" array_group="moist"  packages="bl_mynn_in;cu_nntiedtke_in;mp_kessler_in;mp_thompson_in;mp_thompson_aers_in;mp_wsm6_in;mp_nssl2m_in;mp_tempo_in"
+                        <var name="lbc_qc" name_in_code="qc" array_group="moist"  packages="bl_mynn_in;cu_ntiedtke_in;mp_kessler_in;mp_thompson_in;mp_thompson_aers_in;mp_wsm6_in;mp_nssl2m_in;mp_tempo_in"
                              units="kg kg^{-1} s^{-1}"
                              description="Lateral boundary tendency of cloud water mixing ratio"/>
 
@@ -2211,7 +2211,7 @@
                              units="kg kg^{-1} s^{-1}"
                              description="Lateral boundary tendency of rain water mixing ratio"/>
 
-                        <var name="lbc_qi" name_in_code="qi" array_group="moist"  packages="bl_mynn_in;cu_nntiedtke_in;mp_thompson_in;mp_thompson_aers_in;mp_wsm6_in;mp_nssl2m_in;mp_tempo_in"
+                        <var name="lbc_qi" name_in_code="qi" array_group="moist"  packages="bl_mynn_in;cu_ntiedtke_in;mp_thompson_in;mp_thompson_aers_in;mp_wsm6_in;mp_nssl2m_in;mp_tempo_in"
                              units="kg kg^{-1} s^{-1}"
                              description="Lateral boundary tendency of ice mixing ratio"/>
 
@@ -2694,7 +2694,7 @@
 
                 <var name="graupelncv" type="real" dimensions="nCells Time" units="mm"
                      description="time-step grid-scale precipitation of graupel"
-                     packages="mp_thompson_in;mp_thompson_aers_in;mp_wsm6_in;mp_nssl2m_in;lsm_ruc_in;mp_tempoin"/>
+                     packages="mp_thompson_in;mp_thompson_aers_in;mp_wsm6_in;mp_nssl2m_in;lsm_ruc_in;mp_tempo_in"/>
 
                 <var name="rainnc" type="real" dimensions="nCells Time" units="mm"
                      description="accumulated total grid-scale precipitation"
@@ -2866,18 +2866,6 @@
 
 
                 <!-- MYNN PBL SCHEME: -->
-                <var name="cldfrac_bl" type="real" dimensions="nVertLevels nCells Time" units="unitless"
-                     description="cloud fraction in the MYNN PBL scheme"
-                     packages="bl_mynn_in"/>
-
-                <var name="qc_bl" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1}"
-                     descrition="cloud liquid water mixing ratio in the MYNN PBL scheme"
-                     packages="bl_mynn_in"/>
-
-                <var name="qi_bl" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1}"
-                     descrition="cloud ice mixing ratio in the MYNN PBL scheme"
-                     packages="bl_mynn_in"/>
-
                 <var name="cldfrac_bl" type="real" dimensions="nVertLevels nCells Time" units="unitless"
                      description="cloud fraction in the MYNN PBL scheme"
                      packages="bl_mynn_in"/>
@@ -3194,10 +3182,6 @@
 		<var name="qshltr" type="real" dimensions="nCells Time" units=""
                      description="shelter specific humidity"
                      packages="bl_myj_in"/>
-                <var name="sm3d" type="real" dimensions="nVertLevels nCells Time" units="unitless"
-                     description="stability function for moisture"
-                     packages="bl_mynn_in"/>
-
 
                 <!-- DIAGNOSTICS: -->
                 <var name="u10" type="real" dimensions="nCells Time" packages="bl_mynn_in;bl_ysu_in;bl_myj_in" units="m s^{-1}"
@@ -3875,10 +3859,6 @@
                      description="tendency of snow mixing ratio due to pbl processes"
                      packages="bl_mynn_in"/>
 
-                <var name="rqsblten" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1} s^{-1}"
-                     description="tendency of snow mixing ratio due to pbl processes"
-                     packages="bl_mynn_in"/>
-
                 <var name="rncblten" type="real" dimensions="nVertLevels nCells Time" units="nb kg^{-1} s^{-1}"
                      description="tendency of cloud liquid water number concentration due to pbl processes"
                      packages="bl_mynn_in"/>
@@ -4143,7 +4123,7 @@
                           units="kg kg^{-1}"
                           description="Water vapor mixing ratio increment"/>
 
-                     <var name="qc_amb"  name_in_code="qc" array_group="moist" packages="bl_mynn_in;bl_ysu_in;bl_myj_in;cu_nntiedtke_in;mp_kessler_in;mp_thompson_in;mp_thompson_aers_in;mp_wsm6_in;mp_nssl2m_in;mp_tempo_in"
+                     <var name="qc_amb"  name_in_code="qc" array_group="moist" packages="bl_mynn_in;bl_ysu_in;bl_myj_in;cu_ntiedtke_in;mp_kessler_in;mp_thompson_in;mp_thompson_aers_in;mp_wsm6_in;mp_nssl2m_in;mp_tempo_in"
                           units="kg kg^{-1}"
                           description="Cloud water mixing ratio increment"/>
 
@@ -4151,7 +4131,7 @@
                           units="kg kg^{-1}"
                           description="Rain water mixing ratio increment"/>
 
-                     <var name="qi_amb"  name_in_code="qi" array_group="moist" packages="bl_mynn_in;bl_ysu_in;bl_myj_in;cu_nntiedtke_in;mp_thompson_in;mp_thompson_aers_in;mp_wsm6_in;mp_nssl2m_in;mp_tempo_in"
+                     <var name="qi_amb"  name_in_code="qi" array_group="moist" packages="bl_mynn_in;bl_ysu_in;bl_myj_in;cu_ntiedtke_in;mp_thompson_in;mp_thompson_aers_in;mp_wsm6_in;mp_nssl2m_in;mp_tempo_in"
                           units="kg kg^{-1}"
                           description="Ice mixing ratio increment"/>
 
