@@ -2780,7 +2780,6 @@ module init_atm_cases
       logical, pointer :: config_use_spechumd
       integer, pointer :: config_nfglevels
       integer, pointer :: config_nfgsoillevels
-      integer, pointer :: config_nvegopt
       logical, pointer :: config_smooth_surfaces
       integer, pointer :: config_theta_adv_order
       real (kind=RKIND), pointer :: config_coef_3rd_order
@@ -2876,7 +2875,6 @@ module init_atm_cases
       call mpas_pool_get_config(configs, 'config_use_spechumd', config_use_spechumd)
       call mpas_pool_get_config(configs, 'config_nfglevels', config_nfglevels)
       call mpas_pool_get_config(configs, 'config_nfgsoillevels', config_nfgsoillevels)
-      call mpas_pool_get_config(configs, 'config_nvegopt', config_nvegopt)
       call mpas_pool_get_config(configs, 'config_smooth_surfaces', config_smooth_surfaces)
       call mpas_pool_get_config(configs, 'config_theta_adv_order', config_theta_adv_order)
       call mpas_pool_get_config(configs, 'config_coef_3rd_order', config_coef_3rd_order)
@@ -7805,7 +7803,7 @@ call mpas_log_write('Done with soil consistency check')
 
       !local variables:
       integer :: iCell, iMonth, iSoil, iCat
-      integer, pointer :: nCells, nSoilLevels, nMonths, nLandCat, nSoilCat,nVegOpt
+      integer, pointer :: nCells, nSoilLevels, nMonths, nLandCat, nSoilCat
       integer, dimension(:), pointer :: landmask, lu_index, soilcat_top
       real (kind=RKIND), dimension(:), pointer :: ter, xice, shdmin, shdmax, vegfra, sfc_albbck, xland, seaice
       real (kind=RKIND), dimension(:), pointer :: snow, snowc, snoalb, snowh, skintemp, sst, tmn
@@ -7819,7 +7817,6 @@ call mpas_log_write('Done with soil consistency check')
       call mpas_pool_get_dimension(mesh, 'nMonths', nMonths)
       call mpas_pool_get_dimension(mesh, 'nlcat', nLandCat)
       call mpas_pool_get_dimension(mesh, 'nscat', nSoilCat)
-      call mpas_pool_get_dimension(mesh, 'nveg_opt', nVegOpt)
 
       call mpas_pool_get_array(mesh, 'ter', ter)
       call mpas_pool_get_array(mesh, 'landmask', landmask)
