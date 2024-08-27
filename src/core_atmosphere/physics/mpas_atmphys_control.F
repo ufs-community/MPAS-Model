@@ -273,6 +273,7 @@
 !surface-layer scheme:
  if(.not. (config_sfclayer_scheme .eq. 'off'     .or. &
            config_sfclayer_scheme .eq. 'sf_mynn' .or. &
+           config_sfclayer_scheme .eq. 'sf_mynnsfclay' .or. &
            config_sfclayer_scheme .eq. 'sf_monin_obukhov' .or. &
            config_sfclayer_scheme .eq. 'sf_monin_obukhov_rev' .or. &
            config_sfclayer_scheme .eq. 'sf_myj' )) then
@@ -283,6 +284,8 @@
  else
     if(config_pbl_scheme == 'bl_mynn') then
        config_sfclayer_scheme = 'sf_mynn'
+    elseif(config_pbl_scheme == 'bl_mynnedmf') then
+       config_sfclayer_scheme = 'sf_mynnsfclay'
     elseif(config_pbl_scheme == 'bl_ysu') then
        if(config_sfclayer_scheme /= 'sf_monin_obukhov' .and. &
           config_sfclayer_scheme /= 'sf_monin_obukhov_rev') then
