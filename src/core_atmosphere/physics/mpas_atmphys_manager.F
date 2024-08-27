@@ -135,7 +135,6 @@
  subroutine physics_timetracker(domain,dt,clock,itimestep,xtime_s)
 !=================================================================================================================
 
-!input arguments:
  integer,intent(in):: itimestep
  real(kind=RKIND),intent(in):: dt
  real(kind=RKIND),intent(in) :: xtime_s
@@ -400,7 +399,6 @@
                                   config_camrad_abs_update,      &
                                   config_greeness_update
 
- logical,pointer:: config_gvf_update
  logical,pointer:: config_sst_update
  logical,pointer:: config_frac_seaice
  logical,pointer:: config_microp_re
@@ -436,7 +434,6 @@
  call mpas_pool_get_config(configs,'config_bucket_update'    ,config_bucket_update    )
  call mpas_pool_get_config(configs,'config_camrad_abs_update',config_camrad_abs_update)
  call mpas_pool_get_config(configs,'config_greeness_update'  ,config_greeness_update  )
- call mpas_pool_get_config(configs,'config_gvf_update'       ,config_gvf_update       )
  call mpas_pool_get_config(configs,'config_sst_update'       ,config_sst_update       )
  call mpas_pool_get_config(configs,'config_frac_seaice'      ,config_frac_seaice      )
  call mpas_pool_get_config(configs,'config_microp_re'        ,config_microp_re        )
@@ -551,13 +548,11 @@
  endif
 
 !set alarm for updating the background surface albedo and the greeness fraction:
- if (config_gvf_update) then
-     call mpas_set_timeInterval(alarmTimeStep,timeString=config_greeness_update,ierr=ierr)
-     alarmStartTime = startTime
-     call mpas_add_clock_alarm(clock,greenAlarmID,alarmStartTime,alarmTimeStep,ierr=ierr)
+ call mpas_set_timeInterval(alarmTimeStep,timeString=config_greeness_update,ierr=ierr)
+    alarmStartTime = startTime
+ call mpas_add_clock_alarm(clock,greenAlarmID,alarmStartTime,alarmTimeStep,ierr=ierr)
     if(ierr /= 0) &
-       call physics_error_fatal('subroutine physics_init: error creating alarm greeness')
- endif
+ call physics_error_fatal('subroutine physics_init: error creating alarm greeness')
 
 !set alarm for updating the surface boundary conditions:
  if (config_sst_update) then
