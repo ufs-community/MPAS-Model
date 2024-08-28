@@ -770,8 +770,10 @@ if( trim(config_microp_scheme)=='mp_nssl2m' ) then
 
 !initialization of the non-stationary gravity wave drag scheme
  if(config_ngw_scheme) then
-    print *, "Ahoj svete:  Initializing non-stationary GWD scheme"
-    call ugwpv1_ngw_init
+    call mpas_log_write('Ahoj svete:  Initializing non-stationary GWD scheme')
+    ! Here we assume that master process is 'zero'
+    ! Note that 'julday' is the integer day of year at initialization
+    call ugwpv1_ngw_init(domain%dminfo%my_proc_id,0,julday,kte,config_dt)
  endif
 
  end subroutine physics_run_init
