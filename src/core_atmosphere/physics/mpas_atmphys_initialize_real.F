@@ -947,6 +947,7 @@ end subroutine init_soil_layers_properties
  logical, pointer :: config_frac_seaice
  character(len=StrKIND),pointer:: config_landuse_data
  integer,pointer:: isice_lu
+ integer,pointer:: nvegopt
 
 !note that this threshold is also defined in module_physics_vars.F.It is defined here to avoid
 !adding "use module_physics_vars" since this subroutine is only used for the initialization of
@@ -963,6 +964,7 @@ end subroutine init_soil_layers_properties
 
  call mpas_pool_get_dimension(dims, 'nCellsSolve', nCellsSolve)
  call mpas_pool_get_dimension(dims, 'nSoilLevels', nSoilLevels)
+ call mpas_pool_get_dimension(dims, 'nVegOpt', nvegopt)
 
  call mpas_pool_get_array(mesh, 'isice_lu', isice_lu)
  call mpas_pool_get_array(mesh, 'landmask', landmask)
