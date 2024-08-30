@@ -305,14 +305,14 @@
 
     !call to gravity wave drag over orography scheme:
     if(config_gwdo_scheme .ne. 'off') then
-       call allocate_gwdo
+       call allocate_gwdo(block%configs)
 !$OMP PARALLEL DO
        do thread=1,nThreads
           call driver_gwdo(itimestep,block%configs,mesh,sfc_input,diag_physics,tend_physics, &
                            cellSolveThreadStart(thread),cellSolveThreadEnd(thread))
        end do
 !$OMP END PARALLEL DO
-       call deallocate_gwdo
+       call deallocate_gwdo(block%configs)
     endif
 
     !call to convection scheme:
