@@ -685,6 +685,8 @@
 			<var name="kpbl"/>
 			<var name="hpbl"/>
 			<var name="hfx"/>
+                        <var name="cldfrac_cu"/>
+                        <var name="refl10cm_cu"/>
 			<var name="mavail"/>
 			<var name="mol"/>
 			<var name="qfx"/>
@@ -1116,6 +1118,8 @@
                         <var name="maxwidth"/>
                         <var name="ztop_plume"/>
                         <var name="hpbl"/>
+                        <var name="cldfrac_cu"/>
+                        <var name="refl10cm_cu"/>
 #endif
 
                         <!-- Begin convective diagnostics defined in diagnostics/Registry_convective.xml -->
@@ -2690,6 +2694,14 @@
 
                 <var name="qi_cu" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1}"
                      description="in-cloud cloud ice mixing ratio in Grell-Freitas cloud model"
+                     packages="cu_grell_freitas_in"/>
+
+	       <var name="cldfrac_cu" type="real" dimensions="nVertLevels nCells Time" units="unitless"
+                     description="cloud fraction in the Grell-Freitas cloud model"
+                     packages="cu_grell_freitas_in"/>
+
+	       <var name="refl10cm_cu" type="real" dimensions="nVertLevels nCells Time" units="dBZ"
+                     description="10 cm radar reflectivity in the Grell-Freitas cloud model"
                      packages="cu_grell_freitas_in"/>
 
 
