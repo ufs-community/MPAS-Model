@@ -177,6 +177,7 @@
        if(.not.allocated(qicu_p)         ) allocate(qicu_p(ims:ime,kms:kme,jms:jme)     )
 
        if(.not.allocated(cldfrac_cu_p)   ) allocate(cldfrac_cu_p(ims:ime,kms:kme,jms:jme))
+       if(.not.allocated(refl10cm_cu_p)  ) allocate(refl10cm_cu_p(ims:ime,kms:kme,jms:jme))
 
     case ("cu_kain_fritsch")
        if(.not.allocated(dx_p)       ) allocate(dx_p(ims:ime,jms:jme)              )
@@ -324,6 +325,7 @@
        if(allocated(qicu_p)         ) deallocate(qicu_p         )
 
        if(allocated(cldfrac_cu_p)   ) deallocate(cldfrac_cu_p   )
+       if(allocated(refl10cm_cu_p)  ) deallocate(refl10cm_cu_p  )
 
     case ("cu_kain_fritsch")
        if(allocated(dx_p)         ) deallocate(dx_p         )
@@ -519,7 +521,7 @@
              pbl_scheme      = pbl_scheme             , maxmf         = maxmfbl_p       , &
              qc3d            = qc_p                   , qi3d          = qi_p            , &
              qc_cu           = qccu_p                 , qi_cu         = qicu_p          , &
-             cldfrac_cu      = cldfrac_cu_p                                             , &
+             cldfrac_cu      = cldfrac_cu_p           , refl10cm_cu   = refl10cm_cu_p   , &
              ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde      , &
              ims = ims , ime = ime , jms = jms , jme = jme , kms = kds , kme = kme      , &
              its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte        &
@@ -660,7 +662,7 @@
  real(kind=RKIND),dimension(:,:),pointer:: rthcuten,rqvcuten,rqccuten,rqicuten,rqrcuten,rqscuten 
  real(kind=RKIND),dimension(:,:),pointer:: rthblten,rthdynten,rthratenlw,rthratensw
  real(kind=RKIND),dimension(:,:),pointer:: rqvblten,rqvdynten,rucuten,rvcuten
- real(kind=RKIND),dimension(:,:),pointer:: cldfrac_cu
+ real(kind=RKIND),dimension(:,:),pointer:: cldfrac_cu,refl10cm_cu
 
 !local variables:
  integer:: i,j,k
@@ -718,6 +720,7 @@
        call mpas_pool_get_array(diag_physics,'qc_cu'        ,qc_cu        )
        call mpas_pool_get_array(diag_physics,'qi_cu'        ,qi_cu        )
        call mpas_pool_get_array(diag_physics,'cldfrac_cu'   ,cldfrac_cu   )
+       call mpas_pool_get_array(diag_physics,'refl10cm_cu'  ,refl10cm_cu  )
 
        call mpas_pool_get_array(tend_physics,'rqvblten'  ,rqvblten  )
        call mpas_pool_get_array(tend_physics,'rqvdynten' ,rqvdynten )
@@ -762,6 +765,7 @@
              rvcuten_p(i,k,j)   = rvcuten(k,i)
 
              cldfrac_cu_p(i,k,j)= cldfrac_cu(k,i)
+             refl10cm_cu_p(i,k,j)= refl10cm_cu(k,i)
           enddo
        enddo
        enddo
@@ -900,7 +904,7 @@
  real(kind=RKIND),dimension(:,:),pointer:: w0avg
  real(kind=RKIND),dimension(:,:),pointer:: rthcuten,rqvcuten,rqccuten,rqicuten,rqrcuten,rqscuten
  real(kind=RKIND),dimension(:,:),pointer:: rucuten,rvcuten
- real(kind=RKIND),dimension(:,:),pointer:: cldfrac_cu
+ real(kind=RKIND),dimension(:,:),pointer:: cldfrac_cu,refl10cm_cu
 
 !-----------------------------------------------------------------------------------------------------------------
 
@@ -941,6 +945,7 @@
        call mpas_pool_get_array(diag_physics,'qc_cu'        ,qc_cu        )
        call mpas_pool_get_array(diag_physics,'qi_cu'        ,qi_cu        )
        call mpas_pool_get_array(diag_physics,'cldfrac_cu'   ,cldfrac_cu   )
+       call mpas_pool_get_array(diag_physics,'refl10cm_cu'  ,refl10cm_cu  )
 
        call mpas_pool_get_array(tend_physics,'rucuten',rucuten)
        call mpas_pool_get_array(tend_physics,'rvcuten',rvcuten)
@@ -962,7 +967,8 @@
              rucuten(k,i)  = rucuten_p(i,k,j)
              rvcuten(k,i)  = rvcuten_p(i,k,j)
 
-             cldfrac_cu(k,i)  = cldfrac_cu_p(i,k,j)
+             cldfrac_cu (k,i)  = cldfrac_cu_p(i,k,j)
+             refl10cm_cu(k,i)  = refl10cm_cu_p(i,k,j)
           enddo
        enddo
        enddo

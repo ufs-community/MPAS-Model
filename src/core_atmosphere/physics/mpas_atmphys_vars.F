@@ -294,7 +294,8 @@
     recloud_p,        &!
     reice_p,          &!
     resnow_p,         &!
-    refl10cm_p         !
+    refl10cm_p,       &!
+    refl10cm_cu_p      !
  real(kind=RKIND),dimension(:,:),allocatable:: &
     refl10cm_1km_p
 !=================================================================================================================

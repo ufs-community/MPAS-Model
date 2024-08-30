@@ -62,7 +62,7 @@ CONTAINS
               ,rthcuten,rqvcuten,rqccuten,rqicuten              &
               ,rucuten,rvcuten                                  &
               ,pbl_scheme, maxmf, qc3d, qi3d                    &
-              ,qc_cu, qi_cu, cldfrac_cu                         &
+              ,qc_cu, qi_cu, cldfrac_cu, refl10cm_cu            &
               ,ims, ime, jms, jme, kms,kme                      &
               ,ids, ide, jds, jde, kds,kde                      &
               ,its, ite, jts, jte, kts,kte)
@@ -117,7 +117,7 @@ CONTAINS
  real,dimension(ims:ime,kms:kme,jms:jme),intent(inout):: rthcuten,rqvcuten,rqccuten,rqicuten
  real,dimension(ims:ime,kms:kme,jms:jme),intent(inout):: rucuten,rvcuten
  real,dimension(ims:ime,kms:kme,jms:jme),intent(inout),optional:: gdc,gdc2
- real,dimension(ims:ime,kms:kme,jms:jme),intent(inout):: qc_cu,qi_cu,cldfrac_cu
+ real,dimension(ims:ime,kms:kme,jms:jme),intent(inout):: qc_cu,qi_cu,cldfrac_cu,refl10cm_cu
 
 !local variables:
  character(len=50),dimension(its:ite):: ierrc,ierrcm
@@ -642,7 +642,7 @@ CONTAINS
           rqvcuten(i,k,j) = outqs(i,k) + outq(i,k)+outqm(i,k)
           rucuten(i,k,j) = outu(i,k)+outum(i,k)+outus(i,k)
           rvcuten(i,k,j) = outv(i,k)+outvm(i,k)+outvs(i,k)
-          gf_mfx(i,k) = xmb(i)*zuo(i,k)+xmbm(i)*zum(i,k)+xmbs(i)*zus(i,k)
+          gf_mfx(i,k) = xmb(i)*zuo(i,k)/(1.e-8+forcing(i,6))+xmbm(i)*zum(i,k)+xmbs(i)*zus(i,k)
 
           if(t2d(i,k) .lt. tcrit) then
              rqccuten(i,k,j) = 0.
@@ -668,9 +668,67 @@ CONTAINS
      &                 ims,ime, jms,jme, kms,kme,                       &
      &                 its,ite, jts,jte, kts,kte                        )
 
+ !-- convection contribution to radar reflectivity
+      call calc_cu_reflectivity(g,dt,raincv,zo,t,htop,refl10cm_cu,      &
+                                its,ite, jts,jte, kts,kte               )
+
  end subroutine cu_grell_freitas
 
 !-----------------------------------------------------------------------------------------------------------------
+ subroutine calc_cu_reflectivity(g,dt,raincv,zo,t,htop,refl10cm_cu,     &
+                                      its,ite, jts,jte, kts,kte         )
+       implicit none
+       integer, intent(in):: its,ite,jts,jte,kts,kte
+       real, intent(in):: g,dt
+       real, dimension(its:ite,kts:kte),intent(in):: zo, t
+       real, dimension(its:ite,jts:jte),intent(in):: htop
+       real, dimension(its:ite,jts:jte),intent(in):: raincv
+       real, dimension(its:ite,kts:kte),intent(out):: refl10cm_cu
+       real, dimension(its:ite)        :: factor, zfrz
+       real :: fctz, delz, cuprate, ze_conv, dbz_sum
+       logical :: lfrz
+       integer :: i, k
+
+
+
+         do i=its,ite
+           factor(i) = 0.0
+           lfrz = .true.
+           zfrz(i) = zo(i,1)
+           do k = kte, kts, -1
+             if (t(i,k) >= 273.15 .and. lfrz) then
+              zfrz(i) = zo(i,k)
+              lfrz = .false.
+             endif
+           enddo
+         enddo
+!
+         do i=its,ite
+           if(raincv (i,1) > 0.0 .and. htop(i,1) > 0) then
+             factor(i) = -2./max(1000., zo(i,htop(i,1)) - zfrz(i))
+           endif
+         enddo
+
+         do k=kts,kte
+           do i=its,ite
+             if(raincv(i,1) > 0. .and. k <= htop(i,1)) then
+               fctz = 0.0
+               delz = zo(i,k) - zfrz(i)
+               if(delz <0.0) then
+                 fctz = 1. ! wrong
+               else
+                 fctz = 10.**(factor(i)*delz)
+               endif
+               cuprate = raincv(i,1) * 3.6e3 / dt  ! cu precip rate (mm/h)
+               ze_conv = 300.0 * cuprate**1.4
+               ze_conv = fctz * ze_conv
+               dbz_sum = max(-20.0, 10.*log10(ze_conv))
+               refl10cm_cu(i,k) = dbz_sum
+             endif
+           enddo
+         enddo
+
+      end subroutine calc_cu_reflectivity
 !=================================================================================================================
       subroutine calc_cldfraction_monan(CLDFRA, qv, qc, qi,             &
      &                 p,t,rho, XLAND, zgrid,kpbl,gf_mfx,               &
@@ -790,7 +848,7 @@ CONTAINS
       real :: ZLL, DZZ, ZZZ ! length scales
       real :: ZAH, ZA, ZB, ZSBAR, ZQ1, ZSIGMA, ZDRW, ZDTL ! related to computation of Sig_s
       real :: ZSIG_CONV,  ZSIGMA_NOCONV,  ZQ1_NOCONV      ! convective part of Sig_s
-      real, parameter :: zq1_tuning = 1.
+      real, parameter :: zq1_tuning = 0.
       !
       !*       0.2  Definition of constants :
       !

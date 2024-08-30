@@ -38,7 +38,7 @@ MODULE module_cu_gf_deep
 !> still 16 ensembles for clousres
      integer, parameter:: maxens3=16
 !>  which coldpool version to use
-     integer, parameter:: icoldpool=0
+     integer, parameter:: icoldpool=1
 
 !---meltglac-------------------------------------------------
  logical, parameter :: melt_glac      = .true.  !<- turn on/off ice phase/melting
@@ -1993,6 +1993,7 @@ contains
 !$acc atomic update
           mconv(i)=mconv(i)+omeg(i,k)*dq/g
         enddo
+        if (mconv(i) < 5.*0.001) ierr(i)=42
       enddo
 !$acc end kernels
       call cup_forcing_ens_3d(closure_n,xland1,aa0,aa1,xaa0_ens,mbdt,dtime, &
