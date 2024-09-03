@@ -3090,7 +3090,7 @@
                 <!-- ================================================================================================== -->
 
                 <var name="cldfrac" type="real" dimensions="nVertLevels nCells Time" units="unitless"
-                     description="horizontal cloud fraction" packages="mp_thompson_in;mp_wsm6_in"/>
+                     description="horizontal cloud fraction"/>
 
 
                 <!-- ================================================================================================== -->
