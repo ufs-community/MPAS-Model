@@ -548,11 +548,13 @@
  endif
 
 !set alarm for updating the background surface albedo and the greeness fraction:
- call mpas_set_timeInterval(alarmTimeStep,timeString=config_greeness_update,ierr=ierr)
- alarmStartTime = startTime
- call mpas_add_clock_alarm(clock,greenAlarmID,alarmStartTime,alarmTimeStep,ierr=ierr)
+ if(trim(config_greeness_update) /= "none") then
+    call mpas_set_timeInterval(alarmTimeStep,timeString=config_greeness_update,ierr=ierr)
+    alarmStartTime = startTime
+    call mpas_add_clock_alarm(clock,greenAlarmID,alarmStartTime,alarmTimeStep,ierr=ierr)
     if(ierr /= 0) &
        call physics_error_fatal('subroutine physics_init: error creating alarm greeness')
+ endif
 
 !set alarm for updating the surface boundary conditions:
  if (config_sst_update) then
