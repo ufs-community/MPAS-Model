@@ -240,6 +240,7 @@
  if(.not. (config_radt_cld_scheme .eq. 'off'                   .or. &
            config_radt_cld_scheme .eq. 'cld_incidence'         .or. &
            config_radt_cld_scheme .eq. 'cld_fraction'          .or. &
+           config_radt_cld_scheme .eq. 'cld_pc2'               .or. &
            config_radt_cld_scheme .eq. 'cld_fraction_thompson' .or. &
            config_radt_cld_scheme .eq. 'cld_fraction_mynn')) then
 
