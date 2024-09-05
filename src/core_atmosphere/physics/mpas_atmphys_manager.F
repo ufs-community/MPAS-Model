@@ -411,6 +411,7 @@
  integer,pointer:: nCellsSolve,nSoilLevels,nVertLevels,nlcat,nscat
 
  real(kind=RKIND),pointer:: config_dt
+ real(kind=RKIND),dimension(:),pointer    :: rdzw,dzu
 
 !local variables:
  type(MPAS_Time_Type):: startTime,alarmStartTime
@@ -441,7 +442,8 @@
  call mpas_pool_get_config(configs,'config_ngw_scheme'       ,config_ngw_scheme       )
 
  call mpas_pool_get_config(configs,'config_dt',config_dt)
-
+ call mpas_pool_get_array(mesh,'rdzw'   ,rdzw   )
+ call mpas_pool_get_array(mesh,'dzu'    ,dzu    )
 
  call mpas_pool_get_dimension(mesh,'cam_dim1'   ,cam_dim1   )
  call mpas_pool_get_dimension(mesh,'nMonths'    ,nMonths    )
@@ -770,10 +772,9 @@ if( trim(config_microp_scheme)=='mp_nssl2m' ) then
 
 !initialization of the non-stationary gravity wave drag scheme
  if(config_ngw_scheme) then
-    call mpas_log_write('Ahoj svete:  Initializing non-stationary GWD scheme')
-    ! Here we assume that master process is 'zero'
+    call mpas_log_write('Ahoj svete:  Initializing non-stationary GWD scheme',masterOnly=.true.)
     ! Note that 'julday' is the integer day of year at initialization
-    call ugwpv1_ngw_init(domain%dminfo%my_proc_id,0,julday,kte,config_dt)
+    call ugwpv1_ngw_init(julday,kte,config_dt,rdzw,dzu)
  endif
 
  end subroutine physics_run_init
