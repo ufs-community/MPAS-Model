@@ -1646,8 +1646,12 @@
                              description="Number of water-friendly aerosols for microphysics"
                              packages="mp_thompson_in"/>
 
-			<var name="nifa" array_group="passive" units="nb kg^{-1}"
+          			<var name="nifa" array_group="passive" units="nb kg^{-1}"
                              description="Number of ice-friendly aerosols for microphysics"
+                             packages="mp_thompson_in"/>
+
+			          <var name="qaprog" array_group="passive" units=""
+                             description="Prognostic cloud fraction"
                              packages="mp_thompson_in"/>
 
                         <var name="nc" array_group="number" units="nb kg^{-1}"
@@ -2014,7 +2018,7 @@
                              description="Tendency of cloud ice number concentration multiplied by dry air density divided by d(zeta)/dz"
                              packages="bl_mynn_in;mp_thompson_in;mp_nssl2m_in"/>
 
-			<var name="tend_nc" name_in_code="nc" array_group="number" units="nb m^{-3} s^{-1}" 
+			          <var name="tend_nc" name_in_code="nc" array_group="number" units="nb m^{-3} s^{-1}" 
                              description="Tendency of cloud number concentration multiplied by dry air density divided by d(zeta)/dz"
                              packages="mp_thompson_in;mp_nssl2m_in"/>
 			
@@ -2026,8 +2030,12 @@
                              description="Tendency of water-friendly aerosols multiplied by dry air density divided by d(zeta)/dz"
                              packages="mp_thompson_in"/>
 
-			<var name="tend_nifa" name_in_code="nifa" array_group="passive" units="nb m^{-3} s^{-1}" 
+			          <var name="tend_nifa" name_in_code="nifa" array_group="passive" units="nb m^{-3} s^{-1}" 
                              description="Tendency of ice-friendly aerosols multiplied by dry air density divided by d(zeta)/dz"
+                             packages="mp_thompson_in"/>
+			
+                         <var name="tend_qaprog" name_in_code="qaprog" array_group="passive" units="s^{-1}" 
+                             description="Tendency of prognostic cloud fraction multiplied by dry air density divided by d(zeta)/dz"
                              packages="mp_thompson_in"/>
 
                         <var name="tend_ns" name_in_code="ns" array_group="number" units="nb m^{-3} s^{-1}"
@@ -2153,6 +2161,9 @@
 
                         <var name="lbc_nifa" name_in_code="nifa" array_group="passive" packages="mp_thompson_in" units="m^{-3} s^{-1}"
                              description="Lateral boundary tendency of ifa"/>
+
+                         <var name="lbc_qaprog" name_in_code="qaprog" array_group="passive" packages="mp_thompson_in" units="s^{-1}"
+                             description="Lateral boundary tendency of Prognostic cloud fraction"/>
                 </var_array>
         </var_struct>
 
@@ -2344,7 +2355,7 @@
                 <nml_option name="config_radt_cld_scheme" type="character" default_value="suite" in_defaults="false"
                      units="-"
                      description="configuration for calculation of horizontal cloud fraction"
-                     possible_values="`suite',`cld_fraction',`cld_incidence',`cld_fraction_thompson',`cld_fraction_mynn'"/>
+                     possible_values="`suite',`cld_fraction',`cld_incidence',`cld_fraction_thompson',`cld_fraction_mynn',`cld_pc2'"/>
 
                 <nml_option name="config_radt_lw_scheme" type="character" default_value="suite" in_defaults="false"
                      units="-"
@@ -3702,6 +3713,12 @@
 
                 <var name="rthratenlw" type="real" dimensions="nVertLevels nCells Time" units="K s^{-1}"
                      description="tendency of potential temperature due to long wave radiation"/>
+
+		     <var name="rqccldfracten" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1} s^{-1}"
+                     description="tendency of cloud water mixing ratio due to cloud fraction scheme"/>
+                    		     
+               <var name="rqicldfracten" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1} s^{-1}"
+                     description="tendency of cloud ice mixing ratio due to cloud fraction scheme"/>
 #endif
         </var_struct>
 
