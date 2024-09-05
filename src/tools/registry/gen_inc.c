@@ -1319,7 +1319,7 @@ int parse_var_array(FILE *fd, ezxml_t registry, ezxml_t superStruct, ezxml_t var
 
 			fortprintf(fd, "! Starting group %s\n", vararrgroup);
 			fortprintf(fd, "! Define constituent var %s\n", varname);
-			fortprintf(fd, "! My Packages are %s\n", varpackages);
+			// fortprintf(fd, "! My Packages are %s\n", varpackages);
 
 			// If no packages are defined, default to var_arr packages.
 			if(varpackages == NULL){
@@ -1392,7 +1392,7 @@ int parse_var_array(FILE *fd, ezxml_t registry, ezxml_t superStruct, ezxml_t var
 						}
 
 						fortprintf(fd, "! Define constituent var %s\n", varname);
-						fortprintf(fd, "! My packages are %s\n", varpackages);
+						// fortprintf(fd, "! My packages are %s\n", varpackages);
 
 						// Parse packages if they are defined
 						sub_spacing[0] = '\0';

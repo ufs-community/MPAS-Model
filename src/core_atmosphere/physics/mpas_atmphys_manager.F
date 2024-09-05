@@ -690,6 +690,7 @@
  dt_microp = dt_dyn
  n_microp  = 1
  if(trim(config_microp_scheme)=='mp_thompson' .or. &
+    trim(config_microp_scheme)=='mp_tempo'    .or. &
     trim(config_microp_scheme)=='mp_thompson_aerosols') then
     dt_microp = 90._RKIND
     n_microp  = max(nint(dt_dyn/dt_microp),1)
@@ -759,6 +760,7 @@ if( trim(config_microp_scheme)=='mp_nssl2m' ) then
  has_reqs = 0
  if(config_microp_re) then
     if(trim(config_microp_scheme)=='mp_thompson'          .or. &
+       trim(config_microp_scheme)=='mp_tempo'             .or. &
        trim(config_microp_scheme)=='mp_thompson_aerosols' .or. &
        trim(config_microp_scheme)=='mp_wsm6' .or. trim(config_microp_scheme)=='mp_nssl2m') then
        if(trim(config_radt_lw_scheme)=='rrtmg_lw' .and. trim(config_radt_sw_scheme)=='rrtmg_sw') then
