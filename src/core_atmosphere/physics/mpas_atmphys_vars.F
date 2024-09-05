@@ -211,7 +211,9 @@
     ns_p, ng_p, nh_p, nccn_p, &
     volg_p, volh_p,   &!
     nwfa_p,           &!
-    nifa_p,             zrw_p, zgw_p, zhw_p
+    nifa_p,             zrw_p, zgw_p, zhw_p, &
+    qaprog_p,         &!
+    rqccldfractend_p, rqicldfracttend_p
 
 !... arrays located at w (vertical velocity) points, or at interface between layers:
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
