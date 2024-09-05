@@ -59,7 +59,7 @@ module mpas_convective_diagnostics
     logical :: is_needed_prec_acc_nc
     logical :: is_needed_snow_acc_nc
     logical :: do_any_uh, do_any_diags
-    logical,pointer :: do_diag_dbz
+    integer,pointer :: do_diag_dbz
 
     contains
 
@@ -123,9 +123,9 @@ module mpas_convective_diagnostics
         is_needed_snow_acc_nc = .false.
         do_any_uh = .false.
         do_any_diags = .false.
-        do_diag_dbz = .false.
+        do_diag_dbz = 0
         if (mpas_stream_inclusion_count('refl10cm_1km_max', direction=MPAS_STREAM_OUTPUT) > 0) then
-            do_diag_dbz = .true.
+            do_diag_dbz = 1
         endif
         ! - UH Variables
         if (mpas_stream_inclusion_count('updraft_helicity_max', direction=MPAS_STREAM_OUTPUT) > 0) then

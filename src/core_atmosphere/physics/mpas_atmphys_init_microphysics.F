@@ -15,7 +15,7 @@
  use mpas_pool_routines
 
  use mpas_atmphys_utilities
- use module_mp_thompson_params, only: Nt_c_l, Nt_c_o, aero_max, nwfa_default
+ use module_mp_tempo_params !, only: Nt_c_l, Nt_c_o, aero_max, nwfa_default
 !use module_mp_thompson, only: is_aerosol_aware,naCCN0,naCCN1,naIN0,naIN1,ntb_arc,ntb_arw,ntb_art,ntb_arr, &
 !                              ntb_ark,tnccn_act
 
@@ -184,7 +184,7 @@ end subroutine init_thompson_nwfa_emissions
 !-----------------------------------------------------------------------------------------------------------------
 !call mpas_log_write('--- enter subroutine init_thompson_aerosols_forMPAS:')
 
- is_aerosol_aware = .true.
+! is_aerosol_aware = .true.
 
 !... read a static file containing CCN activation of aerosols. The data were created from a parcel model by
 !... Feingold & Heymsfield with further changes by Eidhammer and Kriedenweis.

@@ -7,9 +7,9 @@
 !
 !=================================================================================================================
  module atmphys_build_tables_thompson
- use module_mp_thompson
- use module_mp_thompson_utils
- use module_mp_thompson_params, only : dimNRHG
+ use module_mp_tempo
+ use module_mp_tempo_utils
+ use module_mp_tempo_params, only : dimNRHG
 
  implicit none
  private
@@ -38,7 +38,7 @@
 !--- partial initialization before building the look-up tables:
 !--- AAJ This needs a hail_aware_flag defined in module_mp_thompson_params
 
- call thompson_init(l_mp_tables=l_mp_tables, hail_aware_flag=build_hail_aware_table)
+ call tempo_init(l_mp_tables=l_mp_tables, hail_aware_flag=build_hail_aware_table)
 
  call mpas_new_unit(mp_unit, unformatted = .true.)
 

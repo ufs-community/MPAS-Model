@@ -33,7 +33,7 @@
 !urban physics: MPAS does not plan to run the urban physics option.
  integer,parameter:: sf_urban_physics = 0 !activate urban canopy model (=0: no urban canopy)
 
- integer :: targetcell= 0 !99975 !81442 !107619
+ integer :: targetcell_= 0 !99975 !81442 !107619
 
 !MPAS driver for parameterization of surface processes over seaice points.
 !Laura D. Fowler (laura@ucar.edu) / 2024-03-13.
@@ -415,7 +415,7 @@
        if (lsm_scheme == 'sf_ruc') then
            dew_p(i,j) = dew(i)
            sfcevp_p(i,j) = sfcevp(i)
-           if (globalcells(i)==targetcell) then
+           if (globalcells(i)==targetcell_) then
               print *,'from MPAS '
               print *,'globalcells(i),cqs_p,cqs2_p,chs_p,chs2_p',globalcells(i),cqs_p(i,j),cqs2_p(i,j),chs_p(i,j),chs2_p(i,j)
               print *,'flqc(i),mavail(i),rho_p(i,kts,j)',flqc(i),mavail(i),rho_p(i,kts,j)
@@ -581,7 +581,7 @@
        call mpas_log_write('--- call subroutine sfcdiags_ruclsm:')
        do j = jts,jte
           do i = its,ite
-             if (globalcells(i)==targetcell) then
+             if (globalcells(i)==targetcell_) then
                 print *,' before call to sfcdiags_ruclsm'
                 print *,'globalcells(i),cqs_p,cqs2_p,chs_p,chs2_p',globalcells(i),cqs_p(i,j),cqs2_p(i,j),chs_p(i,j),chs2_p(i,j)
              endif

@@ -177,6 +177,7 @@
            config_microp_scheme .eq. 'mp_kessler'           .or. &
            config_microp_scheme .eq. 'mp_thompson'          .or. &
            config_microp_scheme .eq. 'mp_thompson_aerosols' .or. &
+           config_microp_scheme .eq. 'mp_tempo' .or. &
            config_microp_scheme .eq. 'mp_nssl2m'  .or. &
            config_microp_scheme .eq. 'mp_wsm6')) then
 
@@ -401,19 +402,6 @@
              dzs(9,iCell) = 0.70_RKIND
         enddo
 
-       case("sf_ruc")
-         do iCell = 1,nCells
-             dzs(1,iCell) = 0.005_RKIND
-             dzs(2,iCell) = 0.025_RKIND
-             dzs(3,iCell) = 0.045_RKIND
-             dzs(4,iCell) = 0.13_RKIND
-             dzs(5,iCell) = 0.25_RKIND
-             dzs(6,iCell) = 0.35_RKIND
-             dzs(7,iCell) = 0.50_RKIND
-             dzs(8,iCell) = 1.00_RKIND
-             dzs(9,iCell) = 0.70_RKIND
-        enddo
-
        case default
     
     end select lsm_select
@@ -445,6 +433,7 @@
 
     call mpas_pool_get_config(configs,'config_microp_scheme',config_microp_scheme)
     if(config_microp_scheme /= "mp_thompson" .or. &
+       config_microp_scheme /= "mp_tempo" .or. &
        config_microp_scheme /= "mp_thompson_aerosols") return
 
     l_qr_acr_qg = .false.

@@ -364,7 +364,7 @@
 
 !initialization of cloud microphysics processes:
  if(config_microp_scheme .ne. 'off') &
-    call microphysics_init(dminfo,configs,mesh,sfc_input,diag,diag_physics,state)
+    call init_microphysics(dminfo,configs,mesh,state,time_lev,sfc_input,diag_physics)
 
 !initialization of PBL processes:
  if(config_pbl_scheme .ne. 'off') call init_pbl(configs)

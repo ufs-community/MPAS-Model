@@ -20,7 +20,7 @@
 !wrf physics:
  use module_mp_kessler
  use module_mp_thompson
- use module_mp_tempo
+ use module_mp_tempo,only: tempo_3d_to_1d_driver
  ! use module_mp_tempo_utils
  use module_mp_wsm6,only: wsm6
  use mp_wsm6,only: mp_wsm6_init,refl10cm_wsm6
@@ -108,7 +108,7 @@
 !local pointers:
  character(len=StrKIND),pointer:: microp_scheme
  character(len=StrKIND),pointer:: nssl_moments
- logical,pointer:: thompson_hail_aware
+ logical,pointer:: tempo_hailaware
 
 !-----------------------------------------------------------------------------------------------------------------
 
@@ -182,7 +182,7 @@
                 if (tempo_hailaware) then
                    if(.not.allocated(ng_p) ) allocate(ng_p(ims:ime,kms:kme,jms:jme))
                    if(.not.allocated(volg_p)) allocate(volg_p(ims:ime,kms:kme,jms:jme))
-                   if(.not.allocated(refl10cm_1km_p)  ) allocate(refl10cm_p(ims:ime,jms:jme) )
+                   if(.not.allocated(refl10cm_1km_p)  ) allocate(refl10cm_1km_p(ims:ime,jms:jme) )
                 endif
                 
              case default
@@ -199,7 +199,7 @@
           if(.not.allocated(nccn_p) ) allocate(nccn_p(ims:ime,kms:kme,jms:jme))
           if(.not.allocated(volg_p)) allocate(volg_p(ims:ime,kms:kme,jms:jme))
           if(.not.allocated(volh_p)) allocate(volh_p(ims:ime,kms:kme,jms:jme))
-          if(.not.allocated(refl10cm_1km_p)  ) allocate(refl10cm_p(ims:ime,jms:jme) )
+          if(.not.allocated(refl10cm_1km_p)  ) allocate(refl10cm_1km_p(ims:ime,jms:jme) )
           
           if (nssl_moments == "nssl3m") then
             if(.not.allocated(zrw_p) ) allocate(zrw_p(ims:ime,kms:kme,jms:jme))
@@ -225,7 +225,7 @@
 !local pointers:
  character(len=StrKIND),pointer:: microp_scheme
  character(len=StrKIND),pointer:: nssl_moments
- logical,pointer:: thompson_hail_aware
+ logical,pointer:: tempo_hailaware
 
 !-----------------------------------------------------------------------------------------------------------------
 
@@ -348,7 +348,7 @@
 !inout arguments:
  type(mpas_pool_type),intent(inout):: diag_physics
  type(mpas_pool_type),intent(inout):: state
- type(mpas_pool_type),intent(in):: diag
+! type(mpas_pool_type),intent(in):: diag
 
 !local pointer:
  logical,pointer:: do_restart
@@ -428,18 +428,17 @@
 
 !local pointers:
  character(len=StrKIND),pointer:: microp_scheme
- logical,pointer:: thompson_aerosol_aware,thompson_hail_aware
-  character(len=StrKIND),pointer:: nssl_moments
+ logical,pointer:: thompson_aerosol_aware,tempo_hailaware
+ character(len=StrKIND),pointer:: nssl_moments
 
 !local variables and arrays:
  integer:: istep
- logical, pointer :: do_diag_dbz
+ integer, pointer :: do_diag_dbz
+ logical :: do_diag_dbz_flag
 
 !CCPP-compliant flags:
  character(len=StrKIND):: errmsg
  integer:: errflg
-
- call mpas_pool_get_array(diag_physics,'do_diag_dbz',do_diag_dbz)
 
 !-----------------------------------------------------------------------------------------------------------------
 !call mpas_log_write('')
@@ -452,6 +451,10 @@
  call mpas_pool_get_config(configs,'config_microp_scheme',microp_scheme)
  call mpas_pool_get_config(configs,'config_tempo_hailaware',tempo_hailaware)
  call mpas_pool_get_config(configs,'config_nssl_moments',nssl_moments)
+ call mpas_pool_get_array(diag_physics,'do_diag_dbz',do_diag_dbz)
+
+ do_diag_dbz_flag = .false.
+ if (do_diag_dbz == 1) do_diag_dbz_flag = .true.
 
 !... allocation of microphysics arrays:
 !$OMP MASTER
@@ -646,7 +649,7 @@
                   sr        = sr_p        , rainprod   = rainprod_p   , evapprod   = evapprod_p   , &
                   re_cloud  = recloud_p   , re_ice     = reice_p      , re_snow    = resnow_p     , &
                   has_reqc  = has_reqc    , has_reqi   = has_reqi     , has_reqs   = has_reqs     , &
-                  diagflag  = l_diags     , dbz        = refl10cm_p   , diag_dbz   = do_diag_dbz  , &
+                  diagflag  = l_diags     , dbz        = refl10cm_p   , diag_dbz   = do_diag_dbz_flag  , &
                   ntmul      = n_microp   , ntcnt      = 1            , lastloop   = .true.       , &
                   refl_diagnostic = refl10cm_1km_p                                                , &
                   ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde           , &
@@ -668,7 +671,7 @@
                   sr        = sr_p        , rainprod   = rainprod_p   , evapprod   = evapprod_p   , &
                   re_cloud  = recloud_p   , re_ice     = reice_p      , re_snow    = resnow_p     , &
                   has_reqc  = has_reqc    , has_reqi   = has_reqi     , has_reqs   = has_reqs     , &
-                  diagflag  = l_diags     , dbz        = refl10cm_p   , diag_dbz   = do_diag_dbz  , &
+                  diagflag  = l_diags     , dbz        = refl10cm_p   , diag_dbz   = do_diag_dbz_flag  , &
                   ntmul      = n_microp   , ntcnt      = 1            , lastloop   = .true.       , &
                   refl_diagnostic = refl10cm_1km_p                                                , &
                   ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde           , &
@@ -705,7 +708,7 @@
 
  end if
 
- if (do_diag_dbz) then
+ if (do_diag_dbz_flag) then
     if(trim(microp_scheme) == "mp_wsm6"     .or. &
        trim(microp_scheme) == "mp_tempo" .or. &
        trim(microp_scheme) == "mp_nssl2m"   ) then
