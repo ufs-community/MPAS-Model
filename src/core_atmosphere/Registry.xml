@@ -1646,7 +1646,7 @@
                              description="Number of water-friendly aerosols for microphysics"
                              packages="mp_thompson_in"/>
 
-          		<var name="nifa" array_group="passive" units="nb kg^{-1}"
+                        <var name="nifa" array_group="passive" units="nb kg^{-1}"
                              description="Number of ice-friendly aerosols for microphysics"
                              packages="mp_thompson_in"/>
 
@@ -2034,7 +2034,7 @@
                              description="Tendency of ice-friendly aerosols multiplied by dry air density divided by d(zeta)/dz"
                              packages="mp_thompson_in"/>
 			
-                         <var name="tend_qaprog" name_in_code="qaprog" array_group="passive" units="s^{-1}" 
+                        <var name="tend_qaprog" name_in_code="qaprog" array_group="passive" units="s^{-1}" 
                              description="Tendency of prognostic cloud fraction multiplied by dry air density divided by d(zeta)/dz"
                              packages="mp_thompson_in"/>
 
@@ -2162,7 +2162,7 @@
                         <var name="lbc_nifa" name_in_code="nifa" array_group="passive" packages="mp_thompson_in" units="m^{-3} s^{-1}"
                              description="Lateral boundary tendency of ifa"/>
 
-                         <var name="lbc_qaprog" name_in_code="qaprog" array_group="passive" packages="mp_thompson_in" units="s^{-1}"
+                        <var name="lbc_qaprog" name_in_code="qaprog" array_group="passive" packages="mp_thompson_in" units="s^{-1}"
                              description="Lateral boundary tendency of Prognostic cloud fraction"/>
                 </var_array>
         </var_struct>
