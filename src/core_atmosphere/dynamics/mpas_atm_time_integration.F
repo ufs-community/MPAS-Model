@@ -366,7 +366,7 @@ module atm_time_integration
       character (len=StrKIND), pointer :: config_convection_scheme
 
       integer, pointer :: num_scalars, index_qv, nCells, nCellsSolve, nEdges, nEdgesSolve, nVertices, nVerticesSolve, nVertLevels
-      integer, pointer :: index_qc, index_qr, index_qi, index_qs, index_qg, index_qh, index_nwfa, index_nifa
+      integer, pointer :: index_qc, index_qr, index_qi, index_qs, index_qg, index_qh, index_nwfa, index_nifa, index_qaprog
       integer, pointer :: index_nc, index_nr, index_ni, index_ns, index_ng, index_nh, index_nccn
       integer, pointer :: index_volg, index_volh, index_zrw, index_zgw, index_zhw
 
@@ -476,6 +476,7 @@ module atm_time_integration
          call mpas_pool_get_dimension(state, 'index_ni', index_ni)
          call mpas_pool_get_dimension(state, 'index_nwfa', index_nwfa)
          call mpas_pool_get_dimension(state, 'index_nifa', index_nifa)
+         call mpas_pool_get_dimension(state, 'index_qaprog', index_qaprog)
          call mpas_pool_get_dimension(state, 'index_ns', index_ns)
          call mpas_pool_get_dimension(state, 'index_ng', index_ng)
          call mpas_pool_get_dimension(state, 'index_nh', index_nh)
@@ -953,6 +954,9 @@ module atm_time_integration
                   if (index_nifa > 0) then
                      scalars_driving(index_nifa,1:nVertLevels,1:nCells+1) = mpas_atm_get_bdy_state( clock, block, nVertLevels, nCells, 'nifa', rk_timestep(rk_step) )
                   end if
+                  if (index_qaprog > 0) then
+                     scalars_driving(index_qaprog,1:nVertLevels,1:nCells+1) = mpas_atm_get_bdy_state( clock, block, nVertLevels, nCells, 'qaprog', rk_timestep(rk_step) )
+                  end if
                   if (index_ns > 0) then
                      scalars_driving(index_ns,1:nVertLevels,1:nCells+1) = mpas_atm_get_bdy_state( clock, block, nVertLevels, nCells, 'ns', rk_timestep(rk_step) )
                   end if
@@ -1159,6 +1163,9 @@ module atm_time_integration
                if (index_nifa > 0) then
                   scalars_driving(index_nifa,1:nVertLevels,1:nCells+1) = mpas_atm_get_bdy_state( clock, block, nVertLevels, nCells, 'nifa', rk_timestep(rk_step) )
                end if
+               if (index_qaprog > 0) then
+                  scalars_driving(index_qaprog,1:nVertLevels,1:nCells+1) = mpas_atm_get_bdy_state( clock, block, nVertLevels, nCells, 'qaprog', rk_timestep(rk_step) )
+               end if
                if (index_ns > 0) then
                   scalars_driving(index_ns,1:nVertLevels,1:nCells+1) = mpas_atm_get_bdy_state( clock, block, nVertLevels, nCells, 'ns', rk_timestep(rk_step) )
                end if
@@ -1274,7 +1281,7 @@ module atm_time_integration
         call mpas_timer_start('microphysics')
 !$OMP PARALLEL DO
         do thread=1,nThreads
-           call driver_microphysics ( block % configs, mesh, state, 2, diag, diag_physics, tend, itimestep, &
+           call driver_microphysics ( block % configs, mesh, state, 2, diag, diag_physics, tend, tend_physics, itimestep, &
                                       cellSolveThreadStart(thread), cellSolveThreadEnd(thread))
         end do
 !$OMP END PARALLEL DO
@@ -1357,6 +1364,9 @@ module atm_time_integration
          end if
          if (index_nifa > 0) then
             scalars_driving(index_nifa,1:nVertLevels,1:nCells+1) = mpas_atm_get_bdy_state( clock, block, nVertLevels, nCells, 'nifa', dt )
+         end if
+         if (index_qaprog > 0) then
+            scalars_driving(index_qaprog,1:nVertLevels,1:nCells+1) = mpas_atm_get_bdy_state( clock, block, nVertLevels, nCells, 'qaprog', dt )
          end if
          if (index_ns > 0) then
             scalars_driving(index_ns,1:nVertLevels,1:nCells+1) = mpas_atm_get_bdy_state( clock, block, nVertLevels, nCells, 'ns', dt)
