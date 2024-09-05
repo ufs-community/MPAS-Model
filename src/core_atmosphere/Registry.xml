@@ -1641,7 +1641,7 @@
                         <var name="nr" array_group="number" units="nb kg^{-1}"
                              description="Rain number concentration"
                              packages="mp_thompson_in;mp_nssl2m_in"/>
-                        
+
                         <var name="nwfa" array_group="passive" units="nb kg^{-1}"
                              description="Number of water-friendly aerosols for microphysics"
                              packages="mp_thompson_in"/>
