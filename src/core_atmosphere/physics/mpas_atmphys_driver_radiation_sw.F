@@ -336,6 +336,7 @@
  logical,pointer:: config_o3climatology
  character(len=StrKIND),pointer:: radt_sw_scheme
  character(len=StrKIND),pointer:: microp_scheme
+ character(len=StrKIND),pointer:: config_radt_cld_scheme
  logical,pointer:: config_microp_re
 
  real(kind=RKIND),dimension(:),pointer    :: latCell,lonCell
@@ -346,10 +347,14 @@
  real(kind=RKIND),dimension(:,:),pointer  :: re_cloud,re_ice,re_snow
  real(kind=RKIND),dimension(:,:,:),pointer:: aerosols,ozmixm
 
+ real(kind=RKIND),dimension(:,:,:),pointer:: scalars
+ real(kind=RKIND),dimension(:,:),pointer  :: qaprog
+ integer,pointer:: index_qaprog
 !-----------------------------------------------------------------------------------------------------------------
 
  call mpas_pool_get_config(configs,'config_o3climatology' ,config_o3climatology)
  call mpas_pool_get_config(configs,'config_radt_sw_scheme',radt_sw_scheme      )
+ call mpas_pool_get_config(configs,'config_radt_cld_scheme',config_radt_cld_scheme)
  call mpas_pool_get_config(configs,'config_microp_scheme' ,microp_scheme       )
  call mpas_pool_get_config(configs,'config_microp_re'     ,config_microp_re    )
 
@@ -388,7 +393,14 @@
  do j = jts,jte
  do k = kts,kte
  do i = its,ite
-    cldfrac_p(i,k,j) = cldfrac(k,i)
+   if (config_radt_cld_scheme == 'cld_pc2') then
+      call mpas_pool_get_dimension(state,'index_qaprog',index_qaprog)
+      call mpas_pool_get_array(state,'scalars',scalars,time_lev)
+      qaprog => scalars(index_qaprog,:,:)
+      cldfrac_p(i,k,j) = qaprog(k,i)
+    else
+      cldfrac_p(i,k,j) = cldfrac(k,i)
+    endif
  enddo
  enddo
  enddo
