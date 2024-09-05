@@ -133,7 +133,8 @@
                                   config_pbl_scheme,        &
                                   config_radt_lw_scheme,    &
                                   config_radt_sw_scheme,    &
-                                  config_sfclayer_scheme
+                                  config_sfclayer_scheme,   &
+                                  config_radt_cld_scheme
 
  logical, pointer:: config_oml1d
  real(kind=RKIND),pointer:: config_bucket_radt
@@ -160,6 +161,7 @@
  call mpas_pool_get_config(domain%configs,'config_radt_lw_scheme'   ,config_radt_lw_scheme   )
  call mpas_pool_get_config(domain%configs,'config_radt_sw_scheme'   ,config_radt_sw_scheme   )
  call mpas_pool_get_config(domain%configs,'config_sfclayer_scheme'  ,config_sfclayer_scheme  )
+ call mpas_pool_get_config(domain%configs,'config_radt_cld_scheme'  ,config_radt_cld_scheme  )
  call mpas_pool_get_config(domain%configs,'config_bucket_radt'      ,config_bucket_radt      )
  call mpas_pool_get_config(domain%configs,'config_bucket_update'    ,config_bucket_update    )
  call mpas_pool_get_config(domain%configs,'config_frac_seaice'      ,config_frac_seaice      ) 
@@ -170,6 +172,7 @@
     config_pbl_scheme        .ne. 'off' .or. & 
     config_radt_lw_scheme    .ne. 'off' .or. &
     config_radt_sw_scheme    .ne. 'off' .or. &
+    config_radt_cld_scheme   .ne. 'off' .or. &
     config_sfclayer_scheme   .ne. 'off') then
 
  block => domain % blocklist
@@ -202,11 +205,11 @@
 !$OMP END PARALLEL DO
 
     call mpas_log_write( ' call to cloud scheme: ')
-    if(l_radtlw .or. l_radtsw) then
+    if(l_radtlw .or. l_radtsw .or. config_radt_cld_scheme == 'cld_pc2') then
        call allocate_cloudiness(block%configs)
 !$OMP PARALLEL DO
        do thread=1,nThreads
-          call driver_cloudiness(itimestep,block%configs,mesh,diag_physics,sfc_input, &
+          call driver_cloudiness(itimestep,block%configs,mesh,state,diag_physics,tend_physics,sfc_input, &
                                  cellSolveThreadStart(thread),cellSolveThreadEnd(thread))
        end do
 !$OMP END PARALLEL DO
