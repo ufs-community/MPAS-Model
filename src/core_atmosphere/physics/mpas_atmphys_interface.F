@@ -470,7 +470,7 @@
  end subroutine MPAS_to_physics
 
 !=================================================================================================================
- subroutine microphysics_from_MPAS(configs,mesh,state,time_lev,diag,diag_physics,its,ite)
+ subroutine microphysics_from_MPAS(configs,mesh,state,time_lev,diag,diag_physics,tend_physics,its,ite)
 !=================================================================================================================
 
 !input variables:
@@ -479,6 +479,7 @@
  type(mpas_pool_type),intent(in):: state
  type(mpas_pool_type),intent(in):: diag
  type(mpas_pool_type),intent(in):: diag_physics
+ type(mpas_pool_type),intent(in):: tend_physics
 
  integer,intent(in):: its,ite
  integer:: time_lev
@@ -486,10 +487,11 @@
 !local pointers:
  character(len=StrKIND),pointer:: microp_scheme
  character(len=StrKIND),pointer:: nssl_moments
+ character(len=StrKIND),pointer:: config_radt_cld_scheme
  logical,pointer:: thompson_hail_aware
  integer,pointer:: index_qv,index_qc,index_qr,index_qi,index_qs,index_qg,index_qh
  integer,pointer:: index_zrw,index_zgw,index_zhw
- integer,pointer:: index_nwfa,index_nifa
+ integer,pointer:: index_nwfa,index_nifa,index_qaprog
  integer,pointer:: index_ni,index_nr,index_nc,index_ns,index_ng,index_nh,index_nccn
  integer,pointer:: index_volg,index_volh
  real(kind=RKIND),dimension(:),pointer    :: nt_c,mu_c,nwfa_emissions
@@ -497,11 +499,12 @@
  real(kind=RKIND),dimension(:,:),pointer  :: zz,exner,pressure_b
  real(kind=RKIND),dimension(:,:),pointer  :: rho_zz,theta_m,pressure_p
  real(kind=RKIND),dimension(:,:),pointer  :: qv,qc,qr,qi,qs,qg,qh
- real(kind=RKIND),dimension(:,:),pointer  :: ni,nr,nc,ns,ng,nh,nccn,nwfa,nifa
+ real(kind=RKIND),dimension(:,:),pointer  :: ni,nr,nc,ns,ng,nh,nccn,nwfa,nifa,qaprog
  real(kind=RKIND),dimension(:,:),pointer  :: volg,volh,zrw,zgw,zhw
  real(kind=RKIND),dimension(:,:),pointer  :: rainprod,evapprod,refl10cm
  real(kind=RKIND),dimension(:,:),pointer  :: re_cloud,re_ice,re_snow
  real(kind=RKIND),dimension(:,:,:),pointer:: scalars
+ real(kind=RKIND),dimension(:,:),pointer:: rqccldfractend,rqicldfracttend
 
 !local variables:
  integer:: i,k,j
@@ -509,6 +512,7 @@
 !-----------------------------------------------------------------------------------------------------------------
 
  call mpas_pool_get_config(configs,'config_microp_scheme',microp_scheme)
+ call mpas_pool_get_config(configs,'config_radt_cld_scheme',config_radt_cld_scheme)
  call mpas_pool_get_config(configs,'config_nssl_moments',nssl_moments)
  call mpas_pool_get_config(configs,'config_thompson_hail_aware',thompson_hail_aware)
 
@@ -546,6 +550,7 @@
  call mpas_pool_get_dimension(state,'index_nr'  ,index_nr  )
  call mpas_pool_get_dimension(state,'index_nwfa'  ,index_nwfa  )
  call mpas_pool_get_dimension(state,'index_nifa'  ,index_nifa  )
+ call mpas_pool_get_dimension(state,'index_qaprog'  ,index_qaprog  )
  call mpas_pool_get_dimension(state,'index_ns'  ,index_ns  )
  call mpas_pool_get_dimension(state,'index_ng'  ,index_ng  )
  call mpas_pool_get_dimension(state,'index_nh'  ,index_nh  )
@@ -614,6 +619,11 @@
           nr   => scalars(index_nr,:,:)
           nwfa   => scalars(index_nwfa,:,:)
           nifa   => scalars(index_nifa,:,:)
+
+          if (config_radt_cld_scheme == 'cld_pc2') then
+            qaprog   => scalars(index_qaprog,:,:)
+          endif   
+
           if (thompson_hail_aware) then
              ng   => scalars(index_ng,:,:)
              volg => scalars(index_volg,:,:)
@@ -636,6 +646,13 @@
              rainprod_p(i,k,j) = rainprod(k,i)
              evapprod_p(i,k,j) = evapprod(k,i)
              refl10cm_p(i,k,j) = refl10cm(k,i)
+
+             if (config_radt_cld_scheme == 'cld_pc2') then
+               qaprog_p(i,k,j) = qaprog(k,i)
+               rqccldfraten_p(i,k,j) = rqccldfractend(k,i)
+               rqcildfraten_p(i,k,j) = rqcildfractend(k,i)
+            endif
+
              if (thompson_hail_aware) then
                 volg_p(i,k,j) = volg(k,i)
                 ng_p(i,k,j) = ng(k,i)
@@ -722,11 +739,13 @@
 !local pointers:
  character(len=StrKIND),pointer:: microp_scheme
  character(len=StrKIND),pointer:: nssl_moments
+ character(len=StrKIND),pointer:: config_radt_cld_scheme
+
  logical,pointer:: thompson_hail_aware
  integer,pointer:: index_qv,index_qc,index_qr,index_qi,index_qs,index_qg,index_qh
  integer,pointer:: index_zrw,index_zgw,index_zhw
  integer,pointer:: index_ni,index_nc,index_nr,index_ns,index_ng,index_nh,index_nccn
- integer,pointer:: index_volg,index_volh,index_nwfa,index_nifa
+ integer,pointer:: index_volg,index_volh,index_nwfa,index_nifa,index_qaprog
  real(kind=RKIND),dimension(:),pointer    :: surface_pressure,tend_sfc_pressure
  real(kind=RKIND),dimension(:,:),pointer  :: zgrid
  real(kind=RKIND),dimension(:,:),pointer  :: zz,exner,exner_b,pressure_b,rtheta_p,rtheta_b
@@ -734,11 +753,12 @@
  real(kind=RKIND),dimension(:,:),pointer  :: rt_diabatic_tend
  real(kind=RKIND),dimension(:,:),pointer  :: dtheta_dt_mp
  real(kind=RKIND),dimension(:,:),pointer  :: qv,qc,qr,qi,qs,qg,qh
- real(kind=RKIND),dimension(:,:),pointer  :: ni,nr,nc,ns,ng,nh,nccn,nwfa,nifa
+ real(kind=RKIND),dimension(:,:),pointer  :: ni,nr,nc,ns,ng,nh,nccn,nwfa,nifa,qaprog
  real(kind=RKIND),dimension(:,:),pointer  :: volg,volh,zrw,zgw,zhw
  real(kind=RKIND),dimension(:,:),pointer  :: rainprod,evapprod,refl10cm
  real(kind=RKIND),dimension(:,:),pointer  :: re_cloud,re_ice,re_snow
  real(kind=RKIND),dimension(:,:,:),pointer:: scalars
+ real(kind=RKIND),dimension(:,:),pointer:: rqccldfractend,rqicldfracttend
 
 !local variables:
  integer:: icount
@@ -887,6 +907,11 @@
           nr   => scalars(index_nr,:,:)
           nwfa   => scalars(index_nwfa,:,:)
           nifa   => scalars(index_nifa,:,:)
+
+          if (config_radt_cld_scheme == 'cld_pc2') then
+            qaprog   => scalars(index_qaprog,:,:)
+          endif
+
           if (thompson_hail_aware) then
              ng   => scalars(index_ng,:,:)
              volg => scalars(index_volg,:,:)
@@ -899,6 +924,13 @@
              nr(k,i) = nr_p(i,k,j)
              nwfa(k,i) = nwfa_p(i,k,j)
              nifa(k,i) = nifa_p(i,k,j)
+            
+             if (config_radt_cld_scheme == 'cld_pc2') then
+               qaprog(k,i) = qaprog_p(i,k,j)
+               rqccldfractend(k,i) = rqccldfraten_p(i,k,j)
+               rqcildfractend(k,i) = rqcildfraten_p(i,k,j)
+            endif
+
              if (thompson_hail_aware) then
                 ng(k,i) = ng_p(i,k,j)
                 volg(k,i) = volg_p(i,k,j)
