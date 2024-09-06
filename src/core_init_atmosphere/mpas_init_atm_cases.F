@@ -210,7 +210,7 @@ module init_atm_cases
             call mpas_pool_get_subpool(block_ptr % structs, 'diag', diag)
 
             call mpas_log_write(' calling test case setup ')
-            call init_atm_case_rainy_mountain(domain % dminfo, mesh, nCells, nVertLevels, state, diag, block_ptr % configs)
+            call init_atm_case_mtn_precip(domain % dminfo, mesh, nCells, nVertLevels, state, diag, block_ptr % configs)
             call decouple_variables(mesh, nCells, nVertLevels, state, diag)
             call mpas_log_write(' returned from test case setup ')
             block_ptr => block_ptr % next
@@ -3172,20 +3172,11 @@ module init_atm_cases
             ! update water vapor mixing ratio from humidity profile
             !
             do i= 1,nCells
-               if (i == 2000) then
-      !            do k=1,nz1
-      !               write(*,*) 'QV', k, scalars(index_qv,k,i)
-      !            enddo
-               endif
-      
                do k=1,nz1
                   temp     = p(k,i)*thi(k,i)
                   pres     = p0*p(k,i)**(1./rcp)
                   qvs      = 380.*exp(17.27*(temp-273.)/(temp-36.))/pres
                   scalars(index_qv,k,i) = min(0.014_RKIND,relhum(k,i)*qvs)
-                  if (i == 1) then
-                     write(*,*) 'REF SOUND', k, temp, pres, qvs, relhum(k,i), scalars(index_qv,k,i)
-                  endif
                end do
             end do
       
@@ -3422,9 +3413,6 @@ module init_atm_cases
             do k=1,nVertLevels
                rho(k,iCell) = rho_zz(k,iCell) * zz(k,iCell)
                theta(k,iCell) = t(k,iCell) / (1.0 + 1.61 * scalars(index_qv,k,iCell))
-               if (iCell == 1) then
-                  write(*,*) 'END', k, rho(k,iCell), theta(k,iCell), scalars(index_qv,k,iCell)
-               endif
             end do
          end do
    
