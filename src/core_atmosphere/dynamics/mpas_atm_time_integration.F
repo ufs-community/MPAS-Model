@@ -366,7 +366,8 @@ module atm_time_integration
       character (len=StrKIND), pointer :: config_convection_scheme
 
       integer, pointer :: num_scalars, index_qv, nCells, nCellsSolve, nEdges, nEdgesSolve, nVertices, nVerticesSolve, nVertLevels
-      integer, pointer :: index_qc, index_qr, index_qi, index_qs, index_qg, index_qh, index_nwfa, index_nifa, index_qaprog
+      integer, pointer :: index_qc, index_qr, index_qi, index_qs, index_qg, index_qh, index_nwfa, index_nifa
+      integer, pointer :: index_qaprog
       integer, pointer :: index_nc, index_nr, index_ni, index_ns, index_ng, index_nh, index_nccn
       integer, pointer :: index_volg, index_volh, index_zrw, index_zgw, index_zhw
 

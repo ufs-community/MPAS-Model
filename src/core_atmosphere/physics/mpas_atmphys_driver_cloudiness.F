@@ -160,7 +160,7 @@
 
 !inout arguments:
  type(mpas_pool_type),intent(inout):: diag_physics
- type(mpas_pool_type),intent(inout):: tend_physics
+ type(mpas_pool_type),intent(in):: tend_physics
 
 !local variables and pointers:
  integer:: i,j,k
@@ -298,7 +298,7 @@
 !inout arguments:
  type(mpas_pool_type),intent(inout):: diag_physics
  type(mpas_pool_type),intent(in)   :: configs
- type(mpas_pool_type),intent(in)   :: state
+ type(mpas_pool_type),intent(inout):: state
 
 !local variables and pointers:
  integer:: i,j,k
@@ -327,8 +327,8 @@
 
    case("cld_pc2")
 
-   call mpas_pool_get_array(state,'scalars',scalars,1)
-   call mpas_pool_get_dimension(state,'index_qaprog'  ,index_qaprog  )     
+      call mpas_pool_get_array(state,'scalars',scalars,1)
+      call mpas_pool_get_dimension(state,'index_qaprog'  ,index_qaprog  )     
       qaprog   => scalars(index_qaprog,:,:)
       do j = jts,jte
       do k = kts,kte

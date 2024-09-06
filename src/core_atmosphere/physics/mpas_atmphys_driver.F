@@ -133,8 +133,9 @@
                                   config_pbl_scheme,        &
                                   config_radt_lw_scheme,    &
                                   config_radt_sw_scheme,    &
-                                  config_sfclayer_scheme,   &
-                                  config_radt_cld_scheme
+                                  config_sfclayer_scheme
+
+ character(len=StrKIND),pointer:: config_radt_cld_scheme
 
  logical, pointer:: config_oml1d
  real(kind=RKIND),pointer:: config_bucket_radt
