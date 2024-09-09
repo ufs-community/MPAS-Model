@@ -116,7 +116,11 @@
  if(.not.allocated(qg_p)   ) allocate(qg_p(ims:ime,kms:kme,jms:jme)   )
 
  microp_select: select case(trim(microp_scheme))
-    case("mp_thompson_aerosols","mp_tempo")
+    case("mp_thompson_aerosols")
+       if(.not.allocated(nifa_p)) allocate(nifa_p(ims:ime,kms:kme,jms:jme))
+       if(.not.allocated(nwfa_p)) allocate(nwfa_p(ims:ime,kms:kme,jms:jme))
+
+    case("mp_tempo")
        if(.not.allocated(nifa_p)) allocate(nifa_p(ims:ime,kms:kme,jms:jme))
        if(.not.allocated(nwfa_p)) allocate(nwfa_p(ims:ime,kms:kme,jms:jme))
 
@@ -127,6 +131,8 @@
     case("bl_mynn")
        if(.not.allocated(nc_p)) allocate(nc_p(ims:ime,kms:kme,jms:jme))
        if(.not.allocated(ni_p)) allocate(ni_p(ims:ime,kms:kme,jms:jme))
+       if(.not.allocated(nifa_p)) allocate(nifa_p(ims:ime,kms:kme,jms:jme))
+       if(.not.allocated(nwfa_p)) allocate(nwfa_p(ims:ime,kms:kme,jms:jme))
 
     case default
  end select pbl_select
@@ -189,7 +195,11 @@
  if(allocated(qg_p)    ) deallocate(qg_p    )
 
  microp_select: select case(trim(microp_scheme))
-    case("mp_thompson_aerosols","mp_tempo")
+    case("mp_thompson_aerosols")
+       if(allocated(nifa_p)) deallocate(nifa_p)
+       if(allocated(nwfa_p)) deallocate(nwfa_p)
+
+    case("mp_tempo")
        if(allocated(nifa_p)) deallocate(nifa_p)
        if(allocated(nwfa_p)) deallocate(nwfa_p)
 
@@ -200,6 +210,8 @@
     case("bl_mynn")
        if(allocated(nc_p)) deallocate(nc_p)
        if(allocated(ni_p)) deallocate(ni_p)
+       if(allocated(nifa_p)) deallocate(nifa_p)
+       if(allocated(nwfa_p)) deallocate(nwfa_p)
 
     case default
  end select pbl_select
@@ -338,7 +350,23 @@
  enddo
 
  microp_select: select case(trim(microp_scheme))
-    case("mp_thompson_aerosols","mp_tempo")
+    case("mp_thompson_aerosols")
+       nullify(nifa)
+       nullify(nwfa)
+       call mpas_pool_get_dimension(state,'index_nifa',index_nifa)
+       call mpas_pool_get_dimension(state,'index_nwfa',index_nwfa)
+       nifa => scalars(index_nifa,:,:)
+       nwfa => scalars(index_nwfa,:,:)
+       do j = jts,jte
+          do k = kts,kte
+             do i = its,ite
+                nifa_p(i,k,j) = max(0.,nifa(k,i))
+                nwfa_p(i,k,j) = max(0.,nwfa(k,i))
+             enddo
+          enddo
+       enddo
+
+    case("mp_tempo")
        nullify(nifa)
        nullify(nwfa)
        call mpas_pool_get_dimension(state,'index_nifa',index_nifa)
@@ -364,6 +392,8 @@
              do i = its,ite
                 nc_p(i,k,j)   = 0._RKIND
                 ni_p(i,k,j)   = 0._RKIND
+                nifa_p(i,k,j) = 0._RKIND
+                nwfa_p(i,k,j) = 0._RKIND
              enddo
           enddo
        enddo
@@ -381,14 +411,22 @@
           enddo
        endif
        !initializes nc_p, nifa_p, and nwfa_p when running the option "mp_thompson_aerosols":
-       if(f_nc) then
+       if(f_nc .and. f_nifa .and. f_nwfa) then
           nullify(nc)
+          nullify(nifa)
+          nullify(nwfa)
           call mpas_pool_get_dimension(state,'index_nc',index_nc)
+          call mpas_pool_get_dimension(state,'index_nifa',index_nifa)
+          call mpas_pool_get_dimension(state,'index_nwfa',index_nwfa)
           nc   => scalars(index_nc,:,:)
+          nifa => scalars(index_nifa,:,:)
+          nwfa => scalars(index_nwfa,:,:)
           do j = jts,jte
              do k = kts,kte
                 do i = its,ite
-                   nc_p(i,k,j)   = max(0.,nc(k,i)  )
+                   nc_p(i,k,j)   = max(0.,nc(k,i))
+                   nifa_p(i,k,j) = max(0.,nifa(k,i))
+                   nwfa_p(i,k,j) = max(0.,nwfa(k,i))
                 enddo
              enddo
           enddo
@@ -638,6 +676,7 @@
        call mpas_pool_get_array(diag_physics,'re_cloud',re_cloud)
        call mpas_pool_get_array(diag_physics,'re_ice'  ,re_ice  )
        call mpas_pool_get_array(diag_physics,'re_snow' ,re_snow )
+       call mpas_pool_get_array(diag_physics,'refl10cm' ,refl10cm )
 
        do j = jts, jte
        do k = kts, kte
@@ -657,7 +696,7 @@
        enddo
 
        mp2_select: select case(trim(mp_scheme))
-          case("mp_thompson","mp_thompson_aerosols","mp_tempo")
+          case("mp_thompson","mp_thompson_aerosols")
              call mpas_pool_get_dimension(state,'index_ni',index_ni)
              call mpas_pool_get_dimension(state,'index_nr',index_nr)
              ni   => scalars(index_ni,:,:)
@@ -677,6 +716,68 @@
              enddo
              enddo
              enddo
+
+          case("mp_tempo")
+             call mpas_pool_get_dimension(state,'index_ni',index_ni)
+             call mpas_pool_get_dimension(state,'index_nr',index_nr)
+             ni   => scalars(index_ni,:,:)
+             nr   => scalars(index_nr,:,:)
+
+!             call mpas_pool_get_array(diag_physics,'nt_c',nt_c)
+!             call mpas_pool_get_array(diag_physics,'mu_c',mu_c)
+!             do j = jts,jte
+!             do i = its,ite
+!                muc_p(i,j) = mu_c(i)
+!                ntc_p(i,j) = nt_c(i)
+!             enddo
+             do j = jts, jte
+             do k = kts, kte
+             do i = its, ite
+                ni_p(i,k,j) = ni(k,i)
+                nr_p(i,k,j) = nr(k,i)
+             enddo
+             enddo
+             enddo
+
+             call mpas_pool_get_dimension(state,'index_nc'  ,index_nc  )
+             call mpas_pool_get_dimension(state,'index_nifa',index_nifa)
+             call mpas_pool_get_dimension(state,'index_nwfa',index_nwfa)
+             nc   => scalars(index_nc,:,:)
+             nifa => scalars(index_nifa,:,:)
+             nwfa => scalars(index_nwfa,:,:)
+
+             call mpas_pool_get_array(diag_physics,'nifa2d',nifa2d)
+             call mpas_pool_get_array(diag_physics,'nwfa2d',nwfa2d)
+             do j = jts,jte
+             do i = its,ite
+                nifa2d_p(i,j) = nifa2d(i)
+                nwfa2d_p(i,j) = nwfa2d(i)
+             enddo
+             do k = kts, kte
+             do i = its, ite
+                nc_p(i,k,j) = nc(k,i)
+                nifa_p(i,k,j) = nifa(k,i)
+                nwfa_p(i,k,j) = nwfa(k,i)
+             enddo
+             enddo
+             enddo
+
+             if (tempo_hailaware) then
+                call mpas_pool_get_dimension(state,'index_ng'  ,index_ng  )
+                call mpas_pool_get_dimension(state,'index_volg' ,index_volg  )
+
+                ng   => scalars(index_ng,:,:)
+                volg => scalars(index_volg,:,:)
+
+                do j = jts, jte
+                do k = kts, kte
+                do i = its, ite
+                   ng_p(i,k,j) = ng(k,i)
+                   volg_p(i,k,j) = volg(k,i)
+                enddo
+                enddo
+                enddo
+             endif
 
           case("mp_nssl2m")
              call mpas_pool_get_dimension(state,'index_ni',index_ni)
@@ -739,7 +840,7 @@
              endif
 
           mp3_select: select case(trim(mp_scheme))
-             case("mp_thompson_aerosols","mp_tempo")
+             case("mp_thompson_aerosols")
                 call mpas_pool_get_dimension(state,'index_nc'  ,index_nc  )
                 call mpas_pool_get_dimension(state,'index_nifa',index_nifa)
                 call mpas_pool_get_dimension(state,'index_nwfa',index_nwfa)
@@ -763,23 +864,6 @@
                 enddo
                 enddo
 
-                if (tempo_hailaware) then
-                   call mpas_pool_get_dimension(state,'index_ng'  ,index_ng  )
-                   call mpas_pool_get_dimension(state,'index_volg' ,index_volg  )
-
-                   ng   => scalars(index_ng,:,:)
-                   volg => scalars(index_volg,:,:)
-             
-                   do j = jts, jte
-                   do k = kts, kte
-                   do i = its, ite
-                      ng_p(i,k,j) = ng(k,i)
-                      volg_p(i,k,j) = volg(k,i)
-                   enddo
-                   enddo
-                   enddo
-                endif
-                
              case default
           end select mp3_select
 
@@ -934,7 +1018,6 @@
  call mpas_pool_get_array(diag_physics,'re_cloud',re_cloud)
  call mpas_pool_get_array(diag_physics,'re_ice'  ,re_ice  )
  call mpas_pool_get_array(diag_physics,'re_snow' ,re_snow )
- call mpas_pool_get_array(diag_physics,'refl10cm' ,refl10cm )
 
  call mpas_pool_get_array(tend,'tend_sfc_pressure',tend_sfc_pressure)
 
@@ -1038,7 +1121,7 @@
        enddo
 
        mp2_select: select case(trim(mp_scheme))
-          case("mp_thompson","mp_thompson_aerosols","mp_tempo")
+          case("mp_thompson","mp_thompson_aerosols")
              call mpas_pool_get_dimension(state,'index_ni',index_ni)
              call mpas_pool_get_dimension(state,'index_nr',index_nr)
              ni   => scalars(index_ni,:,:)
@@ -1052,6 +1135,61 @@
              enddo
              enddo
              enddo
+
+          case("mp_tempo")
+             call mpas_pool_get_dimension(state,'index_ni',index_ni)
+             call mpas_pool_get_dimension(state,'index_nr',index_nr)
+             ni   => scalars(index_ni,:,:)
+             nr   => scalars(index_nr,:,:)
+
+             do j = jts,jte
+             do k = kts,kte
+             do i = its,ite
+                ni(k,i) = ni_p(i,k,j)
+                nr(k,i) = nr_p(i,k,j)
+             enddo
+             enddo
+             enddo
+
+             call mpas_pool_get_dimension(state,'index_nc'  ,index_nc  )
+             call mpas_pool_get_dimension(state,'index_nifa',index_nifa)
+             call mpas_pool_get_dimension(state,'index_nwfa',index_nwfa)
+             nc   => scalars(index_nc,:,:)
+             nifa => scalars(index_nifa,:,:)
+             nwfa => scalars(index_nwfa,:,:)
+
+             call mpas_pool_get_array(diag_physics,'nifa2d',nifa2d)
+             call mpas_pool_get_array(diag_physics,'nwfa2d',nwfa2d)
+             do j = jts,jte
+             do i = its,ite
+                nifa2d(i) = nifa2d_p(i,j)
+                nwfa2d(i) = nwfa2d_p(i,j)
+             enddo
+             do k = kts, kte
+             do i = its, ite
+                nc(k,i)   = nc_p(i,k,j)
+                nifa(k,i) = nifa_p(i,k,j)
+                nwfa(k,i) = nwfa_p(i,k,j)
+             enddo
+             enddo
+             enddo
+
+             if (tempo_hailaware) then
+                call mpas_pool_get_dimension(state,'index_ng'  ,index_ng  )
+                call mpas_pool_get_dimension(state,'index_volg' ,index_volg  )
+
+                ng   => scalars(index_ng,:,:)
+                volg => scalars(index_volg,:,:)
+
+                do j = jts, jte
+                do k = kts, kte
+                do i = its, ite
+                   ng(k,i) = ng_p(i,k,j)
+                   volg(k,i) = volg_p(i,k,j)
+                enddo
+                enddo
+                enddo
+             endif
 
           case("mp_nssl2m")
              call mpas_pool_get_dimension(state,'index_ni'  ,index_ni  )
@@ -1113,7 +1251,7 @@
              endif
 
              mp3_select: select case(trim(mp_scheme))
-                case("mp_thompson_aerosols","mp_tempo")
+                case("mp_thompson_aerosols")
                    call mpas_pool_get_dimension(state,'index_nc'  ,index_nc  )
                    call mpas_pool_get_dimension(state,'index_nifa',index_nifa)
                    call mpas_pool_get_dimension(state,'index_nwfa',index_nwfa)
@@ -1136,23 +1274,6 @@
                    enddo
                    enddo
                    enddo
-
-                   if (tempo_hailaware) then
-                      call mpas_pool_get_dimension(state,'index_ng'  ,index_ng  )
-                      call mpas_pool_get_dimension(state,'index_volg' ,index_volg  )
-
-                      ng   => scalars(index_ng,:,:)
-                      volg => scalars(index_volg,:,:)
-                      
-                      do j = jts, jte
-                      do k = kts, kte
-                      do i = its, ite
-                         ng(k,i) = ng_p(i,k,j)
-                         volg(k,i) = volg_p(i,k,j) 
-                      enddo
-                      enddo
-                      enddo
-                   endif
 
                 case default
              end select mp3_select

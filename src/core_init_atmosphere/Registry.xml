@@ -68,9 +68,11 @@
                                         5 = super-cell, \newline
                                         6 = mountain wave, \newline
                                         7 = real-data initial conditions from, e.g., GFS, \newline
-                                        8 = surface field (SST, sea-ice) update file for use with real-data simulations \newline
-                                        9 = lateral boundary conditions update file for use with real-data simulations \newline
-                                        13 = CAM-MPAS 3-d grid with specified topography and zeta levels"
+                                        8 = surface field (SST, sea-ice) update file for use with real-data simulations, \newline
+                                        9 = lateral boundary conditions update file for use with real-data simulations, \newline
+                                        13 = CAM-MPAS 3-d grid with specified topography and zeta levels, \newline
+					55 = microphysics test: 3D stratocumulus, \newline
+					66 = microphysics test: 2D flow over terrain"					
                      possible_values="1 -- 9"/>
 
                 <nml_option name="config_calendar_type" type="character" default_value="gregorian" in_defaults="false"

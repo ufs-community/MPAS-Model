@@ -20,7 +20,7 @@
 !wrf physics:
  use module_mp_kessler
  use module_mp_thompson
- use module_mp_tempo,only: tempo_3d_to_1d_driver
+ use module_mp_tempo,only: tempo_3d_to_1d_driver, tempo_init
  ! use module_mp_tempo_utils
  use module_mp_wsm6,only: wsm6
  use mp_wsm6,only: mp_wsm6_init,refl10cm_wsm6
@@ -161,7 +161,7 @@
        if(.not.allocated(evapprod_p)) allocate(evapprod_p(ims:ime,kms:kme,jms:jme))
 
     microp2_select: select case(trim(microp_scheme))
-       case("mp_thompson","mp_thompson_aerosols","mp_tempo")
+       case("mp_thompson","mp_thompson_aerosols")
           if(.not.allocated(ntc_p)) allocate(ntc_p(ims:ime,jms:jme))
           if(.not.allocated(muc_p)) allocate(muc_p(ims:ime,jms:jme))
           if(.not.allocated(nwfa2d_p) ) allocate(nwfa2d_p(ims:ime,jms:jme))
@@ -171,20 +171,31 @@
           if(.not.allocated(nwfa_p) ) allocate(nwfa_p(ims:ime,kms:kme,jms:jme))
           if(.not.allocated(nifa_p) ) allocate(nifa_p(ims:ime,kms:kme,jms:jme))
 
+       case("mp_tempo")
+!          if(.not.allocated(ntc_p)) allocate(ntc_p(ims:ime,jms:jme))
+!          if(.not.allocated(muc_p)) allocate(muc_p(ims:ime,jms:jme))
+          if(.not.allocated(ni_p) ) allocate(ni_p(ims:ime,kms:kme,jms:jme))
+          if(.not.allocated(nr_p) ) allocate(nr_p(ims:ime,kms:kme,jms:jme))
+          if(.not.allocated(nifa2d_p)) allocate(nifa2d_p(ims:ime,jms:jme))
+          if(.not.allocated(nwfa2d_p)) allocate(nwfa2d_p(ims:ime,jms:jme))
+          if(.not.allocated(nc_p)    ) allocate(nc_p(ims:ime,kms:kme,jms:jme)  )
+          if(.not.allocated(nifa_p)  ) allocate(nifa_p(ims:ime,kms:kme,jms:jme))
+          if(.not.allocated(nwfa_p)  ) allocate(nwfa_p(ims:ime,kms:kme,jms:jme))
+
+          if (tempo_hailaware) then
+             if(.not.allocated(ng_p) ) allocate(ng_p(ims:ime,kms:kme,jms:jme))
+             if(.not.allocated(volg_p)) allocate(volg_p(ims:ime,kms:kme,jms:jme))
+             if(.not.allocated(refl10cm_1km_p)  ) allocate(refl10cm_1km_p(ims:ime,jms:jme) )
+          endif
+
           microp3_select: select case(trim(microp_scheme))
-             case("mp_thompson_aerosols","mp_tempo")
+             case("mp_thompson_aerosols")
                 if(.not.allocated(nifa2d_p)) allocate(nifa2d_p(ims:ime,jms:jme))
                 if(.not.allocated(nwfa2d_p)) allocate(nwfa2d_p(ims:ime,jms:jme))
                 if(.not.allocated(nc_p)    ) allocate(nc_p(ims:ime,kms:kme,jms:jme)  )
                 if(.not.allocated(nifa_p)  ) allocate(nifa_p(ims:ime,kms:kme,jms:jme))
                 if(.not.allocated(nwfa_p)  ) allocate(nwfa_p(ims:ime,kms:kme,jms:jme))
 
-                if (tempo_hailaware) then
-                   if(.not.allocated(ng_p) ) allocate(ng_p(ims:ime,kms:kme,jms:jme))
-                   if(.not.allocated(volg_p)) allocate(volg_p(ims:ime,kms:kme,jms:jme))
-                   if(.not.allocated(refl10cm_1km_p)  ) allocate(refl10cm_1km_p(ims:ime,jms:jme) )
-                endif
-                
              case default
           end select microp3_select
 
@@ -277,7 +288,7 @@
        if(allocated(refl10cm_p)  ) deallocate(refl10cm_p  )
 
     microp2_select: select case(trim(microp_scheme))
-       case("mp_thompson","mp_thompson_aerosols","mp_tempo")
+       case("mp_thompson","mp_thompson_aerosols")
           if(allocated(ntc_p)) deallocate(ntc_p)
           if(allocated(muc_p)) deallocate(muc_p)
           if(allocated(nwfa2d_p) ) deallocate(nwfa2d_p )
@@ -287,20 +298,31 @@
           if(allocated(nwfa_p) ) deallocate(nwfa_p )
           if(allocated(nifa_p) ) deallocate(nifa_p )
 
+       case("mp_tempo")
+!          if(allocated(ntc_p)) deallocate(ntc_p)
+!          if(allocated(muc_p)) deallocate(muc_p)
+          if(allocated(ni_p) ) deallocate(ni_p )
+          if(allocated(nc_p) ) deallocate(nc_p )
+          if(allocated(nr_p) ) deallocate(nr_p )
+          if(allocated(nwfa_p) ) deallocate(nwfa_p )
+          if(allocated(nifa_p) ) deallocate(nifa_p )
+          if(allocated(nifa2d_p)) deallocate(nifa2d_p)
+          if(allocated(nwfa2d_p)) deallocate(nwfa2d_p)
+
+          if (tempo_hailaware) then
+             if(allocated(ng_p) ) deallocate(ng_p )
+             if(allocated(volg_p) ) deallocate(volg_p )
+             if(allocated(refl10cm_1km_p)) deallocate(refl10cm_1km_p)
+          endif
+
           microp3_select: select case(trim(microp_scheme))
-             case("mp_thompson_aerosols","mp_tempo")
+             case("mp_thompson_aerosols")
                 if(allocated(nifa2d_p)) deallocate(nifa2d_p)
                 if(allocated(nwfa2d_p)) deallocate(nwfa2d_p)
                 if(allocated(nc_p)    ) deallocate(nc_p    )
                 if(allocated(nifa_p)  ) deallocate(nifa_p  )
                 if(allocated(nwfa_p)  ) deallocate(nwfa_p  )
 
-                if (tempo_hailaware) then
-                   if(allocated(ng_p) ) deallocate(ng_p )
-                   if(allocated(volg_p) ) deallocate(volg_p )
-                   if(allocated(refl10cm_1km_p)) deallocate(refl10cm_1km_p)
-                endif
-                
              case default
           end select microp3_select
 
@@ -376,9 +398,13 @@
  call mpas_pool_get_config(configs,'config_do_restart'   ,do_restart   )
 
  microp_select: select case(trim(microp_scheme))
-    case("mp_thompson","mp_thompson_aerosols","mp_tempo")
+    case("mp_thompson","mp_thompson_aerosols")
        call thompson_init(l_mp_tables)
        call init_thompson_clouddroplets_forMPAS(mesh,sfc_input,diag_physics)
+
+    case("mp_tempo")
+       call tempo_init(l_mp_tables)
+       !! call init_thompson_clouddroplets_forMPAS(mesh,sfc_input,diag_physics)
 
        microp2_select: select case(trim(microp_scheme))
           case("mp_thompson_aerosols","mp_tempo")
@@ -506,7 +532,8 @@
                   sr        = sr_p        , rainprod   = rainprod_p   , evapprod   = evapprod_p   , &
                   re_cloud  = recloud_p   , re_ice     = reice_p      , re_snow    = resnow_p     , &
                   has_reqc  = has_reqc    , has_reqi   = has_reqi     , has_reqs   = has_reqs     , &
-                  ntc       = ntc_p       , muc        = muc_p        , refl_10cm  = refl10cm_p   , &
+!                  ntc       = ntc_p       , muc        = muc_p        , refl_10cm  = refl10cm_p   , &
+                  refl_10cm  = refl10cm_p   , &
                   ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde           , &
                   ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme           , &
                   its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte             &
@@ -526,7 +553,8 @@
                   sr        = sr_p        , rainprod   = rainprod_p   , evapprod   = evapprod_p   , &
                   re_cloud  = recloud_p   , re_ice     = reice_p      , re_snow    = resnow_p     , &
                   has_reqc  = has_reqc    , has_reqi   = has_reqi     , has_reqs   = has_reqs     , &
-                  ntc       = ntc_p       , muc        = muc_p        , refl_10cm  = refl10cm_p   , &
+!                  ntc       = ntc_p       , muc        = muc_p        , refl_10cm  = refl10cm_p   , &
+                  refl_10cm  = refl10cm_p   , &
                   ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde           , &
                   ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme           , &
                   its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte             &
