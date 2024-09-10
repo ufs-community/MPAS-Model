@@ -457,6 +457,8 @@
  logical,pointer:: thompson_aerosol_aware,tempo_hailaware
  character(len=StrKIND),pointer:: nssl_moments
 
+ integer :: tempo_options
+
 !local variables and arrays:
  integer:: istep
  integer, pointer :: do_diag_dbz
@@ -517,68 +519,60 @@
        istep = 1
        do while (istep .le. n_microp)
 
-          if (tempo_hailaware) then
-             call tempo_3d_to_1d_driver( &
-                  th        = th_p        , qv         = qv_p         , qc         = qc_p         , &
-                  qr        = qr_p        , qi         = qi_p         , qs         = qs_p         , &
-                  qg        = qg_p        , ni         = ni_p         , nr         = nr_p         , &
-                  ng        = ng_p        , qb         = volg_p                                   , &
-                  nc        = nc_p        , nwfa       = nwfa_p       , nifa       = nifa_p       , &
-                  nwfa2d    = nwfa2d_p                                                            , &
-                  pii       = pi_p        , p          = pres_p       , dz         = dz_p         , &
-                  w         = w_p         , dt_in      = dt_microp    , itimestep  = itimestep    , &
-                  rainnc    = rainnc_p    , rainncv    = rainncv_p    , snownc     = snownc_p     , &
-                  snowncv   = snowncv_p   , graupelnc  = graupelnc_p  , graupelncv = graupelncv_p , &
-                  sr        = sr_p        , rainprod   = rainprod_p   , evapprod   = evapprod_p   , &
-                  re_cloud  = recloud_p   , re_ice     = reice_p      , re_snow    = resnow_p     , &
-                  has_reqc  = has_reqc    , has_reqi   = has_reqi     , has_reqs   = has_reqs     , &
-!                  ntc       = ntc_p       , muc        = muc_p        , refl_10cm  = refl10cm_p   , &
-                  refl_10cm  = refl10cm_p   , &
-                  ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde           , &
-                  ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme           , &
-                  its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte             &
-                  )
-          else
-             call tempo_3d_to_1d_driver( &
-                  th        = th_p        , qv         = qv_p         , qc         = qc_p         , &
-                  qr        = qr_p        , qi         = qi_p         , qs         = qs_p         , &
-                  qg        = qg_p        , ni         = ni_p         , nr         = nr_p         , &
-                  !! ng        = ng_p        , qb         = volg_p                                   , &
-                  nc        = nc_p        , nwfa       = nwfa_p       , nifa       = nifa_p       , &
-                  nwfa2d    = nwfa2d_p                                                            , &
-                  pii       = pi_p        , p          = pres_p       , dz         = dz_p         , &
-                  w         = w_p         , dt_in      = dt_microp    , itimestep  = itimestep    , &
-                  rainnc    = rainnc_p    , rainncv    = rainncv_p    , snownc     = snownc_p     , &
-                  snowncv   = snowncv_p   , graupelnc  = graupelnc_p  , graupelncv = graupelncv_p , &
-                  sr        = sr_p        , rainprod   = rainprod_p   , evapprod   = evapprod_p   , &
-                  re_cloud  = recloud_p   , re_ice     = reice_p      , re_snow    = resnow_p     , &
-                  has_reqc  = has_reqc    , has_reqi   = has_reqi     , has_reqs   = has_reqs     , &
-!                  ntc       = ntc_p       , muc        = muc_p        , refl_10cm  = refl10cm_p   , &
-                  refl_10cm  = refl10cm_p   , &
-                  ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde           , &
-                  ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme           , &
-                  its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte             &
-                  )
-          endif
-       ! else
-       !    call thompson_3d_to_1d_driver( &
-       !            th        = th_p        , qv         = qv_p         , qc         = qc_p         , &
-       !            qr        = qr_p        , qi         = qi_p         , qs         = qs_p         , &
-       !            qg        = qg_p        , ni         = ni_p         , nr         = nr_p         , &
-       !            !!! nc        = nc_p        , nwfa       = nwfa_p       , nifa       = nifa_p       , &
-       !            pii       = pi_p        , p          = pres_p       , dz         = dz_p         , &
-       !            w         = w_p         , dt_in      = dt_microp    , itimestep  = itimestep    , &
-       !            rainnc    = rainnc_p    , rainncv    = rainncv_p    , snownc     = snownc_p     , &
-       !            snowncv   = snowncv_p   , graupelnc  = graupelnc_p  , graupelncv = graupelncv_p , &
-       !            sr        = sr_p        , rainprod   = rainprod_p   , evapprod   = evapprod_p   , &
-       !            re_cloud  = recloud_p   , re_ice     = reice_p      , re_snow    = resnow_p     , &
-       !            has_reqc  = has_reqc    , has_reqi   = has_reqi     , has_reqs   = has_reqs     , &
-       !            ntc       = ntc_p       , muc        = muc_p        , refl_10cm  = refl10cm_p   , &
-       !            ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde           , &
-       !            ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme           , &
-       !            its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte             &
-       !            )
-       ! endif
+          tempo_options = 0
+          if (tempo_hailaware) tempo_options = tempo_options + 1
+
+          tempo_opts: select case(tempo_options)
+             case(0)
+                call tempo_3d_to_1d_driver( &
+                     th        = th_p        , qv         = qv_p         , qc         = qc_p         , &
+                     qr        = qr_p        , qi         = qi_p         , qs         = qs_p         , &
+                     qg        = qg_p        , ni         = ni_p         , nr         = nr_p         , &
+                     !! ng        = ng_p        , qb         = volg_p                                   , &
+                     nc        = nc_p        , nwfa       = nwfa_p       , nifa       = nifa_p       , &
+                     nwfa2d    = nwfa2d_p                                                            , &
+                     pii       = pi_p        , p          = pres_p       , dz         = dz_p         , &
+                     w         = w_p         , dt_in      = dt_microp    , itimestep  = itimestep    , &
+                     rainnc    = rainnc_p    , rainncv    = rainncv_p    , snownc     = snownc_p     , &
+                     snowncv   = snowncv_p   , graupelnc  = graupelnc_p  , graupelncv = graupelncv_p , &
+                     sr        = sr_p        , rainprod   = rainprod_p   , evapprod   = evapprod_p   , &
+                     re_cloud  = recloud_p   , re_ice     = reice_p      , re_snow    = resnow_p     , &
+                     has_reqc  = has_reqc    , has_reqi   = has_reqi     , has_reqs   = has_reqs     , &
+                     !                  ntc       = ntc_p       , muc        = muc_p        , refl_10cm  = refl10cm_p   , &
+                     refl_10cm  = refl10cm_p   , &
+                     ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde           , &
+                     ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme           , &
+                     its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte             &
+                     )
+             case(1)
+                if (tempo_hailaware) then
+                   call tempo_3d_to_1d_driver( &
+                        th        = th_p        , qv         = qv_p         , qc         = qc_p         , &
+                        qr        = qr_p        , qi         = qi_p         , qs         = qs_p         , &
+                        qg        = qg_p        , ni         = ni_p         , nr         = nr_p         , &
+                        ng        = ng_p        , qb         = volg_p                                   , &
+                        nc        = nc_p        , nwfa       = nwfa_p       , nifa       = nifa_p       , &
+                        nwfa2d    = nwfa2d_p                                                            , &
+                        pii       = pi_p        , p          = pres_p       , dz         = dz_p         , &
+                        w         = w_p         , dt_in      = dt_microp    , itimestep  = itimestep    , &
+                        rainnc    = rainnc_p    , rainncv    = rainncv_p    , snownc     = snownc_p     , &
+                        snowncv   = snowncv_p   , graupelnc  = graupelnc_p  , graupelncv = graupelncv_p , &
+                        sr        = sr_p        , rainprod   = rainprod_p   , evapprod   = evapprod_p   , &
+                        re_cloud  = recloud_p   , re_ice     = reice_p      , re_snow    = resnow_p     , &
+                        has_reqc  = has_reqc    , has_reqi   = has_reqi     , has_reqs   = has_reqs     , &
+                        !                  ntc       = ntc_p       , muc        = muc_p        , refl_10cm  = refl10cm_p   , &
+                        refl_10cm  = refl10cm_p   , &
+                        ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde           , &
+                        ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme           , &
+                        its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte             &
+                        )
+                else
+                   call physics_error_fatal('driver_microphysics(): TEMPO called with invalid options -- case(1)')
+                endif
+             case default
+                call physics_error_fatal('driver_microphysics(): TEMPO called with invalid options -- case default')
+             end select tempo_opts
+
        istep = istep + 1
        enddo
        call mpas_timer_stop('mp_tempo')
