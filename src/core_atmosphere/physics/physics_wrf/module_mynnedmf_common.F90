@@ -1,6 +1,6 @@
 !====================================================================
 
- module module_bl_mynn_common
+ module module_mynnedmf_common
 
 !------------------------------------------
 !Define Model-specific constants/parameters.
@@ -92,4 +92,4 @@
 ! xlvcp  = xlv/cp
 ! g_inv  = 1./grav
 
- end module module_bl_mynn_common
+ end module module_mynnedmf_common
