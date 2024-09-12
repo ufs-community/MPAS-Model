@@ -403,6 +403,7 @@
                 <package name="mp_thompson_in" description="parameterization of Thompson cloud microphysics."/>
                 <package name="mp_thompson_aers_in" description="parameterization of aerosol-aware Thompson cloud microphysics."/>
 		<package name="mp_tempo_in" description="parameterization of TEMPO cloud microphysics."/>
+		<package name="tempo_aerosolaware_in" description="variables for TEMPO with aerosol-aware microphysics."/>
 		<package name="tempo_hailaware_in" description="variables for TEMPO hail-aware microphysics."/>
                 <package name="mp_wsm6_in" description="parameterization of WSM6 cloud microphysics."/>
                 <package name="mp_nssl2m_in" description="parameterization of NSSL 2-moment microphysics."/>
@@ -1773,15 +1774,15 @@
 
                         <var name="nc" array_group="number" units="nb kg^{-1}"
                              description="Cloud water number concentration"
-                             packages="bl_mynn_in;mp_thompson_aers_in;mp_tempo_in"/>
+                             packages="bl_mynn_in;mp_thompson_aers_in;tempo_aerosolaware_in"/>
 
                         <var name="nifa" array_group="number" units="nb kg^{-1}"
                              description="Ice-friendly aerosol number concentration"
-                             packages="mp_thompson_aers_in;mp_tempo_in"/>
+                             packages="mp_thompson_aers_in;tempo_aerosolaware_in"/>
 
                         <var name="nwfa" array_group="number" units="nb kg^{-1}"
                              description="Water-friendly aerosol number concentration"
-                             packages="mp_thompson_aers_in;mp_tempo_in"/>
+                             packages="mp_thompson_aers_in;tempo_aerosolaware_in"/>
                 </var_array>
 #endif
 
@@ -2155,15 +2156,15 @@
 
                         <var name="tend_nc" name_in_code="nc" array_group="number" units="nb m^{-3} s^{-1}"
                              description="Tendency of cloud water number concentration multiplied by dry air density divided by d(zeta)/dz"
-                             packages="bl_mynn_in;mp_thompson_aers_in;mp_tempo_in"/>
+                             packages="bl_mynn_in;mp_thompson_aers_in;tempo_aerosolaware_in"/>
 
                         <var name="tend_nifa" name_in_code="nifa" array_group="number" units="nb m^{-3} s^{-1}"
                              description="Tendency of ice-friendly aerosol number concentration multiplied by dry air density divided by d(zeta)/dz"
-                             packages="mp_thompson_aers_in;mp_tempo_in"/>
+                             packages="mp_thompson_aers_in;tempo_aerosolaware_in"/>
 
                         <var name="tend_nwfa" name_in_code="nwfa" array_group="number" units="nb m^{-3} s^{-1}"
                              description="Tendency of water-friendly aerosol number concentration multiplied by dry air density divided by d(zeta)/dz"
-                             packages="mp_thompson_aers_in;mp_tempo_in"/> 
+                             packages="mp_thompson_aers_in;tempo_aerosolaware_in"/>
                 </var_array>
 #endif
         </var_struct>
@@ -2252,15 +2253,15 @@
                         <var name="lbc_volh" name_in_code="volh" array_group="volume" packages="mp_nssl2m_in" units="m^{3} s^{-1}"
                              description="Lateral boundary tendency of hail particle volume"/>
 
-                        <var name="lbc_nc" name_in_code="nc" array_group="number" packages="mp_thompson_aers_in;mp_tempo_in"
+                        <var name="lbc_nc" name_in_code="nc" array_group="number" packages="mp_thompson_aers_in;tempo_aerosolaware_in"
                              units="m^{-3} s^{-1}"
                              description="Lateral boundary tendency of cloud water number concentration"/>
 
-                        <var name="lbc_nifa" name_in_code="nifa" array_group="number" packages="mp_thompson_aers_in;mp_tempo_in"
+                        <var name="lbc_nifa" name_in_code="nifa" array_group="number" packages="mp_thompson_aers_in;tempo_aerosolaware_in"
                              units="m^{-3} s^{-1}"
                              description="Lateral boundary tendency of ice-friendly aerosol number concentration"/>
 
-                        <var name="lbc_nwfa" name_in_code="nwfa" array_group="number" packages="mp_thompson_aers_in;mp_tempo_in"
+                        <var name="lbc_nwfa" name_in_code="nwfa" array_group="number" packages="mp_thompson_aers_in;tempo_aerosolaware_in"
                              units="m^{-3} s^{-1}"
                              description="Lateral boundary tendency of water-friendly aerosol number concentration"/>
                 </var_array>
@@ -2590,7 +2591,7 @@
                      description="configuration for spp boundary layer"
                      possible_values="`0: off',`1: activated'"/>
 
-		<nml_option name="config_thompson_aerosol_aware" type="logical" default_value="true" in_defaults="false"
+		<nml_option name="config_tempo_aerosolaware" type="logical" default_value="true" in_defaults="false"
                      units="-"
                      description="Logical flag to turn on/off prognostic cloud droplet and aerosol number concentrations"
                      possible_values=".true. or .false."/>
@@ -2738,11 +2739,11 @@
 
                 <var name="nwfa2d" type="real" dimensions="nCells Time" units="nb kg^{-1} s^{-1}"
                      description="surface emission of water-friendly aerosols"
-                     packages="mp_thompson_aers_in;mp_tempo_in"/>
+                     packages="mp_thompson_aers_in;tempo_aerosolaware_in"/>
 
                 <var name="nifa2d" type="real" dimensions="nCells Time" units="nb kg^{-1} s^{-1}"
                      description="surface emission of ice-friendly aerosols"
-                     packages="mp_thompson_aers_in;mp_tempo_in"/>
+                     packages="mp_thompson_aers_in;tempo_aerosolaware_in"/>
 
                 <var name="sr" type="real" dimensions="nCells Time" units="unitless"
                      description="time-step ratio of frozen versus total grid-scale precipitation"/>
@@ -3770,15 +3771,15 @@
 
                 <var name="rncmpten" type="real" dimensions="nVertLevels nCells Time" units="nb kg^{-1} s^{-1}"
                      description="tendency of cloud water number concentration due to microphysics"
-                     packages="mp_thompson_aers_in;mp_tempo_in"/>
+                     packages="mp_thompson_aers_in;tempo_aerosolaware_in"/>
 
                 <var name="rnifampten" type="real" dimensions="nVertLevels nCells Time" units="nb kg^{-1} s^{-1}"
                      description="tendency of ice-friendly aerosol number concentration due to microphysics"
-                     packages="mp_thompson_aers_in;mp_tempo_in"/>
+                     packages="mp_thompson_aers_in;tempo_aerosolaware_in"/>
 
                 <var name="rnwfampten" type="real" dimensions="nVertLevels nCells Time" units="nb kg^{-1} s^{-1}"
                      description="tendency of water-friendly aerosol number concentration due to microphysics"
-                     packages="mp_thompson_aers_in;mp_tempo_in"/>
+                     packages="mp_thompson_aers_in;tempo_aerosolaware_in"/>
 
                 <!-- ================================================================================================== -->
                 <!-- TENDENCIES FROM PARAMETERIZATION OF CONVECTION:                                                    -->
