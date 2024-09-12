@@ -1,22 +1,20 @@
 !=================================================================================================================
- module module_bl_mynn_driver
+ module module_mynnedmf_driver
  use mpas_kind_types,only: kind_phys => RKIND
  use mpas_log
 
- use module_bl_mynn,only: mynnedmf
- use bl_mynn_post,only: bl_mynn_post_run
- use bl_mynn_pre,only: bl_mynn_pre_run
+ use module_mynnedmf,only: mynnedmf
 
  implicit none
  private
- public:: mynn_bl_driver
+ public:: mynnedmf_driver
 
 
  contains
 
 
 !=================================================================================================================
- subroutine mynn_bl_driver &
+ subroutine mynnedmf_driver &
                  (ids               , ide               , jds                , jde                , &
                   kds               , kde               , ims                , ime                , &
                   jms               , jme               , kms                , kme                , &
@@ -307,40 +305,10 @@
 
 !-----------------------------------------------------------------------------------------------------------------
 !call mpas_log_write(' ')
-!call mpas_log_write('--- enter subroutine mynn_bl_driver:')
+!call mpas_log_write('--- enter subroutine mynnedmf_driver:')
 
  errmsg = " "
  errflg = 0
-
- mynn_edmf_l     = .false.
- mynn_edmf_dd_l  = .false.
- mynn_edmf_mom_l = .false.
- mynn_edmf_tke_l = .false.
- if(bl_mynn_edmf     == 1) mynn_edmf_l     = .true.
- if(bl_mynn_edmf_dd  == 1) mynn_edmf_dd_l  = .true.
- if(bl_mynn_edmf_mom == 1) mynn_edmf_mom_l = .true.
- if(bl_mynn_edmf_tke == 1) mynn_edmf_tke_l = .true.
-
- mynn_mixscalars_l = .false.
- mynn_mixclouds_l  = .false.
- mynn_mixqt_l      = .false.
- if(bl_mynn_mixscalars == 1) mynn_mixscalars_l = .true.
- if(bl_mynn_cloudmix   == 1) mynn_mixclouds_l  = .true.
- if(bl_mynn_mixqt      == 1) mynn_mixqt_l       = .true.
-
- mynn_tkebudget_l = .false.
- if(bl_mynn_tkebudget == 1) mynn_tkebudget_l = .true.
-
- mynn_output_l     = .false.
- mynn_dheatopt_l   = .false.
- mynn_scaleaware_l = .false.
- mynn_topdown_l    = .false.
- if(bl_mynn_output     == 1) mynn_output_l     = .true.
- if(bl_mynn_dheat_opt  == 1) mynn_dheatopt_l   = .true.
- if(bl_mynn_scaleaware == 1) mynn_scaleaware_l = .true.
- if(bl_mynn_topdown    == 1) mynn_topdown_l    = .true.
-
- dheat_opt = bl_mynn_dheat_opt
 
  do j = jts,jte
  do i = its,ite
@@ -436,7 +404,7 @@
     endif
 
     !--- conversion from mixing ratios to specific contents:
-    call bl_mynn_pre_run(its,ite,kte,f_qc,f_qi,f_qs,qv_v,qc_v,qi_v,qs_v,sqv_v,sqc_v, &
+    call mynnedmf_pre_run(its,ite,kte,f_qc,f_qi,f_qs,qv_v,qc_v,qi_v,qs_v,sqv_v,sqc_v, &
                          sqi_v,sqs_v,errmsg,errflg)
 
     !--- initialization of the stochastic forcing in the PBL:
@@ -528,7 +496,7 @@
             el1             = elpbl_v       , dqke1       = dqke_v        , qwt1        = qwt_v        , &
             qshear1         = qshear_v      , qbuoy1      = qbuoy_v       , qdiss1      = qdiss_v      , &
             sh1             = sh3d_v        , sm1         = sm3d_v        , qc_bl1      = qcbl_v       , &
-            qi_bl1          = qibl_v        , cldfra_bl1  = cldfrabl_v    , &
+            qi_bl1          = qibl_v        , cldfra_bl1  = cldfrabl_v    ,                              &
             edmf_a1         = edmfa_v       , edmf_w1     = edmfw_v       , edmf_qt1    = edmfqt_v     , &
             edmf_thl1       = edmfthl_v     , edmf_ent1   = edmfent_v     , edmf_qc1    = edmfqc_v     , &
             sub_thl1        = subthl_v      , sub_sqv1    = subsqv_v      , det_thl1    = detthl_v     , &
@@ -548,13 +516,8 @@
             tke_budget         = bl_mynn_tkebudget    , &
             bl_mynn_cloudpdf   = bl_mynn_cloudpdf     , &
             bl_mynn_mixlength  = bl_mynn_mixlength    , &
-!            bl_mynn_stfunc     = bl_mynn_stfunc       , &
-!            bl_mynn_dheatopt   = mynn_dheatopt_l      , &
-!            bl_mynn_scaleaware = mynn_scaleaware_l    , &
-!            bl_mynn_topdown    = mynn_topdown_l       , &
             closure            = bl_mynn_closure      , &
             bl_mynn_edmf       = bl_mynn_edmf         , &
-!            bl_mynn_edmf_dd    = mynn_edmf_dd         , &
             bl_mynn_edmf_mom   = bl_mynn_edmf_mom     , &
             bl_mynn_edmf_tke   = bl_mynn_edmf_tke     , &
             bl_mynn_mixscalars = bl_mynn_mixscalars   , &
@@ -567,7 +530,7 @@
 
 
     !--- conversion of tendencies in terms of specific contents to in terms of mixing ratios:
-    call  bl_mynn_post_run(its,ite,kte,f_qc,f_qi,f_qs,delt,qv_v,qc_v,qi_v,qs_v,rqvblten_v,rqcblten_v, &
+    call  mynnedmf_post_run(its,ite,kte,f_qc,f_qi,f_qs,delt,qv_v,qc_v,qi_v,qs_v,rqvblten_v,rqcblten_v, &
                            rqiblten_v,rqsblten_v,errmsg,errflg)
 
     !--- inout arguments:
@@ -690,11 +653,285 @@
  enddo !i
  enddo !j
 
-!call mpas_log_write('--- end subroutine mynn_bl_driver:')
+!call mpas_log_write('--- end subroutine mynnedmf_driver:')
 
- end subroutine mynn_bl_driver
+ end subroutine mynnedmf_driver
 
 !=================================================================================================================
- end module module_bl_mynn_driver
+!>\section arg_table_mynnedmf_pre_init
+!!\html\include mynnedmf_pre_init.html
+!!
+ subroutine mynnedmf_pre_init(errmsg,errflg)
+!=================================================================================================================
+
+!--- output arguments:
+ character(len=*),intent(out):: &
+    errmsg      ! output error message (-).
+
+ integer,intent(out):: &
+    errflg      ! output error flag (-).
+
+!-----------------------------------------------------------------------------------------------------------------
+
+!--- output error flag and message:
+ errflg = 0
+ errmsg = " "
+
+ end subroutine mynnedmf_pre_init
+
+!=================================================================================================================
+!>\section arg_table_mynnedmf_pre_finalize
+!!\html\include mynnedmf_pre_finalize.html
+!!
+ subroutine mynnedmf_pre_finalize(errmsg,errflg)
+!=================================================================================================================
+
+!--- output arguments:
+ character(len=*),intent(out):: &
+    errmsg      ! output error message (-).
+
+ integer,intent(out):: &
+    errflg      ! output error flag (-).
+
+!-----------------------------------------------------------------------------------------------------------------
+
+!--- output error flag and message:
+ errflg = 0
+ errmsg = " "
+
+ end subroutine mynnedmf_pre_finalize
+
+!=================================================================================================================
+!>\section arg_table_mynnedmf_pre_run
+!!\html\include mynnedmf_pre_run.html
+!!
+ subroutine mynnedmf_pre_run(its,ite,kte,f_qc,f_qi,f_qs,qv,qc,qi,qs,sqv,sqc,sqi,sqs,errmsg,errflg)
+!=================================================================================================================
+
+!--- input arguments:
+ logical,intent(in):: &
+    f_qc,      &! if true,the physics package includes the cloud liquid water mixing ratio.
+    f_qi,      &! if true,the physics package includes the cloud ice mixing ratio.
+    f_qs        ! if true,the physics package includes the snow mixing ratio.
+
+ integer,intent(in):: its,ite
+ integer,intent(in):: kte
+
+ real(kind=kind_phys),intent(in),dimension(its:ite,1:kte):: &
+    qv,        &!
+    qc,        &!
+    qi,        &!
+    qs          !
+
+
+!--- output arguments:
+ character(len=*),intent(out):: &
+    errmsg      ! output error message (-).
+
+ integer,intent(out):: &
+    errflg      ! output error flag (-).
+
+ real(kind=kind_phys),intent(out),dimension(its:ite,1:kte):: &
+    sqv,       &!
+    sqc,       &!
+    sqi ,      &!
+    sqs         !
+
+
+!--- local variables:
+ integer:: i,k,kts
+
+!-----------------------------------------------------------------------------------------------------------------
+
+!--- initialization:
+ kts = 1
+ do k = kts,kte
+    do i = its,ite
+       sqc(i,k) = 0._kind_phys
+       sqi(i,k) = 0._kind_phys
+    enddo
+ enddo
+
+!--- conversion from water vapor mixing ratio to specific humidity:
+ do k = kts,kte
+    do i = its,ite
+       sqv(i,k) = qv(i,k)/(1.+qv(i,k))
+    enddo
+ enddo
+
+!--- conversion from cloud liquid water,cloud ice,and snow mixing ratios to specific contents:
+ if(f_qc) then
+    do k = kts,kte
+       do i = its,ite
+          sqc(i,k) = qc(i,k)/(1.+qv(i,k))
+       enddo
+    enddo
+ endif
+ if(f_qi) then
+    do k = kts,kte
+       do i = its,ite
+          sqi(i,k) = qi(i,k)/(1.+qv(i,k))
+       enddo
+    enddo
+ endif
+ if(f_qs) then
+    do k = kts,kte
+       do i = its,ite
+          sqs(i,k) = qs(i,k)/(1.+qs(i,k))
+       enddo
+    enddo
+ endif
+
+!--- output error flag and message:
+ errflg = 0
+ errmsg = " "
+
+ end subroutine mynnedmf_pre_run
+!=================================================================================================================
+
+!=================================================================================================================
+!>\section arg_table_mynnedmf_post_init
+!!\html\include mynnedmf_post_init.html
+!!
+ subroutine mynnedmf_post_init(errmsg,errflg)
+!=================================================================================================================
+
+!--- output arguments:
+ character(len=*),intent(out):: &
+    errmsg      ! output error message (-).
+
+ integer,intent(out):: &
+    errflg      ! output error flag (-).
+
+!-----------------------------------------------------------------------------------------------------------------
+
+!--- output error flag and message:
+ errflg = 0
+ errmsg = " "
+
+ end subroutine mynnedmf_post_init
+
+!=================================================================================================================
+!>\section arg_table_mynnedmf_post_finalize
+!!\html\include mynnedmf_post_finalize.html
+!!
+ subroutine mynnedmf_post_finalize(errmsg,errflg)
+!=================================================================================================================
+
+!--- output arguments:
+ character(len=*),intent(out):: &
+    errmsg      ! output error message (-).
+
+ integer,intent(out):: &
+    errflg      ! output error flag (-).
+
+!-----------------------------------------------------------------------------------------------------------------
+
+!--- output error flag and message:
+ errflg = 0
+ errmsg = " "
+
+ end subroutine mynnedmf_post_finalize
+
+!=================================================================================================================
+!>\section arg_table_mynnedmf_post_run
+!!\html\include mynnedmf_post_run.html
+!!
+ subroutine mynnedmf_post_run(its,ite,kte,f_qc,f_qi,f_qs,delt,qv,qc,qi,qs,dqv,dqc,dqi,dqs,errmsg,errflg)
+!=================================================================================================================
+
+!--- input arguments:
+ logical,intent(in):: &
+    f_qc, &! if true,the physics package includes the cloud liquid water mixing ratio.
+    f_qi, &! if true,the physics package includes the cloud ice mixing ratio.
+    f_qs   ! if true,the physics package includes the snow mixing ratio.
+
+ integer,intent(in):: its,ite
+ integer,intent(in):: kte
+
+ real(kind=kind_phys),intent(in):: &
+    delt   !
+
+ real(kind=kind_phys),intent(in),dimension(its:ite,1:kte):: &
+    qv,   &!
+    qc,   &!
+    qi,   &!
+    qs     !
+
+
+!--- inout arguments:
+ real(kind=kind_phys),intent(inout),dimension(its:ite,1:kte):: &
+    dqv,  &!
+    dqc,  &!
+    dqi,  &!
+    dqs    !
+
+
+!--- output arguments:
+ character(len=*),intent(out):: errmsg
+ integer,intent(out):: errflg
+
+
+!--- local variables:
+ integer:: i,k,kts
+ real(kind=kind_phys):: rq,sq,tem
+ real(kind=kind_phys),dimension(its:ite,1:kte):: sqv,sqc,sqi,sqs
+
+!-----------------------------------------------------------------------------------------------------------------
+
+!--- initialization:
+ kts = 1
+
+!---
+ do i = its,ite
+    do k = kts,kte
+       sq = qv(i,k)/(1.+qv(i,k))      !conversion of qv at time-step n from mixing ratio to specific humidity.
+       sqv(i,k) = sq + dqv(i,k)*delt  !calculation of specific humidity at time-step n+1.
+       rq = sqv(i,k)/(1.-sqv(i,k))    !conversion of qv at time-step n+1 from specific humidity to mixing ratio.
+       dqv(i,k) = (rq - qv(i,k))/delt !calculation of the tendency.
+    enddo
+ enddo
+
+ if(f_qc) then
+    do i = its,ite
+       do k = kts,kte
+          sq = qc(i,k)/(1.+qv(i,k))
+          sqc(i,k) = sq + dqc(i,k)*delt
+          rq  = sqc(i,k)*(1.+sqv(i,k))
+          dqc(i,k) = (rq - qc(i,k))/delt
+       enddo
+    enddo
+ endif
+
+ if(f_qi) then
+    do i = its,ite
+       do k = kts,kte
+          sq = qi(i,k)/(1.+qv(i,k))
+          sqi(i,k) = sq + dqi(i,k)*delt
+          rq = sqi(i,k)*(1.+sqv(i,k))
+          dqi(i,k) = (rq - qi(i,k))/delt
+       enddo
+    enddo
+ endif
+
+ if(f_qs) then
+    do i = its,ite
+       do k = kts,kte
+          sq = qs(i,k)/(1.+qv(i,k))
+          sqs(i,k) = sq + dqs(i,k)*delt
+          rq = sqs(i,k)*(1.+sqv(i,k))
+          dqs(i,k) = (rq - qs(i,k))/delt
+       enddo
+    enddo
+ endif
+
+!--- output error flag and message:
+ errmsg = " "
+ errflg = 0
+
+ end subroutine mynnedmf_post_run
+
+!=================================================================================================================
+ end module module_mynnedmf_driver
 !=================================================================================================================
 
