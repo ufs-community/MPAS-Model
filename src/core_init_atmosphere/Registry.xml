@@ -637,7 +637,6 @@
                         output_interval="initial_only"
                         immutable="true">
 
-                        <var name="xtime"/>
                         <var name="var2dls"/>
                         <var name="conls"/>
                         <var name="oa1ls"/>
