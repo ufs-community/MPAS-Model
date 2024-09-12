@@ -2157,11 +2157,7 @@
 
                         <var name="tend_nc" name_in_code="nc" array_group="number" units="nb m^{-3} s^{-1}"
                              description="Tendency of cloud water number concentration multiplied by dry air density divided by d(zeta)/dz"
-<<<<<<< HEAD
-                             packages="bl_mynn_in;mp_thompson_aers_in;tempo_aerosolaware_in"/>
-=======
-                             packages="bl_mynn_in;bl_mynnedmf_in;mp_thompson_aers_in;mp_tempo_in"/>
->>>>>>> gsl/develop
+                             packages="bl_mynn_in;bl_mynnedmf_in;mp_thompson_aers_in;tempo_aerosolaware_in"/>
 
                         <var name="tend_nifa" name_in_code="nifa" array_group="number" units="nb m^{-3} s^{-1}"
                              description="Tendency of ice-friendly aerosol number concentration multiplied by dry air density divided by d(zeta)/dz"
