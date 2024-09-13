@@ -416,7 +416,47 @@
  radiation_lw_select: select case (trim(radt_lw_scheme))
     case("rrtmg_lw")
        microp_select: select case(microp_scheme)
-          case("mp_thompson","mp_thompson_aerosols","mp_wsm6","mp_nssl2m","mp_tempo")
+          case("mp_thompson","mp_thompson_aerosols","mp_wsm6")
+             if(config_microp_re) then
+                call mpas_pool_get_array(diag_physics,'re_cloud',re_cloud)
+                call mpas_pool_get_array(diag_physics,'re_ice'  ,re_ice  )
+                call mpas_pool_get_array(diag_physics,'re_snow' ,re_snow )
+
+                do j = jts,jte
+                do k = kts,kte
+                do i = its,ite
+                   recloud_p(i,k,j) = re_cloud(k,i)
+                   reice_p(i,k,j)   = re_ice(k,i)
+                   resnow_p(i,k,j)  = re_snow(k,i)
+                enddo
+                enddo
+                enddo
+             else
+                ! These are set in module mpas_atmphys_manager and should not be set again
+                !has_reqc = 0
+                !has_reqi = 0
+                !has_reqs = 0
+                do j = jts,jte
+                do k = kts,kte
+                do i = its,ite
+                   recloud_p(i,k,j) = 0._RKIND
+                   reice_p(i,k,j)   = 0._RKIND
+                   resnow_p(i,k,j)  = 0._RKIND
+                enddo
+                enddo
+                enddo
+             endif
+             do j = jts,jte
+             do k = kts,kte
+             do i = its,ite
+                rrecloud_p(i,k,j) = 0._RKIND
+                rreice_p(i,k,j)   = 0._RKIND
+                rresnow_p(i,k,j)  = 0._RKIND
+             enddo
+             enddo
+             enddo
+
+          case("mp_nssl2m","mp_tempo")
              if(config_microp_re) then
                 call mpas_pool_get_array(diag_physics,'re_cloud',re_cloud)
                 call mpas_pool_get_array(diag_physics,'re_ice'  ,re_ice  )
@@ -687,7 +727,33 @@
     case("rrtmg_lw")
 
        microp_select: select case(microp_scheme)
-          case("mp_thompson","mp_thompson_aerosols","mp_wsm6","mp_nssl2m","mp_tempo")
+          case("mp_thompson","mp_thompson_aerosols","mp_wsm6")
+             call mpas_pool_get_array(diag_physics,'rre_cloud',rre_cloud)
+             call mpas_pool_get_array(diag_physics,'rre_ice'  ,rre_ice  )
+             call mpas_pool_get_array(diag_physics,'rre_snow' ,rre_snow )
+             if(config_microp_re) then
+                do j = jts,jte
+                do k = kts,kte
+                do i = its,ite
+                   rre_cloud(k,i) = rrecloud_p(i,k,j)
+                   rre_ice(k,i)   = rreice_p(i,k,j)
+                   rre_snow(k,i)  = rresnow_p(i,k,j)
+                enddo
+                enddo
+                enddo
+             else
+                do j = jts,jte
+                do k = kts,kte
+                do i = its,ite
+                   rre_cloud(k,i) = 0._RKIND
+                   rre_ice(k,i)   = 0._RKIND
+                   rre_snow(k,i)  = 0._RKIND
+                enddo
+                enddo
+                enddo
+             endif
+
+          case("mp_nssl2m","mp_tempo")
              call mpas_pool_get_array(diag_physics,'rre_cloud',rre_cloud)
              call mpas_pool_get_array(diag_physics,'rre_ice'  ,rre_ice  )
              call mpas_pool_get_array(diag_physics,'rre_snow' ,rre_snow )
