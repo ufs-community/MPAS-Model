@@ -1058,17 +1058,19 @@
                    enddo
 
                 case("mp_tempo")
-                   call mpas_pool_get_array(tend_physics,'rncmpten',rncmpten)
-                   call mpas_pool_get_array(tend_physics,'rnifampten',rnifampten)
-                   call mpas_pool_get_array(tend_physics,'rnwfampten',rnwfampten)
+                   if(config_tempo_aerosolaware) then
+                      call mpas_pool_get_array(tend_physics,'rncmpten',rncmpten)
+                      call mpas_pool_get_array(tend_physics,'rnifampten',rnifampten)
+                      call mpas_pool_get_array(tend_physics,'rnwfampten',rnwfampten)
 
-                   do k = kts,kte
-                   do i = its,ite
-                      rncmpten(k,i) = nc(k,i)
-                      rnifampten(k,i) = nifa(k,i)
-                      rnwfampten(k,i) = nwfa(k,i)
-                   enddo
-                   enddo
+                      do k = kts,kte
+                      do i = its,ite
+                         rncmpten(k,i) = nc(k,i)
+                         rnifampten(k,i) = nifa(k,i)
+                         rnwfampten(k,i) = nwfa(k,i)
+                      enddo
+                      enddo
+                   endif
 
                 case("mp_nssl2m")
                    call mpas_pool_get_array(tend_physics,'rncmpten',rncmpten)
