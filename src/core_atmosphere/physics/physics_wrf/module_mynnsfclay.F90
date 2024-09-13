@@ -1,5 +1,5 @@
 !=================================================================================================================
- module mynnsfclay
+ module module_mynnsfclay
 
 !-------------------------------------------------------------------
 !Modifications implemented by Joseph Olson NOAA/GSL
@@ -63,7 +63,7 @@
 
   implicit none
   private
-  public:: mynnsfclay_run,     &
+  public:: mynnsfclay,         &
            mynnsfclay_init,    &
            mynnsfclay_finalize
 
@@ -127,7 +127,7 @@
 !>\section arg_table_sf_mynn_run
 !!\html\include sf_mynn_run.html
 !!
-  subroutine mynnsfclay_run(                             &
+  subroutine mynnsfclay(                                 &
                      u1d,v1d,t1d,qv1d,p1d,dz8w1d,rho1d,  &
                      u1d2,v1d2,dz2w1d,cp,g,rovcp,r,xlv,  &
                      psfcpa,chs,chs2,cqs,cqs2,           &
@@ -283,6 +283,15 @@
 !-----------------------------------------------------------------------------------------------------------------
 
  ep3 = 1.-ep2
+ if (itimestep == 1) then
+    if (debug_code) then
+       print*,"======= printing of constants:"
+       print*,"cp=",   cp," g=",      g
+       print*,"Rd=",    R," ep1=",    ep1
+       print*,"xlv=", XLV," karman=", karman
+       print*,"ep2=", ep2," ep3=",    ep3
+    endif
+ endif
 
  do i=its,ite
     !convert ground & lowest layer temperature to potential temperature:
@@ -352,7 +361,8 @@
     !--------------------------------------------------------
     !  Calculate the convective velocity scale (WSTAR) and
     !  subgrid-scale velocity (VSGD) following Beljaars (1995, QJRMS)
-    !  and Mahrt and Sun (1995, MWR), respectively
+    !  and Mahrt and Sun (1995, MWR) low-res correction, respectively
+    !  (vsgd; for 13 km ~ 0.37 m/s; for 3 km == 0 m/s)
     !-------------------------------------------------------
     !Use Beljaars over land and water
     fluxc = max(hfx(i)/rho1d(i)/cp                    &
@@ -360,16 +370,13 @@
     !wstar(i) = vconvc*(g/tsk(i)*pblh(i)*fluxc)**.33
     if (xland(i).gt.1.5 .or. qsfc(i).le.0.0) then   !water
        wstar(i) = vconvc*(g/tsk(i)*pblh(i)*fluxc)**.33
+       vsgd = 0.25 * (max(dx(i)/5000.-1.,0.))**.33
     else                                            !land
        !increase height scale, assuming that the non-local transoport
        !from the mass-flux (plume) mixing exceedsd the pblh.
        wstar(i) = vconvc*(g/tsk(i)*min(1.5*pblh(i),4000.)*fluxc)**.33
+       vsgd = 0.32 * (max(dx(i)/5000.-1.,0.))**.33
     endif
-    !--------------------------------------------------------
-    ! Mahrt and Sun low-res correction
-    ! (for 13 km ~ 0.37 m/s; for 3 km == 0 m/s)
-    !--------------------------------------------------------
-    vsgd = 0.32 * (max(dx(i)/5000.-1.,0.))**.33
     wspd(i)=sqrt(wspd(i)*wspd(i)+wstar(i)*wstar(i)+vsgd*vsgd)
     wspd(i)=max(wspd(i),wmin)
 
@@ -396,6 +403,21 @@
 
  1006   format(a,f7.3,a,f9.4,a,f9.5,a,f9.4)
  1007   format(a,f2.0,a,f6.2,a,f7.3,a,f7.2)
+
+ if (debug_code) then
+    do i=its,ite
+       print*,"===important input to mynnsfclay: i=",i," ITIME=",ITIMESTEP                                                                                                                    
+       print*,"xland=",xland(i)," pblh=",pblh(i)," tsk=",tsk(i), &
+       " th1=", th1d(i)," qsfc=", qsfc(i)," znt=", znt(i),       &
+       " ust=", ust(i)," snowh=", snowh(i)," psfcpa=",PSFCPA(i), &
+       " fluxc=",fluxc," qfx=",qfx(i)," hfx=",hfx(i),            &
+       " u1=",u1d(i)," v1=",v1d(i)," qv1=",qvsh(i),              &
+       " rho=",rho1d(i)," w*=",wstar(i)," dz1=",za(i),           &
+       " br=",br(i)," THVGB=",THVGB(i)," DTHVDZ=",DTHVDZ,        &
+       " psim_stab=",psim_stab(1)," psim_unstab=",psim_stab(1),  &
+       " psih_stab=",psih_stab(1)," psih_unstab=",psih_unstab(1)
+    enddo
+ endif
 
 !--------------------------------------------------------------------      
 !--------------------------------------------------------------------      
@@ -1012,7 +1034,7 @@
  errmsg = ' '
  errflg = 0
 
- end subroutine mynnsfclay_run
+ end subroutine mynnsfclay
 
 !=================================================================================================================
  subroutine zilitinkevich_1995(z_0,zt,zq,restar,ustar,karman,landsea,iz0tlnd2,spp_pbl,rstoch)
@@ -2251,6 +2273,6 @@
  end function psih_unstable
 
 !=================================================================================================================
- end module mynnsfclay
+ end module module_mynnsfclay
 !=================================================================================================================
 

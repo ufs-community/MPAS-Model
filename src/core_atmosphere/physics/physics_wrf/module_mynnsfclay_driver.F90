@@ -1,22 +1,22 @@
 !=================================================================================================================
- module mynnsfclay_driver
+ module module_mynnsfclay_driver
 !=================================================================================================================
  use mpas_kind_types,only: RKIND,StrKIND
 
- use mynnsfclay,only    : mynnsfclay_run
- use mynnsfclay_pre,only: mynnsfclay_pre_run
+ use module_mynnsfclay,only: mynnsfclay
+ use module_mynnsfclay_pre,only: mynnsfclay_pre
 
 
  implicit none
  private
- public:: mynnsfclay3d
+ public:: mynnsfclay_driver
 
 
  contains
 
 
 !=================================================================================================================
- subroutine mynnsfclay3d(                                        &
+ subroutine mynnsfclay_driver(                                   &
                    u3d,v3d,t3d,qv3d,p3d,dz8w,                    &
                    cp,g,rovcp,r,xlv,psfcpa,chs,chs2,cqs,cqs2,cpm,&
                    znt,ust,pblh,mavail,zol,mol,regime,psim,psih, &
@@ -313,8 +313,8 @@
        qstar_hv(i) = qstar(i,j)
     enddo
 
-    call mynnsfclay_pre_run(its,ite,kte,itimestep,dz8w,u3d,v3d,p3d,t3d,rho3d,qv3d,qc3d,f_spp, &
-              pattern_spp_pbl,ust_hv,mol_hv,qsfc_hv,qstar_hv,dz8w1d,u1d,v1d,p1d,t1d,rho1d,    &
+    call mynnsfclay_pre(its,ite,kte,itimestep,dz8w,u3d,v3d,p3d,t3d,rho3d,qv3d,qc3d,f_spp, &
+              pattern_spp_pbl,ust_hv,mol_hv,qsfc_hv,qstar_hv,dz8w1d,u1d,v1d,p1d,t1d,rho1d,&
               qv1d,qc1d,rstoch1d,dz2w1d,u1d2,v1d2,errmsg,errflg)
 
     !input arguments:
@@ -379,7 +379,7 @@
        enddo
     endif
 
-    call mynnsfclay_run( &
+    call mynnsfclay( &
                  u1d      = u1d       , v1d      = v1d       , t1d     = t1d      , qv1d      = qv1d      , &
                  p1d      = p1d       , dz8w1d   = dz8w1d    , rho1d   = rho1d    , u1d2      = u1d2      , &
                  v1d2     = v1d2      , dz2w1d   = dz2w1d    , cp      = cp       , g         = g         , &
@@ -458,8 +458,8 @@
 
  enddo
 
- end subroutine mynnsfclay3d
+ end subroutine mynnsfclay_driver
 
 !=================================================================================================================
- end module mynnsfclay_driver
+ end module module_mynnsfclay_driver
 !=================================================================================================================

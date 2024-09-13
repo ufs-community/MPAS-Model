@@ -16,11 +16,11 @@
  use mpas_atmphys_vars
 
  use module_sf_mynn,only: sfclay_mynn
- use mynnsfclay_driver,only:mynnsfclay3d
+ use module_mynnsfclay_driver,only:mynnsfclay_driver
  use module_sf_sfclay
  use module_sf_sfclayrev,only: sfclayrev
  use sf_mynn,only: sf_mynn_init
- use mynnsfclay,only: mynnsfclay_init
+ use module_mynnsfclay,only: mynnsfclay_init
  use sf_sfclayrev,only: sf_sfclayrev_init
  use module_sf_myjsfc
 
@@ -674,7 +674,27 @@
 
        end select sfclayer2_select
 
-    case("sf_mynn","sf_mynnsfclay")
+    case("sf_mynn")
+       !input variables:
+       call mpas_pool_get_array(diag_physics,'qcg'  ,qcg  )
+       call mpas_pool_get_array(sfc_input   ,'snowh',snowh)
+       !inout variables:
+       call mpas_pool_get_array(diag_physics,'ch',ch)
+
+       do j = jts,jte
+       do i = its,ite
+          !input variables:
+          snowh_p(i,j) = snowh(i)
+          qcg_p(i,j)   = qcg(i)
+          !inout variables:
+          ch_p(i,j)    = ch(i)
+          if(config_frac_seaice) then
+             ch_sea(i,j) = ch(i)
+          endif
+       enddo
+       enddo
+
+    case("sf_mynnsfclay")
        !input variables:
        call mpas_pool_get_array(diag_physics,'qcg'  ,qcg  )
        call mpas_pool_get_array(sfc_input   ,'snowh',snowh)
@@ -1059,7 +1079,26 @@
           enddo
        endif
 
-    case("sf_mynn","sf_mynnsfclay")
+    case("sf_mynn")
+       call mpas_pool_get_array(diag_physics,'ch',ch)
+
+       do j = jts,jte
+       do i = its,ite
+          ch(i) = ch_p(i,j)
+       enddo
+       enddo
+       if(config_frac_seaice) then
+          call mpas_pool_get_array(sfc_input,'xice',xice)
+          do j = jts,jte
+          do i = its,ite
+             if(xice(i).ge.xice_threshold .and. xice(i).le.1._RKIND) then
+                ch(i) = ch_p(i,j)*xice(i) + (1._RKIND-xice(i))*ch_sea(i,j)
+             endif
+          enddo
+          enddo
+       endif
+
+    case("sf_mynnsfclay")
        call mpas_pool_get_array(diag_physics,'ch',ch)
 
        do j = jts,jte
@@ -1604,8 +1643,8 @@
 
     case("sf_mynnsfclay")
        call mpas_timer_start('sf_mynnsfclay')
-       call mpas_log_write('--- enter subroutine mynnsfclay3d:')
-       call mynnsfclay3d( &
+       call mpas_log_write('--- enter subroutine mynnsfclay_driver:')
+       call mynnsfclay_driver( &
                    p3d      = pres_hyd_p , pi3d      = pi_p     , psfcpa   = psfc_p      , &
                    th3d     = th_p       , t3d       = t_p      , u3d      = u_p         , &
                    v3d      = v_p        , qv3d      = qv_p     , qc3d     = qc_p        , &
@@ -1637,7 +1676,7 @@
                        )
 
        if(config_frac_seaice) then
-          call mynnsfclay3d( &
+          call mynnsfclay_driver( &
                       p3d      = pres_hyd_p , pi3d      = pi_p     , psfcpa   = psfc_p      , &
                       th3d     = th_p       , t3d       = t_p      , u3d      = u_p         , &
                       v3d      = v_p        , qv3d      = qv_p     , qc3d     = qc_p        , &

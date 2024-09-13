@@ -60,9 +60,9 @@ OBJS = \
 	module_sf_urban.o              \
 	bl_mynn_post.o                 \
 	bl_mynn_pre.o                  \
-	mynnsfclay.o		       \
-        mynnsfclay_pre.o	       \
-	mynnsfclay_driver.o	       \
+	module_mynnsfclay.o	       \
+        module_mynnsfclay_pre.o	       \
+	module_mynnsfclay_driver.o     \
 	cu_ntiedtke_post.o             \
 	cu_ntiedtke_pre.o	       \
 	sf_mynn_pre.o                  \
@@ -89,9 +89,9 @@ module_mynnedmf.o: \
 module_mynnedmf_driver.o: \
         module_mynnedmf.o
 
-mynnsfclay_driver.o: \
-	mynnsfclay.o \
-	mynnsfclay_pre.o
+module_mynnsfclay_driver.o: \
+	module_mynnsfclay.o \
+	module_mynnsfclay_pre.o
 
 module_cam_support.o: \
 	module_cam_shr_kind_mod.o
