@@ -374,7 +374,7 @@
 
 !initialization of land-surface model:
  if(config_lsm_scheme .ne. 'off') then
-    if(config_lsm_scheme .eq. 'sf_noah') then
+    if(config_lsm_scheme .eq. 'sf_noah' .or. config_lsm_scheme .eq. 'sf_ruc') then
        call init_lsm(dminfo,mesh,configs,diag_physics,sfc_input)
     elseif(config_lsm_scheme .eq. 'sf_noahmp') then
        call init_lsm_noahmp(configs,mesh,diag_physics,diag_physics_noahmp,output_noahmp,sfc_input)
