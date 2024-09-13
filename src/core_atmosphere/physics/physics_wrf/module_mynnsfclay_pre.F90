@@ -1,12 +1,12 @@
 !=================================================================================================================
- module mynnsfclay_pre
+ module module_mynnsfclay_pre
  use ccpp_kind_types,only: kind_phys
 
  implicit none
  private
  public:: mynnsfclay_pre_init,     &
           mynnsfclay_pre_finalize, &
-          mynnsfclay_pre_run
+          mynnsfclay_pre
 
 
  contains
@@ -59,9 +59,9 @@
 !>\section arg_table_sf_mynn_pre_run
 !!\html\include sf_mynn_pre_run.html
 !!
- subroutine mynnsfclay_pre_run(its,ite,kte,itimestep,dz3d,u3d,v3d,p3d,t3d,rho3d,qv3d,qc3d,f_spp,pattern_spp,&
-                            ust,mol,qsfc,qstar,dz8w1d,u1d,v1d,p1d,t1d,rho1d,qv1d,qc1d,rstoch1d,dz2w1d,u1d2, &
-                            v1d2,errmsg,errflg)
+ subroutine mynnsfclay_pre(its,ite,kte,itimestep,dz3d,u3d,v3d,p3d,t3d,rho3d,qv3d,qc3d,f_spp,pattern_spp,   &
+                           ust,mol,qsfc,qstar,dz8w1d,u1d,v1d,p1d,t1d,rho1d,qv1d,qc1d,rstoch1d,dz2w1d,u1d2, &
+                           v1d2,errmsg,errflg)
 !=================================================================================================================
 
 !--- input arguments:
@@ -151,9 +151,14 @@
 
  if(itimestep == 1) then
     do i = its,ite
-       ust(i)   = max(0.04*sqrt(u1d(i)*u1d(i) + v1d(i)*v1d(i)),0.001)
+       if (ust(i) .lt. 1e-4 .or. ust(i) .gt. 3.0) then
+          ust(i)   = max(0.04*sqrt(u1d(i)*u1d(i) + v1d(i)*v1d(i)),0.001)
+       endif
+       !qfx(i)   = 0._kind_phy
+       !hfx(i)   = 0._kind_phy
        mol(i)   = 0._kind_phys
-       qsfc(i)  = qv1d(i)/(1.+qv1d(i))
+       !qsfc(i)  = qv1d(i)/(1.+qv1d(i))
+       qsfc(i)  = qsfc(i) !should be available
        qstar(i) = 0._kind_phys
     enddo
  endif
@@ -162,8 +167,8 @@
  errmsg = 'sf_mynn_mpas_run OK'
  errflg = 0
 
- end subroutine mynnsfclay_pre_run
+ end subroutine mynnsfclay_pre
 
 !=================================================================================================================
- end module mynnsfclay_pre
+ end module module_mynnsfclay_pre
 !=================================================================================================================
