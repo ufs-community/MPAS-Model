@@ -64,6 +64,7 @@
 
  call mpas_pool_get_config(configs,'config_nssl_moments',config_nssl_moments)
  call mpas_pool_get_config(configs,'config_tempo_hailaware',config_tempo_hailaware)
+ call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
 
  nullify(mp_kessler_in)
  call mpas_pool_get_package(packages,'mp_kessler_inActive',mp_kessler_in)
