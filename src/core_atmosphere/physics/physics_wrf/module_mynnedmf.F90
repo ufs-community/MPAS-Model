@@ -3648,6 +3648,8 @@ CONTAINS
 
            !in saturated conditions, apply lower limit on sgm
            if (qmq .ge. zero) sgm(k) = max(0.02*qw(k), sgm(k))
+           !apply absolute lower limit in case qw = 0.
+           sgm(k) = max(1e-13, sgm(k))
            
            q1(k)  = qmq  / sgm(k)  ! Q1, the normalized saturation
 

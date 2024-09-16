@@ -231,6 +231,10 @@
        !additional tendencies:
        if(.not.allocated(rqsblten_p)    ) allocate(rqsblten_p(ims:ime,kms:kme,jms:jme)  )
        if(.not.allocated(rniblten_p)    ) allocate(rniblten_p(ims:ime,kms:kme,jms:jme)  )
+       if(.not.allocated(rncblten_p)    ) allocate(rncblten_p(ims:ime,kms:kme,jms:jme)  )
+       if(.not.allocated(rniblten_p)    ) allocate(rniblten_p(ims:ime,kms:kme,jms:jme)  )
+       if(.not.allocated(rnifablten_p)  ) allocate(rnifablten_p(ims:ime,kms:kme,jms:jme))
+       if(.not.allocated(rnwfablten_p)  ) allocate(rnwfablten_p(ims:ime,kms:kme,jms:jme))
 
        !allocation of additional arrays:
        if(.not.allocated(pattern_spp_pbl)) allocate(pattern_spp_pbl(ims:ime,kms:kme,jms:jme))
