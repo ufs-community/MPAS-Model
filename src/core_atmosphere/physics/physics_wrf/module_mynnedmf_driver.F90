@@ -247,61 +247,55 @@
     smoke_dbg  =.false.
  integer, parameter :: nchem=2, ndvel=2, kdvel=1, num_vert_mix = 1
 #endif
- real(kind=kind_phys):: frp_v,emisant_no_v
- real(kind=kind_phys),dimension(kdvel,ndvel):: vd_v
- real(kind=kind_phys),dimension(kts:kte,nchem):: chem_v
-
-!local variables and arrays:
- logical:: mynn_edmf_l,mynn_edmf_dd_l,mynn_edmf_mom_l,mynn_edmf_tke_l
- logical:: mynn_mixscalars_l,mynn_mixclouds_l,mynn_mixqt_l
- logical:: mynn_tkebudget_l
- logical:: mynn_output_l,mynn_dheatopt_l,mynn_scaleaware_l,mynn_topdown_l
+ real(kind=kind_phys):: frp1,emisant_no1
+ real(kind=kind_phys),dimension(kdvel,ndvel):: vd1
+ real(kind=kind_phys),dimension(kts:kte,nchem):: chem1
 
  integer:: i,k,j
 
  integer:: dheat_opt
- integer:: kpbl_v
+ integer:: kpbl1
 
  real(kind=kind_phys):: denom
 
  real(kind=kind_phys):: &
-    dx_v,xland_v,ps_v,ts_v,qsfc_v,ust_v,ch_v,hfx_v,qfx_v, &
-    wspd_v,uoce_v,voce_v,znt_v
+    dx1,xland1,ps1,ts1,qsfc1,ust1,ch1,hfx1,qfx1, &
+    wspd1,uoce1,voce1,znt1
 
  real(kind=kind_phys),dimension(kts:kte):: &
-    dz_v,u_v,v_v,th_v,tt_v,p_v,exner_v,rho_v,qv_v,rthraten_v
+    dz1,u1,v1,th1,tt1,p1,exner1,rho1,qv1,rthraten1
 
  real(kind=kind_phys),dimension(kts:kme):: &
-    w_v
+    w1
 
  real(kind=kind_phys),dimension(kts:kte):: &
-    qc_v,qi_v,qs_v,nc_v,ni_v,nifa_v,nwfa_v,nbca_v,qoz_v
+    qc1,qi1,qs1,nc1,ni1,nifa1,nwfa1,nbca1,qoz1
 
  real(kind=kind_phys),dimension(kts:kte):: &
-    pattern_spp_v
+    pattern_spp1
 
  real(kind=kind_phys):: &
-    pblh_v
+    pblh1
 
  real(kind=kind_phys),dimension(kts:kte):: &
-    cldfrabl_v,qcbl_v,qibl_v,elpbl_v,qke_v,qkeadv_v,cov_v,qsq_v,tsq_v,sh3d_v,sm3d_v
+    cldfrabl1,qcbl1,qibl1,elpbl1,qke1,qkeadv1,cov1,qsq1,tsq1,sh1,sm1
 
  real(kind=kind_phys),dimension(kts:kte):: &
-    rublten_v,rvblten_v,rthblten_v,rqvblten_v,rqcblten_v,rqiblten_v,rqsblten_v, &
-    rncblten_v,rniblten_v,rnifablten_v,rnwfablten_v,rnbcablten_v,rqozblten_v
+    rublten1,rvblten1,rthblten1,rqvblten1,rqcblten1,rqiblten1,rqsblten1, &
+    rncblten1,rniblten1,rnifablten1,rnwfablten1,rnbcablten1,rqozblten1
 
  real(kind=kind_phys),dimension(kts:kte):: &
-    edmfa_v,edmfw_v,edmfqt_v,edmfthl_v,edmfent_v,edmfqc_v, &
-    subthl_v,subsqv_v,detthl_v,detsqv_v
+    edmfa1,edmfw1,edmfqt1,edmfthl1,edmfent1,edmfqc1, &
+    subthl1,subsqv1,detthl1,detsqv1
 
  real(kind=kind_phys):: &
-    maxwidth_v,maxmf_v,ztopplume_v
+    maxwidth1,maxmf1,ztopplume1
 
  real(kind=kind_phys),dimension(kts:kte):: &
-    exchh_v,exchm_v,dqke_v,qwt_v,qshear_v,qbuoy_v,qdiss_v
+    exchh1,exchm1,dqke1,qwt1,qshear1,qbuoy1,qdiss1
 
  real(kind=kind_phys),dimension(kts:kte):: &
-    sqv_v,sqc_v,sqi_v,sqs_v
+    sqv1,sqc1,sqi1,sqs1
 
 !-----------------------------------------------------------------------------------------------------------------
 !call mpas_log_write(' ')
@@ -314,205 +308,205 @@
  do i = its,ite
      
     !--- input arguments
-    dx_v    = dx(i,j)
-    xland_v = xland(i,j)
-    ps_v    = ps(i,j)
-    ts_v    = ts(i,j)
-    qsfc_v  = qsfc(i,j)
-    ust_v   = ust(i,j)
-    ch_v    = ch(i,j)
-    hfx_v   = hfx(i,j)
-    qfx_v   = qfx(i,j)
-    wspd_v  = wspd(i,j)
-    uoce_v  = uoce(i,j)
-    voce_v  = voce(i,j)
-    znt_v   = znt(i,j)
+    dx1    = dx(i,j)
+    xland1 = xland(i,j)
+    ps1    = ps(i,j)
+    ts1    = ts(i,j)
+    qsfc1  = qsfc(i,j)
+    ust1   = ust(i,j)
+    ch1    = ch(i,j)
+    hfx1   = hfx(i,j)
+    qfx1   = qfx(i,j)
+    wspd1  = wspd(i,j)
+    uoce1  = uoce(i,j)
+    voce1  = voce(i,j)
+    znt1   = znt(i,j)
 
     do k = kts,kte
-       dz_v(k)       = dz(i,k,j)
-       u_v(k)        = u(i,k,j)
-       v_v(k)        = v(i,k,j)
-       w_v(k)        = w(i,k,j)
-       th_v(k)       = th(i,k,j)
-       tt_v(k)       = tt(i,k,j)
-       p_v(k)        = p(i,k,j)
-       exner_v(k)    = exner(i,k,j)
-       rho_v(k)      = rho(i,k,j)
-       qv_v(k)       = qv(i,k,j)
-       rthraten_v(k) = rthraten(i,k,j)
+       dz1(k)       = dz(i,k,j)
+       u1(k)        = u(i,k,j)
+       v1(k)        = v(i,k,j)
+       w1(k)        = w(i,k,j)
+       th1(k)       = th(i,k,j)
+       tt1(k)       = tt(i,k,j)
+       p1(k)        = p(i,k,j)
+       exner1(k)    = exner(i,k,j)
+       rho1(k)      = rho(i,k,j)
+       qv1(k)       = qv(i,k,j)
+       rthraten1(k) = rthraten(i,k,j)
     enddo
-    w_v(kte+1) = w(i,kte+1,j)
+    w1(kte+1) = w(i,kte+1,j)
 
     !--- input arguments for cloud mixing ratios and number concentrations; input argument
     !    for the ozone mixing ratio; input arguments for aerosols from the aerosol-aware
     !    Thompson cloud microphysics:
     do k = kts,kte
-       qc_v(k)   = 0._kind_phys
-       qi_v(k)   = 0._kind_phys
-       qs_v(k)   = 0._kind_phys
-       qoz_v(k)  = 0._kind_phys
-       nc_v(k)   = 0._kind_phys
-       ni_v(k)   = 0._kind_phys
-       nifa_v(k) = 0._kind_phys
-       nwfa_v(k) = 0._kind_phys
-       nbca_v(k) = 0._kind_phys
+       qc1(k)   = 0._kind_phys
+       qi1(k)   = 0._kind_phys
+       qs1(k)   = 0._kind_phys
+       qoz1(k)  = 0._kind_phys
+       nc1(k)   = 0._kind_phys
+       ni1(k)   = 0._kind_phys
+       nifa1(k) = 0._kind_phys
+       nwfa1(k) = 0._kind_phys
+       nbca1(k) = 0._kind_phys
     enddo
     if(f_qc .and. present(qc)) then
        do k = kts,kte
-          qc_v(k) = qc(i,k,j)
+          qc1(k) = qc(i,k,j)
        enddo
     endif
     if(f_qi .and. present(qi)) then
        do k = kts,kte
-          qi_v(k) = qi(i,k,j)
+          qi1(k) = qi(i,k,j)
        enddo
     endif
     if(f_qs .and. present(qs)) then
        do k = kts,kte
-          qs_v(k) = qs(i,k,j)
+          qs1(k) = qs(i,k,j)
        enddo
     endif
     if(f_nc .and. present(nc)) then
        do k = kts,kte
-          nc_v(k) = nc(i,k,j)
+          nc1(k) = nc(i,k,j)
        enddo
     endif
     if(f_ni .and. present(ni)) then
        do k = kts,kte
-          ni_v(k) = ni(i,k,j)
+          ni1(k) = ni(i,k,j)
        enddo
     endif
     if(f_nifa .and. present(nifa)) then
        do k = kts,kte
-          nifa_v(k) = nifa(i,k,j)
+          nifa1(k) = nifa(i,k,j)
        enddo
     endif
     if(f_nwfa .and. present(nwfa)) then
        do k = kts,kte
-          nwfa_v(k) = nwfa(i,k,j)
+          nwfa1(k) = nwfa(i,k,j)
        enddo
     endif
     if(f_nbca .and. present(nbca)) then
        do k = kts,kte
-          nbca_v(k) = nbca(i,k,j)
+          nbca1(k) = nbca(i,k,j)
        enddo
     endif
     if(f_qoz .and. present(qoz)) then
        do k = kts,kte
-          qoz_v(k) = qoz(i,k,j)
+          qoz1(k) = qoz(i,k,j)
        enddo
     endif
 
     !--- conversion from mixing ratios to specific contents:
-    call mynnedmf_pre_run(its,ite,kte,f_qc,f_qi,f_qs,qv_v,qc_v,qi_v,qs_v,sqv_v,sqc_v, &
-                         sqi_v,sqs_v,errmsg,errflg)
+    call mynnedmf_pre_run(kte,f_qc,f_qi,f_qs,qv1,qc1,qi1,qs1,sqv1,sqc1, &
+                         sqi1,sqs1,errmsg,errflg)
 
     !--- initialization of the stochastic forcing in the PBL:
     if(spp_pbl > 0 .and. present(pattern_spp)) then
        do k = kts,kte
-          pattern_spp_v(k) = pattern_spp(i,k,j)
+          pattern_spp1(k) = pattern_spp(i,k,j)
        enddo
     else
        do k = kts,kte
-          pattern_spp_v(k) = 0._kind_phys
+          pattern_spp1(k) = 0._kind_phys
        enddo
     endif
 
     !--- inout arguments:
-    pblh_v = pblh(i,j)
-    kpbl_v = kpbl(i,j)
+    pblh1 = pblh(i,j)
+    kpbl1 = kpbl(i,j)
 
     do k = kts,kte
-       cldfrabl_v(k) = cldfra_bl(i,k,j)
-       qcbl_v(k)     = qc_bl(i,k,j)
-       qibl_v(k)     = qi_bl(i,k,j)
+       cldfrabl1(k) = cldfra_bl(i,k,j)
+       qcbl1(k)     = qc_bl(i,k,j)
+       qibl1(k)     = qi_bl(i,k,j)
     enddo
 
     do k = kts,kte
-       elpbl_v(k)  = el_pbl(i,k,j)
-       qke_v(k)    = qke(i,k,j)
-       qkeadv_v(k) = qke_adv(i,k,j)
-       cov_v(k)    = cov(i,k,j)
-       tsq_v(k)    = tsq(i,k,j)   
-       qsq_v(k)    = qsq(i,k,j)
-       sh3d_v(k)   = sh3d(i,k,j)
-       sm3d_v(k)   = sm3d(i,k,j)
+       elpbl1(k)  = el_pbl(i,k,j)
+       qke1(k)    = qke(i,k,j)
+       qkeadv1(k) = qke_adv(i,k,j)
+       cov1(k)    = cov(i,k,j)
+       tsq1(k)    = tsq(i,k,j)   
+       qsq1(k)    = qsq(i,k,j)
+       sh1(k)     = sh3d(i,k,j)
+       sm1(k)     = sm3d(i,k,j)
     enddo
 
 #if(WRF_CHEM == 1)
     do ic = 1,nchem
        do k = kts,kte
-          chem_v(k,ic) = chem3d(i,k,j,ic)
+          chem1(k,ic) = chem3d(i,k,j,ic)
        enddo
     enddo
     do ic = 1,ndvel
        do k = 1,kdvel
-          vd_v(k,ic) = vd3d(i,k,j,ic)
+          vd1(k,ic) = vd3d(i,k,j,ic)
        enddo
     enddo
-    frp_v        = frp_mean(i,j)
-    emisant_no_v = emis_ant_no(i,j)
+    frp1        = frp_mean(i,j)
+    emisant_no1 = emis_ant_no(i,j)
 #else
-    chem_v       = 0.0
-    vd_v         = 0.0
-    frp_v        = 0.0
-    emisant_no_v = 0.0
+    chem1       = 0.0
+    vd1         = 0.0
+    frp1        = 0.0
+    emisant_no1 = 0.0
 #endif
 
     do k = kts,kte
-       rqcblten_v(k)   = 0._kind_phys
-       rqiblten_v(k)   = 0._kind_phys
-       rqsblten_v(k)   = 0._kind_phys
-       rqozblten_v(k)  = 0._kind_phys
-       rncblten_v(k)   = 0._kind_phys
-       rniblten_v(k)   = 0._kind_phys
-       rnifablten_v(k) = 0._kind_phys
-       rnwfablten_v(k) = 0._kind_phys
-       rnbcablten_v(k) = 0._kind_phys
+       rqcblten1(k)   = 0._kind_phys
+       rqiblten1(k)   = 0._kind_phys
+       rqsblten1(k)   = 0._kind_phys
+       rqozblten1(k)  = 0._kind_phys
+       rncblten1(k)   = 0._kind_phys
+       rniblten1(k)   = 0._kind_phys
+       rnifablten1(k) = 0._kind_phys
+       rnwfablten1(k) = 0._kind_phys
+       rnbcablten1(k) = 0._kind_phys
     enddo
 
     call mynnedmf( &
             i               = i             , j           = j             ,                              &
             initflag        = initflag      , restart     = do_restart    , cycling     = do_DAcycling , &
-            delt            = delt          , dz1         = dz_v          , dx          = dx_v         , &
-            znt             = znt_v         , u1          = u_v           , v1          = v_v          , &
-            w1              = w_v           , th1         = th_v          , sqv1        = sqv_v        , &
-            sqc1            = sqc_v         , sqi1        = sqi_v         , sqs1        = sqs_v        , &
-            qnc1            = nc_v          , qni1        = ni_v          , qnwfa1      = nwfa_v       , &
-            qnifa1          = nifa_v        , qnbca1      = nbca_v        , ozone1      = qoz_v        , &
-            p1              = p_v           , ex1         = exner_v       , rho1        = rho_v        , &
-            tk1             = tt_v          , xland       = xland_v       , ts          = ts_v         , &
-            qsfc            = qsfc_v        , ps          = ps_v          , ust         = ust_v        , &
-            ch              = ch_v          , hfx         = hfx_v         , qfx         = qfx_v        , &
-            wspd            = wspd_v        , uoce        = uoce_v        , voce        = voce_v       , &
-            qke1            = qke_v         , qke_adv1    = qkeadv_v      ,                              &
-            tsq1            = tsq_v         , qsq1        = qsq_v         , cov1        = cov_v        , &
-            rthraten1       = rthraten_v    , du1         = rublten_v     , dv1         = rvblten_v    , &
-            dth1            = rthblten_v    , dqv1        = rqvblten_v    , dqc1        = rqcblten_v   , &
-            dqi1            = rqiblten_v    , dqs1        = rqsblten_v    , dqnc1       = rncblten_v   , &
-            dqni1           = rniblten_v    , dqnwfa1     = rnwfablten_v  , dqnifa1     = rnifablten_v , &
-            dqnbca1         = rnbcablten_v  , dozone1     = rqozblten_v   , kh1         = exchh_v      , &
-            km1             = exchm_v       , pblh        = pblh_v        , kpbl        = kpbl_v       , &
-            el1             = elpbl_v       , dqke1       = dqke_v        , qwt1        = qwt_v        , &
-            qshear1         = qshear_v      , qbuoy1      = qbuoy_v       , qdiss1      = qdiss_v      , &
-            sh1             = sh3d_v        , sm1         = sm3d_v        , qc_bl1      = qcbl_v       , &
-            qi_bl1          = qibl_v        , cldfra_bl1  = cldfrabl_v    ,                              &
-            edmf_a1         = edmfa_v       , edmf_w1     = edmfw_v       , edmf_qt1    = edmfqt_v     , &
-            edmf_thl1       = edmfthl_v     , edmf_ent1   = edmfent_v     , edmf_qc1    = edmfqc_v     , &
-            sub_thl1        = subthl_v      , sub_sqv1    = subsqv_v      , det_thl1    = detthl_v     , &
-            det_sqv1        = detsqv_v      ,                                                            &
-            maxwidth        = maxwidth_v    , maxmf       = maxmf_v       , ztop_plume  = ztopplume_v  , &
+            delt            = delt          , dz1         = dz1           , dx          = dx1          , &
+            znt             = znt1          , u1          = u1            , v1          = v1           , &
+            w1              = w1            , th1         = th1           , sqv1        = sqv1         , &
+            sqc1            = sqc1          , sqi1        = sqi1          , sqs1        = sqs1         , &
+            qnc1            = nc1           , qni1        = ni1           , qnwfa1      = nwfa1        , &
+            qnifa1          = nifa1         , qnbca1      = nbca1         , ozone1      = qoz1         , &
+            p1              = p1            , ex1         = exner1        , rho1        = rho1         , &
+            tk1             = tt1           , xland       = xland1        , ts          = ts1          , &
+            qsfc            = qsfc1         , ps          = ps1           , ust         = ust1         , &
+            ch              = ch1           , hfx         = hfx1          , qfx         = qfx1         , &
+            wspd            = wspd1         , uoce        = uoce1         , voce        = voce1        , &
+            qke1            = qke1          , qke_adv1    = qkeadv1       ,                              &
+            tsq1            = tsq1          , qsq1        = qsq1          , cov1        = cov1         , &
+            rthraten1       = rthraten1     , du1         = rublten1      , dv1         = rvblten1     , &
+            dth1            = rthblten1     , dqv1        = rqvblten1     , dqc1        = rqcblten1    , &
+            dqi1            = rqiblten1     , dqs1        = rqsblten1     , dqnc1       = rncblten1    , &
+            dqni1           = rniblten1     , dqnwfa1     = rnwfablten1   , dqnifa1     = rnifablten1  , &
+            dqnbca1         = rnbcablten1   , dozone1     = rqozblten1    , kh1         = exchh1       , &
+            km1             = exchm1        , pblh        = pblh1         , kpbl        = kpbl1        , &
+            el1             = elpbl1        , dqke1       = dqke1         , qwt1        = qwt1         , &
+            qshear1         = qshear1       , qbuoy1      = qbuoy1        , qdiss1      = qdiss1       , &
+            sh1             = sh1           , sm1         = sm1           , qc_bl1      = qcbl1        , &
+            qi_bl1          = qibl1         , cldfra_bl1  = cldfrabl1     ,                              &
+            edmf_a1         = edmfa1        , edmf_w1     = edmfw1        , edmf_qt1    = edmfqt1      , &
+            edmf_thl1       = edmfthl1      , edmf_ent1   = edmfent1      , edmf_qc1    = edmfqc1      , &
+            sub_thl1        = subthl1       , sub_sqv1    = subsqv1       , det_thl1    = detthl1      , &
+            det_sqv1        = detsqv1       ,                                                            &
+            maxwidth        = maxwidth1     , maxmf       = maxmf1        , ztop_plume  = ztopplume1   , &
             flag_qc         = f_qc          , flag_qi     = f_qi          , flag_qs     = f_qs         , &
             flag_ozone      = f_qoz         , flag_qnc    = f_nc          , flag_qni    = f_ni         , &
             flag_qnwfa      = f_nwfa        , flag_qnifa  = f_nifa        , flag_qnbca  = f_nbca       , &
-            pattern_spp_pbl1= pattern_spp_v                                                              &
+            pattern_spp_pbl1= pattern_spp1  ,                                                            &
 !#if(WRF_CHEM == 1)
-           ,mix_chem  = mix_chem  , enh_mix = enh_mix , rrfs_sd     = rrfs_sd        , &
-            smoke_dbg = smoke_dbg , nchem   = nchem   , kdvel       = kdvel          , &
-            ndvel     = ndvel     , chem    = chem_v  , emis_ant_no = emisant_no_v   , &
-            frp       = frp_v     , vdep    = vd_v                                     &
+            mix_chem        = mix_chem      , enh_mix     = enh_mix       , rrfs_sd     = rrfs_sd      , &
+            smoke_dbg       = smoke_dbg     , nchem       = nchem         , kdvel       = kdvel        , &
+            ndvel           = ndvel         , chem        = chem1         , emis_ant_no = emisant_no1  , &
+            frp             = frp1          , vdep        = vd1                                        , &
 !#endif
-           ,bl_mynn_tkeadvect  = bl_mynn_tkeadvect    , &
+            bl_mynn_tkeadvect  = bl_mynn_tkeadvect    , &
             tke_budget         = bl_mynn_tkebudget    , &
             bl_mynn_cloudpdf   = bl_mynn_cloudpdf     , &
             bl_mynn_mixlength  = bl_mynn_mixlength    , &
@@ -530,113 +524,113 @@
 
 
     !--- conversion of tendencies in terms of specific contents to in terms of mixing ratios:
-    call  mynnedmf_post_run(its,ite,kte,f_qc,f_qi,f_qs,delt,qv_v,qc_v,qi_v,qs_v,rqvblten_v,rqcblten_v, &
-                           rqiblten_v,rqsblten_v,errmsg,errflg)
+    call  mynnedmf_post_run(kte,f_qc,f_qi,f_qs,delt,qv1,qc1,qi1,qs1,rqvblten1,rqcblten1, &
+                           rqiblten1,rqsblten1,errmsg,errflg)
 
     !--- inout arguments:
-    pblh(i,j)  = pblh_v
-    kpbl(i,j)  = kpbl_v
+    pblh(i,j)  = pblh1
+    kpbl(i,j)  = kpbl1
     do k = kts,kte
-       cldfra_bl(i,k,j) = cldfrabl_v(k)
-       qc_bl(i,k,j)     = qcbl_v(k)
-       qi_bl(i,k,j)     = qibl_v(k)
+       cldfra_bl(i,k,j) = cldfrabl1(k)
+       qc_bl(i,k,j)     = qcbl1(k)
+       qi_bl(i,k,j)     = qibl1(k)
     enddo
 
     do k = kts,kte
-       el_pbl(i,k,j)  = elpbl_v(k)
-       qke(i,k,j)     = qke_v(k)
-       qke_adv(i,k,j) = qkeadv_v(k)
-       cov(i,k,j)     = cov_v(k)
-       tsq(i,k,j)     = tsq_v(k)
-       qsq(i,k,j)     = qsq_v(k)
-       sh3d(i,k,j)    = sh3d_v(k)
-       sm3d(i,k,j)    = sm3d_v(k)
+       el_pbl(i,k,j)  = elpbl1(k)
+       qke(i,k,j)     = qke1(k)
+       qke_adv(i,k,j) = qkeadv1(k)
+       cov(i,k,j)     = cov1(k)
+       tsq(i,k,j)     = tsq1(k)
+       qsq(i,k,j)     = qsq1(k)
+       sh3d(i,k,j)    = sh1(k)
+       sm3d(i,k,j)    = sm1(k)
     enddo
 
     !--- inout tendencies:
     do k = kts,kte
-       rublten(i,k,j)    = rublten_v(k) 
-       rvblten(i,k,j)    = rvblten_v(k) 
-       rthblten(i,k,j)   = rthblten_v(k) 
-       rqvblten(i,k,j)   = rqvblten_v(k) 
+       rublten(i,k,j)    = rublten1(k) 
+       rvblten(i,k,j)    = rvblten1(k) 
+       rthblten(i,k,j)   = rthblten1(k) 
+       rqvblten(i,k,j)   = rqvblten1(k) 
     enddo
     if(f_qc .and. present(rqcblten)) then
        do k = kts,kte
-          rqcblten(i,k,j) = rqcblten_v(k) 
+          rqcblten(i,k,j) = rqcblten1(k) 
        enddo
     endif
     if(f_qi .and. present(rqiblten)) then
        do k = kts,kte
-          rqiblten(i,k,j) = rqiblten_v(k) 
+          rqiblten(i,k,j) = rqiblten1(k) 
        enddo
     endif
     if(f_qs .and. present(rqsblten)) then
        do k = kts,kte
-          rqsblten(i,k,j) = rqsblten_v(k)
+          rqsblten(i,k,j) = rqsblten1(k)
        enddo
     endif
     if(f_qoz .and. present(rqozblten)) then
        do k = kts,kte
-          rqozblten(i,k,j) = rqozblten_v(k) 
+          rqozblten(i,k,j) = rqozblten1(k) 
        enddo
     endif
     if(f_nc .and. present(rncblten)) then
        do k = kts,kte
-          rncblten(i,k,j) = rncblten_v(k) 
+          rncblten(i,k,j) = rncblten1(k) 
        enddo
     endif
     if(f_ni .and. present(rniblten)) then
        do k = kts,kte
-          rniblten(i,k,j) = rniblten_v(k) 
+          rniblten(i,k,j) = rniblten1(k) 
        enddo
     endif
     if(f_nifa .and. present(rnifablten)) then
        do k = kts,kte
-          rnifablten(i,k,j) = rnifablten_v(k) 
+          rnifablten(i,k,j) = rnifablten1(k) 
        enddo
     endif
     if(f_nwfa .and. present(rnwfablten)) then
        do k = kts,kte
-          rnwfablten(i,k,j) = rnwfablten_v(k) 
+          rnwfablten(i,k,j) = rnwfablten1(k) 
        enddo
     endif
     if(f_nbca .and. present(rnbcablten)) then
        do k = kts,kte
-          rnbcablten(i,k,j) = rnbcablten_v(k) 
+          rnbcablten(i,k,j) = rnbcablten1(k) 
        enddo
     endif
 
     do k = kts,kte
-       edmf_a(i,k,j)   = edmfa_v(k)
-       edmf_w(i,k,j)   = edmfw_v(k)
-       edmf_qt(i,k,j)  = edmfqt_v(k)
-       edmf_thl(i,k,j) = edmfthl_v(k)
-       edmf_ent(i,k,j) = edmfent_v(k)
-       edmf_qc(i,k,j)  = edmfqc_v(k)
-       sub_thl(i,k,j)  = subthl_v(k)
-       sub_sqv(i,k,j)  = subsqv_v(k)
-       det_thl(i,k,j)  = detthl_v(k)
-       det_sqv(i,k,j)  = detsqv_v(k)
+       edmf_a(i,k,j)   = edmfa1(k)
+       edmf_w(i,k,j)   = edmfw1(k)
+       edmf_qt(i,k,j)  = edmfqt1(k)
+       edmf_thl(i,k,j) = edmfthl1(k)
+       edmf_ent(i,k,j) = edmfent1(k)
+       edmf_qc(i,k,j)  = edmfqc1(k)
+       sub_thl(i,k,j)  = subthl1(k)
+       sub_sqv(i,k,j)  = subsqv1(k)
+       det_thl(i,k,j)  = detthl1(k)
+       det_sqv(i,k,j)  = detsqv1(k)
     enddo
 
     !--- output arguments:
-    maxwidth(i,j)   = maxwidth_v
-    maxmf(i,j)      = maxmf_v
-    ztop_plume(i,j) = ztopplume_v
+    maxwidth(i,j)   = maxwidth1
+    maxmf(i,j)      = maxmf1
+    ztop_plume(i,j) = ztopplume1
 
     do k = kts,kte
-       exch_h(i,k,j) = exchh_v(k)
-       exch_m(i,k,j) = exchm_v(k)
+       exch_h(i,k,j) = exchh1(k)
+       exch_m(i,k,j) = exchm1(k)
     enddo
 
     if(present(qwt)   .and. present(qbuoy) .and. present(qshear) .and. &
        present(qdiss) .and. present(dqke)) then
        do k = kts,kte
-          dqke(i,k,j)   = dqke_v(k)
-          qwt(i,k,j)    = qwt_v(k)
-          qshear(i,k,j) = qshear_v(k)
-          qbuoy(i,k,j)  = qbuoy_v(k)
-          qdiss(i,k,j)  = qdiss_v(k)
+          dqke(i,k,j)   = dqke1(k)
+          qwt(i,k,j)    = qwt1(k)
+          qshear(i,k,j) = qshear1(k)
+          qbuoy(i,k,j)  = qbuoy1(k)
+          qdiss(i,k,j)  = qdiss1(k)
        enddo
     endif
 
@@ -644,7 +638,7 @@
     if (mix_chem) then
        do ic = 1,nchem
           do k = kts,kte
-             chem3d(i,k,j,ic) = max(1.e-12, chem(k,ic))
+             chem3d(i,k,j,ic) = max(1.e-12, chem1(k,ic))
           enddo
        enddo
     endif
@@ -705,7 +699,7 @@
 !>\section arg_table_mynnedmf_pre_run
 !!\html\include mynnedmf_pre_run.html
 !!
- subroutine mynnedmf_pre_run(its,ite,kte,f_qc,f_qi,f_qs,qv,qc,qi,qs,sqv,sqc,sqi,sqs,errmsg,errflg)
+ subroutine mynnedmf_pre_run(kte,f_qc,f_qi,f_qs,qv,qc,qi,qs,sqv,sqc,sqi,sqs,errmsg,errflg)
 !=================================================================================================================
 
 !--- input arguments:
@@ -714,10 +708,9 @@
     f_qi,      &! if true,the physics package includes the cloud ice mixing ratio.
     f_qs        ! if true,the physics package includes the snow mixing ratio.
 
- integer,intent(in):: its,ite
  integer,intent(in):: kte
 
- real(kind=kind_phys),intent(in),dimension(its:ite,1:kte):: &
+ real(kind=kind_phys),intent(in),dimension(1:kte):: &
     qv,        &!
     qc,        &!
     qi,        &!
@@ -731,54 +724,43 @@
  integer,intent(out):: &
     errflg      ! output error flag (-).
 
- real(kind=kind_phys),intent(out),dimension(its:ite,1:kte):: &
+ real(kind=kind_phys),intent(out),dimension(1:kte):: &
     sqv,       &!
     sqc,       &!
-    sqi ,      &!
+    sqi,       &!
     sqs         !
 
 
 !--- local variables:
- integer:: i,k,kts
-
+ integer:: k
+ integer,parameter::kts=1
 !-----------------------------------------------------------------------------------------------------------------
 
 !--- initialization:
- kts = 1
  do k = kts,kte
-    do i = its,ite
-       sqc(i,k) = 0._kind_phys
-       sqi(i,k) = 0._kind_phys
-    enddo
+    sqc(k) = 0._kind_phys
+    sqi(k) = 0._kind_phys
  enddo
 
 !--- conversion from water vapor mixing ratio to specific humidity:
  do k = kts,kte
-    do i = its,ite
-       sqv(i,k) = qv(i,k)/(1.+qv(i,k))
-    enddo
+    sqv(k) = qv(k)/(1.+qv(k))
  enddo
 
 !--- conversion from cloud liquid water,cloud ice,and snow mixing ratios to specific contents:
  if(f_qc) then
     do k = kts,kte
-       do i = its,ite
-          sqc(i,k) = qc(i,k)/(1.+qv(i,k))
-       enddo
+       sqc(k) = qc(k)/(1.+qv(k))
     enddo
  endif
  if(f_qi) then
     do k = kts,kte
-       do i = its,ite
-          sqi(i,k) = qi(i,k)/(1.+qv(i,k))
-       enddo
+       sqi(k) = qi(k)/(1.+qv(k))
     enddo
  endif
  if(f_qs) then
     do k = kts,kte
-       do i = its,ite
-          sqs(i,k) = qs(i,k)/(1.+qs(i,k))
-       enddo
+       sqs(k) = qs(k)/(1.+qv(k))
     enddo
  endif
 
@@ -837,7 +819,7 @@
 !>\section arg_table_mynnedmf_post_run
 !!\html\include mynnedmf_post_run.html
 !!
- subroutine mynnedmf_post_run(its,ite,kte,f_qc,f_qi,f_qs,delt,qv,qc,qi,qs,dqv,dqc,dqi,dqs,errmsg,errflg)
+ subroutine mynnedmf_post_run(kte,f_qc,f_qi,f_qs,delt,qv,qc,qi,qs,dqv,dqc,dqi,dqs,errmsg,errflg)
 !=================================================================================================================
 
 !--- input arguments:
@@ -846,13 +828,12 @@
     f_qi, &! if true,the physics package includes the cloud ice mixing ratio.
     f_qs   ! if true,the physics package includes the snow mixing ratio.
 
- integer,intent(in):: its,ite
  integer,intent(in):: kte
 
  real(kind=kind_phys),intent(in):: &
     delt   !
 
- real(kind=kind_phys),intent(in),dimension(its:ite,1:kte):: &
+ real(kind=kind_phys),intent(in),dimension(1:kte):: &
     qv,   &!
     qc,   &!
     qi,   &!
@@ -860,7 +841,7 @@
 
 
 !--- inout arguments:
- real(kind=kind_phys),intent(inout),dimension(its:ite,1:kte):: &
+ real(kind=kind_phys),intent(inout),dimension(1:kte):: &
     dqv,  &!
     dqc,  &!
     dqi,  &!
@@ -873,55 +854,45 @@
 
 
 !--- local variables:
- integer:: i,k,kts
+ integer:: k
+ integer,parameter::kts=1
  real(kind=kind_phys):: rq,sq,tem
- real(kind=kind_phys),dimension(its:ite,1:kte):: sqv,sqc,sqi,sqs
+ real(kind=kind_phys),dimension(1:kte):: sqv,sqc,sqi,sqs
 
 !-----------------------------------------------------------------------------------------------------------------
 
 !--- initialization:
- kts = 1
-
-!---
- do i = its,ite
-    do k = kts,kte
-       sq = qv(i,k)/(1.+qv(i,k))      !conversion of qv at time-step n from mixing ratio to specific humidity.
-       sqv(i,k) = sq + dqv(i,k)*delt  !calculation of specific humidity at time-step n+1.
-       rq = sqv(i,k)/(1.-sqv(i,k))    !conversion of qv at time-step n+1 from specific humidity to mixing ratio.
-       dqv(i,k) = (rq - qv(i,k))/delt !calculation of the tendency.
-    enddo
+ do k = kts,kte
+    sq = qv(k)/(1.+qv(k))      !conversion of qv at time-step n from mixing ratio to specific humidity.
+    sqv(k) = sq + dqv(k)*delt  !calculation of specific humidity at time-step n+1.
+    rq = sqv(k)/(1.-sqv(k))    !conversion of qv at time-step n+1 from specific humidity to mixing ratio.
+    dqv(k) = (rq - qv(k))/delt !calculation of the tendency.
  enddo
 
  if(f_qc) then
-    do i = its,ite
-       do k = kts,kte
-          sq = qc(i,k)/(1.+qv(i,k))
-          sqc(i,k) = sq + dqc(i,k)*delt
-          rq  = sqc(i,k)*(1.+sqv(i,k))
-          dqc(i,k) = (rq - qc(i,k))/delt
-       enddo
+    do k = kts,kte
+       sq = qc(k)/(1.+qv(k))
+       sqc(k) = sq + dqc(k)*delt
+       rq  = sqc(k)*(1.+sqv(k))
+       dqc(k) = (rq - qc(k))/delt
     enddo
  endif
 
  if(f_qi) then
-    do i = its,ite
-       do k = kts,kte
-          sq = qi(i,k)/(1.+qv(i,k))
-          sqi(i,k) = sq + dqi(i,k)*delt
-          rq = sqi(i,k)*(1.+sqv(i,k))
-          dqi(i,k) = (rq - qi(i,k))/delt
-       enddo
+    do k = kts,kte
+       sq = qi(k)/(1.+qv(k))
+       sqi(k) = sq + dqi(k)*delt
+       rq = sqi(k)*(1.+sqv(k))
+       dqi(k) = (rq - qi(k))/delt
     enddo
  endif
 
  if(f_qs) then
-    do i = its,ite
-       do k = kts,kte
-          sq = qs(i,k)/(1.+qv(i,k))
-          sqs(i,k) = sq + dqs(i,k)*delt
-          rq = sqs(i,k)*(1.+sqv(i,k))
-          dqs(i,k) = (rq - qs(i,k))/delt
-       enddo
+    do k = kts,kte
+       sq = qs(k)/(1.+qv(k))
+       sqs(k) = sq + dqs(k)*delt
+       rq = sqs(k)*(1.+sqv(k))
+       dqs(k) = (rq - qs(k))/delt
     enddo
  endif
 
