@@ -5977,7 +5977,8 @@ module atm_time_integration
       integer, pointer :: vertexDegree
 
 
-      real (kind=RKIND) :: edge_sign, laplacian_filter_coef, rayleigh_damping_coef, r_dc, r_dv, invArea
+      real (kind=RKIND) :: laplacian_filter_coef, rayleigh_damping_coef, rzone_scale, local_pi
+      real (kind=RKIND) :: edge_sign, r_dc, r_dv, invArea
       real (kind=RKIND), pointer :: divdamp_coef
       real (kind=RKIND), dimension(nVertLevels) :: divergence1, divergence2, vorticity1, vorticity2      
       integer :: iCell, iEdge, i, k, cell1, cell2, iEdge_vort, iEdge_div
@@ -6017,10 +6018,15 @@ module atm_time_integration
       call mpas_pool_get_config(config, 'config_relax_zone_divdamp_coef', divdamp_coef)
       
       !  First, Rayleigh damping terms for ru, rtheta_m and rho_zz
-
+      local_pi = 4. * atan(1.)
+      rzone_scale = (real(nRelaxZone) - 1.)/real(nRelaxZone)
       do iCell = cellSolveStart, cellSolveEnd
          if( (bdyMaskCell(iCell) > 1) .and. (bdyMaskCell(iCell) <= nRelaxZone) ) then
-            rayleigh_damping_coef = (real(bdyMaskCell(iCell)) - 1.)/real(nRelaxZone)/(50.*dt*meshScalingRegionalCell(iCell))
+            ! Rayleigh damping based on a linear ramp
+            ! rayleigh_damping_coef = (real(bdyMaskCell(iCell)) - 1.)/real(nRelaxZone)/(50.*dt*meshScalingRegionalCell(iCell))
+            ! Rayleigh damping based on a cosine ramp 
+            rayleigh_damping_coef = rzone_scale * (1. - cos(local_pi / rzone_scale * (real(bdyMaskCell(iCell)) - 1.)/real(nRelaxZone)))
+            rayleigh_damping_coef = 0.5 * rayleigh_damping_coef / (50.*dt*meshScalingRegionalCell(iCell))
             do k=1, nVertLevels
                tend_rho(k,iCell) = tend_rho(k,iCell) - rayleigh_damping_coef * (rho_zz(k,iCell) - rho_driving_values(k,iCell))
                tend_rt(k,iCell)  = tend_rt(k,iCell)  - rayleigh_damping_coef * (rho_zz(k,iCell)*theta_m(k,iCell) - rt_driving_values(k,iCell))
@@ -6030,7 +6036,11 @@ module atm_time_integration
 
       do iEdge = edgeStart, edgeEnd
          if( (bdyMaskEdge(iEdge) > 1) .and. (bdyMaskEdge(iEdge) <= nRelaxZone) ) then
-            rayleigh_damping_coef = (real(bdyMaskEdge(iEdge)) - 1.)/real(nRelaxZone)/(50.*dt*meshScalingRegionalEdge(iEdge))
+            ! Rayleigh damping based on a linear ramp
+            ! rayleigh_damping_coef = (real(bdyMaskEdge(iEdge)) - 1.)/real(nRelaxZone)/(50.*dt*meshScalingRegionalEdge(iEdge))
+            ! Rayleigh damping based on a cosine ramp 
+            rayleigh_damping_coef = rzone_scale * (1. - cos(local_pi / rzone_scale * (real(bdyMaskEdge(iEdge)) - 1.)/real(nRelaxZone)))
+            rayleigh_damping_coef = 0.5 * rayleigh_damping_coef / (50.*dt*meshScalingRegionalEdge(iEdge))
             do k=1, nVertLevels
                tend_ru(k,iEdge) = tend_ru(k,iEdge) - rayleigh_damping_coef * (ru(k,iEdge) - ru_driving_values(k,iEdge))
             end do
