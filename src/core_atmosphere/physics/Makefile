@@ -233,16 +233,16 @@ clean:
 	$(RM) $@ $*.mod
 ifeq "$(GEN_F90)" "true"
 	$(CPP) $(CPPFLAGS) $(COREDEF) $(HYDROSTATIC) $(CPPINCLUDES) $< > $*.f90
-	$(FC) $(FFLAGS) -c $*.f90 $(FCINCLUDES) -I./physics_mmm -I./physics_wrf -I./TEMPO -I./UGWP -I.. -I../../framework -I../../external/esmf_time_f90 -L/apps/netcdf/4.2.1.1-intel/lib -lnetcdff -I/apps/netcdf/4.2.1.1-intel/include -L/apps/netcdf/4.2.1.1-intel/lib -lnetcdff -I/apps/netcdf/4.2.1.1-intel/include
+	$(FC) $(FFLAGS) -c $*.f90 $(FCINCLUDES) -I./physics_mmm -I./physics_wrf -I./TEMPO -I./UGWP -I.. -I../../framework -I../../external/esmf_time_f90 -L/apps/netcdf/4.6.1/lib -lnetcdff -I/apps/netcdf/4.6.1/include
 else
-	$(FC) $(CPPFLAGS) $(COREDEF) $(HYDROSATIC) $(FFLAGS) -c $*.F $(CPPINCLUDES) $(FCINCLUDES) -I./physics_mmm -I./physics_wrf -I./TEMPO -I./UGWP -I.. -I../../framework -I../../external/esmf_time_f90 -L/apps/netcdf/4.2.1.1-intel/lib -lnetcdff -I/apps/netcdf/4.2.1.1-intel/include -L/apps/netcdf/4.2.1.1-intel/lib -lnetcdff -I/apps/netcdf/4.2.1.1-intel/include
+	$(FC) $(CPPFLAGS) $(COREDEF) $(HYDROSATIC) $(FFLAGS) -c $*.F $(CPPINCLUDES) $(FCINCLUDES) -I./physics_mmm -I./physics_wrf -I./TEMPO -I./UGWP -I.. -I../../framework -I../../external/esmf_time_f90 -L/apps/netcdf/4.6.1/lib -lnetcdff -I/apps/netcdf/4.6.1/include
 endif
 
 .F90.o:
 	$(RM) $@ $*.mod
 ifeq "$(GEN_F90)" "true"
 	$(CPP) $(CPPFLAGS) $(COREDEF) $(HYDROSTATIC) $(CPPINCLUDES) $< > $*.f90
-	$(FC) $(FFLAGS) -c $*.f90 $(FCINCLUDES) -I./physics_mmm -I./physics_wrf -I./TEMPO -I./UGWP -I.. -I../../framework -I../../external/esmf_time_f90 -L/apps/netcdf/4.2.1.1-intel/lib -lnetcdff -I/apps/netcdf/4.2.1.1-intel/include -L/apps/netcdf/4.2.1.1-intel/lib -lnetcdff -I/apps/netcdf/4.2.1.1-intel/include
+	$(FC) $(FFLAGS) -c $*.f90 $(FCINCLUDES) -I./physics_mmm -I./physics_wrf -I./TEMPO -I./UGWP -I.. -I../../framework -I../../external/esmf_time_f90 -L/apps/netcdf/4.6.1/lib -lnetcdff -I/apps/netcdf/4.6.1/include
 else
-	$(FC) $(CPPFLAGS) $(COREDEF) $(HYDROSATIC) $(FFLAGS) -c $*.F90 $(CPPINCLUDES) $(FCINCLUDES) -I./physics_mmm -I./physics_wrf -I./TEMPO -I./UGWP -I.. -I../../framework -I../../external/esmf_time_f90 -L/apps/netcdf/4.2.1.1-intel/lib -lnetcdff -I/apps/netcdf/4.2.1.1-intel/include -L/apps/netcdf/4.2.1.1-intel/lib -lnetcdff -I/apps/netcdf/4.2.1.1-intel/include
+	$(FC) $(CPPFLAGS) $(COREDEF) $(HYDROSATIC) $(FFLAGS) -c $*.F90 $(CPPINCLUDES) $(FCINCLUDES) -I./physics_mmm -I./physics_wrf -I./TEMPO -I./UGWP -I.. -I../../framework -I../../external/esmf_time_f90 -L/apps/netcdf/4.6.1/lib -lnetcdff -I/apps/netcdf/4.6.1/include
 endif

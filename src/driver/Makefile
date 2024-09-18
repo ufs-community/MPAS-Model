@@ -23,7 +23,7 @@ clean:
 	$(RM) $@ $*.mod
 ifeq "$(GEN_F90)" "true"
 	$(CPP) $(CPPFLAGS) $(CPPINCLUDES) $< > $*.f90
-	$(FC) $(FFLAGS) -c $*.f90 $(FCINCLUDES) -I../framework -I../operators -I../core_$(CORE) -I../external/esmf_time_f90 -I../external/SMIOL -L/apps/netcdf/4.2.1.1-intel/lib -lnetcdff -I/apps/netcdf/4.2.1.1-intel/include
+	$(FC) $(FFLAGS) -c $*.f90 $(FCINCLUDES) -I../framework -I../operators -I../core_$(CORE) -I../external/esmf_time_f90 -I../external/SMIOL -L/apps/netcdf/4.6.1/lib -lnetcdff -I/apps/netcdf/4.6.1/include
 else
-	$(FC) $(CPPFLAGS) $(FFLAGS) -c $*.F $(CPPINCLUDES) $(FCINCLUDES) -I../framework -I../operators -I../core_$(CORE) -I../external/esmf_time_f90 -I../external/SMIOL -L/apps/netcdf/4.2.1.1-intel/lib -lnetcdff -I/apps/netcdf/4.2.1.1-intel/include
+	$(FC) $(CPPFLAGS) $(FFLAGS) -c $*.F $(CPPINCLUDES) $(FCINCLUDES) -I../framework -I../operators -I../core_$(CORE) -I../external/esmf_time_f90 -I../external/SMIOL -L/apps/netcdf/4.6.1/lib -lnetcdff -I/apps/netcdf/4.6.1/include
 endif
