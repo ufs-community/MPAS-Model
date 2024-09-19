@@ -3153,6 +3153,23 @@
 
 
                 <!-- ================================================================================================== -->
+                <!-- ... PARAMETERIZATION OF GRAVITY WAVE DRAG OVER OROGRAPHY:                                          -->
+                <!-- ================================================================================================== -->
+
+                <var name="jindx1_tau" type="integer" dimensions="nCells" units="unitless"
+                     description="lower latitude index of absolute momentum flux due to nonorographic gravity wave drag for interpolation"/>
+
+                <var name="jindx2_tau" type="integer" dimensions="nCells" units="unitless"
+                     description="upper latitude index of absolute momentum flux due to nonorographic gravity wave drag for interpolation"/>
+
+                <var name="ddy_j1tau" type="real" dimensions="nCells" units="unitless"
+                     description="latitude interpolation weight complement for absolute momentum flux due to nonorographic gravity wave drag"/>
+
+                <var name="ddy_j2tau" type="real" dimensions="nCells" units="unitless"
+                     description="latitude interpolation weight for absolute momentum flux due to nonorographic gravity wave drag"/>
+
+
+                <!-- ================================================================================================== -->
                 <!-- ... PARAMETERIZATION OF SHORTWAVE RADIATION:                                                       -->
                 <!-- ================================================================================================== -->
 

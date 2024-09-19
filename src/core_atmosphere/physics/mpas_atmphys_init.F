@@ -23,6 +23,8 @@
  use mpas_atmphys_landuse
  use mpas_atmphys_o3climatology
 
+ use bl_ugwpv1_ngw, only: ugwpv1_ngw_init
+
  implicit none
  private
  public:: physics_init
@@ -125,9 +127,12 @@
 
  real(kind=RKIND),dimension(:),pointer  :: t_oml, t_oml_initial, t_oml_200m_initial
  real(kind=RKIND),dimension(:),pointer  :: h_oml, h_oml_initial, hu_oml, hv_oml
+ real(kind=RKIND),dimension(:),pointer  :: rdzw,dzu
  real(kind=RKIND), pointer :: config_oml_hml0
- integer,pointer:: nCells
+ real(kind=RKIND), pointer :: config_dt
+ integer,pointer:: nCells,nVertLevels
  logical,pointer:: config_oml1d
+ logical,pointer:: config_ngw_scheme
  
  
 
@@ -209,9 +214,15 @@
  call mpas_pool_get_array(diag_physics,'h_oml_initial'     ,h_oml_initial)
  call mpas_pool_get_array(diag_physics,'hu_oml'            ,hu_oml)
  call mpas_pool_get_array(diag_physics,'hv_oml'            ,hv_oml)
+
  call mpas_pool_get_config(configs,'config_oml1d'          ,config_oml1d  )
  call mpas_pool_get_config(configs,'config_oml_hml0'       ,config_oml_hml0  )
+ call mpas_pool_get_config(configs,'config_ngw_scheme'     ,config_ngw_scheme  )
+ call mpas_pool_get_config(configs,'config_dt'              ,config_dt  )
  call mpas_pool_get_dimension(mesh,'nCells',nCells)
+ call mpas_pool_get_dimension(mesh,'nVertLevels',nVertLevels  )
+ call mpas_pool_get_array(mesh,'rdzw'   ,rdzw   )
+ call mpas_pool_get_array(mesh,'dzu'    ,dzu    )
 
  currTime = mpas_get_clock_time(clock,MPAS_NOW,ierr)
  call mpas_get_time(curr_time=currTime,DoY=julday,ierr=ierr)
@@ -402,6 +413,12 @@
     else
        call init_radiation_lw(dminfo,configs)
     endif
+ endif
+
+!initialization of non-stationary gravity wave drag
+ if(config_ngw_scheme) then
+    call mpas_log_write('Ahoj svete:  Initializing non-stationary GWD scheme',masterOnly=.true.)
+    call ugwpv1_ngw_init(nVertLevels,config_dt,rdzw,dzu)
  endif
 
 ! call mpas_log_write('')

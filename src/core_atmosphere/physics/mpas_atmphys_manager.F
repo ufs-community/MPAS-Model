@@ -17,7 +17,6 @@
  use mpas_atmphys_o3climatology
  use mpas_atmphys_update_surface
  use mpas_atmphys_utilities
- use bl_ugwpv1_ngw,      only:  ugwpv1_ngw_init
 
  implicit none
  private
@@ -402,7 +401,6 @@
  logical,pointer:: config_sst_update
  logical,pointer:: config_frac_seaice
  logical,pointer:: config_microp_re
- logical,pointer:: config_ngw_scheme
 
 
  integer,pointer:: cam_dim1
@@ -411,7 +409,6 @@
  integer,pointer:: nCellsSolve,nSoilLevels,nVertLevels,nlcat,nscat
 
  real(kind=RKIND),pointer:: config_dt
- real(kind=RKIND),dimension(:),pointer    :: rdzw,dzu
 
 !local variables:
  type(MPAS_Time_Type):: startTime,alarmStartTime
@@ -439,11 +436,9 @@
  call mpas_pool_get_config(configs,'config_sst_update'       ,config_sst_update       )
  call mpas_pool_get_config(configs,'config_frac_seaice'      ,config_frac_seaice      )
  call mpas_pool_get_config(configs,'config_microp_re'        ,config_microp_re        )
- call mpas_pool_get_config(configs,'config_ngw_scheme'       ,config_ngw_scheme       )
 
  call mpas_pool_get_config(configs,'config_dt',config_dt)
- call mpas_pool_get_array(mesh,'rdzw'   ,rdzw   )
- call mpas_pool_get_array(mesh,'dzu'    ,dzu    )
+
 
  call mpas_pool_get_dimension(mesh,'cam_dim1'   ,cam_dim1   )
  call mpas_pool_get_dimension(mesh,'nMonths'    ,nMonths    )
@@ -769,12 +764,6 @@ if( trim(config_microp_scheme)=='mp_nssl2m' ) then
  call mpas_log_write('--- has_reqc  = $i', intArgs=(/has_reqc/))
  call mpas_log_write('--- has_reqi  = $i', intArgs=(/has_reqi/))
  call mpas_log_write('--- has_reqs  = $i', intArgs=(/has_reqs/))
-
-!initialization of the non-stationary gravity wave drag scheme
- if(config_ngw_scheme) then
-    call mpas_log_write('Ahoj svete:  Initializing non-stationary GWD scheme',masterOnly=.true.)
-    call ugwpv1_ngw_init(kte,config_dt,rdzw,dzu)
- endif
 
  end subroutine physics_run_init
 
