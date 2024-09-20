@@ -132,7 +132,11 @@
  real(kind=RKIND), pointer :: config_dt
  integer,pointer:: nCells,nVertLevels
  logical,pointer:: config_oml1d
- logical,pointer:: config_ngw_scheme
+ character(len=StrKIND),pointer:: gwdo_scheme
+ logical,pointer:: ngw_scheme
+ integer,dimension(:),pointer:: jindx1_tau, jindx2_tau
+ real(kind=RKIND),dimension(:),pointer :: ddy_j1tau, ddy_j2tau
+ real(kind=RKIND),dimension(:),pointer:: latCell
  
  
 
@@ -203,6 +207,12 @@
  call mpas_pool_get_array(diag_physics,'sstsk'       ,sstsk       )
  call mpas_pool_get_array(diag_physics,'xicem'       ,xicem       )
 
+ call mpas_pool_get_array(diag_physics,'jindx1_tau'  ,jindx1_tau  )
+ call mpas_pool_get_array(diag_physics,'jindx2_tau'  ,jindx2_tau  )
+ call mpas_pool_get_array(diag_physics,'ddy_j1tau'   ,ddy_j1tau   )
+ call mpas_pool_get_array(diag_physics,'ddy_j2tau'   ,ddy_j2tau   )
+ call mpas_pool_get_array(mesh,'latCell',latCell)
+
  call mpas_pool_get_array(sfc_input,'sst' ,sst )
  call mpas_pool_get_array(sfc_input,'tmn' ,tmn )
  call mpas_pool_get_array(sfc_input,'xice',xice)
@@ -217,8 +227,9 @@
 
  call mpas_pool_get_config(configs,'config_oml1d'          ,config_oml1d  )
  call mpas_pool_get_config(configs,'config_oml_hml0'       ,config_oml_hml0  )
- call mpas_pool_get_config(configs,'config_ngw_scheme'     ,config_ngw_scheme  )
- call mpas_pool_get_config(configs,'config_dt'              ,config_dt  )
+ call mpas_pool_get_config(configs,'config_gwdo_scheme'    ,gwdo_scheme )
+ call mpas_pool_get_config(configs,'config_ngw_scheme'     ,ngw_scheme  )
+ call mpas_pool_get_config(configs,'config_dt'             ,config_dt  )
  call mpas_pool_get_dimension(mesh,'nCells',nCells)
  call mpas_pool_get_dimension(mesh,'nVertLevels',nVertLevels  )
  call mpas_pool_get_array(mesh,'rdzw'   ,rdzw   )
@@ -416,9 +427,10 @@
  endif
 
 !initialization of non-stationary gravity wave drag
- if(config_ngw_scheme) then
+ if(trim(gwdo_scheme).eq.'bl_ugwp_gwdo' .and. ngw_scheme) then
     call mpas_log_write('Ahoj svete:  Initializing non-stationary GWD scheme',masterOnly=.true.)
-    call ugwpv1_ngw_init(nVertLevels,config_dt,rdzw,dzu)
+    call ugwpv1_ngw_init(latCell,nVertLevels,config_dt,rdzw,dzu,   &
+                         jindx1_tau,jindx2_tau,ddy_j1tau,ddy_j2tau)
  endif
 
 ! call mpas_log_write('')
