@@ -25,7 +25,7 @@ module mpas_atm_boundaries
     ! Important note: At present, the code in mpas_atm_setup_bdy_masks for
     ! deriving the nearestRelaxationCell field assumes that nSpecZone == 2
     integer, parameter :: nSpecZone = 2
-    integer, parameter :: nRelaxZone = 5
+    integer, parameter :: nRelaxZone = 15
     integer, parameter :: nBdyZone = nSpecZone + nRelaxZone
 
     public :: mpas_atm_update_bdy_tend, &
