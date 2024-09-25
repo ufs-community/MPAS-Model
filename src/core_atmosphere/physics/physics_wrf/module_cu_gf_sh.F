@@ -64,7 +64,7 @@ contains
 !>\section gen_cu_gf_sh_run Grell-Freitas Shallow Convection General Algorithm
   subroutine cu_gf_sh_run (                                            &
                          us,vs,zo,t,q,z1,tn,qo,po,psur,dhdt,kpbl,rho,     & ! input variables, must be supplied
-                         hfx,qfx,xland,ichoice,tcrit,dtime,         &
+                         hfx,qfx,xland,ichoice,tcrit,dtime,dx,frhs,          &
                          zuo,xmb_out,kbcon,ktop,k22,ierr,ierrc,     &
                          outt,outq,outqc,outu,outv,cnvwt,pre,cupclw,     & ! output tendencies
                          itf,ktf,its,ite, kts,kte,ipr)  ! dimesnional variables
@@ -118,11 +118,14 @@ contains
          q,qo
      real(kind=kind_phys), dimension (its:ite)                                         &
         ,intent (in   )                   ::                           &
-        xland,z1,psur,hfx,qfx
+        xland,dx,z1,psur,hfx,qfx
        
      real(kind=kind_phys)                                                              &
         ,intent (in   )                   ::                           &
         dtime,tcrit
+     real(kind=kind_phys),dimension (its:ite)                                          &
+        ,intent (inout   )                   ::                           &
+        frhs
 !$acc declare copyin(t,po,tn,dhdt,rho,us,vs) copy(q,qo) copyin(xland,z1,psur,hfx,qfx) copyin(dtime,tcrit)
   !
   !***************** the following are your basic environmental
@@ -225,7 +228,7 @@ contains
       
       real(kind=kind_phys) buo_flux,pgeoh,dp,entup,detup,totmas
 
-     real(kind=kind_phys) xff_shal(3),blqe,xkshal
+     real(kind=kind_phys) xff_shal(3),blqe,xkshal,radius
      character*50 :: ierrc(its:ite)
      real(kind=kind_phys),    dimension (its:ite,kts:kte) ::                           &
        up_massentr,up_massdetr,up_massentro,up_massdetro,up_massentru,up_massdetru
@@ -258,6 +261,9 @@ contains
         xmb_out(i)=0.
         cap_max_increment(i)=25.
         entr_rate(i) = 1.e-3 !9.e-5 ! 1.75e-3 ! 1.2e-3 ! .2/50.
+        radius=.2/entr_rate(i)
+        frhs(i)=min(1.,3.14*radius*radius/dx(i)/dx(i))
+
       enddo
 !$acc end kernels
 

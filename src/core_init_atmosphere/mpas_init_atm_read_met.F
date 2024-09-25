@@ -19,14 +19,15 @@ module init_atm_read_met
    INTEGER, PRIVATE, PARAMETER  :: PROJ_PS = 2
    INTEGER, PRIVATE, PARAMETER  :: PROJ_MERC = 3
    INTEGER, PRIVATE, PARAMETER  :: PROJ_GAUSS = 4
-
+   INTEGER, PRIVATE, PARAMETER  :: PROJ_CASSINI = 6
 
    ! Derived types
    type met_data
       integer                       :: version, nx, ny, iproj
       real (kind=4)                 :: xfcst, xlvl, startlat, startlon, starti, startj, &
                                        deltalat, deltalon, dx, dy, xlonc, &
-                                       truelat1, truelat2, earth_radius
+                                       truelat1, truelat2, earth_radius, &
+                                       centerlat, centerlon, pole_lat, pole_lon
       real (kind=4), pointer, dimension(:,:) :: slab
       logical                       :: is_wind_grid_rel
       character (len=9)             :: field
@@ -169,8 +170,6 @@ module init_atm_read_met
                                                     fg_data % xlonc,    &
                                                     fg_data % truelat1
 
-         ! ?????????
-         else
             call mpas_log_write('Unrecognized projection code $i when reading from '//trim(filename), intArgs=(/fg_data % iproj/), messageType=MPAS_LOG_ERR)
      
          end if
@@ -364,6 +363,28 @@ module init_atm_read_met
                                                     fg_data % xlonc,    &
                                                     fg_data % truelat1, &
                                                     fg_data % earth_radius
+         ! CASSINI
+         else if (fg_data % iproj == 6) then
+            fg_data % iproj = PROJ_CASSINI
+            read(unit=input_unit,err=1001,end=1001) startloc, &
+                                                    fg_data % startlat, &
+                                                    fg_data % startlon, &
+                                                    fg_data % dx,       &
+                                                    fg_data % dy,       &
+                                                    fg_data % centerlat, &
+                                                    fg_data % centerlon, &
+                                                    fg_data % earth_radius
+            if ( fg_data % centerlat > 0. ) then
+                fg_data % pole_lat = 90. - fg_data % centerlat
+                fg_data % pole_lon = 180.
+                fg_data % xlonc = -fg_data % centerlon
+            else
+                fg_data % pole_lat = 90. + fg_data % centerlat
+                fg_data % pole_lon = 0.
+                fg_data % xlonc = 180. - fg_data % centerlon
+            end if
+            fg_data % deltalon = fg_data % dx
+            fg_data % deltalat = fg_data % dy
      
          ! ?????????
          else

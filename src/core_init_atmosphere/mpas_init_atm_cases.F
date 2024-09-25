@@ -4167,6 +4167,7 @@ module init_atm_cases
       logical, pointer :: config_use_spechumd
       integer, pointer :: config_nfglevels
       integer, pointer :: config_nfgsoillevels
+      integer, pointer :: config_nvegopt
       logical, pointer :: config_smooth_surfaces
       integer, pointer :: config_theta_adv_order
       real (kind=RKIND), pointer :: config_coef_3rd_order
@@ -4205,7 +4206,13 @@ module init_atm_cases
       real (kind=RKIND), dimension(:), pointer :: psfc
       real (kind=RKIND), dimension(:), pointer :: skintemp
       real (kind=RKIND), dimension(:), pointer :: snow
+      real (kind=RKIND), dimension(:), pointer :: snowh
       real (kind=RKIND), dimension(:), pointer :: snowc
+      real (kind=RKIND), dimension(:), pointer :: canwat
+      real (kind=RKIND), dimension(:), pointer :: vegfra
+      real (kind=RKIND), dimension(:), pointer :: greenfrac
+      real (kind=RKIND), dimension(:), pointer :: shdmin
+      real (kind=RKIND), dimension(:), pointer :: shdmax
       real (kind=RKIND), dimension(:,:), pointer :: u_fg
       real (kind=RKIND), dimension(:,:), pointer :: v_fg
       real (kind=RKIND), dimension(:,:), pointer :: z_fg
@@ -4241,7 +4248,7 @@ module init_atm_cases
       character (len=StrKIND), pointer :: config_interface_projection
 
       real (kind=RKIND) :: truelat1, truelat2, xlonc, cone
-
+      real (kind=RKIND) :: temp
 
       call mpas_pool_get_config(configs, 'config_met_prefix', config_met_prefix)
       call mpas_pool_get_config(configs, 'config_start_time', config_start_time)
@@ -4256,6 +4263,7 @@ module init_atm_cases
       call mpas_pool_get_config(configs, 'config_use_spechumd', config_use_spechumd)
       call mpas_pool_get_config(configs, 'config_nfglevels', config_nfglevels)
       call mpas_pool_get_config(configs, 'config_nfgsoillevels', config_nfgsoillevels)
+      call mpas_pool_get_config(configs, 'config_nvegopt', config_nvegopt)
       call mpas_pool_get_config(configs, 'config_smooth_surfaces', config_smooth_surfaces)
       call mpas_pool_get_config(configs, 'config_theta_adv_order', config_theta_adv_order)
       call mpas_pool_get_config(configs, 'config_coef_3rd_order', config_coef_3rd_order)
@@ -4356,7 +4364,13 @@ module init_atm_cases
       call mpas_pool_get_array(fg, 'psfc', psfc)
       call mpas_pool_get_array(fg, 'skintemp', skintemp)
       call mpas_pool_get_array(fg, 'snow', snow)
+      call mpas_pool_get_array(fg, 'snowh', snowh)
       call mpas_pool_get_array(fg, 'snowc', snowc)
+      call mpas_pool_get_array(fg, 'canwat', canwat)
+      call mpas_pool_get_array(fg, 'vegfra', vegfra)
+      call mpas_pool_get_array(fg, 'greenfrac', greenfrac)
+      call mpas_pool_get_array(fg, 'shdmin', shdmin)
+      call mpas_pool_get_array(fg, 'shdmax', shdmax)
       call mpas_pool_get_array(fg, 'u', u_fg)
       call mpas_pool_get_array(fg, 'v', v_fg)
       call mpas_pool_get_array(fg, 'z', z_fg)
@@ -4854,7 +4868,7 @@ module init_atm_cases
       !seaice flag:
        sst = 0.0
        xice = 0.0
-       seaice = 0.0
+       !seaice = 0.0 !tgs seaice comes from parent model, do not set it to 0
       !ldf end.
 
       !
@@ -4996,6 +5010,12 @@ module init_atm_cases
              trim(field % field) == 'PRES' .or. &
              trim(field % field) == 'PRESSURE' .or. &
              trim(field % field) == 'SNOW' .or. &
+             trim(field % field) == 'SNOWH' .or. &
+             trim(field % field) == 'CANWAT' .or. &
+             trim(field % field) == 'VEGFRA' .or. &
+             trim(field % field) == 'GREENFRAC' .or. &
+             trim(field % field) == 'SHDMIN' .or. &
+             trim(field % field) == 'SHDMAX' .or. &
              trim(field % field) == 'SEAICE' .or. &
              trim(field % field) == 'SKINTEMP') then
 
@@ -5038,6 +5058,12 @@ module init_atm_cases
                 trim(field % field) == 'SOILT160' .or. &
                 trim(field % field) == 'SOILT300' .or. &
                 trim(field % field) == 'SNOW' .or. &
+                trim(field % field) == 'SNOWH' .or. &
+                trim(field % field) == 'CANWAT' .or. &
+                trim(field % field) == 'VEGFRA' .or. &
+                trim(field % field) == 'GREENFRAC' .or. &
+                trim(field % field) == 'SHDMIN' .or. &
+                trim(field % field) == 'SHDMAX' .or. &
                 trim(field % field) == 'SEAICE' .or. &
                 trim(field % field) == 'SKINTEMP') then
                k = 1
@@ -5103,6 +5129,17 @@ module init_atm_cases
                             knownj = 1.0_RKIND, &
                             stdlon = real(field % xlonc, kind=RKIND), &
                             dx = real(field % dx, kind=RKIND))
+            else if (field % iproj == PROJ_CASSINI ) then
+                call map_set(PROJ_CASSINI, proj, &
+                            latinc = real(field % deltalat,RKIND), &
+                            loninc = real(field % deltalon,RKIND), &
+                            lat1 = real(field % centerlat, RKIND), &
+                            lon1 = real(field % centerlon, RKIND), &
+                            lat0 = real(field % pole_lat, RKIND), &
+                            lon0 = real(field % pole_lon, RKIND), &
+                            knowni = real((field % nx + 1) / 2,RKIND), &
+                            knownj = real((field % ny + 1) / 2,RKIND), &
+                            stdlon = real(field % xlonc , RKIND))
             else
                call mpas_log_write('********************************************************************************', &
                                    messageType=MPAS_LOG_ERR)
@@ -5495,7 +5532,7 @@ module init_atm_cases
                dzs_fg(k,:) = 289.-100.
                zs_fg(k,:) = 289.
              else if (trim(field % field) == 'SOILM000') then
-               call mpas_log_write('Interpolating SOILM000')
+               call mpas_log_write('Interpolating SOILM000 min $r max $r', realArgs=(/minval(field%slab),maxval(field%slab)/))
 
                interp_list(1) = FOUR_POINT
                interp_list(2) = W_AVERAGE4
@@ -6088,6 +6125,86 @@ module init_atm_cases
                lonPoints => lonCell
                call mpas_pool_get_array(fg, 'snow', destField1d)
                ndims = 1
+            else if (trim(field % field) == 'SNOWH') then
+               call mpas_log_write('Interpolating SNOWH')
+
+               interp_list(1) = FOUR_POINT
+               interp_list(2) = W_AVERAGE4
+               interp_list(3) = 0
+
+               masked = 0
+               fillval = 0.0
+
+               nInterpPoints = nCells
+               latPoints => latCell
+               lonPoints => lonCell
+               call mpas_pool_get_array(fg, 'snowh', destField1d)
+               ndims = 1
+
+            else if (trim(field % field) == 'CANWAT') then
+               call mpas_log_write('Interpolating CANWAT')
+
+               interp_list(1) = FOUR_POINT
+               interp_list(2) = W_AVERAGE4
+               interp_list(3) = 0
+
+               masked = 0
+               fillval = 0.0
+
+               nInterpPoints = nCells
+               latPoints => latCell
+               lonPoints => lonCell
+               call mpas_pool_get_array(fg, 'canwat', destField1d)
+               ndims = 1
+
+            else if (trim(field % field) == 'VEGFRA') then
+               call mpas_log_write('Interpolating VEGFRA')
+
+               interp_list(1) = FOUR_POINT
+               interp_list(2) = W_AVERAGE4
+               interp_list(3) = 0
+
+               masked = 0
+               fillval = 0.0
+
+               nInterpPoints = nCells
+               latPoints => latCell
+               lonPoints => lonCell
+               call mpas_pool_get_array(fg, 'vegfra', destField1d)
+               ndims = 1
+
+            else if (trim(field % field) == 'SHDMIN') then
+               call mpas_log_write('Interpolating SHDMIN')
+
+               interp_list(1) = FOUR_POINT
+               interp_list(2) = W_AVERAGE4
+               interp_list(3) = 0
+
+               masked = 0
+               fillval = 0.0
+
+               nInterpPoints = nCells
+               latPoints => latCell
+               lonPoints => lonCell
+               call mpas_pool_get_array(fg, 'shdmin', destField1d)
+               ndims = 1
+
+            else if (trim(field % field) == 'SHDMAX') then
+               call mpas_log_write('Interpolating SHDMAX')
+
+               interp_list(1) = FOUR_POINT
+               interp_list(2) = W_AVERAGE4
+               interp_list(3) = 0
+
+               masked = 0
+               fillval = 0.0
+
+               nInterpPoints = nCells
+               latPoints => latCell
+               lonPoints => lonCell
+               call mpas_pool_get_array(fg, 'shdmax', destField1d)
+               ndims = 1
+
             else if (trim(field % field) == 'SEAICE') then
                call mpas_log_write('Interpolating SEAICE')
 
@@ -6574,19 +6691,21 @@ call mpas_log_write('Done with soil consistency check')
          call mpas_log_write(" is_wind_grid_rel is true ")
          call mpas_log_write(" truelat1, truelat2, xlonc are $r $r $r ",realArgs=(/truelat1, truelat2, xlonc/))
 
-         IF (ABS(truelat1-truelat2) .GT. 0.1) THEN
-            cone = ALOG10(COS(truelat1*rad_per_deg)) - &
-                   ALOG10(COS(truelat2*rad_per_deg))
-            cone = cone /(ALOG10(TAN((45.0 - ABS(truelat1)/2.0) * rad_per_deg)) - &
-                   ALOG10(TAN((45.0 - ABS(truelat2)/2.0) * rad_per_deg)))
-         ELSE
-            cone = SIN(ABS(truelat1)*rad_per_deg )
-         ENDIF
+         if (field % iproj == PROJ_LC) then 
+            IF (ABS(truelat1-truelat2) .GT. 0.1) THEN
+               cone = ALOG10(COS(truelat1*rad_per_deg)) - &
+                      ALOG10(COS(truelat2*rad_per_deg))
+               cone = cone /(ALOG10(TAN((45.0 - ABS(truelat1)/2.0) * rad_per_deg)) - &
+                      ALOG10(TAN((45.0 - ABS(truelat2)/2.0) * rad_per_deg)))
+            ELSE
+               cone = SIN(ABS(truelat1)*rad_per_deg )
+            ENDIF
+            call mpas_log_write(" cone value is $r ",realArgs=(/cone/))
+         endif
 
-         call mpas_log_write(" cone value is $r ",realArgs=(/cone/))
          xlonc = rad_per_deg * xlonc
          call mpas_log_write(" rotating velocities ")
-         call rotate_velocities(u_fg, v_fg, lonEdge, cone, xlonc, nfglevels_actual, nEdges)
+         call rotate_velocities(u_fg, v_fg, lonEdge, latEdge, cone, xlonc, nfglevels_actual, nEdges, field % iproj, proj)
 
       else
          call mpas_log_write(" is_wind_grid_rel is false ")
@@ -6615,8 +6734,10 @@ call mpas_log_write('Done with soil consistency check')
       allocate(sorted_arrQ9(2,nfglevels_actual))
       allocate(sorted_arrQ10(2,nfglevels_actual))
 
+      call mpas_log_write('min lon $r max lon $r min lat $r max lat $r',realArgs=(/minval(lonPoints),maxval(lonPoints),minval(latPoints),maxval(latPoints)/))
       do iCell=1,nCells
-
+         lat = latPoints(i)*DEG_PER_RAD
+         lon = lonPoints(i)*DEG_PER_RAD
          ! T
          sorted_arr(:,:) = -999.0
          do k = 1, nfglevels_actual
@@ -6625,6 +6746,12 @@ call mpas_log_write('Done with soil consistency check')
             sorted_arr(2,k) = t_fg(k,iCell)
          end do
          call mpas_quicksort(nfglevels_actual, sorted_arr)
+         if (maxval(sorted_arr(1,:))>1.0E6 .or. minval(sorted_arr(1,:))<0.1) then
+            call mpas_log_write('Bad z at cell $i lat $r lon $r, arr = ',intArgs=(/icell/),realArgs=(/lat,lon/))
+            do k = 1,nfglevels_actual
+                call mpas_log_write('k $i T $r z $r',intArgs=(/k/),realArgs=(/sorted_arr(2,k),sorted_arr(1,k)/))
+            enddo
+         endif 
          do k = 1, nVertLevels
             target_z = 0.5 * (zgrid(k,iCell) + zgrid(k+1,iCell))
             t(k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
@@ -6791,8 +6918,12 @@ call mpas_log_write('Done with soil consistency check')
          call mpas_quicksort(nfglevels_actual, sorted_arr)
          do k = 1, nVertLevels
             target_z = 0.5 * (zgrid(k,iCell) + zgrid(k+1,iCell))
-            pressure(k,iCell) = exp(vertical_interp(target_z, nfglevels_actual-1, &
-                                    sorted_arr(:,1:nfglevels_actual-1), order=1, extrap=1))
+            temp = vertical_interp(target_z, nfglevels_actual-1, &
+                                    sorted_arr(:,1:nfglevels_actual-1), order=1, extrap=1)
+            if(temp>1.0E3) then
+                call mpas_log_write("BAD LOGP $r at $i level $i target z $r",realArgs=(/temp,target_z/),intArgs=(/iCell,k/))
+            endif
+            pressure(k,iCell) = exp(temp)
          end do
 
       end do
@@ -7138,7 +7269,7 @@ call mpas_log_write('Done with soil consistency check')
 
       use mpas_dmpar, only : mpas_dmpar_min_real, mpas_dmpar_max_real
       use init_atm_read_met, only : met_data, read_met_init, read_met_close, read_next_met_field
-      use init_atm_llxy, only : proj_info, map_init, map_set, latlon_to_ij, PROJ_LATLON, PROJ_GAUSS, PROJ_LC, DEG_PER_RAD, RAD_PER_DEG
+      use init_atm_llxy, only : proj_info, map_init, map_set, latlon_to_ij, PROJ_LATLON, PROJ_GAUSS, PROJ_LC, PROJ_CASSINI, DEG_PER_RAD, RAD_PER_DEG
       use init_atm_hinterp, only : interp_sequence, FOUR_POINT, SIXTEEN_POINT, W_AVERAGE4, SEARCH
       use mpas_hash, only : hashtable, mpas_hash_init, mpas_hash_destroy, mpas_hash_search, mpas_hash_size, mpas_hash_insert
 
@@ -7503,6 +7634,17 @@ call mpas_log_write('Done with soil consistency check')
                             knownj = 1.0_RKIND, &
                             stdlon = real(field % xlonc, kind=RKIND), &
                             dx = real(field % dx, kind=RKIND))
+            else if (field % iproj == PROJ_CASSINI ) then
+                call map_set(PROJ_CASSINI, proj, &
+                            latinc = real(field % deltalat,RKIND), &
+                            loninc = real(field % deltalon,RKIND), &
+                            lat1 = real(field % centerlat, RKIND), &
+                            lon1 = real(field % centerlon, RKIND), &
+                            lat0 = real(field % pole_lat, RKIND), &
+                            lon0 = real(field % pole_lon, RKIND), &
+                            knowni = real((field % nx +1 ) /2.0,RKIND), &
+                            knownj = real((field % ny +1 ) / 2.0,RKIND), &
+                            stdlon = real(field % xlonc,RKIND))
             else
                call mpas_log_write('********************************************************************************', &
                                    messageType=MPAS_LOG_ERR)
@@ -7753,19 +7895,21 @@ call mpas_log_write('Done with soil consistency check')
          call mpas_log_write(" is_wind_grid_rel is true ")
          call mpas_log_write(" truelat1, truelat2, xlonc are $r $r $r ",realArgs=(/truelat1, truelat2, xlonc/))
 
-         IF (ABS(truelat1-truelat2) .GT. 0.1) THEN
-            cone = ALOG10(COS(truelat1*rad_per_deg)) - &
-                   ALOG10(COS(truelat2*rad_per_deg))
-            cone = cone /(ALOG10(TAN((45.0 - ABS(truelat1)/2.0) * rad_per_deg)) - &
-                   ALOG10(TAN((45.0 - ABS(truelat2)/2.0) * rad_per_deg)))
-         ELSE
-            cone = SIN(ABS(truelat1)*rad_per_deg )
-         ENDIF
+         if (field % iproj == PROJ_LC) then
+            IF (ABS(truelat1-truelat2) .GT. 0.1) THEN
+               cone = ALOG10(COS(truelat1*rad_per_deg)) - &
+                      ALOG10(COS(truelat2*rad_per_deg))
+               cone = cone /(ALOG10(TAN((45.0 - ABS(truelat1)/2.0) * rad_per_deg)) - &
+                      ALOG10(TAN((45.0 - ABS(truelat2)/2.0) * rad_per_deg)))
+            ELSE
+               cone = SIN(ABS(truelat1)*rad_per_deg )
+            ENDIF
 
-         call mpas_log_write(" cone value is $r ",realArgs=(/cone/))
+            call mpas_log_write(" cone value is $r ",realArgs=(/cone/))
+         endif
          xlonc = rad_per_deg * xlonc
          call mpas_log_write(" rotating velocities ")
-         call rotate_velocities(u_fg, v_fg, lonEdge, cone, xlonc, nfglevels_actual, nEdges)
+         call rotate_velocities(u_fg, v_fg, lonEdge, latEdge, cone, xlonc, nfglevels_actual, nEdges, field % iproj, proj)
 
       else
          call mpas_log_write(" is_wind_grid_rel is false ")
@@ -8972,6 +9116,7 @@ call mpas_log_write('Done with soil consistency check')
          return
       end if
       if (target_z >= zf(1,nz)) then
+         call mpas_log_write('bad z target $r zf top $r zf top-1 $r',realArgs=(/target_z,zf(1,nz),zf(1,nz-1)/)) 
          if (extrap_type == 0) then
             vertical_interp = zf(2,nz)
          else if (extrap_type == 1) then
@@ -9047,7 +9192,7 @@ call mpas_log_write('Done with soil consistency check')
 
       !local variables:
       integer :: iCell, iMonth, iSoil, iCat
-      integer, pointer :: nCells, nSoilLevels, nMonths, nLandCat, nSoilCat
+      integer, pointer :: nCells, nSoilLevels, nMonths, nLandCat, nSoilCat,nVegOpt
       integer, dimension(:), pointer :: landmask, lu_index, soilcat_top
       real (kind=RKIND), dimension(:), pointer :: ter, xice, shdmin, shdmax, vegfra, sfc_albbck, xland, seaice
       real (kind=RKIND), dimension(:), pointer :: snow, snowc, snoalb, snowh, skintemp, sst, tmn
@@ -9061,13 +9206,14 @@ call mpas_log_write('Done with soil consistency check')
       call mpas_pool_get_dimension(mesh, 'nMonths', nMonths)
       call mpas_pool_get_dimension(mesh, 'nlcat', nLandCat)
       call mpas_pool_get_dimension(mesh, 'nscat', nSoilCat)
+      call mpas_pool_get_dimension(mesh, 'nveg_opt', nVegOpt)
 
       call mpas_pool_get_array(mesh, 'ter', ter)
       call mpas_pool_get_array(mesh, 'landmask', landmask)
       call mpas_pool_get_array(mesh, 'lu_index', lu_index)
       call mpas_pool_get_array(mesh, 'soilcat_top', soilcat_top)
-      call mpas_pool_get_array(mesh, 'shdmin', shdmin)
-      call mpas_pool_get_array(mesh, 'shdmax', shdmax)
+      call mpas_pool_get_array(fg, 'shdmin', shdmin)
+      call mpas_pool_get_array(fg, 'shdmax', shdmax)
       call mpas_pool_get_array(mesh, 'snoalb', snoalb)
       call mpas_pool_get_array(mesh, 'albedo12m', albedo12m)
       call mpas_pool_get_array(mesh, 'greenfrac', greenfrac)
@@ -9342,7 +9488,7 @@ call mpas_log_write('Done with soil consistency check')
    subroutine blend_bdy_terrain(config_met_prefix, config_start_time, nCells, latCell, lonCell, bdyMaskCell, ter, dryrun, ierr)
 
       use init_atm_read_met, only : read_met_init, read_met_close, read_next_met_field, met_data
-      use init_atm_llxy, only : map_init, map_set, proj_info, latlon_to_ij, PROJ_LATLON, PROJ_GAUSS, PROJ_LC, DEG_PER_RAD
+      use init_atm_llxy, only : map_init, map_set, proj_info, latlon_to_ij, PROJ_LATLON, PROJ_GAUSS, PROJ_LC, PROJ_CASSINI, DEG_PER_RAD
       use init_atm_hinterp, only : interp_sequence, FOUR_POINT
 
       implicit none
@@ -9429,6 +9575,17 @@ call mpas_log_write('Done with soil consistency check')
                                knownj = 1.0_RKIND, &
                                stdlon = real(field % xlonc, kind=RKIND), &
                                dx = real(field % dx, kind=RKIND))
+               else if (field % iproj == PROJ_CASSINI ) then
+                call map_set(PROJ_CASSINI, proj, &
+                            latinc = real(field % deltalat,RKIND), &
+                            loninc = real(field % deltalon,RKIND), &
+                            lat1 = real(field % centerlat, RKIND), &
+                            lon1 = real(field % centerlon, RKIND), &
+                            lat0 = real(field % pole_lat, RKIND), &
+                            lon0 = real(field % pole_lon, RKIND), &
+                            knowni = real((field % nx + 1)/2,RKIND), &
+                            knownj = real((field % ny + 1)/2,RKIND), &
+                            stdlon = real(field % xlonc, RKIND))
                else
                   call mpas_log_write('********************************************************************************', &
                                       messageType=MPAS_LOG_ERR)
@@ -10282,31 +10439,64 @@ call mpas_log_write('Done with soil consistency check')
 
     END function calcnfromq
 
-    subroutine rotate_velocities( u, v, lonEdge, cone, xlonc, levels, nEdges )
+    subroutine rotate_velocities( u, v, lonEdge, latEdge,cone, xlonc, levels, nEdges, iproj, proj )
+
+    use init_atm_llxy, only : PROJ_LC, PROJ_CASSINI,  &
+                              latlon_to_ij, ij_to_latlon, &
+                              RAD_PER_DEG, DEG_PER_RAD, &
+                              proj_info
 
     implicit none
 
-    real (kind=RKIND), dimension(:) :: lonEdge
+    type(proj_info) :: proj
+    real (kind=RKIND), dimension(:) :: lonEdge, latEdge
     real (kind=RKIND), dimension(:,:) :: u, v
-    real (kind=RKIND) :: cone, xlonc
-    integer :: levels, nEdges
+    real (kind=RKIND) :: cone, xlonc, xlonc_save
+    integer :: levels, nEdges, iproj
 
     integer :: iEdge, iLevel
     real (kind=RKIND) :: rlon, cos_rlon, sin_rlon, twopii
     real (kind=RKIND), dimension(levels) :: u_in, v_in
-
+    real :: diff_lon, diff_lat, x_v, y_v, xlat_p1, xlon_p1, xlat_m1, xlon_m1
     twopii = 4.0*asin(1.0)
     ! mpas longitudes are 0 - 2*pi, adjust if xlonc is west (negative)
+    xlonc_save = xlonc
     if (xlonc < 0) xlonc = xlonc + twopii
 
     do iEdge=1, nEdges
+
       rlon = lonEdge(iEdge) - xlonc
-      cos_rlon = cos(cone*rlon)
-      sin_rlon = sin(cone*rlon)
+
+      if (iproj == PROJ_LC) then
+         cos_rlon = cos(cone*rlon)
+         sin_rlon = sin(cone*rlon)
+      else if ( iproj == PROJ_CASSINI) then
+         call latlon_to_ij ( proj, latEdge(iEdge)*deg_per_rad,  &
+                             lonEdge(iEdge)*deg_per_rad, x_v, y_v )
+         call ij_to_latlon ( proj , &
+                             x_v, y_v + 0.1 , xlat_p1 , xlon_p1 )
+         call ij_to_latlon ( proj , &
+                             x_v, y_v - 0.1 , xlat_m1 , xlon_m1 )
+         diff_lon = xlon_p1-xlon_m1
+         if (diff_lon > 180.) then
+            diff_lon = diff_lon - 360.
+         else if (diff_lon < -180.) then
+            diff_lon = diff_lon + 360.
+         end if
+
+         diff_lat = xlat_p1-xlat_m1
+         rlon =-atan2(   -cos(latEdge(iEdge)) * diff_lon*rad_per_deg,   &
+                                         diff_lat*rad_per_deg    &
+                      )
+         cos_rlon = cos(rlon)
+         sin_rlon = sin(rlon)
+      else 
+         cos_rlon = cos(rlon)
+         sin_rlon = sin(rlon)
+      endif
 
       u_in(:) = u(:,iEdge)
       v_in(:) = v(:,iEdge)
-
       do iLevel=1, levels
         u(iLevel,iEdge) =   cos_rlon*u_in(iLevel) + sin_rlon*v_in(iLevel)
         v(iLevel,iEdge) = - sin_rlon*u_in(iLevel) + cos_rlon*v_in(iLevel)
@@ -10316,4 +10506,3 @@ call mpas_log_write('Done with soil consistency check')
     end subroutine rotate_velocities
 
 end module init_atm_cases
-

@@ -49,6 +49,8 @@
                      description="The number of landuse categories used in the land surface model"/>
                 <dim name="nscat" definition="16" definition:"namelist:config_nsoilcat"
                      description="The number of soil categories used in the land surface model"/>
+	        <dim name="nVegOpt" definition="namelist:config_nvegopt"
+                     description="The number of vegetation fraction option: 1 - clim, 2 - real-time"/>
         </dims>
 
 
@@ -148,6 +150,11 @@
                      units='-'
                      description="The number of landuse categories used by the LSM."
                      possible_values="16"/>
+
+                <nml_option name="config_nvegopt"               type="integer"       default_value="1"
+                     units='-'
+                     description="The number of vegetation fraction option used by the LSM."
+                     possible_values="1"/>
 
         </nml_record>
 
@@ -574,8 +581,6 @@
                         <var name="snoalb"/>
                         <var name="soiltemp"/>
                         <var name="greenfrac"/>
-                        <var name="shdmin"/>
-                        <var name="shdmax"/>
                         <var name="albedo12m"/>
                         <var name="lai12m"/>
                         <var name="soilcomp"/>
@@ -635,6 +640,9 @@
                         <var name="xice" packages="met_stage_out"/>
                         <var name="seaice" packages="met_stage_out"/>
                         <var name="vegfra" packages="met_stage_out"/>
+                        <var name="shdmin" packages="met_stage_out"/>
+                        <var name="shdmax" packages="met_stage_out"/>
+                        <var name="canwat" packages="met_stage_out"/>
                         <var name="sfc_albbck" packages="met_stage_out"/>
                         <var name="xland" packages="met_stage_out"/>
                         <var name="rho" packages="met_stage_out"/>
@@ -889,12 +897,6 @@
 
                 <var name="greenfrac" type="real" dimensions="nMonths nCells" units="unitless"
                      description="monthly-mean climatological greeness fraction"/>
-
-                <var name="shdmin" type="real" dimensions="nCells" units="unitless"
-                     description="minimum fractional coverage of annual green vegetation fraction"/>
-
-                <var name="shdmax" type="real" dimensions="nCells" units="unitless"
-                     description="maximum fractional coverage of annual green vegetation fraction"/>
 
                 <var name="albedo12m" type="real" dimensions="nMonths nCells" units="unitless"
                      description="monthly-mean climatological surface albedo"/>
@@ -1456,6 +1458,18 @@
                 <var name="vegfra" type="real" dimensions="nCells Time" units="unitless"
                      description="vegetation fraction"
                      packages="met_stage_out"/>
+
+	        <var name="shdmin" type="real" dimensions="nCells Time" units="unitless"
+                     description="minimum fractional coverage of annual green vegetation fraction"
+                     packages="met_stage_out"/>
+
+	        <var name="shdmax" type="real" dimensions="nCells Time" units="unitless"
+                     description="maximum fractional coverage of annual green vegetation fraction"
+                     packages="met_stage_out"/>
+
+	        <var name="canwat" type="real" dimensions="nCells Time" units="kg m^{-2}"
+		     description="water in canopy" 
+   		     packages="met_stage_out"/>
 
                 <var name="sfc_albbck" type="real" dimensions="nCells Time" units="unitless"
                      description="background surface albedo"
