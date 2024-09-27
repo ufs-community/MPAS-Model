@@ -2348,6 +2348,11 @@
                      description="logical for configuration of sea-surface temperature"
                      possible_values=".true. for time-varying sea-surface temperatures; .false., otherwise"/>
 
+	        <nml_option name="config_gvf_update" type="logical" default_value="true"
+                     units="-"
+                     description="logical for configuration of green vegetation fraction"
+                     possible_values=".true. for time-varying green fraction; .false., otherwise"/>
+
                 <nml_option name="config_sstdiurn_update" type="logical" default_value="false"
                      units="-"
                      description="logical for configuration of diurnal cycle of sea-surface temperatures"

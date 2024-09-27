@@ -137,7 +137,6 @@
  subroutine physics_timetracker(domain,dt,clock,itimestep,xtime_s)
 !=================================================================================================================
 
-!input arguments:
  integer,intent(in):: itimestep
  real(kind=RKIND),intent(in):: dt
  real(kind=RKIND),intent(in) :: xtime_s
@@ -151,6 +150,7 @@
                    config_o3climatology,      &
                    config_sfc_albedo,         &
                    config_sst_update,         &
+                   config_gvf_update,         &
                    config_sstdiurn_update,    &
                    config_deepsoiltemp_update
 
@@ -196,6 +196,7 @@
  call mpas_pool_get_config(domain%blocklist%configs,'config_o3climatology'      ,config_o3climatology      )
  call mpas_pool_get_config(domain%blocklist%configs,'config_sfc_albedo'         ,config_sfc_albedo         )
  call mpas_pool_get_config(domain%blocklist%configs,'config_sst_update'         ,config_sst_update         )
+ call mpas_pool_get_config(domain%blocklist%configs,'config_gvf_update'         ,config_gvf_update         )
  call mpas_pool_get_config(domain%blocklist%configs,'config_sstdiurn_update'    ,config_sstdiurn_update    )
  call mpas_pool_get_config(domain%blocklist%configs,'config_deepsoiltemp_update',config_deepsoiltemp_update)
 
@@ -233,7 +234,7 @@
     if(mpas_is_alarm_ringing(clock,greenAlarmID,ierr=ierr)) then
        call mpas_reset_clock_alarm(clock,greenAlarmID,ierr=ierr)
        call mpas_log_write('--- time to update background surface albedo, greeness fraction.')
-       call physics_update_surface(timeStamp,config_sfc_albedo,mesh,sfc_input,diag_physics)
+       call physics_update_surface(timeStamp,config_sfc_albedo,config_gvf_update,mesh,sfc_input,diag_physics)
     endif
 
     !update surface boundary conditions with input sea-surface temperatures and fractional

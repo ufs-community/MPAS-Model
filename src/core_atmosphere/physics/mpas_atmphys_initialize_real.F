@@ -161,7 +161,7 @@
     if(landmask(iCell) .eq. 0) sfc_albbck(iCell) = 0.08_RKIND
  enddo
 
- if(nvegopt == 1) then ! clim from static
+ if(nvegopt == 1 .or. (minval(vegfra) == 0.0 .and. maxval(vegfra) == 0.0) ) then ! clim from static
 !initialization of the green-ness (vegetation) fraction: interpolation of the monthly values to
 !the initial date. get the min/max for each cell for the monthly green-ness fraction:
     initial_date = trim(config_start_time)
@@ -169,6 +169,7 @@
 
 !calculates the maximum and minimum green-ness (vegetation) fraction:
     call monthly_min_max(nCellsSolve,greenfrac,shdmin,shdmax)
+    if (nvegopt == 2) call mpas_log_write('--- WARNING: nevgopt=2, but there is no VEGFRA in the RAP/RRFS grib file')
  endif
 
 !initialization of the flag indicating the presence of snow (0 or 1) and of the snow depth
