@@ -51,13 +51,14 @@
 
 
 !=================================================================================================================
- subroutine physics_update_surface(current_date,config_sfc_albedo,mesh,sfc_input,diag_physics)
+ subroutine physics_update_surface(current_date,config_sfc_albedo,config_gvf_update,mesh,sfc_input,diag_physics)
 !=================================================================================================================
 
 !input variables:
  type(mpas_pool_type),intent(in):: mesh
  character(len=*),intent(in):: current_date
  logical,intent(in):: config_sfc_albedo
+ logical,intent(in):: config_gvf_update
 
 !inout variables:
  type(mpas_pool_type),intent(inout):: sfc_input
@@ -110,8 +111,10 @@
 !updates the green-ness fraction for the current date as a function of the monthly-mean green-
 !ness valid on the 15th day of the month. get the min/max for each cell for the monthly green-
 !ness fraction:
- call monthly_interp_to_date(nCellsSolve,current_date,greenfrac,vegfra)
- call monthly_min_max(nCellsSolve,greenfrac,shdmin,shdmax)
+ if(config_gvf_update) then
+    call monthly_interp_to_date(nCellsSolve,current_date,greenfrac,vegfra)
+    call monthly_min_max(nCellsSolve,greenfrac,shdmin,shdmax)
+ endif
 
 !updates the leaf area index for the current date as a function of the leaf area index
 !valid on the 15th day of the month :
