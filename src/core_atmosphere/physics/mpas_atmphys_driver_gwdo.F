@@ -77,10 +77,11 @@
 
  !local variables:
  character(len=StrKIND),pointer:: gwdo_scheme
- logical,pointer:: ugwp_diags
+ logical,pointer:: ugwp_diags,ngw_scheme
 
  call mpas_pool_get_config(configs,'config_gwdo_scheme',gwdo_scheme)
  call mpas_pool_get_config(configs,'config_ugwp_diags',ugwp_diags)
+ call mpas_pool_get_config(configs,'config_ngw_scheme',ngw_scheme)
 
  if(.not.allocated(cosa_p)  ) allocate(cosa_p(ims:ime,jms:jme)  )
  if(.not.allocated(sina_p)  ) allocate(sina_p(ims:ime,jms:jme)  )
@@ -150,6 +151,9 @@
        if(.not.allocated(dtaux3d_fd_p)) allocate(dtaux3d_fd_p(ims:ime,kms:kme,jms:jme))
        if(.not.allocated(dtauy3d_fd_p)) allocate(dtauy3d_fd_p(ims:ime,kms:kme,jms:jme))
     endif
+    if (ngw_scheme) then
+       if(.not.allocated(xlat_p)) allocate(xlat_p(ims:ime,jms:jme))
+    endif
 
    case default
 
@@ -166,10 +170,11 @@
 
  !local variables:
  character(len=StrKIND),pointer:: gwdo_scheme
- logical,pointer:: ugwp_diags
+ logical,pointer:: ugwp_diags,ngw_scheme
 
  call mpas_pool_get_config(configs,'config_gwdo_scheme',gwdo_scheme)
  call mpas_pool_get_config(configs,'config_ugwp_diags',ugwp_diags)
+ call mpas_pool_get_config(configs,'config_ngw_scheme',ngw_scheme)
 
  if(allocated(cosa_p)  ) deallocate(cosa_p  )
  if(allocated(sina_p)  ) deallocate(sina_p  )
@@ -239,6 +244,9 @@
        if(allocated(dtaux3d_fd_p)) deallocate(dtaux3d_fd_p)
        if(allocated(dtauy3d_fd_p)) deallocate(dtauy3d_fd_p)
     endif
+    if (ngw_scheme) then
+       if(allocated(xlat_p)) deallocate(xlat_p)
+    endif
 
    case default
 
@@ -262,7 +270,7 @@
 !local variables:
  integer:: i,k,j
  character(len=StrKIND),pointer:: gwdo_scheme
- logical,pointer:: ugwp_diags
+ logical,pointer:: ugwp_diags,ngw_scheme
 
 !local pointers:
  integer,dimension(:),pointer:: kpbl
@@ -277,7 +285,7 @@
  real(kind=RKIND),dimension(:,:),pointer:: dtaux3d,dtauy3d,rublten,rvblten
  real(kind=RKIND),dimension(:),pointer  :: dusfc_ls,dvsfc_ls,dusfc_bl,dvsfc_bl,     &
                                            dusfc_ss,dvsfc_ss,dusfc_fd,dvsfc_fd
- real(kind=RKIND),dimension(:),pointer  :: hpbl,xland,br1
+ real(kind=RKIND),dimension(:),pointer  :: hpbl,xland,br1,latCell
  real(kind=RKIND),dimension(:,:),pointer:: dtaux3d_ls,dtauy3d_ls,dtaux3d_bl,dtauy3d_bl, &
                                            dtaux3d_ss,dtauy3d_ss,dtaux3d_fd,dtauy3d_fd
 
@@ -286,6 +294,7 @@
  call mpas_pool_get_config(configs,'config_len_disp',len_disp)
  call mpas_pool_get_config(configs,'config_gwdo_scheme',gwdo_scheme)
  call mpas_pool_get_config(configs,'config_ugwp_diags',ugwp_diags)
+ call mpas_pool_get_config(configs,'config_ngw_scheme',ngw_scheme)
  call mpas_pool_get_array(mesh,'meshDensity',meshDensity)
 
 
@@ -409,6 +418,14 @@
             dtaux3d_fd_p(i,k,j) = dtaux3d_fd(k,i)
             dtauy3d_fd_p(i,k,j) = dtauy3d_fd(k,i)
          enddo
+         enddo
+         enddo
+      endif
+      if (ngw_scheme) then
+         call mpas_pool_get_array(mesh,'latCell',latCell)
+         do j = jts,jte
+         do i = its,ite
+            xlat_p(i,j) = latCell(i)
          enddo
          enddo
       endif
@@ -586,7 +603,7 @@
 
 !local variables:
  character(len=StrKIND),pointer:: gwdo_scheme
- logical,pointer:: ugwp_diags
+ logical,pointer:: ugwp_diags,ngw_scheme
 
  integer:: i,iCell,iEdge
  real(kind=RKIND),dimension(:),allocatable:: dx_max
@@ -605,6 +622,7 @@
 
  call mpas_pool_get_config(configs,'config_gwdo_scheme',gwdo_scheme)
  call mpas_pool_get_config(configs,'config_ugwp_diags',ugwp_diags)
+ call mpas_pool_get_config(configs,'config_ngw_scheme',ngw_scheme)
 
 !copy MPAS arrays to local arrays:
  call gwdo_from_MPAS(configs,mesh,sfc_input,diag_physics,tend_physics,its,ite)
@@ -658,8 +676,8 @@
                   dusfc_fd = dusfc_fd_p , dvsfc_fd = dvsfc_fd_p  , dtaux3d_ls = dtaux3d_ls_p,      &
                   dtauy3d_ls = dtauy3d_ls_p, dtaux3d_bl = dtaux3d_bl_p, dtauy3d_bl = dtauy3d_bl_p, &
                   dtaux3d_ss = dtaux3d_ss_p, dtauy3d_ss = dtauy3d_ss_p, dtaux3d_fd = dtaux3d_fd_p, &
-                  dtauy3d_fd = dtauy3d_fd_p, ugwp_diags = ugwp_diags,                              &
-                  errmsg    = errmsg      , errflg    = errflg       ,                       &
+                  dtauy3d_fd = dtauy3d_fd_p, ugwp_diags = ugwp_diags  , ngw_scheme = ngw_scheme,   &
+                  xlat = xlat_p            , errmsg    = errmsg      , errflg    = errflg,   &
                   ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde ,    &
                   ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme ,    &
                   its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte      &

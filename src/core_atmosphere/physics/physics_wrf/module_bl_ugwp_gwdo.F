@@ -1,7 +1,8 @@
 !=================================================================================================================
  module module_bl_ugwp_gwdo
  use mpas_kind_types,only: kind_phys => RKIND
- use bl_ugwp
+ use bl_ugwp,only: bl_ugwp_run
+ use bl_ugwpv1_ngw,only: ugwpv1_ngw_run
 
  implicit none
  private
@@ -18,7 +19,7 @@
                  dtaux3d_ls,dtauy3d_ls,dtaux3d_bl,dtauy3d_bl,                 &
                  dtaux3d_ss,dtauy3d_ss,dtaux3d_fd,dtauy3d_fd,                 &
                  dusfc_ls,dvsfc_ls,dusfc_bl,dvsfc_bl,dusfc_ss,dvsfc_ss,       &
-                 dusfc_fd,dvsfc_fd,ugwp_diags,                                &
+                 dusfc_fd,dvsfc_fd,ugwp_diags,ngw_scheme,xlat,                &
                  var2dls,oc12dls,oa2d1ls,oa2d2ls,oa2d3ls,oa2d4ls,ol2d1ls,     &
                  ol2d2ls,ol2d3ls,ol2d4ls,var2dss,oc12dss,oa2d1ss,oa2d2ss,     &
                  oa2d3ss,oa2d4ss,ol2d1ss,ol2d2ss,ol2d3ss,ol2d4ss,             &
@@ -96,7 +97,10 @@
  real(kind=kind_phys),intent(in),dimension(ims:ime,jms:jme)::         &
                                                                   dx, &
                                                            sina,cosa, &
-                                                      pblh,br1,xland
+                                                 pblh,br1,xland
+
+ real(kind=kind_phys),intent(in),dimension(ims:ime,jms:jme),optional::&
+                                                 xlat
 
  real(kind=kind_phys),intent(in),dimension(ims:ime,jms:jme):: &
                                                      var2dls,var2dss, &
@@ -120,7 +124,7 @@
  real(kind=kind_phys),intent(in),dimension(ims:ime,kms:kme,jms:jme):: &
                                                                  p3di
 
- logical,intent(in)::                                      ugwp_diags
+ logical,intent(in)::                           ugwp_diags,ngw_scheme
 
 !--- output arguments:
  character(len=*),intent(out)::  errmsg
@@ -164,7 +168,8 @@
 
  real(kind=kind_phys),dimension(:),allocatable::   &
     dusfc_ls_hv,dvsfc_ls_hv,dusfc_bl_hv,dvsfc_bl_hv, &
-    dusfc_ss_hv,dvsfc_ss_hv,dusfc_fd_hv,dvsfc_fd_hv
+    dusfc_ss_hv,dvsfc_ss_hv,dusfc_fd_hv,dvsfc_fd_hv, &
+    xlat_hv
 
  real(kind=kind_phys),dimension(its:ite,kts:kte):: &
     u3d_hv,v3d_hv,t3d_hv,qv3d_hv,pi3d_hv,p3d_hv,z_hv,dz_hv
@@ -248,6 +253,12 @@
        ol2d3ss_hv(i) = ol2d3ss(i,j)
        ol2d4ss_hv(i) = ol2d4ss(i,j)
     enddo
+    if (ngw_scheme) then
+       allocate (xlat_hv(its:ite))
+       do i = its,ite
+          xlat_hv(i) = xlat(i,j)
+       enddo
+    endif
 
     ! Allocate ugwp_diags variables if needed
     if (ugwp_diags) then
@@ -268,6 +279,11 @@
        allocate (dtaux3d_fd_hv(its:ite,kts:kte))
        allocate (dtauy3d_fd_hv(its:ite,kts:kte))
     endif
+
+    ! Allocate non-stationary GWD variables if needed
+    ! if (ngw_scheme) then
+    !    
+    ! endif
 
     call bl_ugwp_run(sina=sina_hv,cosa=cosa_hv                &
                     ,rublten=rublten_hv,rvblten=rvblten_hv    &
@@ -301,6 +317,15 @@
                     ,dxmeter=dx_hv,deltim=dt                  &
                     ,its=its,ite=ite,kte=kte,kme=kte+1        &
                     ,errmsg=errmsg,errflg=errflg)
+
+!
+! Option to call non-stationary gravity wave drag
+!
+    if (ngw_scheme) then
+       call ugwpv1_ngw_run(xlat=xlat_hv,its=its,ite=ite)
+    endif
+
+
 
     !  Variables that are INTENT(OUT) or INTENT(INOUT):
 
@@ -364,6 +389,9 @@
        deallocate (dtauy3d_ss_hv)
        deallocate (dtaux3d_fd_hv)
        deallocate (dtauy3d_fd_hv)
+    endif
+    if (ngw_scheme) then
+       deallocate (xlat_hv)
     endif
 
  enddo ! Outer J-loop
