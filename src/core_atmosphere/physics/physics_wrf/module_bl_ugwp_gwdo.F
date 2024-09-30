@@ -134,14 +134,14 @@
  real(kind=kind_phys),intent(out),dimension(ims:ime,jms:jme)::    &
                                                    dusfcg,dvsfcg
 
- real(kind=kind_phys),intent(out),dimension(:,:)::                &
+ real(kind=kind_phys),intent(out),dimension(:,:),optional::       &
                              dusfc_ls,dusfc_bl,dusfc_ss,dusfc_fd, &
                              dvsfc_ls,dvsfc_bl,dvsfc_ss,dvsfc_fd
 
  real(kind=kind_phys),intent(out),dimension(ims:ime,kms:kme,jms:jme ):: &
                                                        dtaux3d,dtauy3d
 
- real(kind=kind_phys),intent(out),dimension(:,:,:)::                    &
+ real(kind=kind_phys),intent(out),dimension(:,:,:),optional::           &
                            dtaux3d_ls,dtaux3d_bl,dtaux3d_ss,dtaux3d_fd, &
                            dtauy3d_ls,dtauy3d_bl,dtauy3d_ss,dtauy3d_fd
 
