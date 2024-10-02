@@ -20,6 +20,7 @@
                  dtaux3d_ss,dtauy3d_ss,dtaux3d_fd,dtauy3d_fd,                 &
                  dusfc_ls,dvsfc_ls,dusfc_bl,dvsfc_bl,dusfc_ss,dvsfc_ss,       &
                  dusfc_fd,dvsfc_fd,ugwp_diags,ngw_scheme,xlat,                &
+                 jindx1_tau,jindx2_tau,ddy_j1tau,ddy_j2tau,r_DoY,             &
                  var2dls,oc12dls,oa2d1ls,oa2d2ls,oa2d3ls,oa2d4ls,ol2d1ls,     &
                  ol2d2ls,ol2d3ls,ol2d4ls,var2dss,oc12dss,oa2d1ss,oa2d2ss,     &
                  oa2d3ss,oa2d4ss,ol2d1ss,ol2d2ss,ol2d3ss,ol2d4ss,             &
@@ -100,7 +101,10 @@
                                                  pblh,br1,xland
 
  real(kind=kind_phys),intent(in),dimension(ims:ime,jms:jme),optional::&
-                                                 xlat
+                                            xlat,ddy_j1tau,ddy_j2tau
+ integer,intent(in),dimension(ims:ime,jms:jme),optional::             &
+                                               jindx1_tau,jindx2_tau
+ real(kind=kind_phys),intent(in)                           :: r_DoY
 
  real(kind=kind_phys),intent(in),dimension(ims:ime,jms:jme):: &
                                                      var2dls,var2dss, &
@@ -169,7 +173,10 @@
  real(kind=kind_phys),dimension(:),allocatable::   &
     dusfc_ls_hv,dvsfc_ls_hv,dusfc_bl_hv,dvsfc_bl_hv, &
     dusfc_ss_hv,dvsfc_ss_hv,dusfc_fd_hv,dvsfc_fd_hv, &
-    xlat_hv
+    xlat_hv,ddy_j1tau_hv,ddy_j2tau_hv
+
+ integer,dimension(:),allocatable::                &
+    jindx1_tau_hv,jindx2_tau_hv
 
  real(kind=kind_phys),dimension(its:ite,kts:kte):: &
     u3d_hv,v3d_hv,t3d_hv,qv3d_hv,pi3d_hv,p3d_hv,z_hv,dz_hv
@@ -255,8 +262,16 @@
     enddo
     if (ngw_scheme) then
        allocate (xlat_hv(its:ite))
+       allocate (ddy_j1tau_hv(its:ite))
+       allocate (ddy_j2tau_hv(its:ite))
+       allocate (jindx1_tau_hv(its:ite))
+       allocate (jindx2_tau_hv(its:ite))
        do i = its,ite
           xlat_hv(i) = xlat(i,j)
+          ddy_j1tau_hv(i)  = ddy_j1tau(i,j)
+          ddy_j2tau_hv(i)  = ddy_j2tau(i,j)
+          jindx1_tau_hv(i) = jindx1_tau(i,j)
+          jindx2_tau_hv(i) = jindx2_tau(i,j)
        enddo
     endif
 
@@ -279,11 +294,6 @@
        allocate (dtaux3d_fd_hv(its:ite,kts:kte))
        allocate (dtauy3d_fd_hv(its:ite,kts:kte))
     endif
-
-    ! Allocate non-stationary GWD variables if needed
-    ! if (ngw_scheme) then
-    !    
-    ! endif
 
     call bl_ugwp_run(sina=sina_hv,cosa=cosa_hv                &
                     ,rublten=rublten_hv,rvblten=rvblten_hv    &
@@ -322,7 +332,9 @@
 ! Option to call non-stationary gravity wave drag
 !
     if (ngw_scheme) then
-       call ugwpv1_ngw_run(xlat=xlat_hv,its=its,ite=ite)
+       call ugwpv1_ngw_run(xlat=xlat_hv,ddy_j1tau=ddy_j1tau_hv,ddy_j2tau=ddy_j2tau_hv, &
+                           jindx1_tau=jindx1_tau_hv,jindx2_tau=jindx2_tau_hv,          &
+                           r_DoY=r_DoY,its=its,ite=ite)
     endif
 
 

@@ -13,6 +13,7 @@
 
  use mpas_atmphys_constants
  use mpas_atmphys_vars
+ use mpas_atmphys_manager,only: curr_julday
 
 !wrf physics:
  use module_bl_gwdo
@@ -153,6 +154,10 @@
     endif
     if (ngw_scheme) then
        if(.not.allocated(xlat_p)) allocate(xlat_p(ims:ime,jms:jme))
+       if(.not.allocated(jindx1_tau_p)) allocate(jindx1_tau_p(ims:ime,jms:jme))
+       if(.not.allocated(jindx2_tau_p)) allocate(jindx2_tau_p(ims:ime,jms:jme))
+       if(.not.allocated(ddy_j1tau_p)) allocate(ddy_j1tau_p(ims:ime,jms:jme))
+       if(.not.allocated(ddy_j2tau_p)) allocate(ddy_j2tau_p(ims:ime,jms:jme))
     endif
 
    case default
@@ -246,6 +251,10 @@
     endif
     if (ngw_scheme) then
        if(allocated(xlat_p)) deallocate(xlat_p)
+       if(allocated(jindx1_tau_p)) deallocate(jindx1_tau_p)
+       if(allocated(jindx2_tau_p)) deallocate(jindx2_tau_p)
+       if(allocated(ddy_j1tau_p)) deallocate(ddy_j1tau_p)
+       if(allocated(ddy_j2tau_p)) deallocate(ddy_j2tau_p)
     endif
 
    case default
@@ -273,7 +282,7 @@
  logical,pointer:: ugwp_diags,ngw_scheme
 
 !local pointers:
- integer,dimension(:),pointer:: kpbl
+ integer,dimension(:),pointer:: kpbl,jindx1_tau,jindx2_tau
  real(kind=RKIND),pointer:: len_disp
  real(kind=RKIND),dimension(:),pointer  :: meshDensity
  real(kind=RKIND),dimension(:),pointer  :: oa1,oa2,oa3,oa4,ol1,ol2,ol3,ol4,con,var2d
@@ -285,7 +294,7 @@
  real(kind=RKIND),dimension(:,:),pointer:: dtaux3d,dtauy3d,rublten,rvblten
  real(kind=RKIND),dimension(:),pointer  :: dusfc_ls,dvsfc_ls,dusfc_bl,dvsfc_bl,     &
                                            dusfc_ss,dvsfc_ss,dusfc_fd,dvsfc_fd
- real(kind=RKIND),dimension(:),pointer  :: hpbl,xland,br1,latCell
+ real(kind=RKIND),dimension(:),pointer  :: hpbl,xland,br1,latCell,ddy_j1tau,ddy_j2tau
  real(kind=RKIND),dimension(:,:),pointer:: dtaux3d_ls,dtauy3d_ls,dtaux3d_bl,dtauy3d_bl, &
                                            dtaux3d_ss,dtauy3d_ss,dtaux3d_fd,dtauy3d_fd
 
@@ -423,9 +432,17 @@
       endif
       if (ngw_scheme) then
          call mpas_pool_get_array(mesh,'latCell',latCell)
+         call mpas_pool_get_array(diag_physics,'jindx1_tau',jindx1_tau)
+         call mpas_pool_get_array(diag_physics,'jindx2_tau',jindx2_tau)
+         call mpas_pool_get_array(diag_physics,'ddy_j1tau', ddy_j1tau)
+         call mpas_pool_get_array(diag_physics,'ddy_j2tau', ddy_j2tau)
          do j = jts,jte
          do i = its,ite
             xlat_p(i,j) = latCell(i)
+            jindx1_tau_p(i,j) = jindx1_tau(i)
+            jindx2_tau_p(i,j) = jindx2_tau(i)
+            ddy_j1tau_p(i,j)  = ddy_j1tau(i)
+            ddy_j2tau_p(i,j)  = ddy_j2tau(i)
          enddo
          enddo
       endif
@@ -677,7 +694,9 @@
                   dtauy3d_ls = dtauy3d_ls_p, dtaux3d_bl = dtaux3d_bl_p, dtauy3d_bl = dtauy3d_bl_p, &
                   dtaux3d_ss = dtaux3d_ss_p, dtauy3d_ss = dtauy3d_ss_p, dtaux3d_fd = dtaux3d_fd_p, &
                   dtauy3d_fd = dtauy3d_fd_p, ugwp_diags = ugwp_diags  , ngw_scheme = ngw_scheme,   &
-                  xlat = xlat_p            , errmsg    = errmsg      , errflg    = errflg,   &
+                  xlat = xlat_p,  jindx1_tau = jindx1_tau_p,  jindx2_tau = jindx2_tau_p,     &
+                  ddy_j1tau = ddy_j1tau_p  , ddy_j2tau = ddy_j2tau_p, r_DoY = curr_julday,   &
+                  errmsg    = errmsg    , errflg    = errflg,                                &
                   ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde ,    &
                   ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme ,    &
                   its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte      &

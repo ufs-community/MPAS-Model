@@ -495,7 +495,7 @@
     dtaux3d_p,        &!gravity wave drag over orography u-stress                                          [m s-1]
     dtauy3d_p          !gravity wave drag over orography u-stress                                          [m s-1]
 
-!... variables for GSL orographic gravity wave drag:
+!... variables for UGWP orographic gravity wave drag:
 
  real(kind=RKIND),dimension(:,:),allocatable:: &
     var2dls_p,          &!orographic variance (meso-scale orographic variation)                                [m]
@@ -538,6 +538,16 @@
     dtauy3d_ss_p,        &!small-scale orog gravity wave drag v-tendency                                      [m s-2]
     dtaux3d_fd_p,        &!turb orog form drag u-tendency                                                     [m s-2]
     dtauy3d_fd_p          !turb orog form drag u-tendency                                                     [m s-2]
+
+!... variables for UGWP non-stationarly gravity wave (NGW) drag:
+
+ integer,dimension(:,:),allocatable:: &
+    jindx1_tau_p,        &!lower latitude index of NGW momentum flux for interpolation                         [-] 
+    jindx2_tau_p          !upper latitude index of NGW momentum flux for interpolation                         [-]
+
+ real(kind=RKIND),dimension(:,:),allocatable:: &
+    ddy_j1tau_p,         &!latitude interpolation weight complement for NGW momentum flux                      [-]
+    ddy_j2tau_p           !latitude interpolation weight for NGW momentum flux                                 [-]
 
 !=================================================================================================================
 !... variables and arrays related to parameterization of surface layer:

@@ -109,7 +109,8 @@ mpas_atmphys_driver_convection.o: \
 	mpas_atmphys_vars.o
 
 mpas_atmphys_driver_gwdo.o: \
-	mpas_atmphys_vars.o
+	mpas_atmphys_vars.o \
+	mpas_atmphys_manager.o
 
 mpas_atmphys_driver_lsm.o: \
 	mpas_atmphys_constants.o \
