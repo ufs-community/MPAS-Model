@@ -562,6 +562,8 @@
                         <var name="snoalb"/>
                         <var name="soiltemp"/>
                         <var name="greenfrac"/>
+                        <var name="shdmin"/>
+                        <var name="shdmax"/>
                         <var name="albedo12m"/>
                         <var name="lai12m"/>
                         <var name="var2d" packages="gwd_stage_out;vertical_stage_out;met_stage_out"/>
@@ -616,8 +618,6 @@
                         <var name="xice" packages="met_stage_out"/>
                         <var name="seaice" packages="met_stage_out"/>
                         <var name="vegfra" packages="met_stage_out"/>
-                        <var name="shdmin" packages="met_stage_out"/>
-                        <var name="shdmax" packages="met_stage_out"/>
                         <var name="canwat" packages="met_stage_out"/>
                         <var name="sfc_albbck" packages="met_stage_out"/>
                         <var name="xland" packages="met_stage_out"/>
@@ -873,6 +873,12 @@
 
                 <var name="greenfrac" type="real" dimensions="nMonths nCells" units="unitless"
                      description="monthly-mean climatological greeness fraction"/>
+
+                <var name="shdmin" type="real" dimensions="nCells" units="unitless"
+                     description="minimum fractional coverage of annual green vegetation fraction"/>
+
+                <var name="shdmax" type="real" dimensions="nCells" units="unitless"
+                     description="maximum fractional coverage of annual green vegetation fraction"/>
 
                 <var name="albedo12m" type="real" dimensions="nMonths nCells" units="unitless"
                      description="monthly-mean climatological surface albedo"/>
@@ -1400,14 +1406,6 @@
 
                 <var name="vegfra" type="real" dimensions="nCells Time" units="unitless"
                      description="vegetation fraction"
-                     packages="met_stage_out"/>
-
-	        <var name="shdmin" type="real" dimensions="nCells Time" units="unitless"
-                     description="minimum fractional coverage of annual green vegetation fraction"
-                     packages="met_stage_out"/>
-
-	        <var name="shdmax" type="real" dimensions="nCells Time" units="unitless"
-                     description="maximum fractional coverage of annual green vegetation fraction"
                      packages="met_stage_out"/>
 
 	        <var name="canwat" type="real" dimensions="nCells Time" units="kg m^{-2}"
