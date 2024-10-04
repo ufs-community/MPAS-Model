@@ -154,6 +154,8 @@
     endif
     if (ngw_scheme) then
        if(.not.allocated(xlat_p)) allocate(xlat_p(ims:ime,jms:jme))
+       if(.not.allocated(raincv_p)  ) allocate(raincv_p(ims:ime,jms:jme)  )
+       if(.not.allocated(rainncv_p) ) allocate(rainncv_p(ims:ime,jms:jme) )
        if(.not.allocated(jindx1_tau_p)) allocate(jindx1_tau_p(ims:ime,jms:jme))
        if(.not.allocated(jindx2_tau_p)) allocate(jindx2_tau_p(ims:ime,jms:jme))
        if(.not.allocated(ddy_j1tau_p)) allocate(ddy_j1tau_p(ims:ime,jms:jme))
@@ -251,6 +253,8 @@
     endif
     if (ngw_scheme) then
        if(allocated(xlat_p)) deallocate(xlat_p)
+       if(allocated(raincv_p)  ) deallocate(raincv_p)
+       if(allocated(rainncv_p) ) deallocate(rainncv_p)
        if(allocated(jindx1_tau_p)) deallocate(jindx1_tau_p)
        if(allocated(jindx2_tau_p)) deallocate(jindx2_tau_p)
        if(allocated(ddy_j1tau_p)) deallocate(ddy_j1tau_p)
@@ -295,6 +299,7 @@
  real(kind=RKIND),dimension(:),pointer  :: dusfc_ls,dvsfc_ls,dusfc_bl,dvsfc_bl,     &
                                            dusfc_ss,dvsfc_ss,dusfc_fd,dvsfc_fd
  real(kind=RKIND),dimension(:),pointer  :: hpbl,xland,br1,latCell,ddy_j1tau,ddy_j2tau
+ real(kind=RKIND),dimension(:),pointer  :: raincv,rainncv
  real(kind=RKIND),dimension(:,:),pointer:: dtaux3d_ls,dtauy3d_ls,dtaux3d_bl,dtauy3d_bl, &
                                            dtaux3d_ss,dtauy3d_ss,dtaux3d_fd,dtauy3d_fd
 
@@ -432,6 +437,8 @@
       endif
       if (ngw_scheme) then
          call mpas_pool_get_array(mesh,'latCell',latCell)
+         call mpas_pool_get_array(diag_physics,'raincv',raincv)
+         call mpas_pool_get_array(diag_physics,'rainncv',rainncv)
          call mpas_pool_get_array(diag_physics,'jindx1_tau',jindx1_tau)
          call mpas_pool_get_array(diag_physics,'jindx2_tau',jindx2_tau)
          call mpas_pool_get_array(diag_physics,'ddy_j1tau', ddy_j1tau)
@@ -439,6 +446,8 @@
          do j = jts,jte
          do i = its,ite
             xlat_p(i,j) = latCell(i)
+            raincv_p(i,j) = raincv(i)
+            rainncv_p(i,j) = rainncv(i)
             jindx1_tau_p(i,j) = jindx1_tau(i)
             jindx2_tau_p(i,j) = jindx2_tau(i)
             ddy_j1tau_p(i,j)  = ddy_j1tau(i)
@@ -696,7 +705,8 @@
                   dtauy3d_fd = dtauy3d_fd_p, ugwp_diags = ugwp_diags  , ngw_scheme = ngw_scheme,   &
                   xlat = xlat_p,  jindx1_tau = jindx1_tau_p,  jindx2_tau = jindx2_tau_p,     &
                   ddy_j1tau = ddy_j1tau_p  , ddy_j2tau = ddy_j2tau_p, r_DoY = curr_julday,   &
-                  errmsg    = errmsg    , errflg    = errflg,                                &
+                  raincv = raincv_p     , rainncv = rainncv_p    ,                           &
+                  errmsg    = errmsg    , errflg    = errflg     ,                           &
                   ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde ,    &
                   ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme ,    &
                   its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte      &
