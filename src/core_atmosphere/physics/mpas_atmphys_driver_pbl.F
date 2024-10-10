@@ -95,7 +95,6 @@
 !local pointers:
  character(len=StrKIND),pointer:: pbl_scheme
 
- integer :: i, j
 !-----------------------------------------------------------------------------------------------------------------
 
  call mpas_pool_get_config(configs,'config_pbl_scheme',pbl_scheme)
@@ -110,7 +109,8 @@
  if(.not.allocated(znt_p)  ) allocate(znt_p(ims:ime,jms:jme)  )
  if(.not.allocated(uoce_p) ) allocate(uoce_p(ims:ime,jms:jme) )
  if(.not.allocated(voce_p) ) allocate(voce_p(ims:ime,jms:jme) )
-
+ if(.not.allocated(psfc_p) ) allocate(psfc_p(ims:ime,jms:jme) )
+      
  !tendencies:
  if(.not.allocated(rublten_p) ) allocate(rublten_p(ims:ime,kms:kme,jms:jme) )
  if(.not.allocated(rvblten_p) ) allocate(rvblten_p(ims:ime,kms:kme,jms:jme) )
@@ -130,16 +130,16 @@
 
     case("bl_ysu")
        !from surface-layer model:
-       if(.not.allocated(br_p)          ) allocate(br_p(ims:ime,jms:jme)                )
-       if(.not.allocated(ctopo_p)       ) allocate(ctopo_p(ims:ime,jms:jme)             )
-       if(.not.allocated(ctopo2_p)      ) allocate(ctopo2_p(ims:ime,jms:jme)            )
-       if(.not.allocated(delta_p)       ) allocate(delta_p(ims:ime,jms:jme)             )
-       if(.not.allocated(psih_p)        ) allocate(psih_p(ims:ime,jms:jme)              )
-       if(.not.allocated(psim_p)        ) allocate(psim_p(ims:ime,jms:jme)              )
-       if(.not.allocated(u10_p)         ) allocate(u10_p(ims:ime,jms:jme)               )
-       if(.not.allocated(v10_p)         ) allocate(v10_p(ims:ime,jms:jme)               )
-       if(.not.allocated(exch_p)        ) allocate(exch_p(ims:ime,kms:kme,jms:jme)      )
-       if(.not.allocated(wstar_p)       ) allocate(wstar_p(ims:ime,jms:jme)             )
+       if(.not.allocated(br_p)    ) allocate(br_p(ims:ime,jms:jme)          )
+       if(.not.allocated(ctopo_p) ) allocate(ctopo_p(ims:ime,jms:jme)       )
+       if(.not.allocated(ctopo2_p)) allocate(ctopo2_p(ims:ime,jms:jme)      )
+       if(.not.allocated(delta_p) ) allocate(delta_p(ims:ime,jms:jme)       )
+       if(.not.allocated(psih_p)  ) allocate(psih_p(ims:ime,jms:jme)        )
+       if(.not.allocated(psim_p)  ) allocate(psim_p(ims:ime,jms:jme)        )
+       if(.not.allocated(u10_p)   ) allocate(u10_p(ims:ime,jms:jme)         )
+       if(.not.allocated(v10_p)   ) allocate(v10_p(ims:ime,jms:jme)         )
+       if(.not.allocated(exch_p)  ) allocate(exch_p(ims:ime,kms:kme,jms:jme))
+       if(.not.allocated(wstar_p) ) allocate(wstar_p(ims:ime,jms:jme)       )
 
     case("bl_mynn")
        if(.not.allocated(kbl_plume_p) ) allocate(kbl_plume_p(ims:ime,jms:jme)         )
@@ -274,8 +274,7 @@
 !local pointers:
  character(len=StrKIND),pointer:: pbl_scheme
 
- integer :: i, j, k
-!n-----------------------------------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------------------------------
 
  call mpas_pool_get_config(configs,'config_pbl_scheme',pbl_scheme)
 
@@ -289,7 +288,8 @@
  if(allocated(znt_p)  ) deallocate(znt_p  )
  if(allocated(uoce_p) ) deallocate(uoce_p )
  if(allocated(voce_p) ) deallocate(voce_p )
-
+ if(allocated(psfc_p) ) deallocate(psfc_p )
+      
  !tendencies:
  if(allocated(rublten_p) ) deallocate(rublten_p )
  if(allocated(rvblten_p) ) deallocate(rvblten_p )
@@ -309,16 +309,16 @@
 
     case("bl_ysu")
        !from surface-layer model:
-       if(allocated(br_p)          ) deallocate(br_p          )
-       if(allocated(ctopo_p)       ) deallocate(ctopo_p       )
-       if(allocated(ctopo2_p)      ) deallocate(ctopo2_p      )
-       if(allocated(delta_p)       ) deallocate(delta_p       )
-       if(allocated(psih_p)        ) deallocate(psih_p        )
-       if(allocated(psim_p)        ) deallocate(psim_p        )
-       if(allocated(u10_p)         ) deallocate(u10_p         )
-       if(allocated(v10_p)         ) deallocate(v10_p         )
-       if(allocated(exch_p)        ) deallocate(exch_p        )
-       if(allocated(wstar_p)       ) deallocate(wstar_p       )
+       if(allocated(br_p)    ) deallocate(br_p    )
+       if(allocated(ctopo_p) ) deallocate(ctopo_p )
+       if(allocated(ctopo2_p)) deallocate(ctopo2_p)
+       if(allocated(delta_p) ) deallocate(delta_p )
+       if(allocated(psih_p)  ) deallocate(psih_p  )
+       if(allocated(psim_p)  ) deallocate(psim_p  )
+       if(allocated(u10_p)   ) deallocate(u10_p   )
+       if(allocated(v10_p)   ) deallocate(v10_p   )
+       if(allocated(exch_p)  ) deallocate(exch_p  )
+       if(allocated(wstar_p) ) deallocate(wstar_p )
 
     case("bl_mynn")
        if(allocated(kbl_plume_p) ) deallocate(kbl_plume_p )
@@ -444,7 +444,7 @@
  end subroutine deallocate_pbl
 
 !=================================================================================================================
- subroutine pbl_from_MPAS(configs,mesh,sfc_input,diag_physics,tend_physics,its,ite)
+ subroutine pbl_from_MPAS(configs,mesh,sfc_input,diag_physics,tend_physics,diag,its,ite)
 !=================================================================================================================
 
 !input arguments:
@@ -453,7 +453,8 @@
  type(mpas_pool_type),intent(in):: diag_physics
  type(mpas_pool_type),intent(in):: sfc_input
  type(mpas_pool_type),intent(in):: tend_physics
-
+ type(mpas_pool_type),intent(in):: diag
+      
  integer,intent(in):: its,ite
 
 !local variables:
@@ -473,12 +474,11 @@
 !local pointers for MYNN scheme:
  real(kind=RKIND),pointer:: len_disp
  real(kind=RKIND),dimension(:),pointer  :: meshDensity
- real(kind=RKIND),dimension(:),pointer  :: ch,qsfc,qcg,skintemp,rmol
+ real(kind=RKIND),dimension(:),pointer  :: ch,qsfc,rmol,skintemp,psfc
  real(kind=RKIND),dimension(:,:),pointer:: cov,qke,qsq,tsq,sh3d,sm3d,tke_pbl,qke_adv,el_pbl
  real(kind=RKIND),dimension(:,:),pointer:: cldfrac_bl,qc_bl,qi_bl
  real(kind=RKIND),dimension(:,:),pointer:: edmf_a,edmf_ent,edmf_qc,edmf_qt,edmf_thl,edmf_w
  real(kind=RKIND),dimension(:,:),pointer:: sub_thl,sub_qv,det_thl,det_qv
- real(kind=RKIND),dimension(:,:),pointer:: rncblten,rniblten,rnifablten,rnwfablten
       
 !local pointers for MYJ scheme:
  real(kind=RKIND),dimension(:),pointer   :: chlowq,thz0,qz0,uz0,vz0,ct,akhs,akms,lh,mixht
@@ -494,7 +494,8 @@
  call mpas_pool_get_array(diag_physics,'ust' ,ust )
  call mpas_pool_get_array(diag_physics,'wspd',wspd)
  call mpas_pool_get_array(diag_physics,'znt' ,znt )
-
+ call mpas_pool_get_array(diag,'surface_pressure' ,psfc)
+      
  call mpas_pool_get_array(tend_physics,'rthratenlw',rthratenlw)
  call mpas_pool_get_array(tend_physics,'rthratensw',rthratensw)
 
@@ -514,6 +515,7 @@
     !... ocean currents are set to zero:
     uoce_p(i,j)  = 0._RKIND
     voce_p(i,j)  = 0._RKIND
+    psfc_p(i,j)  = psfc(i)  
  enddo
  do k = kts,kte
  do i = its,ite
@@ -1192,10 +1194,10 @@
  pbl_select: select case (trim(pbl_scheme))
 
     case("bl_mynn")
-!       call mpas_log_write('--- enter subroutine bl_mynn_init:')
+!      call mpas_log_write('--- enter subroutine bl_mynn_init:')
        call bl_mynn_init(cp,cpv,cice,cliq,ep_1,ep_2,gravity,karman,P0,R_d,R_v,svp1,svp2,svp3,svpt0, &
                          xlf,xls,xlv,errmsg,errflg)
-!       call mpas_log_write('--- end subroutine bl_mynn_mpas_init:')
+!      call mpas_log_write('--- end subroutine bl_mynn_init:')
 
     case default
 
@@ -1204,7 +1206,7 @@
  end subroutine init_pbl
 
 !=================================================================================================================
- subroutine driver_pbl(itimestep,configs,mesh,sfc_input,diag_physics,tend_physics,its,ite)
+ subroutine driver_pbl(itimestep,configs,mesh,sfc_input,diag_physics,tend_physics,diag,its,ite)
 !=================================================================================================================
 
 !input arguments:
@@ -1218,7 +1220,8 @@
  type(mpas_pool_type),intent(inout):: sfc_input
  type(mpas_pool_type),intent(inout):: diag_physics
  type(mpas_pool_type),intent(inout):: tend_physics
-
+ type(mpas_pool_type),intent(inout):: diag
+      
 !local pointers:
  logical,pointer:: config_do_DAcycling, &
                    config_do_restart,   &
@@ -1265,7 +1268,7 @@
  call mpas_pool_get_config(configs,'config_pbl_scheme'  ,pbl_scheme         )
 
 !copy MPAS arrays to local arrays:
- call pbl_from_MPAS(configs,mesh,sfc_input,diag_physics,tend_physics,its,ite)
+ call pbl_from_MPAS(configs,mesh,sfc_input,diag_physics,tend_physics,diag,its,ite)
 
  initflag = 1
  if(config_do_restart .or. itimestep > 1) initflag = 0

@@ -587,6 +587,7 @@
              endif
           enddo
        enddo
+       if (minval(cqs_p) == 0.0 .and. maxval(cqs_p) == 0.0) cqs_p = chs_p
        call sfcdiags_ruclsm( &
                      hfx     = hfx_p  , qfx     = qfx_p   , tsk  = tsk_p       , qsfc = qsfc_p , chs = chs_p , &
                      chs2    = chs2_p , cqs2    = cqs2_p  , t2   = t2m_p       , th2  = th2m_p , q2  = q2_p  , &
