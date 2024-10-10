@@ -190,8 +190,6 @@
        if(.not.allocated(pattern_spp_pbl)) allocate(pattern_spp_pbl(ims:ime,kms:kme,jms:jme))
        
     case("bl_mynnedmf") !GSL version
-       if(.not.allocated(kbl_plume_p)   ) allocate(kbl_plume_p(ims:ime,jms:jme)         )
-
        if(.not.allocated(dx_p)          ) allocate(dx_p(ims:ime,jms:jme)                )
        if(.not.allocated(ch_p)          ) allocate(ch_p(ims:ime,jms:jme)                )
        if(.not.allocated(qsfc_p)        ) allocate(qsfc_p(ims:ime,jms:jme)              )
@@ -370,7 +368,6 @@
        if(allocated(pattern_spp_pbl)) deallocate(pattern_spp_pbl)
        
     case("bl_mynnedmf")
-       if(allocated(kbl_plume_p)   ) deallocate(kbl_plume_p   )
        if(allocated(dx_p)          ) deallocate(dx_p          )
        if(allocated(ch_p)          ) deallocate(ch_p          )
        if(allocated(qsfc_p)        ) deallocate(qsfc_p        )
@@ -733,7 +730,6 @@
        enddo
        enddo
        do i = its,ite
-          kbl_plume_p(i,j)  = 0
           maxwidthbl_p(i,j) = 0._RKIND
           maxmfbl_p(i,j)    = 0._RKIND
           zbl_plume_p(i,j)  = 0._RKIND
@@ -1143,31 +1139,6 @@
        enddo
        enddo
        enddo
-
-       if(f_ni) then
-          call mpas_pool_get_array(tend_physics,'rniblten',rniblten)
-          do j = jts,jte
-             do k = kts,kte
-                do i = its,ite
-                   rniblten(k,i) = rniblten_p(i,k,j)
-                enddo
-             enddo
-          enddo
-       endif
-       if(f_nc .and. f_nifa .and. f_nwfa) then
-          call mpas_pool_get_array(tend_physics,'rncblten'  ,rncblten  )
-          call mpas_pool_get_array(tend_physics,'rnifablten',rnifablten)
-          call mpas_pool_get_array(tend_physics,'rnwfablten',rnwfablten)
-          do j = jts,jte
-             do k = kts,kte
-                do i = its,ite
-                   rncblten(k,i)   = rncblten_p(i,k,j)
-                   rnifablten(k,i) = rnifablten_p(i,k,j)
-                   rnwfablten(k,i) = rnwfablten_p(i,k,j)
-                enddo
-             enddo
-          enddo
-       endif
 
     case default
 

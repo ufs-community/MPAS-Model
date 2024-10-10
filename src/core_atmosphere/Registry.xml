@@ -3013,6 +3013,10 @@
                      description="Height of highest penetrating plume"
                      packages="bl_mynn_in;bl_mynnedmf_in"/>
 
+		<var name="ktop_plume" type="integer" dimensions="nCells Time" units="#"
+                     description="k-level of highest penetrating plume"
+                     packages="bl_mynn_in"/>
+
 		<!-- MYJ PBL SCHEME: -->
                 <var name="chlowq" type="real" dimensions="nCells Time" units=""
                      description=""
@@ -3084,7 +3088,7 @@
 
 	        <var name="cqs" type="real" dimensions="nCells Time" units="m s^{-1}"
                      description="surface exchange coefficient for moisture at 2-meter"
-                     packages="bl_mynn_in;bl_mynnedmf_in"/>
+                     packages="bl_mynn_in;bl_mynnedmf_in;bl_ysu_in;bl_myj_in"/>
 
                 <var name="ck" type="real" dimensions="nCells Time" units="unitless"
                      description="enthalpy exchange coeff at 10-meter"
