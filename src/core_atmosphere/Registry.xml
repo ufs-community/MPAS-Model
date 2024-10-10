@@ -2873,14 +2873,6 @@
                      description="Planetary Boundary Layer (PBL) height"
                      packages="bl_mynn_in;bl_mynnedmf_in;bl_ysu_in;bl_myj_in"/>
 
-                <var name="delta" type="real" dimensions="nCells Time" units="m"
-                     description="entrainment layer depth from PBL scheme"
-                     packages="bl_ysu_in;bl_myj_in"/>
-
-                <var name="wstar" type="real" dimensions="nCells Time" units="m s^{-1}"
-                     description="mixed velocity scale from PBL scheme"
-                     packages="bl_mynn_in;bl_mynnedmf_in;bl_ysu_in;bl_myj_in"/>
-
 		<var name="kzh" type="real" dimensions="nVertLevels nCells Time" units="m^{2} s^{-1}"
                      description="vertical diffusion coefficient of potential temperature"
                      packages="bl_mynn_in;bl_mynnedmf_in;bl_ysu_in;bl_myj_in"/>
@@ -2895,6 +2887,14 @@
 
 
                 <!-- YSU PBL SCHEME: -->
+		<var name="delta" type="real" dimensions="nCells Time" units="m"
+                     description="entrainment layer depth from PBL scheme"
+                     packages="bl_ysu_in;bl_myj_in"/>
+
+                <var name="wstar" type="real" dimensions="nCells Time" units="m s^{-1}"
+                     description="mixed velocity scale from PBL scheme"
+                     packages="bl_ysu_in;bl_myj_in"/>
+		
                 <var name="exch_h" type="real" dimensions="nVertLevels nCells Time" units="m^{2} s^{-1}"
                      description="exchange coefficient"
                      packages="bl_ysu_in"/>
@@ -2961,19 +2961,11 @@
                      description="TKE vertical distribution"
                      packages="bl_mynn_in;bl_mynnedmf_in"/>
 
-		<!-- MYJ PBL SCHEME: -->
-		<var name="chlowq" type="real" dimensions="nCells Time" units=""
-		     description=""
-		     packages="bl_myj_in"/>
-
-		<var name="mixht" type="real" dimensions="nCells Time" units="m"
-		     desciption="Mixing height"
-		     packages="bl_myj_in"/>
-          <var name="edmf_a" type="real" dimensions="nVertLevels nCells Time" units="unitless"
+		<var name="edmf_a" type="real" dimensions="nVertLevels nCells Time" units="unitless"
                      description="EDMF relative updraft area of moist updrafts in the MYNN PBL scheme"
                      packages="bl_mynn_in;bl_mynnedmf_in"/>
 
-          <var name="edmf_w" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1}"
+		<var name="edmf_w" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1}"
                      description="EDMF vertical velocity of  moist updrafts in the MYNN PBL scheme"
                      packages="bl_mynn_in;bl_mynnedmf_in"/>
 
@@ -3021,6 +3013,15 @@
                      description="Height of highest penetrating plume"
                      packages="bl_mynn_in;bl_mynnedmf_in"/>
 
+		<!-- MYJ PBL SCHEME: -->
+                <var name="chlowq" type="real" dimensions="nCells Time" units=""
+                     description=""
+                     packages="bl_myj_in"/>
+
+                <var name="mixht" type="real" dimensions="nCells Time" units="m"
+                     desciption="Mixing height"
+                     packages="bl_myj_in"/>
+		
                 <!-- ================================================================================================== -->
                 <!-- ... PARAMETERIZATION OF SURFACE LAYER PROCESSES:                                                   -->
                 <!-- ================================================================================================== -->
@@ -3083,7 +3084,7 @@
 
 	        <var name="cqs" type="real" dimensions="nCells Time" units="m s^{-1}"
                      description="surface exchange coefficient for moisture at 2-meter"
-                     packages="bl_mynn_in;bl_mynnedmf_in;bl_ysu_in;bl_myj_in"/>
+                     packages="bl_mynn_in;bl_mynnedmf_in"/>
 
                 <var name="ck" type="real" dimensions="nCells Time" units="unitless"
                      description="enthalpy exchange coeff at 10-meter"
