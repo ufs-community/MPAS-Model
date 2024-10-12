@@ -19,7 +19,7 @@
                  dtaux3d_ls,dtauy3d_ls,dtaux3d_bl,dtauy3d_bl,                 &
                  dtaux3d_ss,dtauy3d_ss,dtaux3d_fd,dtauy3d_fd,                 &
                  dusfc_ls,dvsfc_ls,dusfc_bl,dvsfc_bl,dusfc_ss,dvsfc_ss,       &
-                 dusfc_fd,dvsfc_fd,ugwp_diags,ngw_scheme,xlat,                &
+                 dusfc_fd,dvsfc_fd,ugwp_diags,ngw_scheme,xlatd,               &
                  jindx1_tau,jindx2_tau,ddy_j1tau,ddy_j2tau,r_DoY,             &
                  raincv,rainncv,                                              &
                  var2dls,oc12dls,oa2d1ls,oa2d2ls,oa2d3ls,oa2d4ls,ol2d1ls,     &
@@ -102,7 +102,7 @@
                                                  pblh,br1,xland
 
  real(kind=kind_phys),intent(in),dimension(ims:ime,jms:jme),optional::&
-                             xlat,raincv,rainncv,ddy_j1tau,ddy_j2tau
+                            xlatd,raincv,rainncv,ddy_j1tau,ddy_j2tau
  integer,intent(in),dimension(ims:ime,jms:jme),optional::             &
                                                jindx1_tau,jindx2_tau
  real(kind=kind_phys),intent(in)                           :: r_DoY
@@ -174,7 +174,7 @@
  real(kind=kind_phys),dimension(:),allocatable::   &
     dusfc_ls_hv,dvsfc_ls_hv,dusfc_bl_hv,dvsfc_bl_hv, &
     dusfc_ss_hv,dvsfc_ss_hv,dusfc_fd_hv,dvsfc_fd_hv, &
-    xlat_hv,raincv_hv,rainncv_hv,                    &
+    xlatd_hv,raincv_hv,rainncv_hv,                   &
     ddy_j1tau_hv,ddy_j2tau_hv
 
  integer,dimension(:),allocatable::                &
@@ -263,7 +263,7 @@
        ol2d4ss_hv(i) = ol2d4ss(i,j)
     enddo
     if (ngw_scheme) then
-       allocate (xlat_hv(its:ite))
+       allocate (xlatd_hv(its:ite))
        allocate (raincv_hv(its:ite))
        allocate (rainncv_hv(its:ite))
        allocate (ddy_j1tau_hv(its:ite))
@@ -271,7 +271,7 @@
        allocate (jindx1_tau_hv(its:ite))
        allocate (jindx2_tau_hv(its:ite))
        do i = its,ite
-          xlat_hv(i)       = xlat(i,j)
+          xlatd_hv(i)       = xlatd(i,j)
           raincv_hv(i)     = raincv(i,j)
           rainncv_hv(i)    = rainncv(i,j)
           ddy_j1tau_hv(i)  = ddy_j1tau(i,j)
@@ -338,10 +338,11 @@
 ! Option to call non-stationary gravity wave drag
 !
     if (ngw_scheme) then
-       call ugwpv1_ngw_run(xlat=xlat_hv,raincv=raincv_hv,rainncv=rainncv_hv,  &
-                           ddy_j1tau=ddy_j1tau_hv,ddy_j2tau=ddy_j2tau_hv,     &
-                           jindx1_tau=jindx1_tau_hv,jindx2_tau=jindx2_tau_hv, &
-                           r_DoY=r_DoY,its=its,ite=ite)
+       call ugwpv1_ngw_run(xlatd=xlatd_hv,raincv=raincv_hv,rainncv=rainncv_hv, &
+                           ddy_j1tau=ddy_j1tau_hv,ddy_j2tau=ddy_j2tau_hv,      &
+                           jindx1_tau=jindx1_tau_hv,jindx2_tau=jindx2_tau_hv,  &
+                           r_DoY=r_DoY,kdt=itimestep,dtp=dt,                   &
+                           its=its,ite=ite,levs=kte)
     endif
 
 
@@ -410,7 +411,7 @@
        deallocate (dtauy3d_fd_hv)
     endif
     if (ngw_scheme) then
-       deallocate (xlat_hv      )
+       deallocate (xlatd_hv     )
        deallocate (raincv_hv    )
        deallocate (rainncv_hv   )
        deallocate (ddy_j1tau_hv )

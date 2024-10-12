@@ -284,6 +284,7 @@
  integer:: i,k,j
  character(len=StrKIND),pointer:: gwdo_scheme
  logical,pointer:: ugwp_diags,ngw_scheme
+ real(kind=RKIND),parameter :: rad2deg = 180./3.1415926 
 
 !local pointers:
  integer,dimension(:),pointer:: kpbl,jindx1_tau,jindx2_tau
@@ -445,7 +446,7 @@
          call mpas_pool_get_array(diag_physics,'ddy_j2tau', ddy_j2tau)
          do j = jts,jte
          do i = its,ite
-            xlat_p(i,j) = latCell(i)
+            xlat_p(i,j) = latCell(i)*rad2deg   ! latitude in degrees
             raincv_p(i,j) = raincv(i)
             rainncv_p(i,j) = rainncv(i)
             jindx1_tau_p(i,j) = jindx1_tau(i)
@@ -703,7 +704,7 @@
                   dtauy3d_ls = dtauy3d_ls_p, dtaux3d_bl = dtaux3d_bl_p, dtauy3d_bl = dtauy3d_bl_p, &
                   dtaux3d_ss = dtaux3d_ss_p, dtauy3d_ss = dtauy3d_ss_p, dtaux3d_fd = dtaux3d_fd_p, &
                   dtauy3d_fd = dtauy3d_fd_p, ugwp_diags = ugwp_diags  , ngw_scheme = ngw_scheme,   &
-                  xlat = xlat_p,  jindx1_tau = jindx1_tau_p,  jindx2_tau = jindx2_tau_p,     &
+                  xlatd = xlat_p, jindx1_tau = jindx1_tau_p,  jindx2_tau = jindx2_tau_p,     &
                   ddy_j1tau = ddy_j1tau_p  , ddy_j2tau = ddy_j2tau_p, r_DoY = curr_julday,   &
                   raincv = raincv_p     , rainncv = rainncv_p    ,                           &
                   errmsg    = errmsg    , errflg    = errflg     ,                           &
