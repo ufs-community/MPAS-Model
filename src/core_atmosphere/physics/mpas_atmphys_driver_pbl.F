@@ -110,7 +110,7 @@
  if(.not.allocated(uoce_p) ) allocate(uoce_p(ims:ime,jms:jme) )
  if(.not.allocated(voce_p) ) allocate(voce_p(ims:ime,jms:jme) )
  if(.not.allocated(psfc_p) ) allocate(psfc_p(ims:ime,jms:jme) )
-      
+
  !tendencies:
  if(.not.allocated(rublten_p) ) allocate(rublten_p(ims:ime,kms:kme,jms:jme) )
  if(.not.allocated(rvblten_p) ) allocate(rvblten_p(ims:ime,kms:kme,jms:jme) )
@@ -204,7 +204,6 @@
        if(.not.allocated(tsq_p)         ) allocate(tsq_p(ims:ime,kms:kme,jms:jme)       )
        if(.not.allocated(qkeadv_p)      ) allocate(qkeadv_p(ims:ime,kms:kme,jms:jme)    )
        if(.not.allocated(elpbl_p)       ) allocate(elpbl_p(ims:ime,kms:kme,jms:jme)     )
-       if(.not.allocated(tkepbl_p)      ) allocate(tkepbl_p(ims:ime,kms:kme,jms:jme)    )
        if(.not.allocated(sh3d_p)        ) allocate(sh3d_p(ims:ime,kms:kme,jms:jme)      )
        if(.not.allocated(sm3d_p)        ) allocate(sm3d_p(ims:ime,kms:kme,jms:jme)      )
        if(.not.allocated(dqke_p)        ) allocate(dqke_p(ims:ime,kms:kme,jms:jme)      )
@@ -228,7 +227,6 @@
 
        !additional tendencies:
        if(.not.allocated(rqsblten_p)    ) allocate(rqsblten_p(ims:ime,kms:kme,jms:jme)  )
-       if(.not.allocated(rniblten_p)    ) allocate(rniblten_p(ims:ime,kms:kme,jms:jme)  )
        if(.not.allocated(rncblten_p)    ) allocate(rncblten_p(ims:ime,kms:kme,jms:jme)  )
        if(.not.allocated(rniblten_p)    ) allocate(rniblten_p(ims:ime,kms:kme,jms:jme)  )
        if(.not.allocated(rnifablten_p)  ) allocate(rnifablten_p(ims:ime,kms:kme,jms:jme))
@@ -382,7 +380,6 @@
        if(allocated(tsq_p)       ) deallocate(tsq_p       )
        if(allocated(qkeadv_p)    ) deallocate(qkeadv_p    )
        if(allocated(elpbl_p)     ) deallocate(elpbl_p     )
-       if(allocated(tkepbl_p)    ) deallocate(tkepbl_p    )
        if(allocated(sh3d_p)      ) deallocate(sh3d_p      )
        if(allocated(sm3d_p)      ) deallocate(sm3d_p      )
        if(allocated(dqke_p)      ) deallocate(dqke_p      )
@@ -441,7 +438,7 @@
  end subroutine deallocate_pbl
 
 !=================================================================================================================
- subroutine pbl_from_MPAS(configs,mesh,sfc_input,diag_physics,tend_physics,diag,its,ite)
+ subroutine pbl_from_MPAS(configs,mesh,sfc_input,diag_physics,tend_physics,its,ite)
 !=================================================================================================================
 
 !input arguments:
@@ -450,7 +447,6 @@
  type(mpas_pool_type),intent(in):: diag_physics
  type(mpas_pool_type),intent(in):: sfc_input
  type(mpas_pool_type),intent(in):: tend_physics
- type(mpas_pool_type),intent(in):: diag
       
  integer,intent(in):: its,ite
 
@@ -471,7 +467,7 @@
 !local pointers for MYNN scheme:
  real(kind=RKIND),pointer:: len_disp
  real(kind=RKIND),dimension(:),pointer  :: meshDensity
- real(kind=RKIND),dimension(:),pointer  :: ch,qsfc,rmol,skintemp,psfc
+ real(kind=RKIND),dimension(:),pointer  :: ch,qsfc,rmol,skintemp
  real(kind=RKIND),dimension(:,:),pointer:: cov,qke,qsq,tsq,sh3d,sm3d,tke_pbl,qke_adv,el_pbl
  real(kind=RKIND),dimension(:,:),pointer:: cldfrac_bl,qc_bl,qi_bl
  real(kind=RKIND),dimension(:,:),pointer:: edmf_a,edmf_ent,edmf_qc,edmf_qt,edmf_thl,edmf_w
@@ -491,7 +487,6 @@
  call mpas_pool_get_array(diag_physics,'ust' ,ust )
  call mpas_pool_get_array(diag_physics,'wspd',wspd)
  call mpas_pool_get_array(diag_physics,'znt' ,znt )
- call mpas_pool_get_array(diag,'surface_pressure' ,psfc)
       
  call mpas_pool_get_array(tend_physics,'rthratenlw',rthratenlw)
  call mpas_pool_get_array(tend_physics,'rthratensw',rthratensw)
@@ -512,7 +507,6 @@
     !... ocean currents are set to zero:
     uoce_p(i,j)  = 0._RKIND
     voce_p(i,j)  = 0._RKIND
-    psfc_p(i,j)  = psfc(i)  
  enddo
  do k = kts,kte
  do i = its,ite
@@ -663,7 +657,6 @@
        call mpas_pool_get_array(diag_physics,'qke_adv'   ,qke_adv   )
        call mpas_pool_get_array(diag_physics,'qsq'       ,qsq       )
        call mpas_pool_get_array(diag_physics,'tsq'       ,tsq       )
-       call mpas_pool_get_array(diag_physics,'tke_pbl'   ,tke_pbl   )
        call mpas_pool_get_array(diag_physics,'sh3d'      ,sh3d      )
        call mpas_pool_get_array(diag_physics,'sm3d'      ,sm3d      )
        call mpas_pool_get_array(diag_physics,'cldfrac_bl',cldfrac_bl)
@@ -697,7 +690,6 @@
           qke_p(i,k,j)      = qke(k,i)
           qsq_p(i,k,j)      = qsq(k,i)
           tsq_p(i,k,j)      = tsq(k,i)
-          tkepbl_p(i,k,j)   = tke_pbl(k,i)
           qkeadv_p(i,k,j)   = qke_adv(k,i)
           sh3d_p(i,k,j)     = sh3d(k,i)
           sm3d_p(i,k,j)     = sm3d(k,i)
@@ -1030,7 +1022,6 @@
        call mpas_pool_get_array(diag_physics,'det_qv'    ,det_qv    )
 
        call mpas_pool_get_array(tend_physics,'rqsblten'  ,rqsblten  )
-       call mpas_pool_get_array(tend_physics,'rniblten'  ,rniblten  )
 
        do j = jts,jte
        do i = its,ite
@@ -1177,7 +1168,7 @@
  end subroutine init_pbl
 
 !=================================================================================================================
- subroutine driver_pbl(itimestep,configs,mesh,sfc_input,diag_physics,tend_physics,diag,its,ite)
+ subroutine driver_pbl(itimestep,configs,mesh,sfc_input,diag_physics,tend_physics,its,ite)
 !=================================================================================================================
 
 !input arguments:
@@ -1191,7 +1182,6 @@
  type(mpas_pool_type),intent(inout):: sfc_input
  type(mpas_pool_type),intent(inout):: diag_physics
  type(mpas_pool_type),intent(inout):: tend_physics
- type(mpas_pool_type),intent(inout):: diag
       
 !local pointers:
  logical,pointer:: config_do_DAcycling, &
@@ -1239,7 +1229,7 @@
  call mpas_pool_get_config(configs,'config_pbl_scheme'  ,pbl_scheme         )
 
 !copy MPAS arrays to local arrays:
- call pbl_from_MPAS(configs,mesh,sfc_input,diag_physics,tend_physics,diag,its,ite)
+ call pbl_from_MPAS(configs,mesh,sfc_input,diag_physics,tend_physics,its,ite)
 
  initflag = 1
  if(config_do_restart .or. itimestep > 1) initflag = 0
@@ -1567,7 +1557,7 @@
                 qcw      = qc_p      , qci      = qi_p       , qcs      = qs_p       , &
                 qcr      = qr_p      , qcg      = qg_p       , u        = u_p        , &
                 v        = v_p       , rho      = rho_p      , tsk      = tsk_p      , &
-                qsfc     = qsfc_p    , chklowq   = chlowq_p   , thz0     = thz0_p     , &
+                qsfc     = qsfc_p    , chklowq  = chlowq_p   , thz0     = thz0_p     , &
                 qz0      = qz0_p     , uz0      = uz0_p      , vz0      = vz0_p      , &
                 lowlyr   = lowlyr_p  , xland    = xland_p    , sice     = xice_p     , &
                 snow     = snow_p    , tke_myj  = tkepbl_p   , exch_h   = kzh_p      , &
