@@ -14,7 +14,7 @@
 
 !=================================================================================================================
  subroutine gwdo_ugwp(u3d,v3d,t3d,qv3d,p3d,p3di,pi3d,z,pblh,kpbl2d,br1,xland, &
-                 rublten,rvblten,                                             &
+                 rublten,rvblten,rthblten,                                    &
                  dtaux3d,dtauy3d,dusfcg,dvsfcg,                               &
                  dtaux3d_ls,dtauy3d_ls,dtaux3d_bl,dtauy3d_bl,                 &
                  dtaux3d_ss,dtauy3d_ss,dtaux3d_fd,dtauy3d_fd,                 &
@@ -25,7 +25,7 @@
                  var2dls,oc12dls,oa2d1ls,oa2d2ls,oa2d3ls,oa2d4ls,ol2d1ls,     &
                  ol2d2ls,ol2d3ls,ol2d4ls,var2dss,oc12dss,oa2d1ss,oa2d2ss,     &
                  oa2d3ss,oa2d4ss,ol2d1ss,ol2d2ss,ol2d3ss,ol2d4ss,             &
-                 sina,cosa,dz,znu,znw,p_top,                                  &
+                 sina,cosa,zi,dz,znu,znw,p_top,                               &
                  cp,g,rd,rv,ep1,pi,                                           &
                  dt,dx,itimestep,                                             &
                  ids,ide, jds,jde, kds,kde,                                   &
@@ -48,13 +48,15 @@
 !-- xland       land mask (1 for land, 2 for water)
 !-- rublten     u tendency due to pbl parameterization (m/s/s) 
 !-- rvblten     v tendency due to pbl parameterization (m/s/s)
+!-- rthblten    potential temperature tendency due to pbl parameterization (K/s)
 !-- sina        sine rotation angle
 !-- cosa        cosine rotation angle
 !-- znu         eta values (sigma values)
 !-- cp          heat capacity at constant pressure for dry air (j/kg/k)
 !-- g           acceleration due to gravity (m/s^2)
 !-- rd          gas constant for dry air (j/kg/k)
-!-- z           height above sea level (m)
+!-- z           height above sea level of layer centers (m)
+!-- zi          height above sea level of layer interfaces (m)
 !-- dz          layer thickness (m)
 !-- rv          gas constant for water vapor (j/kg/k)
 !-- dt          time step (s)
@@ -124,6 +126,7 @@
                                                                  u3d, &
                                                                  v3d, &
                                                                    z, &
+                                                                  zi, &
                                                                   dz
 
  real(kind=kind_phys),intent(in),dimension(ims:ime,kms:kme,jms:jme):: &
@@ -152,8 +155,7 @@
 
 !--- inout arguments:
  real(kind=kind_phys),intent(inout),dimension(ims:ime,kms:kme,jms:jme):: &
-                                                             rublten,    &
-                                                             rvblten
+                           rublten,rvblten,rthblten
 
 !--- local variables and arrays:
  integer:: i,j,k
@@ -184,13 +186,13 @@
     u3d_hv,v3d_hv,t3d_hv,qv3d_hv,pi3d_hv,p3d_hv,z_hv,dz_hv
 
  real(kind=kind_phys),dimension(its:ite,kts:kte):: &
-    rublten_hv,rvblten_hv,dtaux3d_hv,dtauy3d_hv
+    rublten_hv,rvblten_hv,rthblten_hv,dtaux3d_hv,dtauy3d_hv
  real(kind=kind_phys),dimension(:,:),allocatable:: &
     dtaux3d_ls_hv,dtauy3d_ls_hv,dtaux3d_bl_hv,dtauy3d_bl_hv,  &
     dtaux3d_ss_hv,dtauy3d_ss_hv,dtaux3d_fd_hv,dtauy3d_fd_hv
 
  real(kind=kind_phys),dimension(its:ite,kms:kme):: &
-    p3di_hv
+    p3di_hv,zi_hv
 
 !-----------------------------------------------------------------------------------------------------------------
 
@@ -213,6 +215,7 @@
     do k = kts,kte+1
        do i = its,ite
           p3di_hv(i,k) = p3di(i,k,j)
+          zi_hv(i,k)   = zi(i,k,j)
        enddo
     enddo
 
@@ -221,6 +224,7 @@
        do i = its,ite
           rublten_hv(i,k) = rublten(i,k,j)
           rvblten_hv(i,k) = rvblten(i,k,j)
+         rthblten_hv(i,k) = rthblten(i,k,j)
               u3d_hv(i,k) =     u3d(i,k,j)
               v3d_hv(i,k) =     v3d(i,k,j)
               t3d_hv(i,k) =     t3d(i,k,j)
@@ -271,7 +275,7 @@
        allocate (jindx1_tau_hv(its:ite))
        allocate (jindx2_tau_hv(its:ite))
        do i = its,ite
-          xlatd_hv(i)       = xlatd(i,j)
+          xlatd_hv(i)      = xlatd(i,j)
           raincv_hv(i)     = raincv(i,j)
           rainncv_hv(i)    = rainncv(i,j)
           ddy_j1tau_hv(i)  = ddy_j1tau(i,j)
@@ -338,11 +342,15 @@
 ! Option to call non-stationary gravity wave drag
 !
     if (ngw_scheme) then
-       call ugwpv1_ngw_run(xlatd=xlatd_hv,raincv=raincv_hv,rainncv=rainncv_hv, &
-                           ddy_j1tau=ddy_j1tau_hv,ddy_j2tau=ddy_j2tau_hv,      &
-                           jindx1_tau=jindx1_tau_hv,jindx2_tau=jindx2_tau_hv,  &
-                           r_DoY=r_DoY,kdt=itimestep,dtp=dt,                   &
-                           its=its,ite=ite,levs=kte)
+       call ugwpv1_ngw_run(xlatd=xlatd_hv,raincv=raincv_hv,rainncv=rainncv_hv  &
+                          ,ddy_j1tau=ddy_j1tau_hv,ddy_j2tau=ddy_j2tau_hv       &
+                          ,jindx1_tau=jindx1_tau_hv,jindx2_tau=jindx2_tau_hv   &
+                          ,r_DoY=r_DoY,kdt=itimestep,dtp=dt                    &
+                          ,ugrs=u3d_hv,vgrs=v3d_hv   &
+                          ,tgrs=t3d_hv,q1=qv3d_hv,prsl=p3d_hv,prslk=pi3d_hv    &
+                          ,prsi=p3di_hv,zl=z_hv,zi=zi_hv         &
+                          ,rublten=rublten_hv,rvblten=rvblten_hv,rthblten=rthblten_hv    &
+                          ,its=its,ite=ite,levs=kte)
     endif
 
 
@@ -354,6 +362,7 @@
        do i = its,ite
           rublten(i,k,j) = rublten_hv(i,k)
           rvblten(i,k,j) = rvblten_hv(i,k)
+          rthblten(i,k,j)= rthblten_hv(i,k)
           dtaux3d(i,k,j) = dtaux3d_hv(i,k)
           dtauy3d(i,k,j) = dtauy3d_hv(i,k)
        enddo

@@ -95,6 +95,7 @@
  if(.not.allocated(dtauy3d_p)) allocate(dtauy3d_p(ims:ime,kms:kme,jms:jme))
  if(.not.allocated(rublten_p)) allocate(rublten_p(ims:ime,kms:kme,jms:jme))
  if(.not.allocated(rvblten_p)) allocate(rvblten_p(ims:ime,kms:kme,jms:jme))
+ if(.not.allocated(rthblten_p)) allocate(rthblten_p(ims:ime,kms:kme,jms:jme))
 
  gwdo_select: select case (trim(gwdo_scheme))
 
@@ -194,6 +195,7 @@
  if(allocated(dtauy3d_p)) deallocate(dtauy3d_p)
  if(allocated(rublten_p)) deallocate(rublten_p)
  if(allocated(rvblten_p)) deallocate(rvblten_p)
+ if(allocated(rthblten_p)) deallocate(rthblten_p)
 
  gwdo_select: select case (trim(gwdo_scheme))
 
@@ -296,7 +298,7 @@
  real(kind=RKIND),dimension(:),pointer  :: oa1ss,oa2ss,oa3ss,oa4ss,ol1ss,ol2ss,       &
                                            ol3ss,ol4ss,conss,var2dss
  real(kind=RKIND),dimension(:),pointer  :: dusfcg,dvsfcg
- real(kind=RKIND),dimension(:,:),pointer:: dtaux3d,dtauy3d,rublten,rvblten
+ real(kind=RKIND),dimension(:,:),pointer:: dtaux3d,dtauy3d,rublten,rvblten,rthblten
  real(kind=RKIND),dimension(:),pointer  :: dusfc_ls,dvsfc_ls,dusfc_bl,dvsfc_bl,     &
                                            dusfc_ss,dvsfc_ss,dusfc_fd,dvsfc_fd
  real(kind=RKIND),dimension(:),pointer  :: hpbl,xland,br1,latCell,ddy_j1tau,ddy_j2tau
@@ -469,6 +471,7 @@
  call mpas_pool_get_array(diag_physics,'dtauy3d' ,dtauy3d )
  call mpas_pool_get_array(tend_physics,'rublten' ,rublten )
  call mpas_pool_get_array(tend_physics,'rvblten' ,rvblten )
+ call mpas_pool_get_array(tend_physics,'rthblten',rthblten)
 
  do j = jts,jte
  do i = its,ite
@@ -488,6 +491,7 @@
     dtauy3d_p(i,k,j) = dtauy3d(k,i)
     rublten_p(i,k,j) = rublten(k,i)
     rvblten_p(i,k,j) = rvblten(k,i)
+    rthblten_p(i,k,j) = rthblten(k,i)
  enddo
  enddo
  enddo
@@ -513,13 +517,14 @@
 
 !local pointers:
  real(kind=RKIND),dimension(:),pointer  :: dusfcg,dvsfcg
- real(kind=RKIND),dimension(:,:),pointer:: dtaux3d,dtauy3d,rubldiff,rvbldiff,rublten,rvblten
+ real(kind=RKIND),dimension(:,:),pointer:: dtaux3d,dtauy3d,rubldiff,rvbldiff,         &
+                                           rublten,rvblten,rthblten
 
  real(kind=RKIND),dimension(:),pointer  :: oa1ls,oa2ls,oa3ls,oa4ls,ol1ls,ol2ls,       &
                                            ol3ls,ol4ls,conls,var2dls
  real(kind=RKIND),dimension(:),pointer  :: oa1ss,oa2ss,oa3ss,oa4ss,ol1ss,ol2ss,       &
                                            ol3ss,ol4ss,conss,var2dss
- real(kind=RKIND),dimension(:),pointer  :: dusfc_ls,dvsfc_ls,dusfc_bl,dvsfc_bl,     &
+ real(kind=RKIND),dimension(:),pointer  :: dusfc_ls,dvsfc_ls,dusfc_bl,dvsfc_bl,       &
                                            dusfc_ss,dvsfc_ss,dusfc_fd,dvsfc_fd
  real(kind=RKIND),dimension(:,:),pointer:: dtaux3d_ls,dtauy3d_ls,dtaux3d_bl,dtauy3d_bl, &
                                            dtaux3d_ss,dtauy3d_ss,dtaux3d_fd,dtauy3d_fd
@@ -536,6 +541,7 @@
  call mpas_pool_get_array(diag_physics,'rvbldiff',rvbldiff)
  call mpas_pool_get_array(tend_physics,'rublten' ,rublten )
  call mpas_pool_get_array(tend_physics,'rvblten' ,rvblten )
+ call mpas_pool_get_array(tend_physics,'rthblten',rthblten)
 
 
  gwdo_select: select case (trim(gwdo_scheme))
@@ -606,6 +612,7 @@
     rvbldiff(k,i) = rvblten_p(i,k,j)-rvblten(k,i) 
     rublten(k,i)  = rublten_p(i,k,j)
     rvblten(k,i)  = rvblten_p(i,k,j)
+    rthblten(k,i) = rthblten_p(i,k,j)
  enddo
  enddo
  enddo
@@ -684,7 +691,8 @@
                   p3d       = pres_hydd_p , p3di      = pres2_hydd_p , pi3d    = pi_p      , &
                   u3d       = u_p         , v3d       = v_p          , t3d     = t_p       , &
                   qv3d      = qv_p        , z         = zmid_p       , rublten = rublten_p , &
-                  rvblten   = rvblten_p   , dtaux3d   = dtaux3d_p    , dtauy3d = dtauy3d_p , &
+                  rvblten   = rvblten_p   , rthblten  = rthblten_p   ,                       &
+                  dtaux3d   = dtaux3d_p   , dtauy3d   = dtauy3d_p    ,                       &
                   dusfcg    = dusfcg_p    , dvsfcg    = dvsfcg_p     , kpbl2d  = kpbl_p    , &
                   itimestep = itimestep   , dt        = dt_pbl       , dx      = dx_p      , &
                   pblh      = hpbl_p      , br1       = br_p         , xland   = xland_p   , &
@@ -697,7 +705,7 @@
                   ol2d4ls   = ol4ls_p     , var2dss   = var2dss_p    , oc12dss   = conss_p , & 
                   oa2d1ss = oa1ss_p       , oa2d2ss   = oa2ss_p      , oa2d3ss   = oa3ss_p , & 
                   oa2d4ss = oa4ss_p       , ol2d1ss   = ol1ss_p      , ol2d2ss   = ol2ss_p , &
-                  ol2d3ss = ol3ss_p       , ol2d4ss   = ol4ss_p      ,                       &
+                  ol2d3ss = ol3ss_p       , ol2d4ss   = ol4ss_p      , zi      = z_p       , &
                   dusfc_ls = dusfc_ls_p , dvsfc_ls = dvsfc_ls_p  , dusfc_bl = dusfc_bl_p,    &
                   dvsfc_bl = dvsfc_bl_p , dusfc_ss = dusfc_ss_p  , dvsfc_ss = dvsfc_ss_p,    &
                   dusfc_fd = dusfc_fd_p , dvsfc_fd = dvsfc_fd_p  , dtaux3d_ls = dtaux3d_ls_p,      &
