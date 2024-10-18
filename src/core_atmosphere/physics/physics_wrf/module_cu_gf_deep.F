@@ -38,7 +38,9 @@ MODULE module_cu_gf_deep
 !> still 16 ensembles for clousres
      integer, parameter:: maxens3=16
 !>  which coldpool version to use
-     integer, parameter:: icoldpool=1
+     integer, parameter:: icoldpool=1  ! 1 = momentum impact; 2 = sf flx impact
+                                       ! 3 = both, (1) and (2)
+                                       ! 4 = full implement, not working yet
 
 !---meltglac-------------------------------------------------
  logical, parameter :: melt_glac      = .true.  !<- turn on/off ice phase/melting
@@ -450,7 +452,7 @@ contains
 ! coldpool
      real(kind=kind_phys),    dimension (its:ite) ::  beta_x,vcpool, wlpool,umcl,vmcl,slope_pool
      real(kind=kind_phys),    dimension (its:ite,kts:kte) ::  buoysrc,dellat_d
-     real(kind=kind_phys) :: aux,mcl_speed,total_dz,mx_buoy2,h_env
+     real(kind=kind_phys) :: aux,mcl_speed,total_dz,mx_buoy2,h_env,dpsum
 
 !$acc declare create(p_liq_ice,melting_layer,melting,buoysrc,beta_x,vcpool,wlpool,umcl,vmcl)
 
@@ -2304,23 +2306,44 @@ contains
           endif
       enddo
       !-----downdraft_cold_pool---------------
-      if (icoldpool > 0 .and. imid ==0) then
+      !if (icoldpool > 0 .and. imid ==0) then
+      if (icoldpool /= 0 .and. icoldpool /= 2 .and. imid ==0) then
       ! --- adding the gust front horizontal speed to the 2-d MCL wind
       ! --- only magnitude is augmented, direction is kept the same
       do i=its,itf
+          umcl(i)=0.
+          vmcl(i)=0.
+          dpsum=0.
           if(ierr(i) > 0 ) cycle
+           do k=kts+1,ktop(i)-1
+             trash =-(po_cup(i,k)-po_cup(i,kts))
+             if(trash.gt.300. .and. trash.lt.600.)then
+             dp=100.*(po_cup(i,k)-po_cup(i,k+1))
+             umcl(i)=umcl(i)+us(i,k)*dp
+             vmcl(i)=vmcl(i)+us(i,k)*dp
+             dpsum=dpsum+dp
+             endif
+           enddo
+           if(dpsum > 0.) then
+           umcl(i)=umcl(i)/dpsum
+           vmcl(i)=vmcl(i)/dpsum
            MCL_speed= sqrt( umcl(i)**2 + vmcl(i)**2 )
            aux =  (MCL_speed + vcpool(i))/(MCL_speed+1.e-6)
            umcl(i) = aux * umcl(i)
            vmcl(i) = aux * vmcl(i)
+           endif
       enddo
       ! --- gust front momentum impact
       do i=its,itf
-          if(ierr(i) > 0 ) cycle
-           do k=kts,kdet(i)
+          if(ierr(i) > 0 .or. vcpool(i) .le.0.) cycle
+             k=kts
              dp=100.*(po_cup(i,k)-po_cup(i,k+1))
-             outu(i,k) = outu(i,k) + edto(i)*zdo(i,k+1)*(umcl(i)-us(i,k))*g/dp*xmb(i)
-             outv(i,k) = outv(i,k) + edto(i)*zdo(i,k+1)*(vmcl(i)-vs(i,k))*g/dp*xmb(i)
+             outu(i,k) = outu(i,k) + edto(i)*zdo(i,k+1)*umcl(i)*g/dp*xmb(i)
+             outv(i,k) = outv(i,k) + edto(i)*zdo(i,k+1)*vmcl(i)*g/dp*xmb(i)
+                do k=kts+1,kdet(i)
+                  dp=100.*(po_cup(i,k)-po_cup(i,k+1))
+                  outu(i,k) = outu(i,k) + edto(i)*dd_massdetro(i,k)*umcl(i)*g/dp*xmb(i)
+                  outv(i,k) = outv(i,k) + edto(i)*dd_massdetro(i,k)*vmcl(i)*g/dp*xmb(i)
            enddo
       enddo
      endif ! icoldpool
