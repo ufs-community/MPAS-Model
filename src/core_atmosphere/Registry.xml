@@ -3566,11 +3566,11 @@
 
                 <var name="taod5502d" type="real" dimensions="nCells Time" units="unitless"
                      description="total aerosol optical depth at 550 nm from the Thompson cloud microphysics"
-                     packages="mp_thompson_aers_in;mp_tempo_in"/>
+                     packages="mp_thompson_aers_in;tempo_aerosolaware_in"/>
 
                 <var name="taod5503d" type="real" dimensions="nVertLevels nCells Time" units="unitless"
                      description="aerosol optical depth at 550 nm from the Thompson cloud microphysics"
-                     packages="mp_thompson_aers_in;mp_tempo_in"/>
+                     packages="mp_thompson_aers_in;tempo_aerosolaware_in"/>
 
 
                 <!-- ================================================================================================== -->
