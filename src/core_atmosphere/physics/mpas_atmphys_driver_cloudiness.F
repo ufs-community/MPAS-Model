@@ -88,12 +88,12 @@
        if(.not.allocated(qcbl_p)) allocate(qcbl_p(ims:ime,kms:kme,jms:jme))
     case default
 
-    if (convection_scheme=="cu_grell_freitas") then
-       if(.not.allocated(qicu_p)) allocate(qicu_p(ims:ime,kms:kme,jms:jme))
-       if(.not.allocated(qccu_p)) allocate(qccu_p(ims:ime,kms:kme,jms:jme))
-    endif
-
  end select cld_fraction_select
+
+ if (convection_scheme=="cu_grell_freitas") then
+    if(.not.allocated(qicu_p)) allocate(qicu_p(ims:ime,kms:kme,jms:jme))
+    if(.not.allocated(qccu_p)) allocate(qccu_p(ims:ime,kms:kme,jms:jme))
+ endif
 
  end subroutine allocate_cloudiness
 
@@ -237,25 +237,24 @@
 
     case default
 
-    if (convection_scheme=="cu_grell_freitas") then
-       call mpas_pool_get_array(diag_physics,'cldfrac_cu',cldfrac_cu)
-       call mpas_pool_get_array(diag_physics,'qi_cu',qi_cu)
-       call mpas_pool_get_array(diag_physics,'qc_cu',qc_cu)
-       do j = jts,jte
-       do k = kts,kte
-       do i = its,ite
-          if (cldfrac_cu(k,i) .gt. 0.001) then
-             cldfrac_p(i,k,j) = min(1._RKIND,cldfrac_p(i,k,j) + cldfrac_cu(k,i))
-          endif
-          qccu_p(i,k,j) = qc_cu(k,i)
-          qicu_p(i,k,j) = qi_cu(k,i)
-       enddo
-       enddo
-       enddo
-    endif
-
  end select cld_fraction_select  
  
+ if (convection_scheme=="cu_grell_freitas") then
+    call mpas_pool_get_array(diag_physics,'cldfrac_cu',cldfrac_cu)
+    call mpas_pool_get_array(diag_physics,'qi_cu',qi_cu)
+    call mpas_pool_get_array(diag_physics,'qc_cu',qc_cu)
+    do j = jts,jte
+    do k = kts,kte
+    do i = its,ite
+       if (cldfrac_cu(k,i) .gt. 0.001) then
+          cldfrac_p(i,k,j) = min(1._RKIND,cldfrac_p(i,k,j) + cldfrac_cu(k,i))
+       endif
+       qccu_p(i,k,j) = qc_cu(k,i)
+       qicu_p(i,k,j) = qi_cu(k,i)
+    enddo
+    enddo
+    enddo
+ endif
 
  end subroutine cloudiness_from_MPAS
 
@@ -352,15 +351,15 @@
 
     case default
 
-    if (convection_scheme=="cu_grell_freitas") then
-       call mpas_timer_start('cal_gfcld')
-       call cal_gfcld(cldfrac_p , qcrad_p   , qirad_p    , &
-                      qccu_p    , qicu_p    ,              &
-                      its,  ite , jts , jte , kts , kte  )
-      call mpas_timer_stop('cal_gfcld')
-    endif
-
  end select cld_fraction_select
+
+ if (convection_scheme=="cu_grell_freitas") then
+    call mpas_timer_start('cal_gfcld')
+    call cal_gfcld(cldfrac_p , qcrad_p   , qirad_p    , &
+                   qccu_p    , qicu_p    ,              &
+                   its,  ite , jts , jte , kts , kte  )
+    call mpas_timer_stop('cal_gfcld')
+ endif
 
 !copy local arrays to MPAS grid:
  call cloudiness_to_MPAS(diag_physics,its,ite)

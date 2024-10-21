@@ -4353,6 +4353,8 @@ module init_atm_cases
       call mpas_pool_get_array(mesh, 'cf2', cf2)
       call mpas_pool_get_array(mesh, 'cf3', cf3)
       call mpas_pool_get_array(mesh, 'landmask', landmask)
+      call mpas_pool_get_array(mesh, 'shdmin', shdmin)
+      call mpas_pool_get_array(mesh, 'shdmax', shdmax)
 
       call mpas_pool_get_array(fg, 'dzs_fg', dzs_fg)
       call mpas_pool_get_array(fg, 'zs_fg', zs_fg)
@@ -4369,8 +4371,6 @@ module init_atm_cases
       call mpas_pool_get_array(fg, 'canwat', canwat)
       call mpas_pool_get_array(fg, 'vegfra', vegfra)
       call mpas_pool_get_array(fg, 'greenfrac', greenfrac)
-      call mpas_pool_get_array(fg, 'shdmin', shdmin)
-      call mpas_pool_get_array(fg, 'shdmax', shdmax)
       call mpas_pool_get_array(fg, 'u', u_fg)
       call mpas_pool_get_array(fg, 'v', v_fg)
       call mpas_pool_get_array(fg, 'z', z_fg)
@@ -6186,7 +6186,7 @@ module init_atm_cases
                nInterpPoints = nCells
                latPoints => latCell
                lonPoints => lonCell
-               call mpas_pool_get_array(fg, 'shdmin', destField1d)
+               call mpas_pool_get_array(mesh, 'shdmin', destField1d)
                ndims = 1
 
             else if (trim(field % field) == 'SHDMAX') then
@@ -6202,7 +6202,7 @@ module init_atm_cases
                nInterpPoints = nCells
                latPoints => latCell
                lonPoints => lonCell
-               call mpas_pool_get_array(fg, 'shdmax', destField1d)
+               call mpas_pool_get_array(mesh, 'shdmax', destField1d)
                ndims = 1
 
             else if (trim(field % field) == 'SEAICE') then
@@ -9212,6 +9212,8 @@ call mpas_log_write('Done with soil consistency check')
       call mpas_pool_get_array(mesh, 'landmask', landmask)
       call mpas_pool_get_array(mesh, 'lu_index', lu_index)
       call mpas_pool_get_array(mesh, 'soilcat_top', soilcat_top)
+      call mpas_pool_get_array(mesh, 'shdmin', shdmin)
+      call mpas_pool_get_array(mesh, 'shdmax', shdmax)
       call mpas_pool_get_array(mesh, 'snoalb', snoalb)
       call mpas_pool_get_array(mesh, 'albedo12m', albedo12m)
       call mpas_pool_get_array(mesh, 'greenfrac', greenfrac)
@@ -9221,8 +9223,6 @@ call mpas_log_write('Done with soil consistency check')
 
       call mpas_pool_get_array(fg, 'xice', xice)
       call mpas_pool_get_array(fg, 'vegfra', vegfra)
-      call mpas_pool_get_array(fg, 'shdmin', shdmin)
-      call mpas_pool_get_array(fg, 'shdmax', shdmax)
       call mpas_pool_get_array(fg, 'sfc_albbck', sfc_albbck)
       call mpas_pool_get_array(fg, 'xland', xland)
       call mpas_pool_get_array(fg, 'seaice', seaice)
