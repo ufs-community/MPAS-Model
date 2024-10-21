@@ -1267,6 +1267,9 @@
                         <var name="dvsfc_ss"/>
                         <var name="dusfc_fd"/>
                         <var name="dvsfc_fd"/>
+                        <var name="dudt_ngw"/>
+                        <var name="dvdt_ngw"/>
+                        <var name="dtdt_ngw"/>
                 </stream>
 
 	</streams>
@@ -3153,7 +3156,7 @@
 
 
                 <!-- ================================================================================================== -->
-                <!-- ... PARAMETERIZATION OF GRAVITY WAVE DRAG OVER OROGRAPHY:                                          -->
+                <!-- ... PARAMETERIZATION OF NON-STATIONARY (NON-OROGRAPHIC) GRAVITY WAVE:                              -->
                 <!-- ================================================================================================== -->
 
                 <var name="jindx1_tau" type="integer" dimensions="nCells" units="unitless"
@@ -3167,6 +3170,15 @@
 
                 <var name="ddy_j2tau" type="real" dimensions="nCells" units="unitless"
                      description="latitude interpolation weight for absolute momentum flux due to nonorographic gravity wave drag"/>
+
+                <var name="dudt_ngw" type="real" dimensions="nVertLevels nCells Time" units="m s^{-2}"
+                     description="u-momentum tendency due to non-stationary gravity wave drag"/>
+
+                <var name="dvdt_ngw" type="real" dimensions="nVertLevels nCells Time" units="m s^{-2}"
+                     description="v-momentum tendency due to non-stationary gravity wave drag"/>
+
+                <var name="dtdt_ngw" type="real" dimensions="nVertLevels nCells Time" units="K s^{-1}"
+                     description="temperature tendency due to non-stationary gravity wave drag"/>
 
 
                 <!-- ================================================================================================== -->

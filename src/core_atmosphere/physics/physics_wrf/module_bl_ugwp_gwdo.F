@@ -21,7 +21,7 @@
                  dusfc_ls,dvsfc_ls,dusfc_bl,dvsfc_bl,dusfc_ss,dvsfc_ss,       &
                  dusfc_fd,dvsfc_fd,ugwp_diags,ngw_scheme,xlatd,               &
                  jindx1_tau,jindx2_tau,ddy_j1tau,ddy_j2tau,r_DoY,             &
-                 raincv,rainncv,                                              &
+                 raincv,rainncv,dudt_ngw,dvdt_ngw,dtdt_ngw,                   &
                  var2dls,oc12dls,oa2d1ls,oa2d2ls,oa2d3ls,oa2d4ls,ol2d1ls,     &
                  ol2d2ls,ol2d3ls,ol2d4ls,var2dss,oc12dss,oa2d1ss,oa2d2ss,     &
                  oa2d3ss,oa2d4ss,ol2d1ss,ol2d2ss,ol2d3ss,ol2d4ss,             &
@@ -153,6 +153,9 @@
                            dtaux3d_ls,dtaux3d_bl,dtaux3d_ss,dtaux3d_fd, &
                            dtauy3d_ls,dtauy3d_bl,dtauy3d_ss,dtauy3d_fd
 
+ real(kind=kind_phys),intent(out),dimension(:,:,:),optional::           &
+                           dudt_ngw,dvdt_ngw,dtdt_ngw
+
 !--- inout arguments:
  real(kind=kind_phys),intent(inout),dimension(ims:ime,kms:kme,jms:jme):: &
                            rublten,rvblten,rthblten
@@ -190,6 +193,8 @@
  real(kind=kind_phys),dimension(:,:),allocatable:: &
     dtaux3d_ls_hv,dtauy3d_ls_hv,dtaux3d_bl_hv,dtauy3d_bl_hv,  &
     dtaux3d_ss_hv,dtauy3d_ss_hv,dtaux3d_fd_hv,dtauy3d_fd_hv
+ real(kind=kind_phys),dimension(:,:),allocatable:: &
+    dudt_ngw_hv,dvdt_ngw_hv,dtdt_ngw_hv
 
  real(kind=kind_phys),dimension(its:ite,kms:kme):: &
     p3di_hv,zi_hv
@@ -285,7 +290,7 @@
        enddo
     endif
 
-    ! Allocate ugwp_diags variables if needed
+    ! Allocate ugwp_diags and/or variables if needed
     if (ugwp_diags) then
        allocate (dusfc_ls_hv(its:ite))
        allocate (dvsfc_ls_hv(its:ite))
@@ -303,6 +308,11 @@
        allocate (dtauy3d_ss_hv(its:ite,kts:kte))
        allocate (dtaux3d_fd_hv(its:ite,kts:kte))
        allocate (dtauy3d_fd_hv(its:ite,kts:kte))
+       if (ngw_scheme) then
+          allocate (dudt_ngw_hv(its:ite,kts:kte))
+          allocate (dvdt_ngw_hv(its:ite,kts:kte))
+          allocate (dtdt_ngw_hv(its:ite,kts:kte))
+       endif
     endif
 
     call bl_ugwp_run(sina=sina_hv,cosa=cosa_hv                &
@@ -346,11 +356,13 @@
                           ,ddy_j1tau=ddy_j1tau_hv,ddy_j2tau=ddy_j2tau_hv       &
                           ,jindx1_tau=jindx1_tau_hv,jindx2_tau=jindx2_tau_hv   &
                           ,r_DoY=r_DoY,kdt=itimestep,dtp=dt                    &
-                          ,ugrs=u3d_hv,vgrs=v3d_hv   &
+                          ,ugrs=u3d_hv,vgrs=v3d_hv                             &
                           ,tgrs=t3d_hv,q1=qv3d_hv,prsl=p3d_hv,prslk=pi3d_hv    &
-                          ,prsi=p3di_hv,zl=z_hv,zi=zi_hv         &
-                          ,rublten=rublten_hv,rvblten=rvblten_hv,rthblten=rthblten_hv    &
-                          ,its=its,ite=ite,levs=kte)
+                          ,prsi=p3di_hv,zl=z_hv,zi=zi_hv                       &
+                          ,rublten=rublten_hv,rvblten=rvblten_hv               &
+                          ,rthblten=rthblten_hv,ugwp_diags=ugwp_diags          &
+                          ,dudt_ngw=dudt_ngw_hv,dvdt_ngw=dvdt_ngw_hv           &
+                          ,dtdt_ngw=dtdt_ngw_hv,its=its,ite=ite,levs=kte)
     endif
 
 
@@ -381,6 +393,15 @@
           enddo
        enddo
     endif
+    if (ugwp_diags.and.ngw_scheme) then
+       do k = kts,kte
+          do i = its,ite
+             dudt_ngw(i,k,j) = dudt_ngw_hv(i,k)
+             dvdt_ngw(i,k,j) = dvdt_ngw_hv(i,k)
+             dtdt_ngw(i,k,j) = dtdt_ngw_hv(i,k)
+          enddo
+       enddo
+    endif
 
     !  2d:
     do i = its,ite
@@ -400,7 +421,7 @@
        enddo
     endif
 
-    ! Deallocate ugwp_diags variables if used
+    ! Deallocate ugwp_diags and/or ngw_scheme variables if used
     if (ugwp_diags) then
        deallocate (dusfc_ls_hv)
        deallocate (dvsfc_ls_hv)
@@ -418,6 +439,11 @@
        deallocate (dtauy3d_ss_hv)
        deallocate (dtaux3d_fd_hv)
        deallocate (dtauy3d_fd_hv)
+       if (ngw_scheme) then
+          deallocate (dudt_ngw_hv)
+          deallocate (dvdt_ngw_hv)
+          deallocate (dtdt_ngw_hv)
+       endif
     endif
     if (ngw_scheme) then
        deallocate (xlatd_hv     )

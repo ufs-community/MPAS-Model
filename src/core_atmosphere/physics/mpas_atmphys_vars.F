@@ -539,7 +539,7 @@
     dtaux3d_fd_p,        &!turb orog form drag u-tendency                                                     [m s-2]
     dtauy3d_fd_p          !turb orog form drag u-tendency                                                     [m s-2]
 
-!... variables for UGWP non-stationarly gravity wave (NGW) drag:
+!... variables for UGWP non-stationary gravity wave (NGW) drag:
 
  integer,dimension(:,:),allocatable:: &
     jindx1_tau_p,        &!lower latitude index of NGW momentum flux for interpolation                         [-] 
@@ -548,6 +548,11 @@
  real(kind=RKIND),dimension(:,:),allocatable:: &
     ddy_j1tau_p,         &!latitude interpolation weight complement for NGW momentum flux                      [-]
     ddy_j2tau_p           !latitude interpolation weight for NGW momentum flux                                 [-]
+
+ real(kind=RKIND),dimension(:,:,:),allocatable:: &
+    dudt_ngw_p,          &!u-momentum tendency due to non-stationary gravity wave drag                        [m s-2]
+    dvdt_ngw_p,          &!v-momentum tendency due to non-stationary gravity wave drag                        [m s-2]
+    dtdt_ngw_p            !temperature tendency due to non-stationary gravity wave drag                       [K s-1]
 
 !=================================================================================================================
 !... variables and arrays related to parameterization of surface layer:

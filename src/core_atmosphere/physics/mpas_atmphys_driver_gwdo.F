@@ -152,6 +152,11 @@
        if(.not.allocated(dtauy3d_ss_p)) allocate(dtauy3d_ss_p(ims:ime,kms:kme,jms:jme))
        if(.not.allocated(dtaux3d_fd_p)) allocate(dtaux3d_fd_p(ims:ime,kms:kme,jms:jme))
        if(.not.allocated(dtauy3d_fd_p)) allocate(dtauy3d_fd_p(ims:ime,kms:kme,jms:jme))
+       if (ngw_scheme) then
+          if(.not.allocated(dudt_ngw_p)) allocate(dudt_ngw_p(ims:ime,kms:kme,jms:jme))
+          if(.not.allocated(dvdt_ngw_p)) allocate(dvdt_ngw_p(ims:ime,kms:kme,jms:jme))
+          if(.not.allocated(dtdt_ngw_p)) allocate(dtdt_ngw_p(ims:ime,kms:kme,jms:jme))
+       endif
     endif
     if (ngw_scheme) then
        if(.not.allocated(xlat_p)) allocate(xlat_p(ims:ime,jms:jme))
@@ -252,6 +257,11 @@
        if(allocated(dtauy3d_ss_p)) deallocate(dtauy3d_ss_p)
        if(allocated(dtaux3d_fd_p)) deallocate(dtaux3d_fd_p)
        if(allocated(dtauy3d_fd_p)) deallocate(dtauy3d_fd_p)
+       if (ngw_scheme) then
+          if(allocated(dudt_ngw_p)) deallocate(dudt_ngw_p)
+          if(allocated(dvdt_ngw_p)) deallocate(dvdt_ngw_p)
+          if(allocated(dtdt_ngw_p)) deallocate(dtdt_ngw_p)
+       endif
     endif
     if (ngw_scheme) then
        if(allocated(xlat_p)) deallocate(xlat_p)
@@ -305,6 +315,7 @@
  real(kind=RKIND),dimension(:),pointer  :: raincv,rainncv
  real(kind=RKIND),dimension(:,:),pointer:: dtaux3d_ls,dtauy3d_ls,dtaux3d_bl,dtauy3d_bl, &
                                            dtaux3d_ss,dtauy3d_ss,dtaux3d_fd,dtauy3d_fd
+ real(kind=RKIND),dimension(:,:),pointer:: dudt_ngw,dvdt_ngw,dtdt_ngw
 
 !-----------------------------------------------------------------------------------------------------------------
 
@@ -438,6 +449,20 @@
          enddo
          enddo
       endif
+      if (ugwp_diags.and.ngw_scheme) then
+         call mpas_pool_get_array(diag_physics,'dudt_ngw',dudt_ngw)
+         call mpas_pool_get_array(diag_physics,'dvdt_ngw',dvdt_ngw)
+         call mpas_pool_get_array(diag_physics,'dtdt_ngw',dtdt_ngw)
+         do j = jts,jte
+         do k = kts,kte
+         do i = its,ite
+            dudt_ngw_p(i,k,j) = dudt_ngw(k,i)
+            dvdt_ngw_p(i,k,j) = dvdt_ngw(k,i)
+            dtdt_ngw_p(i,k,j) = dtdt_ngw(k,i)
+         enddo
+         enddo
+         enddo
+      endif
       if (ngw_scheme) then
          call mpas_pool_get_array(mesh,'latCell',latCell)
          call mpas_pool_get_array(diag_physics,'raincv',raincv)
@@ -513,7 +538,7 @@
 !local variables:
  integer:: i,k,j
  character(len=StrKIND),pointer:: gwdo_scheme
- logical,pointer:: ugwp_diags
+ logical,pointer:: ugwp_diags,ngw_scheme
 
 !local pointers:
  real(kind=RKIND),dimension(:),pointer  :: dusfcg,dvsfcg
@@ -528,11 +553,13 @@
                                            dusfc_ss,dvsfc_ss,dusfc_fd,dvsfc_fd
  real(kind=RKIND),dimension(:,:),pointer:: dtaux3d_ls,dtauy3d_ls,dtaux3d_bl,dtauy3d_bl, &
                                            dtaux3d_ss,dtauy3d_ss,dtaux3d_fd,dtauy3d_fd
+ real(kind=RKIND),dimension(:,:),pointer:: dudt_ngw,dvdt_ngw,dtdt_ngw
 
 !-----------------------------------------------------------------------------------------------------------------
 
  call mpas_pool_get_config(configs,'config_gwdo_scheme',gwdo_scheme)
  call mpas_pool_get_config(configs,'config_ugwp_diags',ugwp_diags)
+ call mpas_pool_get_config(configs,'config_ngw_scheme',ngw_scheme)
  call mpas_pool_get_array(diag_physics,'dusfcg'  ,dusfcg  )
  call mpas_pool_get_array(diag_physics,'dvsfcg'  ,dvsfcg  )
  call mpas_pool_get_array(diag_physics,'dtaux3d' ,dtaux3d )
@@ -590,6 +617,20 @@
          enddo
          enddo
          enddo
+         if (ngw_scheme) then
+            call mpas_pool_get_array(diag_physics,'dudt_ngw' ,dudt_ngw )
+            call mpas_pool_get_array(diag_physics,'dvdt_ngw' ,dvdt_ngw )
+            call mpas_pool_get_array(diag_physics,'dtdt_ngw' ,dtdt_ngw )
+            do j = jts,jte
+            do k = kts,kte
+            do i = its,ite
+               dudt_ngw(k,i) = dudt_ngw_p(i,k,j)
+               dvdt_ngw(k,i) = dvdt_ngw_p(i,k,j)
+               dtdt_ngw(k,i) = dtdt_ngw_p(i,k,j)
+            enddo
+            enddo
+            enddo
+         endif
       endif
 
    case default
@@ -715,6 +756,7 @@
                   xlatd = xlat_p, jindx1_tau = jindx1_tau_p,  jindx2_tau = jindx2_tau_p,     &
                   ddy_j1tau = ddy_j1tau_p  , ddy_j2tau = ddy_j2tau_p, r_DoY = curr_julday,   &
                   raincv = raincv_p     , rainncv = rainncv_p    ,                           &
+                  dudt_ngw = dudt_ngw_p , dvdt_ngw = dvdt_ngw_p  , dtdt_ngw = dtdt_ngw_p ,   &
                   errmsg    = errmsg    , errflg    = errflg     ,                           &
                   ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde ,    &
                   ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme ,    &

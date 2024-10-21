@@ -428,7 +428,7 @@
 
 !initialization of non-stationary gravity wave drag
  if(trim(gwdo_scheme).eq.'bl_ugwp_gwdo' .and. ngw_scheme) then
-    call mpas_log_write('Ahoj svete:  Initializing non-stationary GWD scheme',masterOnly=.true.)
+    call mpas_log_write('Initializing non-stationary GWD scheme',masterOnly=.true.)
     call ugwpv1_ngw_init(latCell,nVertLevels,config_dt,rdzw,dzu,   &
                          jindx1_tau,jindx2_tau,ddy_j1tau,ddy_j2tau)
  endif
