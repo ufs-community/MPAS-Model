@@ -321,10 +321,10 @@
              if(allocated(taod5503d_p)) deallocate(taod5503d_p)
           case("mp_tempo")
              if	(config_tempo_aerosolaware) then
-                if(.not.allocated(ht_p)       ) deallocate(ht_p       )
-                if(.not.allocated(taer_type_p)) deallocate(taer_type_p)
-                if(.not.allocated(taod5502d_p)) deallocate(taod5502d_p)
-                if(.not.allocated(taod5503d_p)) deallocate(taod5503d_p)
+                if(allocated(ht_p)       ) deallocate(ht_p       )
+                if(allocated(taer_type_p)) deallocate(taer_type_p)
+                if(allocated(taod5502d_p)) deallocate(taod5502d_p)
+                if(allocated(taod5503d_p)) deallocate(taod5503d_p)
              endif
           case default
        end select aerosol_select
