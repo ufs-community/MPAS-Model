@@ -117,11 +117,11 @@
  call mpas_pool_get_array(mesh, 'landmask', landmask)
  call mpas_pool_get_array(mesh, 'albedo12m', albedo12m)
  call mpas_pool_get_array(mesh, 'greenfrac', greenfrac)
+ call mpas_pool_get_array(mesh, 'shdmin', shdmin)
+ call mpas_pool_get_array(mesh, 'shdmax', shdmax)
 
  call mpas_pool_get_array(fg, 'sfc_albbck', sfc_albbck)
  call mpas_pool_get_array(fg, 'vegfra', vegfra)
- call mpas_pool_get_array(fg, 'shdmin', shdmin)
- call mpas_pool_get_array(fg, 'shdmax', shdmax)
  call mpas_pool_get_array(fg, 'snow', snow)
  call mpas_pool_get_array(fg, 'snowc', snowc)
  call mpas_pool_get_array(fg, 'snowh', snowh)
