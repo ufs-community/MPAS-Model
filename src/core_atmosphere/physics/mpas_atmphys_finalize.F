@@ -40,18 +40,20 @@
  type(mpas_pool_type),intent(in):: configs
 
 !local variables and pointers:
- character(len=StrKIND),pointer:: config_microp_scheme
+ character(len=StrKIND),pointer:: config_microp_scheme,config_gwdo_scheme
  logical,pointer:: config_ngw_scheme
 
 !----------------------------------------------------------------------------------------------------------------- 
 
  call mpas_pool_get_config(configs,'config_microp_scheme',config_microp_scheme)
+ call mpas_pool_get_config(configs,'config_gwdo_scheme',config_gwdo_scheme)
  call mpas_pool_get_config(configs,'config_ngw_scheme',config_ngw_scheme)
 
  if(trim(config_microp_scheme) == 'mp_thompson') &
     call mp_thompson_deallocate
 
- if(config_ngw_scheme) call ugwpv1_ngw_deallocate
+ if((trim(config_gwdo_scheme) == 'bl_ugwp_gwdo').and.config_ngw_scheme) &
+    call ugwpv1_ngw_deallocate
 
  end subroutine atmphys_finalize
 
