@@ -64,6 +64,8 @@
 !   Laura D. Fowler (laura@ucar.edu) / 2019-01-30.
 ! * added the flags errmsg and errflg in the call to subroutine gwdo for compliance with the CCPP framework.
 !   Laura D. Fowler (laura@ucar.edu) / 2023-05-15.
+! * added the NOAA UFS unified gravity wave drag scheme
+!   Michael D. Toy (michael.toy@noaa.gov) / 2024-10-21
 
 
  contains

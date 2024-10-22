@@ -10,6 +10,7 @@
  use mpas_pool_routines
 
  use module_mp_thompson
+ use cires_ugwpv1_module
 
  implicit none
  private
@@ -24,7 +25,9 @@
 !   * added subroutine mp_thompson_deallocate which deallocate arrays used in the initialization of the Thompson
 !     cloud microphysics scheme. these arrays contain coefficients for collection,collision,freezing, ...
 !     Laura D. Fowler (laura@ucar.edu) / 2016-03-22.
-
+!   * added subroutine ugwpv1_ngw_deallocate which deallocates arrays used in the initialization of the
+!     non-stationary gravity wave (NGW) scheme
+!     Michael D. toy (michael.toy@noaa.gov) / 2024-10-21
 
  contains
 
@@ -38,13 +41,17 @@
 
 !local variables and pointers:
  character(len=StrKIND),pointer:: config_microp_scheme
+ logical,pointer:: config_ngw_scheme
 
 !----------------------------------------------------------------------------------------------------------------- 
 
  call mpas_pool_get_config(configs,'config_microp_scheme',config_microp_scheme)
+ call mpas_pool_get_config(configs,'config_ngw_scheme',config_ngw_scheme)
 
  if(trim(config_microp_scheme) == 'mp_thompson') &
     call mp_thompson_deallocate
+
+ if(config_ngw_scheme) call ugwpv1_ngw_deallocate
 
  end subroutine atmphys_finalize
 
@@ -91,6 +98,16 @@
 !call mpas_log_write('--- end subroutine mp_thompson_deallocate')
 
  end subroutine mp_thompson_deallocate
+
+
+!=================================================================================================================
+ subroutine ugwpv1_ngw_deallocate
+!=================================================================================================================
+
+ call cires_ugwp_dealloc
+
+ end subroutine ugwpv1_ngw_deallocate
+
 
 !=================================================================================================================
  end module mpas_atmphys_finalize
