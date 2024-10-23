@@ -296,7 +296,7 @@
 
 !local variables:
  integer:: i,k,j
- character(len=StrKIND),pointer:: gwdo_scheme
+ character(len=StrKIND),pointer:: gwdo_scheme,convection_scheme,microp_scheme
  logical,pointer:: ugwp_diags,ngw_scheme
  real(kind=RKIND),parameter :: rad2deg = 180./3.1415926 
 
@@ -325,6 +325,8 @@
  call mpas_pool_get_config(configs,'config_gwdo_scheme',gwdo_scheme)
  call mpas_pool_get_config(configs,'config_ugwp_diags',ugwp_diags)
  call mpas_pool_get_config(configs,'config_ngw_scheme',ngw_scheme)
+ call mpas_pool_get_config(configs,'config_convection_scheme',convection_scheme)
+ call mpas_pool_get_config(configs,'config_microp_scheme',microp_scheme)
  call mpas_pool_get_array(mesh,'meshDensity',meshDensity)
 
 
@@ -467,8 +469,10 @@
       endif
       if (ngw_scheme) then
          call mpas_pool_get_array(mesh,'latCell',latCell)
-         call mpas_pool_get_array(diag_physics,'raincv',raincv)
-         call mpas_pool_get_array(diag_physics,'rainncv',rainncv)
+         if(trim(convection_scheme) /= "off") &
+            call mpas_pool_get_array(diag_physics,'raincv',raincv)
+         if(trim(microp_scheme) /= "off") &
+            call mpas_pool_get_array(diag_physics,'rainncv',rainncv)
          call mpas_pool_get_array(diag_physics,'jindx1_tau',jindx1_tau)
          call mpas_pool_get_array(diag_physics,'jindx2_tau',jindx2_tau)
          call mpas_pool_get_array(diag_physics,'ddy_j1tau', ddy_j1tau)
@@ -476,14 +480,32 @@
          do j = jts,jte
          do i = its,ite
             xlat_p(i,j) = latCell(i)*rad2deg   ! latitude in degrees
-            raincv_p(i,j) = raincv(i)
-            rainncv_p(i,j) = rainncv(i)
             jindx1_tau_p(i,j) = jindx1_tau(i)
             jindx2_tau_p(i,j) = jindx2_tau(i)
             ddy_j1tau_p(i,j)  = ddy_j1tau(i)
             ddy_j2tau_p(i,j)  = ddy_j2tau(i)
          enddo
          enddo
+         ! Treat rain rates conditionally
+         if(trim(convection_scheme) == "off") then
+            raincv_p(:,:) = 0._RKIND
+         else
+            do j = jts,jte
+            do i = its,ite
+               raincv_p(i,j) = raincv(i)
+            enddo
+            enddo
+         endif
+         if(trim(microp_scheme) == "off") then
+            rainncv_p(:,:) = 0._RKIND
+         else
+            do j = jts,jte
+            do i = its,ite
+               rainncv_p(i,j) = rainncv(i)
+            enddo
+            enddo
+         endif
+
       endif
 
    case default
