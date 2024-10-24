@@ -1484,11 +1484,13 @@ MODULE init_atm_llxy
       i = deltalon/proj%loninc
       j = deltalat/proj%latinc
 
+!LJR -- moved this block above the check for i value as done in WPS; incorrect otherwise
+      i = i + proj%knowni
+      j = j + proj%knownj
+
       if (i <= 0.)              i = i + 360./proj%loninc
       if (i > 360./proj%loninc) i = i - 360./proj%loninc
 
-      i = i + proj%knowni
-      j = j + proj%knownj
 
    END SUBROUTINE llij_cyl
 
@@ -1550,6 +1552,7 @@ MODULE init_atm_llxy
 
       if (abs(proj%lat0) /= 90. .and. .not.global_domain) then
          call rotate_coords(proj%lat1,proj%lon1,comp_lat,comp_lon,proj%lat0,proj%lon0,proj%stdlon,-1)
+         comp_lon = comp_lon + proj%stdlon
          proj%lat1 = comp_lat
          proj%lon1 = comp_lon
       end if
@@ -1572,6 +1575,7 @@ MODULE init_atm_llxy
       ! Convert geographic to computational lat/lon
       if (abs(proj%lat0) /= 90.) then
          call rotate_coords(lat,lon,comp_lat,comp_lon,proj%lat0,proj%lon0,proj%stdlon,-1)
+         comp_lon = comp_lon + proj%stdlon
       else
          comp_lat = lat
          comp_lon = lon
@@ -1600,6 +1604,7 @@ MODULE init_atm_llxy
 
       ! Convert computational to geographic lat/lon
       if (abs(proj%lat0) /= 90.) then
+         comp_lon = comp_lon - proj%stdlon
          call rotate_coords(comp_lat,comp_lon,lat,lon,proj%lat0,proj%lon0,proj%stdlon,1)
       else
          lat = comp_lat

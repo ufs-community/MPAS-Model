@@ -88,7 +88,7 @@
  real(kind=RKIND),dimension(:,:),pointer:: albedo12m
 
  real(kind=RKIND),dimension(:),pointer:: seaice,xice,xland
- real(kind=RKIND),dimension(:),pointer:: vegfra,shdmin,shdmax
+ real(kind=RKIND),dimension(:),pointer:: vegfra,shdmin,shdmax,canwat
  real(kind=RKIND),dimension(:),pointer:: snow,snowc,snowh
  real(kind=RKIND),dimension(:,:),pointer:: greenfrac
 
@@ -97,6 +97,8 @@
  character (len=StrKIND), pointer :: config_sfc_prefix
  character (len=StrKIND), pointer :: config_start_time
  logical, pointer :: config_input_sst
+
+ integer, pointer :: nvegopt
  
 !temporary:
  integer:: iSoil,nSoilLevels
@@ -109,6 +111,7 @@
  call mpas_pool_get_config(configs, 'config_start_time', config_start_time)
  call mpas_pool_get_config(configs, 'config_input_sst', config_input_sst)
 
+ call mpas_pool_get_dimension(mesh, 'nVegOpt', nvegopt)
  call mpas_pool_get_dimension(dims, 'nCellsSolve', nCellsSolve)
 
  call mpas_pool_get_array(mesh, 'landmask', landmask)
@@ -122,6 +125,7 @@
  call mpas_pool_get_array(fg, 'snow', snow)
  call mpas_pool_get_array(fg, 'snowc', snowc)
  call mpas_pool_get_array(fg, 'snowh', snowh)
+ call mpas_pool_get_array(fg, 'canwat', canwat)
  call mpas_pool_get_array(fg, 'skintemp', skintemp)
  call mpas_pool_get_array(fg, 'sst', sst)
  call mpas_pool_get_array(fg, 'seaice', seaice)
@@ -157,13 +161,16 @@
     if(landmask(iCell) .eq. 0) sfc_albbck(iCell) = 0.08_RKIND
  enddo
 
+ if(nvegopt == 1 .or. (minval(vegfra) == 0.0 .and. maxval(vegfra) == 0.0) ) then ! clim from static
 !initialization of the green-ness (vegetation) fraction: interpolation of the monthly values to
 !the initial date. get the min/max for each cell for the monthly green-ness fraction:
- initial_date = trim(config_start_time)
- call monthly_interp_to_date(nCellsSolve,initial_date,greenfrac,vegfra)
+    initial_date = trim(config_start_time)
+    call monthly_interp_to_date(nCellsSolve,initial_date,greenfrac,vegfra)
 
 !calculates the maximum and minimum green-ness (vegetation) fraction:
- call monthly_min_max(nCellsSolve,greenfrac,shdmin,shdmax)
+    call monthly_min_max(nCellsSolve,greenfrac,shdmin,shdmax)
+    if (nvegopt == 2) call mpas_log_write('--- WARNING: nevgopt=2, but there is no VEGFRA in the RAP/RRFS grib file')
+ endif
 
 !initialization of the flag indicating the presence of snow (0 or 1) and of the snow depth
 !(m) as functions of the input snow water content (kg/m2). we use a 5:1 ratio from liquid
@@ -174,8 +181,11 @@
     else
        snowc(iCell) = 0._RKIND
     endif
-    snowh(iCell) = snow(iCell) * 5.0_RKIND / 1000._RKIND
  enddo
+
+ if (minval(snowh) == 0.0 .and. maxval(snowh) == 0.0) then
+    snowh = snow * 5.0_RKIND / 1000._RKIND
+ endif ! non-defined snow depth
 
 !initialization of soil layers properties:
  call init_soil_layers(mesh,fg,dminfo,dims,configs)
@@ -937,6 +947,7 @@ end subroutine init_soil_layers_properties
  logical, pointer :: config_frac_seaice
  character(len=StrKIND),pointer:: config_landuse_data
  integer,pointer:: isice_lu
+ integer,pointer:: nvegopt
 
 !note that this threshold is also defined in module_physics_vars.F.It is defined here to avoid
 !adding "use module_physics_vars" since this subroutine is only used for the initialization of
@@ -953,6 +964,7 @@ end subroutine init_soil_layers_properties
 
  call mpas_pool_get_dimension(dims, 'nCellsSolve', nCellsSolve)
  call mpas_pool_get_dimension(dims, 'nSoilLevels', nSoilLevels)
+ call mpas_pool_get_dimension(dims, 'nVegOpt', nvegopt)
 
  call mpas_pool_get_array(mesh, 'isice_lu', isice_lu)
  call mpas_pool_get_array(mesh, 'landmask', landmask)
@@ -996,6 +1008,7 @@ end subroutine init_soil_layers_properties
 !prescribed threshold:
  num_seaice_changes = 0
  do iCell = 1, nCellsSolve
+    seaice(iCell) = 0._RKIND
     if(xice(iCell) .ge. xice_threshold .or. &
       (landmask(iCell).eq.0 .and. skintemp(iCell).lt.tsk_seaice_threshold)) then
 
@@ -1007,6 +1020,7 @@ end subroutine init_soil_layers_properties
        snoalb(iCell) = 0.75
        vegfra(iCell) = 0._RKIND
        xland(iCell)  = 1._RKIND
+       seaice(iCell) = 1._RKIND
 
        !... recalculate the soil temperature and soil moisture:
        do iSoil = 1, nSoilLevels
@@ -1023,22 +1037,14 @@ end subroutine init_soil_layers_properties
        if(xice(iCell) .gt. 0._RKIND) &
           call mpas_log_write('$i $r $r $r', intArgs=(/iCell/), &
                                              realArgs=(/real(landmask(iCell),kind=RKIND),xland(iCell),xice(iCell)/))
-       xice(iCell) = 0._RKIND
+       seaice(iCell) = 0._RKIND
     endif
 
  enddo
  call mpas_log_write('')
- write(mess,fmt='(A,i12)') 'number of seaice cells converted to land cells 2 =', &
+ write(mess,fmt='(A,i12)') 'number of initialized ice cells =', &
        num_seaice_changes
  call physics_message(mess)
-
-!finally, update the sea-ice flag:
- do iCell = 1, nCellsSolve
-    seaice(iCell) = 0._RKIND
-    if(xice(iCell) > 0._RKIND) then
-       seaice(iCell) = 1._RKIND
-    endif
- enddo
 
 !call mpas_log_write('--- end physics_init_seaice:')
 

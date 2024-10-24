@@ -9,6 +9,7 @@
  module mpas_atmphys_finalize
  use mpas_pool_routines
 
+ use mpas_atmphys_lsm_noahmpfinalize,only: sf_noahmp_deallocate
  use module_mp_thompson
  use cires_ugwpv1_module
 
@@ -40,17 +41,26 @@
  type(mpas_pool_type),intent(in):: configs
 
 !local variables and pointers:
- character(len=StrKIND),pointer:: config_microp_scheme,config_gwdo_scheme
+ character(len=StrKIND),pointer:: config_lsm_scheme,    &
+                                  config_microp_scheme, &
+                                  config_gwdo_scheme
  logical,pointer:: config_ngw_scheme
 
 !----------------------------------------------------------------------------------------------------------------- 
 
+ call mpas_pool_get_config(configs,'config_lsm_scheme'   ,config_lsm_scheme   )
  call mpas_pool_get_config(configs,'config_microp_scheme',config_microp_scheme)
  call mpas_pool_get_config(configs,'config_gwdo_scheme',config_gwdo_scheme)
  call mpas_pool_get_config(configs,'config_ngw_scheme',config_ngw_scheme)
 
- if(trim(config_microp_scheme) == 'mp_thompson') &
+ if(trim(config_lsm_scheme) == 'sf_noahmp') &
+    call sf_noahmp_deallocate
+
+ if(trim(config_microp_scheme) == 'mp_thompson'         .or. &
+    trim(config_microp_scheme) == 'mp_tempo'            .or. &
+    trim(config_microp_scheme) == 'mp_thompson_aerosols') then
     call mp_thompson_deallocate
+ endif
 
  if((trim(config_gwdo_scheme) == 'bl_ugwp_gwdo').and.config_ngw_scheme) &
     call ugwpv1_ngw_deallocate
