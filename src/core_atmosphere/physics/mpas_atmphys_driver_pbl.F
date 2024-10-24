@@ -1283,7 +1283,8 @@
        call mpas_pool_get_config(configs,'config_mynn_mixqt'      ,bl_mynn_mixqt      )
        call mpas_pool_get_config(configs,'config_mynn_tkeadvect'  ,bl_mynn_tkeadvect  )
        call mpas_pool_get_config(configs,'config_mynn_tkebudget'  ,bl_mynn_tkebudget  )
-
+       call mpas_pool_get_config(configs,'config_icloud_bl'       ,icloud_bl          )
+       call mpas_pool_get_config(configs,'config_spp_pbl'         ,spp_pbl            )
 !      call mpas_log_write(' ')
 !      call mpas_log_write('--- enter subroutine mynn_bl_driver:')
 !      call mpas_log_write('--- config_mynn_cloudpdf    = $i',intArgs=(/bl_mynn_cloudpdf/))
