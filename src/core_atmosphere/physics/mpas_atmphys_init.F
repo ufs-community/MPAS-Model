@@ -131,20 +131,18 @@
  real(kind=RKIND),dimension(:),pointer:: sst,sstsk,tmn,xice,xicem
  real(kind=RKIND),dimension(:,:),pointer:: tlag
 
- real(kind=RKIND),dimension(:),pointer  :: t_oml, t_oml_initial, t_oml_200m_initial
- real(kind=RKIND),dimension(:),pointer  :: h_oml, h_oml_initial, hu_oml, hv_oml
- real(kind=RKIND),dimension(:),pointer  :: rdzw,dzu
- real(kind=RKIND), pointer :: config_oml_hml0
- real(kind=RKIND), pointer :: config_dt
+ real(kind=RKIND),pointer:: config_oml_hml0
+ real(kind=RKIND),dimension(:),pointer:: t_oml,t_oml_initial,t_oml_200m_initial
+ real(kind=RKIND),dimension(:),pointer:: h_oml,h_oml_initial,hu_oml,hv_oml
+ real(kind=RKIND),dimension(:),pointer:: rdzw,dzu
+ real(kind=RKIND), pointer:: config_dt
  integer,pointer:: nCells,nVertLevels
  logical,pointer:: config_oml1d
  character(len=StrKIND),pointer:: gwdo_scheme
  logical,pointer:: ngw_scheme
  integer,dimension(:),pointer:: jindx1_tau, jindx2_tau
- real(kind=RKIND),dimension(:),pointer :: ddy_j1tau, ddy_j2tau
+ real(kind=RKIND),dimension(:),pointer:: ddy_j1tau, ddy_j2tau
  real(kind=RKIND),dimension(:),pointer:: latCell
- 
- 
 
 !local variables and arrays:
  type(MPAS_Time_Type):: currTime
