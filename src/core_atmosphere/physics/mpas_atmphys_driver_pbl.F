@@ -109,7 +109,6 @@
  if(.not.allocated(znt_p)  ) allocate(znt_p(ims:ime,jms:jme)  )
  if(.not.allocated(uoce_p) ) allocate(uoce_p(ims:ime,jms:jme) )
  if(.not.allocated(voce_p) ) allocate(voce_p(ims:ime,jms:jme) )
- if(.not.allocated(psfc_p) ) allocate(psfc_p(ims:ime,jms:jme) )
 
  !tendencies:
  if(.not.allocated(rublten_p) ) allocate(rublten_p(ims:ime,kms:kme,jms:jme) )
@@ -284,8 +283,7 @@
  if(allocated(znt_p)  ) deallocate(znt_p  )
  if(allocated(uoce_p) ) deallocate(uoce_p )
  if(allocated(voce_p) ) deallocate(voce_p )
- if(allocated(psfc_p) ) deallocate(psfc_p )
-      
+
  !tendencies:
  if(allocated(rublten_p) ) deallocate(rublten_p )
  if(allocated(rvblten_p) ) deallocate(rvblten_p )
@@ -447,7 +445,7 @@
  type(mpas_pool_type),intent(in):: diag_physics
  type(mpas_pool_type),intent(in):: sfc_input
  type(mpas_pool_type),intent(in):: tend_physics
-      
+
  integer,intent(in):: its,ite
 
 !local variables:
@@ -487,7 +485,7 @@
  call mpas_pool_get_array(diag_physics,'ust' ,ust )
  call mpas_pool_get_array(diag_physics,'wspd',wspd)
  call mpas_pool_get_array(diag_physics,'znt' ,znt )
-      
+
  call mpas_pool_get_array(tend_physics,'rthratenlw',rthratenlw)
  call mpas_pool_get_array(tend_physics,'rthratensw',rthratensw)
 
@@ -1182,7 +1180,7 @@
  type(mpas_pool_type),intent(inout):: sfc_input
  type(mpas_pool_type),intent(inout):: diag_physics
  type(mpas_pool_type),intent(inout):: tend_physics
-      
+
 !local pointers:
  logical,pointer:: config_do_DAcycling, &
                    config_do_restart,   &
@@ -1204,7 +1202,9 @@
                    bl_mynn_mixscalars,  &
                    bl_mynn_cloudmix,    &
                    bl_mynn_mixqt,       &
-                   bl_mynn_tkebudget
+                   bl_mynn_tkebudget,   &
+                   icloud_bl,           &
+                   spp_pbl
 
  real(kind=RKIND),pointer:: bl_mynn_closure
 
@@ -1393,6 +1393,8 @@
        call mpas_pool_get_config(configs,'config_mynn_mixqt'      ,bl_mynn_mixqt      )
        call mpas_pool_get_config(configs,'config_mynn_tkeadvect'  ,bl_mynn_tkeadvect  )
        call mpas_pool_get_config(configs,'config_mynn_tkebudget'  ,bl_mynn_tkebudget  )
+       call mpas_pool_get_config(configs,'config_icloud_bl'       ,icloud_bl          )
+       call mpas_pool_get_config(configs,'config_spp_pbl'         ,spp_pbl            )
 
 !      call mpas_log_write(' ')
 !      call mpas_log_write('--- enter subroutine mynn_bl_driver:')
@@ -1436,7 +1438,7 @@
                   wspd       = wspd_p       , znt        = znt_p       , uoce        = uoce_p           , &
                   voce       = voce_p       , dz         = dz_p        , u           = u_p              , &
                   v          = v_p          , w          = w_p         , th          = th_p             , &
-                  tt         = t_p          , p          = pres_hyd_p  , exner       = pi_p             , &
+                  tt         = t_p          , p          = pres_p      , exner       = pi_p             , &
                   rho        = rho_p        , qv         = qv_p        , qc          = qc_p             , &
                   qi         = qi_p         , qs         = qs_p        , ni          = ni_p             , &
                   nc         = nc_p         , nifa       = nifa_p      , nwfa        = nwfa_p           , &
