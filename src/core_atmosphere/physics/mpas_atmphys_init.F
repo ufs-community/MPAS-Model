@@ -137,7 +137,6 @@
  real(kind=RKIND),dimension(:),pointer:: rdzw,dzu
  real(kind=RKIND), pointer:: config_dt
  integer,pointer:: nCells,nVertLevels
- logical,pointer:: config_oml1d
  character(len=StrKIND),pointer:: gwdo_scheme
  logical,pointer:: ngw_scheme
  integer,dimension(:),pointer:: jindx1_tau, jindx2_tau
