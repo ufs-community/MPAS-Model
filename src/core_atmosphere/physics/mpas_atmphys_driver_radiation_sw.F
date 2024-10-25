@@ -10,6 +10,7 @@
  use mpas_kind_types
  use mpas_pool_routines
  use mpas_timer,only: mpas_timer_start,mpas_timer_stop
+ use mpas_timer,only: mpas_timer_start,mpas_timer_stop
 
  use mpas_atmphys_constants
  use mpas_atmphys_manager, only: gmt,curr_julday,julday,year
@@ -113,12 +114,13 @@
 !local pointers:
  character(len=StrKIND),pointer:: mp_scheme,     &
                                   radt_sw_scheme
-
+ logical,pointer:: config_tempo_aerosolaware
 !-----------------------------------------------------------------------------------------------------------------
 
  call mpas_pool_get_config(configs,'config_microp_scheme' ,mp_scheme     )
  call mpas_pool_get_config(configs,'config_radt_sw_scheme',radt_sw_scheme)
-
+ call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
+      
  if(.not.allocated(f_ice)        ) allocate(f_ice(ims:ime,kms:kme,jms:jme)        )
  if(.not.allocated(f_rain)       ) allocate(f_rain(ims:ime,kms:kme,jms:jme)       )
 
@@ -182,7 +184,13 @@
              if(.not.allocated(taer_type_p)) allocate(taer_type_p(ims:ime,jms:jme))
              if(.not.allocated(taod5502d_p)) allocate(taod5502d_p(ims:ime,jms:jme))
              if(.not.allocated(taod5503d_p)) allocate(taod5503d_p(ims:ime,kms:kme,jms:jme))
-
+          case("mp_tempo")
+             if (config_tempo_aerosolaware) then
+                if(.not.allocated(ht_p)       ) allocate(ht_p(ims:ime,jms:jme)       )
+                if(.not.allocated(taer_type_p)) allocate(taer_type_p(ims:ime,jms:jme))
+                if(.not.allocated(taod5502d_p)) allocate(taod5502d_p(ims:ime,jms:jme))
+                if(.not.allocated(taod5503d_p)) allocate(taod5503d_p(ims:ime,kms:kme,jms:jme))
+             endif
           case default
        end select aerosol_select
 
@@ -244,11 +252,13 @@
 !local pointers:
  character(len=StrKIND),pointer:: mp_scheme,     &
                                   radt_sw_scheme
+ logical,pointer:: config_tempo_aerosolaware
 
 !-----------------------------------------------------------------------------------------------------------------
 
  call mpas_pool_get_config(configs,'config_microp_scheme' ,mp_scheme     )
  call mpas_pool_get_config(configs,'config_radt_sw_scheme',radt_sw_scheme)
+ call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)     
 
  if(allocated(f_ice)        ) deallocate(f_ice        )
  if(allocated(f_rain)       ) deallocate(f_rain       )
@@ -300,7 +310,6 @@
        if(allocated(pin_p)        ) deallocate(pin_p        )
        if(allocated(o3clim_p)     ) deallocate(o3clim_p     )
 
-       if(allocated(taod5503d_p)  ) deallocate(taod5503d_p  )
        if(allocated(tauaer_p)     ) deallocate(tauaer_p     )
        if(allocated(ssaaer_p)     ) deallocate(ssaaer_p     )
        if(allocated(asyaer_p)     ) deallocate(asyaer_p     )
@@ -311,7 +320,13 @@
              if(allocated(taer_type_p)) deallocate(taer_type_p)
              if(allocated(taod5502d_p)) deallocate(taod5502d_p)
              if(allocated(taod5503d_p)) deallocate(taod5503d_p)
-
+          case("mp_tempo")
+             if	(config_tempo_aerosolaware) then
+                if(allocated(ht_p)       ) deallocate(ht_p       )
+                if(allocated(taer_type_p)) deallocate(taer_type_p)
+                if(allocated(taod5502d_p)) deallocate(taod5502d_p)
+                if(allocated(taod5503d_p)) deallocate(taod5503d_p)
+             endif
           case default
        end select aerosol_select
 
@@ -376,6 +391,7 @@
 !local pointers:
  logical,pointer:: config_o3climatology
  logical,pointer:: config_microp_re
+ logical,pointer:: config_tempo_aerosolaware
  character(len=StrKIND),pointer:: radt_sw_scheme
  character(len=StrKIND),pointer:: microp_scheme
 
@@ -396,7 +412,8 @@
  call mpas_pool_get_config(configs,'config_o3climatology' ,config_o3climatology)
  call mpas_pool_get_config(configs,'config_radt_sw_scheme',radt_sw_scheme      )
  call mpas_pool_get_config(configs,'config_microp_scheme' ,microp_scheme       )
-
+ call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
+      
  call mpas_pool_get_array(mesh,'latCell',latCell)
  call mpas_pool_get_array(mesh,'lonCell',lonCell)
 
@@ -608,6 +625,61 @@
                                its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte   &
                                         )
 
+          case ("mp_tempo")
+             if (config_tempo_aerosolaware) then
+                call mpas_pool_get_array(mesh,'zgrid',zgrid)
+                call mpas_pool_get_array(diag_physics,'taod5502d',taod5502d)
+                call mpas_pool_get_array(diag_physics,'taod5503d',taod5503d)
+
+                aer_opt = 3
+                do j = jts,jte
+                do i = its,ite
+                   ht_p(i,j) = zgrid(1,i)
+                   if(xland_p(i,j)==1._RKIND) then
+                      taer_type_p(i,j) = 1
+                   elseif(xland_p(i,j)==2._RKIND) then
+                      taer_type_p(i,j) = 3
+                   endif
+                enddo
+                enddo
+
+                !--- calculation of the 550 nm optical depth of the water- and ice-friendly aerosols:
+                call gt_aod( &
+                     p_phy = pres_hyd_p , dz8w = dz_p   , t_phy     = t_p         , qvapor = qv_p , &
+                     nwfa  = nwfa_p     , nifa = nifa_p , taod5503d = taod5503d_p ,                 &
+                     ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme ,        &
+                     its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte          &
+                        )
+
+                do j = jts,jte
+                do i = its,ite
+                   taod5502d_p(i,j) = 0._RKIND
+                   do k = kts,kte
+                      taod5502d_p(i,j) = taod5502d_p(i,j) + taod5503d_p(i,k,j)
+                      taod5503d(k,i) = taod5503d_p(i,k,j)
+                   enddo
+                   taod5502d(i) = taod5502d_p(i,j)
+                enddo
+                enddo
+
+                !--- calculation of the spectral optical depth, single-scattering albedo, and asymmetry factor
+                !as a function of the 550 nm optical depth of the water- and ice-friendly aerosols:
+                call calc_aerosol_rrtmg_sw( &
+                     ht       = ht_p         , dz8w     = dz_p        , &
+                     p        = pres_hyd_p   , t3d      = t_p         , &
+                     qv3d     = qv_p         , tauaer   = tauaer_p    , &
+                     ssaaer   = ssaaer_p     , asyaer   = asyaer_p    , &
+                     aod5502d = taod5502d_p  , aod5503d = taod5503d_p , &
+                     aer_type = taer_type_p  ,                                               &
+                     aer_aod550_opt = taer_aod550_opt , aer_angexp_opt = taer_angexp_opt   , &
+                     aer_ssa_opt    = taer_ssa_opt    , aer_asy_opt    = taer_asy_opt      , &
+                     aer_aod550_val = aer_aod550_val  , aer_angexp_val = aer_angexp_val    , &
+                     aer_ssa_val    = aer_ssa_val     , aer_asy_val    = aer_asy_val       , &
+                     ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme , &
+                     its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte   &
+                               )
+             endif
+                            
           case default
        end select aerosol_select
 
