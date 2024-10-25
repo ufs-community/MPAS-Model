@@ -19,6 +19,7 @@
  use mpas_atmphys_driver_radiation_lw
  use mpas_atmphys_driver_radiation_sw 
  use mpas_atmphys_driver_seaice,only: allocate_seaice,deallocate_seaice,driver_seaice
+ use mpas_atmphys_driver_seaice,only: allocate_seaice,deallocate_seaice,driver_seaice
  use mpas_atmphys_driver_sfclayer
  use mpas_atmphys_driver_oml
  use mpas_atmphys_constants

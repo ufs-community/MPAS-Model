@@ -2931,7 +2931,7 @@
 
                 <var name="tke_pbl" type="real" dimensions="nVertLevels nCells Time" units="m^{2} s^{-2}"
                      description="turbulent kinetic energy from PBL"
-                     packages="bl_mynn_in;bl_myj_in"/>
+                     packages="bl_mynn_in;bl_mynnedmf_in;bl_myj_in"/>
 
                 <var name="dqke" type="real" dimensions="nVertLevels nCells Time" units="m^{2} s^{-2}"
                      description="TKE change"
@@ -2957,7 +2957,7 @@
                      description="EDMF relative updraft area of moist updrafts in the MYNN PBL scheme"
                      packages="bl_mynn_in;bl_mynnedmf_in"/>
 
-                <var name="edmf_w" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1}"
+          <var name="edmf_w" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1}"
                      description="EDMF vertical velocity of  moist updrafts in the MYNN PBL scheme"
                      packages="bl_mynn_in;bl_mynnedmf_in"/>
 
@@ -4183,6 +4183,7 @@
 <!-- **************************************************************************************** -->
 
 #include "diagnostics/Registry_diagnostics.xml"
+#include "physics/Registry_noahmp.xml"
 
 #ifdef DO_PHYSICS
 #include "physics/Registry_noahmp.xml"

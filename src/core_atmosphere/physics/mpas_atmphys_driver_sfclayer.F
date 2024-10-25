@@ -17,9 +17,11 @@
 
  use module_sf_mynn,only: sfclay_mynn
  use module_mynnsfclay_driver,only:mynnsfclay_driver
+ use module_mynnsfclay_driver,only:mynnsfclay_driver
  use module_sf_sfclay
  use module_sf_sfclayrev,only: sfclayrev
  use sf_mynn,only: sf_mynn_init
+ use module_mynnsfclay,only: mynnsfclay_init
  use module_mynnsfclay,only: mynnsfclay_init
  use sf_sfclayrev,only: sf_sfclayrev_init
  use module_sf_myjsfc

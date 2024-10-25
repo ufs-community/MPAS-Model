@@ -17,6 +17,9 @@
  use bl_mynn,only: bl_mynn_init
  use module_bl_mynn,only: mynn_bl_driver
  use module_mynnedmf_driver,only: mynnedmf_driver
+ use bl_mynn,only: bl_mynn_init
+ use module_bl_mynn,only: mynn_bl_driver
+ use module_mynnedmf_driver,only: mynnedmf_driver
  use module_bl_ysu
  use module_bl_myjpbl
 
@@ -1128,6 +1131,31 @@
        enddo
        enddo
        enddo
+
+       if(f_ni) then
+          call mpas_pool_get_array(tend_physics,'rniblten',rniblten)
+          do j = jts,jte
+             do k = kts,kte
+                do i = its,ite
+                   rniblten(k,i) = rniblten_p(i,k,j)
+                enddo
+             enddo
+          enddo
+       endif
+       if(f_nc .and. f_nifa .and. f_nwfa) then
+          call mpas_pool_get_array(tend_physics,'rncblten'  ,rncblten  )
+          call mpas_pool_get_array(tend_physics,'rnifablten',rnifablten)
+          call mpas_pool_get_array(tend_physics,'rnwfablten',rnwfablten)
+          do j = jts,jte
+             do k = kts,kte
+                do i = its,ite
+                   rncblten(k,i)   = rncblten_p(i,k,j)
+                   rnifablten(k,i) = rnifablten_p(i,k,j)
+                   rnwfablten(k,i) = rnwfablten_p(i,k,j)
+                enddo
+             enddo
+          enddo
+       endif
 
     case default
 

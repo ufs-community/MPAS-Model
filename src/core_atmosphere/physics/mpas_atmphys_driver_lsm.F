@@ -105,6 +105,11 @@
 !   Laura D. Fowler (laura@ucar.edu) / 2024-03-12.
 ! * moved all sourcecode related to surface processes over seaice points to mpas_atmphys_driver_seaice.F.
 !   Laura D. Fowler (laura@ucar.edu) / 2024-03-13.
+! * moved the call to sfcdiags from subroutine driver_lsm to subroutine lsm_to_MPAS. this allows t2m, th2m,
+!   and q2 to be correctly computed over seaice points.
+!   Laura D. Fowler (laura@ucar.edu) / 2024-03-12.
+! * moved all sourcecode related to surface processes over seaice points to mpas_atmphys_driver_seaice.F.
+!   Laura D. Fowler (laura@ucar.edu) / 2024-03-13.
 
 
 !
