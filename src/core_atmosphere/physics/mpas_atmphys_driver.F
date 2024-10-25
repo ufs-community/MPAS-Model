@@ -19,7 +19,6 @@
  use mpas_atmphys_driver_radiation_lw
  use mpas_atmphys_driver_radiation_sw 
  use mpas_atmphys_driver_seaice,only: allocate_seaice,deallocate_seaice,driver_seaice
- use mpas_atmphys_driver_seaice,only: allocate_seaice,deallocate_seaice,driver_seaice
  use mpas_atmphys_driver_sfclayer
  use mpas_atmphys_driver_oml
  use mpas_atmphys_constants
@@ -196,12 +195,12 @@
     call mpas_pool_get_dimension(block%dimensions,'cellSolveThreadStart',cellSolveThreadStart)
     call mpas_pool_get_dimension(block%dimensions,'cellSolveThreadEnd',cellSolveThreadEnd)
 
-    call mpas_log_write( 'allocate arrays shared by all physics parameterizations:')
+    !allocate arrays shared by all physics parameterizations:
     call allocate_forall_physics(block%configs)
 
     !physics prep step:
     time_lev = 1
-    call mpas_log_write( 'MPAS to physics' )
+
 !$OMP PARALLEL DO
     do thread=1,nThreads
        call MPAS_to_physics(block%configs,mesh,state,time_lev,diag,diag_physics, &
@@ -209,7 +208,7 @@
     end do
 !$OMP END PARALLEL DO
 
-    call mpas_log_write( ' call to cloud scheme: ')
+    !call to cloud scheme:
     if(l_radtlw .or. l_radtsw) then
        call allocate_cloudiness(block%configs)
 !$OMP PARALLEL DO
@@ -220,7 +219,7 @@
 !$OMP END PARALLEL DO
     endif
 
-    call mpas_log_write( ' call to short wave radiation scheme: ')
+    !call to short wave radiation scheme:
     if(l_radtsw) then
        time_lev = 1
        call allocate_radiation_sw(block%configs,xtime_s)
@@ -233,7 +232,7 @@
 !$OMP END PARALLEL DO
     endif
 
-    call mpas_log_write( ' call to long wave radiation scheme: ')
+    !call to long wave radiation scheme:
     if(l_radtlw) then
        time_lev = 1
        call allocate_radiation_lw(block%configs,xtime_s)

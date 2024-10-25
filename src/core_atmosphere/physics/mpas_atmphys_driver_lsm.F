@@ -19,8 +19,10 @@
 
 !wrf physics
  use module_sf_noahdrv
+ use module_sf_noah_seaice_drv
  use module_ruc_land
  use module_sf_sfcdiags
+ 
  implicit none
  private
  public:: init_lsm,       &
@@ -98,11 +100,6 @@
 !   Laura D. Fowler (laura@ucar.edu) / 2020-05-10.
 ! * replaced the option "noah" with "sf_noah" to run the NOAH land surface scheme.
 !   Laura D. Fowler (laura@ucar.edu) / 2022-02-18.
-! * moved the call to sfcdiags from subroutine driver_lsm to subroutine lsm_to_MPAS. this allows t2m, th2m,
-!   and q2 to be correctly computed over seaice points.
-!   Laura D. Fowler (laura@ucar.edu) / 2024-03-12.
-! * moved all sourcecode related to surface processes over seaice points to mpas_atmphys_driver_seaice.F.
-!   Laura D. Fowler (laura@ucar.edu) / 2024-03-13.
 ! * moved the call to sfcdiags from subroutine driver_lsm to subroutine lsm_to_MPAS. this allows t2m, th2m,
 !   and q2 to be correctly computed over seaice points.
 !   Laura D. Fowler (laura@ucar.edu) / 2024-03-12.
@@ -647,9 +644,9 @@
 
  integer,dimension(:),pointer:: isltyp,ivgtyp
 
- real(kind=RKIND),dimension(:),pointer  :: acsnom,acsnow,canwat,chs,chs2,chklowq,cpm,cqs2,glw,  &
-                                           grdflx,gsw,hfx,lai,lh,noahres,potevp,qfx,qgh,qsfc,   &
-                                           br,sfc_albedo,sfc_emibck,sfc_emiss,sfcrunoff,        &
+ real(kind=RKIND),dimension(:),pointer  :: acsnom,acsnow,canwat,chs,chs2,chklowq,cpm,cqs2,glw, &
+                                           grdflx,gsw,hfx,lai,lh,noahres,potevp,qfx,qgh,qsfc,  &
+                                           br,sfc_albedo,sfc_emibck,sfc_emiss,sfcrunoff,       &
                                            smstav,smstot,snotime,snopcx,sr,udrunoff,z0,znt
  real(kind=RKIND),dimension(:),pointer  :: rhosnf,precipfr,qsg,qvg,dew,soilt1,tsnav,acrunoff,   &
                                            snowfallac,graupelncv,snowncv,qcg,                   &
@@ -730,24 +727,24 @@
    call mpas_pool_get_array(diag_physics,'mavail'         ,mavail     )
  endif
 
- call mpas_pool_get_array(sfc_input,'isltyp'       ,isltyp    )
- call mpas_pool_get_array(sfc_input,'ivgtyp'       ,ivgtyp    )
- call mpas_pool_get_array(sfc_input,'shdmin'       ,shdmin    )
- call mpas_pool_get_array(sfc_input,'shdmax'       ,shdmax    )
- call mpas_pool_get_array(sfc_input,'snoalb'       ,snoalb    )
- call mpas_pool_get_array(sfc_input,'sfc_albbck'   ,sfc_albbck)
- call mpas_pool_get_array(sfc_input,'snow'         ,snow      )
- call mpas_pool_get_array(sfc_input,'snowc'        ,snowc     )
- call mpas_pool_get_array(sfc_input,'snowh'        ,snowh     )
- call mpas_pool_get_array(sfc_input,'tmn'          ,tmn       )
- call mpas_pool_get_array(sfc_input,'skintemp'     ,skintemp  )
- call mpas_pool_get_array(sfc_input,'vegfra'       ,vegfra    )
- call mpas_pool_get_array(sfc_input,'xice'         ,xice      )
- call mpas_pool_get_array(sfc_input,'xland'        ,xland     )
- call mpas_pool_get_array(sfc_input,'sh2o'         ,sh2o      )
- call mpas_pool_get_array(sfc_input,'smcrel'       ,smcrel    )
- call mpas_pool_get_array(sfc_input,'smois'        ,smois     )
- call mpas_pool_get_array(sfc_input,'tslb'         ,tslb      )
+ call mpas_pool_get_array(sfc_input,'isltyp'    ,isltyp    )
+ call mpas_pool_get_array(sfc_input,'ivgtyp'    ,ivgtyp    )
+ call mpas_pool_get_array(sfc_input,'shdmin'    ,shdmin    )
+ call mpas_pool_get_array(sfc_input,'shdmax'    ,shdmax    )
+ call mpas_pool_get_array(sfc_input,'snoalb'    ,snoalb    )
+ call mpas_pool_get_array(sfc_input,'sfc_albbck',sfc_albbck)
+ call mpas_pool_get_array(sfc_input,'snow'      ,snow      )
+ call mpas_pool_get_array(sfc_input,'snowc'     ,snowc     )
+ call mpas_pool_get_array(sfc_input,'snowh'     ,snowh     )
+ call mpas_pool_get_array(sfc_input,'tmn'       ,tmn       )
+ call mpas_pool_get_array(sfc_input,'skintemp'  ,skintemp  )
+ call mpas_pool_get_array(sfc_input,'vegfra'    ,vegfra    )
+ call mpas_pool_get_array(sfc_input,'xice'      ,xice      )
+ call mpas_pool_get_array(sfc_input,'xland'     ,xland     )
+ call mpas_pool_get_array(sfc_input,'sh2o'      ,sh2o      )
+ call mpas_pool_get_array(sfc_input,'smcrel'    ,smcrel    )
+ call mpas_pool_get_array(sfc_input,'smois'     ,smois     )
+ call mpas_pool_get_array(sfc_input,'tslb'      ,tslb      )
 
  do j = jts,jte
  do n = 1,num_soils
@@ -831,9 +828,6 @@
     endif
  enddo
  enddo
-
- 
-
 
  if(config_microp_scheme .ne. 'off') then
     call mpas_pool_get_array(diag_physics,'sr',sr) 
