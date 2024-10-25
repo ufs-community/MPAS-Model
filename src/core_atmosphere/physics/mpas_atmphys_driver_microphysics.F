@@ -20,7 +20,8 @@
 !wrf physics:
  use module_mp_kessler
  use module_mp_thompson
- use module_mp_thompson_utils
+ use module_mp_tempo,only: tempo_3d_to_1d_driver, tempo_init
+ ! use module_mp_tempo_utils
  use module_mp_wsm6,only: wsm6
  use mp_wsm6,only: mp_wsm6_init,refl10cm_wsm6
  use module_mp_nssl_2mom
@@ -30,7 +31,7 @@
  public:: allocate_microphysics,   &
           deallocate_microphysics, &
           driver_microphysics,     &
-          microphysics_init
+          init_microphysics
 
 
 !MPAS driver for parameterization of cloud microphysics processes.
@@ -88,7 +89,7 @@
 !   Laura D. Fowler (laura@ucar.edu) / 2016-09-19.
 ! * since we removed the local variable microp_scheme from mpas_atmphys_vars.F, now defines microp_scheme as a
 !   pointer to config_microp_scheme.
-!   Laura D. Fowler (laura@ucar.edu) / 2917-02-16.
+!   Laura D. Fowler (laura@ucar.edu) / 2917-02-16. <--- Time travel?
 
 !--- initialization option for WSM6 from WRF version 3.8.1. this option could also be set as a namelist parameter.
  integer,parameter:: hail_opt = 0
@@ -107,39 +108,39 @@
 !local pointers:
  character(len=StrKIND),pointer:: microp_scheme
  character(len=StrKIND),pointer:: nssl_moments
- logical,pointer:: thompson_hail_aware
+ logical,pointer:: config_tempo_hailaware, config_tempo_aerosolaware
 
 !-----------------------------------------------------------------------------------------------------------------
 
  call mpas_pool_get_config(configs,'config_microp_scheme',microp_scheme)
  call mpas_pool_get_config(configs,'config_nssl_moments',nssl_moments)
- call mpas_pool_get_config(configs,'config_thompson_hail_aware',thompson_hail_aware)
+ call mpas_pool_get_config(configs,'config_tempo_hailaware',config_tempo_hailaware)
+ call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
 
 !sounding variables:
- if(.not.allocated(rho_p)    ) allocate(rho_p(ims:ime,kms:kme,jms:jme) )
- if(.not.allocated(th_p)     ) allocate(th_p(ims:ime,kms:kme,jms:jme)  )
- if(.not.allocated(pi_p)     ) allocate(pi_p(ims:ime,kms:kme,jms:jme)  )
- if(.not.allocated(pres_p)   ) allocate(pres_p(ims:ime,kms:kme,jms:jme))
- if(.not.allocated(z_p)      ) allocate(z_p(ims:ime,kms:kme,jms:jme)   )
- if(.not.allocated(dz_p)     ) allocate(dz_p(ims:ime,kms:kme,jms:jme)  )
- if(.not.allocated(w_p)      ) allocate(w_p(ims:ime,kms:kme,jms:jme)   )
+ if(.not.allocated(rho_p) ) allocate(rho_p(ims:ime,kms:kme,jms:jme) )
+ if(.not.allocated(th_p)  ) allocate(th_p(ims:ime,kms:kme,jms:jme)  )
+ if(.not.allocated(pi_p)  ) allocate(pi_p(ims:ime,kms:kme,jms:jme)  )
+ if(.not.allocated(pres_p)) allocate(pres_p(ims:ime,kms:kme,jms:jme))
+ if(.not.allocated(z_p)   ) allocate(z_p(ims:ime,kms:kme,jms:jme)   )
+ if(.not.allocated(dz_p)  ) allocate(dz_p(ims:ime,kms:kme,jms:jme)  )
+ if(.not.allocated(w_p)   ) allocate(w_p(ims:ime,kms:kme,jms:jme)   )
 
 !mass mixing ratios:
- if(.not.allocated(qv_p)     ) allocate(qv_p(ims:ime,kms:kme,jms:jme))
- if(.not.allocated(qc_p)     ) allocate(qc_p(ims:ime,kms:kme,jms:jme))
- if(.not.allocated(qr_p)     ) allocate(qr_p(ims:ime,kms:kme,jms:jme))
+ if(.not.allocated(qv_p)) allocate(qv_p(ims:ime,kms:kme,jms:jme))
+ if(.not.allocated(qc_p)) allocate(qc_p(ims:ime,kms:kme,jms:jme))
+ if(.not.allocated(qr_p)) allocate(qr_p(ims:ime,kms:kme,jms:jme))
 
  !surface precipitation:
  if(.not.allocated(rainnc_p) ) allocate(rainnc_p(ims:ime,jms:jme) )
  if(.not.allocated(rainncv_p)) allocate(rainncv_p(ims:ime,jms:jme))
 
- microp_select: select case(microp_scheme)
-
-    case ("mp_thompson","mp_wsm6","mp_nssl2m")
+ microp_select: select case(trim(microp_scheme))
+    case ("mp_thompson","mp_thompson_aerosols","mp_wsm6")
        !mass mixing ratios:
-       if(.not.allocated(qi_p)        ) allocate(qi_p(ims:ime,kms:kme,jms:jme))
-       if(.not.allocated(qs_p)        ) allocate(qs_p(ims:ime,kms:kme,jms:jme))
-       if(.not.allocated(qg_p)        ) allocate(qg_p(ims:ime,kms:kme,jms:jme))
+       if(.not.allocated(qi_p)) allocate(qi_p(ims:ime,kms:kme,jms:jme))
+       if(.not.allocated(qs_p)) allocate(qs_p(ims:ime,kms:kme,jms:jme))
+       if(.not.allocated(qg_p)) allocate(qg_p(ims:ime,kms:kme,jms:jme))
 
        !surface precipitation:
        if(.not.allocated(sr_p)        ) allocate(sr_p(ims:ime,jms:jme)        )
@@ -149,64 +150,100 @@
        if(.not.allocated(graupelncv_p)) allocate(graupelncv_p(ims:ime,jms:jme))
 
        !cloud water,cloud ice,and snow effective radii:
-       if(.not.allocated(recloud_p) ) allocate(recloud_p(ims:ime,kms:kme,jms:jme))
-       if(.not.allocated(reice_p)   ) allocate(reice_p(ims:ime,kms:kme,jms:jme)  )
-       if(.not.allocated(resnow_p)  ) allocate(resnow_p(ims:ime,kms:kme,jms:jme) )
+       if(.not.allocated(recloud_p)) allocate(recloud_p(ims:ime,kms:kme,jms:jme))
+       if(.not.allocated(reice_p)  ) allocate(reice_p(ims:ime,kms:kme,jms:jme)  )
+       if(.not.allocated(resnow_p) ) allocate(resnow_p(ims:ime,kms:kme,jms:jme) )
 
-       ! 3D reflectivity
-       if(.not.allocated(refl10cm_p)  ) allocate(refl10cm_p(ims:ime,kms:kme,jms:jme) )
+       !precipitation flux:
+       if(.not.allocated(rainprod_p)) allocate(rainprod_p(ims:ime,kms:kme,jms:jme))
+       if(.not.allocated(evapprod_p)) allocate(evapprod_p(ims:ime,kms:kme,jms:jme))
 
-    microp2_select: select case(microp_scheme)
+    case ("mp_tempo","mp_nssl2m")
+       !mass mixing ratios:
+       if(.not.allocated(qi_p)) allocate(qi_p(ims:ime,kms:kme,jms:jme))
+       if(.not.allocated(qs_p)) allocate(qs_p(ims:ime,kms:kme,jms:jme))
+       if(.not.allocated(qg_p)) allocate(qg_p(ims:ime,kms:kme,jms:jme))
 
-       case("mp_thompson")
-          !number concentrations:
+       !surface precipitation:
+       if(.not.allocated(sr_p)        ) allocate(sr_p(ims:ime,jms:jme)        )
+       if(.not.allocated(snownc_p)    ) allocate(snownc_p(ims:ime,jms:jme)    )
+       if(.not.allocated(snowncv_p)   ) allocate(snowncv_p(ims:ime,jms:jme)   )
+       if(.not.allocated(graupelnc_p) ) allocate(graupelnc_p(ims:ime,jms:jme) )
+       if(.not.allocated(graupelncv_p)) allocate(graupelncv_p(ims:ime,jms:jme))
+
+       !cloud water,cloud ice,and snow effective radii:
+       if(.not.allocated(recloud_p)) allocate(recloud_p(ims:ime,kms:kme,jms:jme))
+       if(.not.allocated(reice_p)  ) allocate(reice_p(ims:ime,kms:kme,jms:jme)  )
+       if(.not.allocated(resnow_p) ) allocate(resnow_p(ims:ime,kms:kme,jms:jme) )
+
+       !precipitation flux:
+       if(.not.allocated(rainprod_p)) allocate(rainprod_p(ims:ime,kms:kme,jms:jme))
+       if(.not.allocated(evapprod_p)) allocate(evapprod_p(ims:ime,kms:kme,jms:jme))
+
+    microp2_select: select case(trim(microp_scheme))
+       case("mp_thompson","mp_thompson_aerosols")
           if(.not.allocated(ntc_p)) allocate(ntc_p(ims:ime,jms:jme))
           if(.not.allocated(muc_p)) allocate(muc_p(ims:ime,jms:jme))
-          if(.not.allocated(nwfa2d_p) ) allocate(nwfa2d_p(ims:ime,jms:jme))
           if(.not.allocated(ni_p) ) allocate(ni_p(ims:ime,kms:kme,jms:jme))
-          if(.not.allocated(nc_p) ) allocate(nc_p(ims:ime,kms:kme,jms:jme))
           if(.not.allocated(nr_p) ) allocate(nr_p(ims:ime,kms:kme,jms:jme))
-          if(.not.allocated(nwfa_p) ) allocate(nwfa_p(ims:ime,kms:kme,jms:jme))
-          if(.not.allocated(nifa_p) ) allocate(nifa_p(ims:ime,kms:kme,jms:jme))
 
-          if(.not.allocated(rainprod_p)) allocate(rainprod_p(ims:ime,kms:kme,jms:jme))
-          if(.not.allocated(evapprod_p)) allocate(evapprod_p(ims:ime,kms:kme,jms:jme))
-          if(.not.allocated(refl10cm_p)) allocate(refl10cm_p(ims:ime,kms:kme,jms:jme))
-          if(.not.allocated(refl10cm_1km_p)) allocate(refl10cm_1km_p(ims:ime,jms:jme))
-          if (thompson_hail_aware) then
+       case("mp_tempo")
+!          if(.not.allocated(ntc_p)) allocate(ntc_p(ims:ime,jms:jme))
+!          if(.not.allocated(muc_p)) allocate(muc_p(ims:ime,jms:jme))
+          if(.not.allocated(ni_p) ) allocate(ni_p(ims:ime,kms:kme,jms:jme))
+          if(.not.allocated(nr_p) ) allocate(nr_p(ims:ime,kms:kme,jms:jme))
+          if(.not.allocated(refl10cm_p)  ) allocate(refl10cm_p(ims:ime,kms:kme,jms:jme) )
+          if(.not.allocated(refl10cm_1km_p)  ) allocate(refl10cm_1km_p(ims:ime,jms:jme) )
+
+          ! Allocate TEMPO options based on config flags insead of adding more nested select cases
+          ! These flags are associated with appropriate packages in mpas_atmphys_packages.F
+          if (config_tempo_hailaware) then
              if(.not.allocated(ng_p) ) allocate(ng_p(ims:ime,kms:kme,jms:jme))
              if(.not.allocated(volg_p)) allocate(volg_p(ims:ime,kms:kme,jms:jme))
           endif
+
+          if (config_tempo_aerosolaware) then
+             if(.not.allocated(nifa2d_p)) allocate(nifa2d_p(ims:ime,jms:jme))
+             if(.not.allocated(nwfa2d_p)) allocate(nwfa2d_p(ims:ime,jms:jme))
+             if(.not.allocated(nc_p)    ) allocate(nc_p(ims:ime,kms:kme,jms:jme)  )
+             if(.not.allocated(nifa_p)  ) allocate(nifa_p(ims:ime,kms:kme,jms:jme))
+             if(.not.allocated(nwfa_p)  ) allocate(nwfa_p(ims:ime,kms:kme,jms:jme))
+          endif
+
        case("mp_nssl2m")
-          if(.not.allocated(qh_p)        ) allocate(qh_p(ims:ime,kms:kme,jms:jme))
-          !number concentrations:
+          if(.not.allocated(qh_p) ) allocate(qh_p(ims:ime,kms:kme,jms:jme))
           if(.not.allocated(nc_p) ) allocate(nc_p(ims:ime,kms:kme,jms:jme))
           if(.not.allocated(ni_p) ) allocate(ni_p(ims:ime,kms:kme,jms:jme))
           if(.not.allocated(nr_p) ) allocate(nr_p(ims:ime,kms:kme,jms:jme))
           if(.not.allocated(ns_p) ) allocate(ns_p(ims:ime,kms:kme,jms:jme))
           if(.not.allocated(ng_p) ) allocate(ng_p(ims:ime,kms:kme,jms:jme))
           if(.not.allocated(nh_p) ) allocate(nh_p(ims:ime,kms:kme,jms:jme))
-
           if(.not.allocated(nccn_p) ) allocate(nccn_p(ims:ime,kms:kme,jms:jme))
-
           if(.not.allocated(volg_p)) allocate(volg_p(ims:ime,kms:kme,jms:jme))
           if(.not.allocated(volh_p)) allocate(volh_p(ims:ime,kms:kme,jms:jme))
-
-          if(.not.allocated(rainprod_p)) allocate(rainprod_p(ims:ime,kms:kme,jms:jme))
-          if(.not.allocated(evapprod_p)) allocate(evapprod_p(ims:ime,kms:kme,jms:jme))
-          if(.not.allocated(refl10cm_p)) allocate(refl10cm_p(ims:ime,kms:kme,jms:jme))
-          if(.not.allocated(refl10cm_1km_p)) allocate(refl10cm_1km_p(ims:ime,jms:jme))
-          IF ( nssl_moments == 'nssl3m' ) THEN
+          if(.not.allocated(refl10cm_1km_p)  ) allocate(refl10cm_1km_p(ims:ime,jms:jme) )
+          
+          if (nssl_moments == "nssl3m") then
             if(.not.allocated(zrw_p) ) allocate(zrw_p(ims:ime,kms:kme,jms:jme))
             if(.not.allocated(zgw_p) ) allocate(zgw_p(ims:ime,kms:kme,jms:jme))
             if(.not.allocated(zhw_p) ) allocate(zhw_p(ims:ime,kms:kme,jms:jme))
-          ENDIF
-       case default
+          endif
 
+          microp3_select: select case(trim(microp_scheme))
+             case("mp_thompson_aerosols")
+                if(.not.allocated(nifa2d_p)) allocate(nifa2d_p(ims:ime,jms:jme))
+                if(.not.allocated(nwfa2d_p)) allocate(nwfa2d_p(ims:ime,jms:jme))
+                if(.not.allocated(nc_p)    ) allocate(nc_p(ims:ime,kms:kme,jms:jme)  )
+                if(.not.allocated(nifa_p)  ) allocate(nifa_p(ims:ime,kms:kme,jms:jme))
+                if(.not.allocated(nwfa_p)  ) allocate(nwfa_p(ims:ime,kms:kme,jms:jme))
+
+          case default
+       end select microp3_select
+
+       case default
     end select microp2_select
 
     case default
-
  end select microp_select
 
  end subroutine allocate_microphysics
@@ -221,78 +258,108 @@
 !local pointers:
  character(len=StrKIND),pointer:: microp_scheme
  character(len=StrKIND),pointer:: nssl_moments
- logical,pointer:: thompson_hail_aware
+ logical,pointer:: config_tempo_hailaware, config_tempo_aerosolaware
 
 !-----------------------------------------------------------------------------------------------------------------
 
  call mpas_pool_get_config(configs,'config_microp_scheme',microp_scheme)
  call mpas_pool_get_config(configs,'config_nssl_moments',nssl_moments)
- call mpas_pool_get_config(configs,'config_thompson_hail_aware',thompson_hail_aware)
+ call mpas_pool_get_config(configs,'config_tempo_hailaware',config_tempo_hailaware)
+ call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
 
 !sounding variables:
- if(allocated(rho_p)     ) deallocate(rho_p     )
- if(allocated(th_p)      ) deallocate(th_p      )
- if(allocated(pi_p)      ) deallocate(pi_p      )
- if(allocated(pres_p)    ) deallocate(pres_p    )
- if(allocated(z_p)       ) deallocate(z_p       )
- if(allocated(dz_p)      ) deallocate(dz_p      )
- if(allocated(w_p)       ) deallocate(w_p       )
+ if(allocated(rho_p) ) deallocate(rho_p )
+ if(allocated(th_p)  ) deallocate(th_p  )
+ if(allocated(pi_p)  ) deallocate(pi_p  )
+ if(allocated(pres_p)) deallocate(pres_p)
+ if(allocated(z_p)   ) deallocate(z_p   )
+ if(allocated(dz_p)  ) deallocate(dz_p  )
+ if(allocated(w_p)   ) deallocate(w_p   )
 
 !mass mixing ratios:
- if(allocated(qv_p)      ) deallocate(qv_p      )
- if(allocated(qc_p)      ) deallocate(qc_p      )
- if(allocated(qr_p)      ) deallocate(qr_p      )
+ if(allocated(qv_p)) deallocate(qv_p)
+ if(allocated(qc_p)) deallocate(qc_p)
+ if(allocated(qr_p)) deallocate(qr_p)
 
  !surface precipitation:
- if(allocated(rainnc_p)  ) deallocate(rainnc_p  )
- if(allocated(rainncv_p) ) deallocate(rainncv_p )
+ if(allocated(rainnc_p) ) deallocate(rainnc_p )
+ if(allocated(rainncv_p)) deallocate(rainncv_p)
 
- microp_select: select case(microp_scheme)
-
-    case ("mp_thompson","mp_wsm6","mp_nssl2m")
+ microp_select: select case(trim(microp_scheme))
+    case ("mp_thompson","mp_thompson_aerosols","mp_wsm6")
        !mass mixing ratios:
-       if(allocated(qi_p)         ) deallocate(qi_p         )
-       if(allocated(qs_p)         ) deallocate(qs_p         )
-       if(allocated(qg_p)         ) deallocate(qg_p         )
+       if(allocated(qi_p)) deallocate(qi_p)
+       if(allocated(qs_p)) deallocate(qs_p)
+       if(allocated(qg_p)) deallocate(qg_p)
 
        !surface precipitation:
-       if(allocated(sr_p)         ) deallocate(sr_p         )
-       if(allocated(snownc_p)     ) deallocate(snownc_p     )
-       if(allocated(snowncv_p)    ) deallocate(snowncv_p    )
-       if(allocated(graupelnc_p)  ) deallocate(graupelnc_p  )
-       if(allocated(graupelncv_p) ) deallocate(graupelncv_p )
+       if(allocated(sr_p)        ) deallocate(sr_p        )
+       if(allocated(snownc_p)    ) deallocate(snownc_p    )
+       if(allocated(snowncv_p)   ) deallocate(snowncv_p   )
+       if(allocated(graupelnc_p) ) deallocate(graupelnc_p )
+       if(allocated(graupelncv_p)) deallocate(graupelncv_p)
 
        !cloud water,cloud ice,and snow effective radii:
-       if(allocated(recloud_p) ) deallocate(recloud_p )
-       if(allocated(reice_p)   ) deallocate(reice_p   )
-       if(allocated(resnow_p)  ) deallocate(resnow_p  )
+       if(allocated(recloud_p)) deallocate(recloud_p)
+       if(allocated(reice_p)  ) deallocate(reice_p  )
+       if(allocated(resnow_p) ) deallocate(resnow_p )
 
-       if(allocated(refl10cm_p)  ) deallocate(refl10cm_p  )
+       !precipitation flux:
+       if(allocated(rainprod_p)) deallocate(rainprod_p)
+       if(allocated(evapprod_p)) deallocate(evapprod_p)
 
-    microp2_select: select case(microp_scheme)
+    case ("mp_tempo","mp_nssl2m")
+       !mass mixing ratios:
+       if(allocated(qi_p)) deallocate(qi_p)
+       if(allocated(qs_p)) deallocate(qs_p)
+       if(allocated(qg_p)) deallocate(qg_p)
 
-       case("mp_thompson")
-          !number concentrations:
+       !surface precipitation:
+       if(allocated(sr_p)        ) deallocate(sr_p        )
+       if(allocated(snownc_p)    ) deallocate(snownc_p    )
+       if(allocated(snowncv_p)   ) deallocate(snowncv_p   )
+       if(allocated(graupelnc_p) ) deallocate(graupelnc_p )
+       if(allocated(graupelncv_p)) deallocate(graupelncv_p)
+
+       !cloud water,cloud ice,and snow effective radii:
+       if(allocated(recloud_p)) deallocate(recloud_p)
+       if(allocated(reice_p)  ) deallocate(reice_p  )
+       if(allocated(resnow_p) ) deallocate(resnow_p )
+
+       !precipitation flux:
+       if(allocated(rainprod_p)) deallocate(rainprod_p)
+       if(allocated(evapprod_p)) deallocate(evapprod_p)
+
+    microp2_select: select case(trim(microp_scheme))
+       case("mp_thompson","mp_thompson_aerosols")
           if(allocated(ntc_p)) deallocate(ntc_p)
           if(allocated(muc_p)) deallocate(muc_p)
-          if(allocated(nwfa2d_p) ) deallocate(nwfa2d_p )
           if(allocated(ni_p) ) deallocate(ni_p )
-          if(allocated(nc_p) ) deallocate(nc_p )
           if(allocated(nr_p) ) deallocate(nr_p )
-          if(allocated(nwfa_p) ) deallocate(nwfa_p )
-          if(allocated(nifa_p) ) deallocate(nifa_p )
 
-          if(allocated(rainprod_p)) deallocate(rainprod_p)
-          if(allocated(evapprod_p)) deallocate(evapprod_p)
-          if(allocated(refl10cm_p)) deallocate(refl10cm_p)
+       case("mp_tempo")
+!          if(allocated(ntc_p)) deallocate(ntc_p)
+!          if(allocated(muc_p)) deallocate(muc_p)
+          if(allocated(ni_p) ) deallocate(ni_p )
+          if(allocated(nr_p) ) deallocate(nr_p )
+          if(allocated(refl10cm_p)  ) deallocate(refl10cm_p  )
           if(allocated(refl10cm_1km_p)) deallocate(refl10cm_1km_p)
-          if (thompson_hail_aware) then
+
+          if (config_tempo_hailaware) then
              if(allocated(ng_p) ) deallocate(ng_p )
              if(allocated(volg_p) ) deallocate(volg_p )
           endif
+
+          if (config_tempo_aerosolaware) then
+             if(allocated(nifa2d_p)) deallocate(nifa2d_p)
+             if(allocated(nwfa2d_p)) deallocate(nwfa2d_p)
+             if(allocated(nc_p)    ) deallocate(nc_p    )
+             if(allocated(nifa_p)  ) deallocate(nifa_p  )
+             if(allocated(nwfa_p)  ) deallocate(nwfa_p  )
+          endif
+
        case("mp_nssl2m")
-          if(allocated(qh_p)         ) deallocate(qh_p         )
-          !number concentrations:
+          if(allocated(qh_p) ) deallocate(qh_p )
           if(allocated(nc_p) ) deallocate(nc_p )
           if(allocated(nr_p) ) deallocate(nr_p )
           if(allocated(ni_p) ) deallocate(ni_p )
@@ -300,33 +367,40 @@
           if(allocated(ng_p) ) deallocate(ng_p )
           if(allocated(nh_p) ) deallocate(nh_p )
           if(allocated(nccn_p) ) deallocate(nccn_p )
-
           if(allocated(volg_p) ) deallocate(volg_p )
           if(allocated(volh_p) ) deallocate(volh_p )
-
           if(allocated(rainprod_p)) deallocate(rainprod_p)
           if(allocated(evapprod_p)) deallocate(evapprod_p)
           if(allocated(refl10cm_p)) deallocate(refl10cm_p)
           if(allocated(refl10cm_1km_p)) deallocate(refl10cm_1km_p)
 
-          IF ( nssl_moments == 'nssl3m' ) THEN
+          if (nssl_moments == "nssl3m") then
             if(allocated(zrw_p) ) deallocate(zrw_p)
             if(allocated(zgw_p) ) deallocate(zgw_p)
             if(allocated(zhw_p) ) deallocate(zhw_p)
-          ENDIF
+          endif
+
+          microp3_select: select case(trim(microp_scheme))
+             case("mp_thompson_aerosols")
+                if(allocated(nifa2d_p)) deallocate(nifa2d_p)
+                if(allocated(nwfa2d_p)) deallocate(nwfa2d_p)
+                if(allocated(nc_p)    ) deallocate(nc_p    )
+                if(allocated(nifa_p)  ) deallocate(nifa_p  )
+                if(allocated(nwfa_p)  ) deallocate(nwfa_p  )
+
+          case default
+       end select microp3_select
 
        case default
-
     end select microp2_select
 
     case default
-
  end select microp_select
 
  end subroutine deallocate_microphysics
 
 !=================================================================================================================
- subroutine microphysics_init(dminfo,configs,mesh,sfc_input,diag,diag_physics,state)
+ subroutine init_microphysics(dminfo,configs,mesh,state,time_lev,sfc_input,diag_physics)
 !=================================================================================================================
 
 !input arguments:
@@ -334,16 +408,18 @@
  type(mpas_pool_type),intent(in):: configs
  type(mpas_pool_type),intent(in):: mesh
  type(mpas_pool_type),intent(in):: sfc_input
+ integer,intent(in):: time_lev
 
 !inout arguments:
  type(mpas_pool_type),intent(inout):: diag_physics
  type(mpas_pool_type),intent(inout):: state
- type(mpas_pool_type),intent(in):: diag
+! type(mpas_pool_type),intent(in):: diag
 
 !local pointer:
+ logical,pointer:: do_restart
  character(len=StrKIND),pointer:: microp_scheme
- logical,pointer:: thompson_aerosol_aware,thompson_hail_aware
-  character(len=StrKIND),pointer:: nssl_moments
+ logical,pointer:: config_tempo_hailaware, config_tempo_aerosolaware
+ character(len=StrKIND),pointer:: nssl_moments
 
  logical :: outputon = .false.
 
@@ -352,45 +428,59 @@
  integer:: errflg
 
 !-----------------------------------------------------------------------------------------------------------------
+!call mpas_log_write(' ')
+!call mpas_log_write('--- enter subroutine init_microphysics:')
 
 !initialization of CCPP-compliant flags:
  errmsg = ' '
  errflg = 0
 
  call mpas_pool_get_config(configs,'config_microp_scheme',microp_scheme)
- call mpas_pool_get_config(configs,'config_thompson_aerosol_aware',thompson_aerosol_aware)
- call mpas_pool_get_config(configs,'config_thompson_hail_aware',thompson_hail_aware)
-  call mpas_pool_get_config(configs,'config_nssl_moments',nssl_moments)
+ call mpas_pool_get_config(configs,'config_tempo_hailaware',config_tempo_hailaware)
+ call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
+ call mpas_pool_get_config(configs,'config_nssl_moments',nssl_moments)
+ call mpas_pool_get_config(configs,'config_do_restart'   ,do_restart   )
 
-  microp_select: select case(microp_scheme)
+ microp_select: select case(trim(microp_scheme))
+    case("mp_thompson","mp_thompson_aerosols")
+       call thompson_init(l_mp_tables)
+       call init_thompson_clouddroplets_forMPAS(mesh,sfc_input,diag_physics)
 
-     case("mp_thompson")
-        call thompson_init(l_mp_tables, thompson_hail_aware, thompson_aerosol_aware)
-        if (thompson_aerosol_aware) then
-           call init_thompson_nwfa_emissions(mesh,state,diag_physics)
-        else
-           call init_thompson_clouddroplets_forMPAS(mesh,sfc_input,diag_physics)
-        endif
+    case("mp_tempo")
+       call tempo_init(l_mp_tables=l_mp_tables, &
+            hail_aware_flag=config_tempo_hailaware, aerosol_aware_flag=config_tempo_aerosolaware)
 
-     case("mp_wsm6")
-        call mp_wsm6_init(den0=rho_a,denr=rho_r,dens=rho_s,cl=cliq,cpv=cpv, &
-                          hail_opt=hail_opt,errmsg=errmsg,errflg=errflg)
+       microp2_select: select case(trim(microp_scheme))
+          case("mp_thompson_aerosols")
+             call init_thompson_aerosols_forMPAS(do_restart,dminfo,mesh,state,time_lev,diag_physics)
 
-     case("mp_nssl2m")
-        IF ( nssl_moments == 'nssl3m' ) THEN
-          CALL nssl_2mom_init(ipctmp=8,mixphase=0,ihvol=1, myrank=dminfo % my_proc_id, mpiroot = IO_NODE)
-        ELSE
-          CALL nssl_2mom_init(ipctmp=5,mixphase=0,ihvol=1, myrank=dminfo % my_proc_id, mpiroot = IO_NODE)
-        ENDIF
+          case("tempo_aerosolaware")
+             call init_thompson_aerosols_forMPAS(do_restart,dminfo,mesh,state,time_lev,diag_physics)
+
+          case default
+       end select microp2_select
+
+    case("mp_wsm6")
+       call mp_wsm6_init(den0=rho_a,denr=rho_r,dens=rho_s,cl=cliq,cpv=cpv, &
+                         hail_opt=hail_opt,errmsg=errmsg,errflg=errflg)
+
+    case("mp_nssl2m")
+       if (nssl_moments == "nssl3m") then
+          call nssl_2mom_init(ipctmp=8,mixphase=0,ihvol=1, myrank=dminfo % my_proc_id, mpiroot = IO_NODE)
+       else
+          call nssl_2mom_init(ipctmp=5,mixphase=0,ihvol=1, myrank=dminfo % my_proc_id, mpiroot = IO_NODE)
+       endif
 
      case default
 
   end select microp_select
 
- end subroutine microphysics_init
+!call mpas_log_write('--- end subroutine init_microphysics:')
+
+ end subroutine init_microphysics
 
 !=================================================================================================================
- subroutine driver_microphysics(configs,mesh,state,time_lev,diag,diag_physics,tend,itimestep,its,ite)
+ subroutine driver_microphysics(configs,mesh,state,time_lev,diag,diag_physics,tend_physics,tend,itimestep,its,ite)
 !=================================================================================================================
 
  use mpas_constants, only : rvord
@@ -406,28 +496,24 @@
  type(mpas_pool_type),intent(inout):: state
  type(mpas_pool_type),intent(inout):: diag
  type(mpas_pool_type),intent(inout):: diag_physics
+ type(mpas_pool_type),intent(inout):: tend_physics
  type(mpas_pool_type),intent(inout):: tend
 
 !local pointers:
  character(len=StrKIND),pointer:: microp_scheme
- logical,pointer:: thompson_aerosol_aware,thompson_hail_aware
-  character(len=StrKIND),pointer:: nssl_moments
+ logical,pointer:: config_tempo_aerosolaware,config_tempo_hailaware
+ character(len=StrKIND),pointer:: nssl_moments
+
+ integer :: tempo_options
 
 !local variables and arrays:
  integer:: istep
  integer, pointer :: do_diag_dbz
- logical :: dbz_from_mp
+ logical :: do_diag_dbz_flag
 
 !CCPP-compliant flags:
  character(len=StrKIND):: errmsg
  integer:: errflg
-
- call mpas_pool_get_array(diag_physics,'do_diag_dbz',do_diag_dbz)
- if (do_diag_dbz==1) then
-   dbz_from_mp = .true.
- else
-   dbz_from_mp= .false.
- endif
 
 !-----------------------------------------------------------------------------------------------------------------
 !call mpas_log_write('')
@@ -438,9 +524,13 @@
  errflg = 0
 
  call mpas_pool_get_config(configs,'config_microp_scheme',microp_scheme)
- call mpas_pool_get_config(configs,'config_thompson_aerosol_aware',thompson_aerosol_aware)
- call mpas_pool_get_config(configs,'config_thompson_hail_aware',thompson_hail_aware)
+ call mpas_pool_get_config(configs,'config_tempo_hailaware',config_tempo_hailaware)
+ call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
  call mpas_pool_get_config(configs,'config_nssl_moments',nssl_moments)
+ call mpas_pool_get_array(diag_physics,'do_diag_dbz',do_diag_dbz)
+
+ do_diag_dbz_flag = .false.
+ if (do_diag_dbz == 1) do_diag_dbz_flag = .true.
 
 !... allocation of microphysics arrays:
 !$OMP MASTER
@@ -452,13 +542,12 @@
  call precip_from_MPAS(configs,diag_physics,its,ite)
 
 !... initialization of soundings for non-hydrostatic dynamical cores.
- call microphysics_from_MPAS(configs,mesh,state,time_lev,diag,diag_physics,its,ite)
+ call microphysics_from_MPAS(configs,mesh,state,time_lev,diag,diag_physics,tend_physics,its,ite)
 
 !... call to different cloud microphysics schemes:
- microp_select: select case(microp_scheme)
-
+ microp_select: select case(trim(microp_scheme))
     case ("mp_kessler")
-       call mpas_timer_start('Kessler')
+       call mpas_timer_start('mp_kessler')
        call kessler( &
                   t        = th_p      , qv    = qv_p  , qc     = qc_p     ,                &
                   qr       = qr_p      , rho   = rho_p , pii    = pi_p     ,                &
@@ -471,76 +560,163 @@
                   ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme   , &
                   its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte     &
                    )
-       call mpas_timer_stop('Kessler')
+       call mpas_timer_stop('mp_kessler')
 
-    case ("mp_thompson")
+    case ("mp_tempo")
+       call mpas_timer_start('mp_tempo')
+       tempo_options = 0
+       if (config_tempo_hailaware) tempo_options = tempo_options + 1
+       if (config_tempo_aerosolaware) tempo_options = tempo_options + 1
+
        istep = 1
-       call mpas_timer_start('Thompson')
        do while (istep .le. n_microp)
 
-       if (thompson_aerosol_aware) then
-          if (thompson_hail_aware) then
-             call thompson_3d_to_1d_driver( &
-                  th        = th_p        , qv         = qv_p         , qc         = qc_p         , &
-                  qr        = qr_p        , qi         = qi_p         , qs         = qs_p         , &
-                  qg        = qg_p        , ni         = ni_p         , nr         = nr_p         , &
-                  ng        = ng_p        , qb         = volg_p       ,                             &
-                  nc        = nc_p        , nwfa       = nwfa_p       , nifa       = nifa_p       , &
-                  nwfa2d    = nwfa2d_p                                                            , &
-                  pii       = pi_p        , p          = pres_p       , dz         = dz_p         , &
-                  w         = w_p         , dt_in      = dt_microp    , itimestep  = itimestep    , &
-                  rainnc    = rainnc_p    , rainncv    = rainncv_p    , snownc     = snownc_p     , &
-                  snowncv   = snowncv_p   , graupelnc  = graupelnc_p  , graupelncv = graupelncv_p , &
-                  sr        = sr_p        , rainprod   = rainprod_p   , evapprod   = evapprod_p   , &
-                  re_cloud  = recloud_p   , re_ice     = reice_p      , re_snow    = resnow_p     , &
-                  has_reqc  = has_reqc    , has_reqi   = has_reqi     , has_reqs   = has_reqs     , &
-                  ntc       = ntc_p       , muc        = muc_p        , refl_10cm  = refl10cm_p   , &
-                  ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde           , &
-                  ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme           , &
-                  its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte             &
-                  )
-          else
-             call thompson_3d_to_1d_driver( &
-                  th        = th_p        , qv         = qv_p         , qc         = qc_p         , &
-                  qr        = qr_p        , qi         = qi_p         , qs         = qs_p         , &
-                  qg        = qg_p        , ni         = ni_p         , nr         = nr_p         , &
-                  nc        = nc_p        , nwfa       = nwfa_p       , nifa       = nifa_p       , &
-                  nwfa2d    = nwfa2d_p                                                            , &
-                  pii       = pi_p        , p          = pres_p       , dz         = dz_p         , &
-                  w         = w_p         , dt_in      = dt_microp    , itimestep  = itimestep    , &
-                  rainnc    = rainnc_p    , rainncv    = rainncv_p    , snownc     = snownc_p     , &
-                  snowncv   = snowncv_p   , graupelnc  = graupelnc_p  , graupelncv = graupelncv_p , &
-                  sr        = sr_p        , rainprod   = rainprod_p   , evapprod   = evapprod_p   , &
-                  re_cloud  = recloud_p   , re_ice     = reice_p      , re_snow    = resnow_p     , &
-                  has_reqc  = has_reqc    , has_reqi   = has_reqi     , has_reqs   = has_reqs     , &
-                  ntc       = ntc_p       , muc        = muc_p        , refl_10cm  = refl10cm_p   , &
-                  ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde           , &
-                  ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme           , &
-                  its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte             &
-                  )
-          endif
-       else
-          call thompson_3d_to_1d_driver( &
-                  th        = th_p        , qv         = qv_p         , qc         = qc_p         , &
-                  qr        = qr_p        , qi         = qi_p         , qs         = qs_p         , &
-                  qg        = qg_p        , ni         = ni_p         , nr         = nr_p         , &
-!!!                  nc        = nc_p        , nwfa       = nwfa_p       , nifa       = nifa_p       , &
-                  pii       = pi_p        , p          = pres_p       , dz         = dz_p         , &
-                  w         = w_p         , dt_in      = dt_microp    , itimestep  = itimestep    , &
-                  rainnc    = rainnc_p    , rainncv    = rainncv_p    , snownc     = snownc_p     , &
-                  snowncv   = snowncv_p   , graupelnc  = graupelnc_p  , graupelncv = graupelncv_p , &
-                  sr        = sr_p        , rainprod   = rainprod_p   , evapprod   = evapprod_p   , &
-                  re_cloud  = recloud_p   , re_ice     = reice_p      , re_snow    = resnow_p     , &
-                  has_reqc  = has_reqc    , has_reqi   = has_reqi     , has_reqs   = has_reqs     , &
-                  ntc       = ntc_p       , muc        = muc_p        , refl_10cm  = refl10cm_p   , &
-                  ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde           , &
-                  ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme           , &
-                  its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte             &
-                  )
-       endif
+          tempo_opts: select case(tempo_options)
+             case(0)
+                call tempo_3d_to_1d_driver( &
+                     th        = th_p        , qv         = qv_p         , qc         = qc_p         , &
+                     qr        = qr_p        , qi         = qi_p         , qs         = qs_p         , &
+                     qg        = qg_p        , ni         = ni_p         , nr         = nr_p         , &
+                     !! ng        = ng_p        , qb         = volg_p                                   , &
+                     !! nc        = nc_p        , nwfa       = nwfa_p       , nifa       = nifa_p       , &
+                     !! nwfa2d    = nwfa2d_p    , nifa2d     = nifa2d_p                                 , &
+                     pii       = pi_p        , p          = pres_p       , dz         = dz_p         , &
+                     w         = w_p         , dt_in      = dt_microp    , itimestep  = itimestep    , &
+                     rainnc    = rainnc_p    , rainncv    = rainncv_p    , snownc     = snownc_p     , &
+                     snowncv   = snowncv_p   , graupelnc  = graupelnc_p  , graupelncv = graupelncv_p , &
+                     sr        = sr_p        , rainprod   = rainprod_p   , evapprod   = evapprod_p   , &
+                     re_cloud  = recloud_p   , re_ice     = reice_p      , re_snow    = resnow_p     , &
+                     has_reqc  = has_reqc    , has_reqi   = has_reqi     , has_reqs   = has_reqs     , &
+                     !! ntc       = ntc_p       , muc        = muc_p                                    , &
+                     refl_10cm  = refl10cm_p   , &
+                     ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde           , &
+                     ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme           , &
+                     its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte             &
+                     )
+             case(1)
+                if (config_tempo_aerosolaware) then
+                   call tempo_3d_to_1d_driver( &
+                        th        = th_p        , qv         = qv_p         , qc         = qc_p         , &
+                        qr        = qr_p        , qi         = qi_p         , qs         = qs_p         , &
+                        qg        = qg_p        , ni         = ni_p         , nr         = nr_p         , &
+                        !! ng        = ng_p        , qb         = volg_p                                   , &
+                        nc        = nc_p        , nwfa       = nwfa_p       , nifa       = nifa_p       , &
+                        nwfa2d    = nwfa2d_p    , nifa2d     = nifa2d_p                                 , &
+                        pii       = pi_p        , p          = pres_p       , dz         = dz_p         , &
+                        w         = w_p         , dt_in      = dt_microp    , itimestep  = itimestep    , &
+                        rainnc    = rainnc_p    , rainncv    = rainncv_p    , snownc     = snownc_p     , &
+                        snowncv   = snowncv_p   , graupelnc  = graupelnc_p  , graupelncv = graupelncv_p , &
+                        sr        = sr_p        , rainprod   = rainprod_p   , evapprod   = evapprod_p   , &
+                        re_cloud  = recloud_p   , re_ice     = reice_p      , re_snow    = resnow_p     , &
+                        has_reqc  = has_reqc    , has_reqi   = has_reqi     , has_reqs   = has_reqs     , &
+                        !! ntc       = ntc_p       , muc        = muc_p                                    , &
+                        refl_10cm  = refl10cm_p   , &
+                        ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde           , &
+                        ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme           , &
+                        its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte             &
+                        )
+                elseif (config_tempo_hailaware) then
+                   call tempo_3d_to_1d_driver( &
+                        th        = th_p        , qv         = qv_p         , qc         = qc_p         , &
+                        qr        = qr_p        , qi         = qi_p         , qs         = qs_p         , &
+                        qg        = qg_p        , ni         = ni_p         , nr         = nr_p         , &
+                        ng        = ng_p        , qb         = volg_p                                   , &
+                        !! nc        = nc_p        , nwfa       = nwfa_p       , nifa       = nifa_p       , &
+                        !! nwfa2d    = nwfa2d_p    , nifa2d     = nifa2d_p                                 , &
+                        pii       = pi_p        , p          = pres_p       , dz         = dz_p         , &
+                        w         = w_p         , dt_in      = dt_microp    , itimestep  = itimestep    , &
+                        rainnc    = rainnc_p    , rainncv    = rainncv_p    , snownc     = snownc_p     , &
+                        snowncv   = snowncv_p   , graupelnc  = graupelnc_p  , graupelncv = graupelncv_p , &
+                        sr        = sr_p        , rainprod   = rainprod_p   , evapprod   = evapprod_p   , &
+                        re_cloud  = recloud_p   , re_ice     = reice_p      , re_snow    = resnow_p     , &
+                        has_reqc  = has_reqc    , has_reqi   = has_reqi     , has_reqs   = has_reqs     , &
+                        !! ntc       = ntc_p       , muc        = muc_p                                    , &
+                        refl_10cm  = refl10cm_p   , &
+                        ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde           , &
+                        ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme           , &
+                        its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte             &
+                        )
+                else
+                   call physics_error_fatal('driver_microphysics(): TEMPO called with invalid options -- case 1')
+                endif
+             case(2)
+                call tempo_3d_to_1d_driver( &
+                     th        = th_p        , qv         = qv_p         , qc         = qc_p         , &
+                     qr        = qr_p        , qi         = qi_p         , qs         = qs_p         , &
+                     qg        = qg_p        , ni         = ni_p         , nr         = nr_p         , &
+                     ng        = ng_p        , qb         = volg_p                                   , &
+                     nc        = nc_p        , nwfa       = nwfa_p       , nifa       = nifa_p       , &
+                     nwfa2d    = nwfa2d_p    , nifa2d     = nifa2d_p                                 , &
+                     pii       = pi_p        , p          = pres_p       , dz         = dz_p         , &
+                     w         = w_p         , dt_in      = dt_microp    , itimestep  = itimestep    , &
+                     rainnc    = rainnc_p    , rainncv    = rainncv_p    , snownc     = snownc_p     , &
+                     snowncv   = snowncv_p   , graupelnc  = graupelnc_p  , graupelncv = graupelncv_p , &
+                     sr        = sr_p        , rainprod   = rainprod_p   , evapprod   = evapprod_p   , &
+                     re_cloud  = recloud_p   , re_ice     = reice_p      , re_snow    = resnow_p     , &
+                     has_reqc  = has_reqc    , has_reqi   = has_reqi     , has_reqs   = has_reqs     , &
+                     !! ntc       = ntc_p       , muc        = muc_p                                    , &
+                     refl_10cm  = refl10cm_p   , &
+                     ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde           , &
+                     ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme           , &
+                     its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte             &
+                     )
+             case default
+                call physics_error_fatal('driver_microphysics(): TEMPO called with invalid options -- case default')
+             end select tempo_opts
+
        istep = istep + 1
        enddo
-       call mpas_timer_stop('Thompson')
+       call mpas_timer_stop('mp_tempo')
+       
+    case ("mp_thompson")
+       call mpas_timer_start('mp_thompson')
+       istep = 1
+       do while (istep .le. n_microp)
+       call mp_gt_driver( &
+                  th        = th_p        , qv         = qv_p         , qc         = qc_p         , &
+                  qr        = qr_p        , qi         = qi_p         , qs         = qs_p         , &
+                  qg        = qg_p        , ni         = ni_p         , nr         = nr_p         , &
+                  pii       = pi_p        , p          = pres_p       , dz         = dz_p         , &
+                  w         = w_p         , dt_in      = dt_microp    , itimestep  = itimestep    , &
+                  rainnc    = rainnc_p    , rainncv    = rainncv_p    , snownc     = snownc_p     , &
+                  snowncv   = snowncv_p   , graupelnc  = graupelnc_p  , graupelncv = graupelncv_p , &
+                  sr        = sr_p        , rainprod   = rainprod_p   , evapprod   = evapprod_p   , &
+                  re_cloud  = recloud_p   , re_ice     = reice_p      , re_snow    = resnow_p     , &
+                  has_reqc  = has_reqc    , has_reqi   = has_reqi     , has_reqs   = has_reqs     , &
+                  ntc        = ntc_p      , muc        = muc_p                                    , &
+                  ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde           , &
+                  ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme           , &
+                  its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte             &
+                           )
+          istep = istep + 1
+          enddo
+          call mpas_timer_stop('mp_thompson')
+          
+    case ("mp_thompson_aerosols")
+       call mpas_timer_start('mp_thompson_aerosols')
+       istep = 1
+       do while (istep .le. n_microp)
+       call mp_gt_driver( &
+                  th        = th_p        , qv         = qv_p         , qc         = qc_p         , &
+                  qr        = qr_p        , qi         = qi_p         , qs         = qs_p         , &
+                  qg        = qg_p        , ni         = ni_p         , nr         = nr_p         , &
+                  pii       = pi_p        , p          = pres_p       , dz         = dz_p         , &
+                  w         = w_p         , dt_in      = dt_microp    , itimestep  = itimestep    , &
+                  rainnc    = rainnc_p    , rainncv    = rainncv_p    , snownc     = snownc_p     , &
+                  snowncv   = snowncv_p   , graupelnc  = graupelnc_p  , graupelncv = graupelncv_p , &
+                  sr        = sr_p        , rainprod   = rainprod_p   , evapprod   = evapprod_p   , &
+                  re_cloud  = recloud_p   , re_ice     = reice_p      , re_snow    = resnow_p     , &
+                  has_reqc  = has_reqc    , has_reqi   = has_reqi     , has_reqs   = has_reqs     , &
+                  nc        = nc_p        , nifa       = nifa_p       , nwfa       = nwfa_p       , &
+                  nifa2d    = nifa2d_p    , nwfa2d     = nwfa2d_p     , ntc        = ntc_p        , &
+                  muc       = muc_p       ,                                                         &
+                  ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde           , &
+                  ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme           , &
+                  its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte             &
+                           )
+          istep = istep + 1
+          enddo
+          call mpas_timer_stop('mp_thompson_aerosols')
 
     case ("mp_wsm6")
        call mpas_timer_start('mp_wsm6')
@@ -568,10 +744,9 @@
                )
        call mpas_timer_stop('mp_wsm6')
 
-
     case ("mp_nssl2m")
        call mpas_timer_start('mp_nssl')
-        IF ( nssl_moments == 'nssl3m' ) THEN
+       if (nssl_moments == "nssl3m") then
           call nssl_2mom_driver( &
                   th        = th_p        , qv         = qv_p         , qc         = qc_p         , &
                   qr        = qr_p        , qi         = qi_p         , qs         = qs_p         , &
@@ -587,15 +762,14 @@
                   sr        = sr_p        , rainprod   = rainprod_p   , evapprod   = evapprod_p   , &
                   re_cloud  = recloud_p   , re_ice     = reice_p      , re_snow    = resnow_p     , &
                   has_reqc  = has_reqc    , has_reqi   = has_reqi     , has_reqs   = has_reqs     , &
-                  diagflag  = l_diags     , dbz        = refl10cm_p   , diag_dbz   = dbz_from_mp  , &
+                  diagflag  = l_diags     , dbz        = refl10cm_p   , diag_dbz   = do_diag_dbz_flag  , &
                   ntmul      = n_microp   , ntcnt      = 1            , lastloop   = .true.       , &
                   refl_diagnostic = refl10cm_1km_p                                                , &
                   ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde           , &
                   ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme           , &
                   its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte             &
                            )
-
-        ELSE
+       else
           call nssl_2mom_driver( &
                   th        = th_p        , qv         = qv_p         , qc         = qc_p         , &
                   qr        = qr_p        , qi         = qi_p         , qs         = qs_p         , &
@@ -610,15 +784,14 @@
                   sr        = sr_p        , rainprod   = rainprod_p   , evapprod   = evapprod_p   , &
                   re_cloud  = recloud_p   , re_ice     = reice_p      , re_snow    = resnow_p     , &
                   has_reqc  = has_reqc    , has_reqi   = has_reqi     , has_reqs   = has_reqs     , &
-                  diagflag  = l_diags     , dbz        = refl10cm_p   , diag_dbz   = dbz_from_mp  , &
+                  diagflag  = l_diags     , dbz        = refl10cm_p   , diag_dbz   = do_diag_dbz_flag  , &
                   ntmul      = n_microp   , ntcnt      = 1            , lastloop   = .true.       , &
                   refl_diagnostic = refl10cm_1km_p                                                , &
                   ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde           , &
                   ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme           , &
                   its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte             &
                            )
-          ENDIF
-
+       endif
        call mpas_timer_stop('mp_nssl')
 
     case default
@@ -632,6 +805,8 @@
  if (l_diags) then
     if(trim(microp_scheme) == "mp_wsm6"     .or. &
        trim(microp_scheme) == "mp_thompson" .or. &
+       trim(microp_scheme) == "mp_thompson_aerosols" .or. &
+       trim(microp_scheme) == "mp_tempo" .or. &
        trim(microp_scheme) == "mp_nssl2m"   ) then
        call mpas_log_write('Computing 3d reflectivity')
        call compute_radar_reflectivity(configs,diag_physics,its,ite)
@@ -646,9 +821,8 @@
 
  end if
 
- if (dbz_from_mp) then
-    if(trim(microp_scheme) == "mp_wsm6"     .or. &
-       trim(microp_scheme) == "mp_thompson" .or. &
+ if (do_diag_dbz_flag) then
+    if(trim(microp_scheme) == "mp_tempo"    .or. &
        trim(microp_scheme) == "mp_nssl2m"   ) then
        call mpas_log_write('Computing hourly max reflectivity')
        call compute_hourly_max_radar_reflectivity(configs,diag_physics,its,ite)
@@ -663,7 +837,7 @@
 
 !... copy updated cloud microphysics variables from the wrf-physics grid back to the geodesic-
 !    dynamics grid:
- call microphysics_to_MPAS(configs,mesh,state,time_lev,diag,diag_physics,tend,itimestep,its,ite)
+ call microphysics_to_MPAS(configs,mesh,state,time_lev,diag,diag_physics,tend_physics,tend,its,ite)
 
 !... deallocation of all microphysics arrays:
 !$OMP BARRIER
@@ -719,9 +893,25 @@
  enddo
 
 !variables specific to different cloud microphysics schemes:
- microp_select: select case(microp_scheme)
+ microp_select: select case(trim(microp_scheme))
+    case ("mp_thompson","mp_thompson_aerosols","mp_wsm6")
+       do j = jts, jte
+       do i = its, ite
+          snowncv_p(i,j)    = 0._RKIND
+          graupelncv_p(i,j) = 0._RKIND
+          snownc_p(i,j)     = 0._RKIND
+          graupelnc_p(i,j)  = 0._RKIND
+          sr_p(i,j)         = 0._RKIND
+       enddo
+       enddo
 
-    case ("mp_thompson","mp_wsm6","mp_nssl2m")
+       do i = its,ite
+          snowncv(i)    = 0._RKIND
+          graupelncv(i) = 0._RKIND
+          sr(i)         = 0._RKIND
+       enddo
+
+    case ("mp_tempo","mp_nssl2m")
        do j = jts, jte
        do i = its, ite
           snowncv_p(i,j)    = 0._RKIND
@@ -739,7 +929,6 @@
        enddo
 
     case default
-
  end select microp_select
 
  end subroutine precip_from_MPAS
@@ -815,9 +1004,22 @@
  enddo
 
 !variables specific to different cloud microphysics schemes:
- microp_select_init: select case(microp_scheme)
+ microp_select: select case(trim(microp_scheme))
+    case ("mp_thompson","mp_thompson_aerosols","mp_wsm6")
+       do j = jts,jte
+       do i = its,ite
+          !time-step precipitation:
+          snowncv(i)    = snownc_p(i,j)
+          graupelncv(i) = graupelnc_p(i,j)
+          sr(i) = (snownc_p(i,j) + graupelnc_p(i,j)) / (rainnc_p(i,j)+1.e-12)
 
-    case ("mp_thompson","mp_wsm6","mp_nssl2m")
+          !accumulated precipitation:
+          snownc(i)    = snownc(i) + snowncv(i)
+          graupelnc(i) = graupelnc(i) + graupelncv(i)
+       enddo
+       enddo
+
+    case ("mp_tempo","mp_nssl2m")
        do j = jts,jte
        do i = its,ite
           !time-step precipitation:
@@ -832,8 +1034,7 @@
        enddo
 
     case default
-
- end select microp_select_init
+ end select microp_select
 
  end subroutine precip_to_MPAS
 
@@ -866,15 +1067,13 @@
  call mpas_pool_get_array(diag_physics,'refl10cm',refl10cm)
  call mpas_pool_get_array(diag_physics,'refl10cm_max',refl10cm_max)
  call mpas_pool_get_array(diag_physics,'refl10cm_1km',refl10cm_1km)
- !call mpas_pool_get_array(diag_physics,'refl10cm_1km_max',refl10cm_1km_max)
+ call mpas_pool_get_array(diag_physics,'refl10cm_1km_max',refl10cm_1km_max)
 
- microp_select: select case(microp_scheme)
-
+ microp_select: select case(trim(microp_scheme))
     case ("mp_kessler")
        call physics_error_fatal('--- calculation of radar reflectivity is not available' // &
                                  'with kessler cloud microphysics')
     case ("mp_nssl2m")
-
        ! Reflectivity is already computed in 3D in the refl10cm_p array, so just read out the values
        if(.not.allocated(dBz1d)) allocate(dBZ1d(kts:kte))
        if(.not.allocated(zp)   ) allocate(zp(kts:kte)   )
@@ -907,6 +1106,39 @@
        if(allocated(dBz1d)) deallocate(dBZ1d)
        if(allocated(zp)   ) deallocate(zp   )
 
+    case ("mp_tempo")
+       ! Reflectivity is already computed in 3D in the refl10cm_p array, so just read out the values
+       if(.not.allocated(dBz1d)) allocate(dBZ1d(kts:kte))
+       if(.not.allocated(zp)   ) allocate(zp(kts:kte)   )
+       call mpas_log_write("Computing refl10cm_1km_max")
+       !call mpas_log_write("max before = $r dbz", realArgs=(/maxval(refl10cm_1km_max)/))
+       do j = jts,jte ! Assuming here that jts == jte (2D arrays)
+       do i = its,ite
+
+          do k = kts,kte
+             dBZ1d(k) = -35._RKIND
+             zp(k) = z_p(i,k,j) - z_p(i,1,j)+0.5*dz_p(i,k,j) ! height AGL at mid-layer
+          enddo
+
+          kp = 1
+          do k = kts,kte
+             dBZ1d(k) = max(-35._RKIND,refl10cm_p(i,k,j))
+             if(zp(k) .lt. 1000.) kp = k
+          enddo
+
+          refl10cm_max(i) = maxval(dBZ1d(:))
+          w1 = (zp(kp+1)-1000.)/(zp(kp+1)-zp(kp))
+          w2 = 1.0 - w1
+          refl10cm_1km(i) = w1*dBZ1d(kp) + w2*dBZ1d(kp+1)
+  !        refl10cm_1km_max(i) = max(refl10cm_1km_max(i),refl10cm_1km(i))
+
+        enddo
+        enddo
+ !      call mpas_log_write("max after = $r dbz", realArgs=(/maxval(refl10cm_1km_max)/))
+
+       if(allocated(dBz1d)) deallocate(dBZ1d)
+       if(allocated(zp)   ) deallocate(zp   )
+       
     case ("mp_wsm6")
        if(.not.allocated(p1d)  ) allocate(p1d(kts:kte)  )
        if(.not.allocated(t1d)  ) allocate(t1d(kts:kte)  )
@@ -954,7 +1186,7 @@
        if(allocated(dBz1d)) deallocate(dBZ1d)
        if(allocated(zp)   ) deallocate(zp   )
 
-    case ("mp_thompson")
+    case ("mp_thompson","mp_thompson_aerosols")
        if(.not.allocated(p1d)  ) allocate(p1d(kts:kte)  )
        if(.not.allocated(t1d)  ) allocate(t1d(kts:kte)  )
        if(.not.allocated(qv1d) ) allocate(qv1d(kts:kte) )
@@ -981,8 +1213,7 @@
              zp(k) = z_p(i,k,j) - z_p(i,1,j)+0.5*dz_p(i,k,j) ! height AGL at mid-layer
           enddo
           
-          ! AAJ This function is called directly from the microphysics
-          ! call calc_refl10cm(qv1d,qc1d,qr1d,nr1d,qs1d,qg1d,t1d,p1d,dBZ1d,kts,kte,i,j)
+          call calc_refl10cm(qv1d,qc1d,qr1d,nr1d,qs1d,qg1d,t1d,p1d,dBZ1d,kts,kte,i,j)
 
           kp = 1
           do k = kts,kte
@@ -994,7 +1225,7 @@
           w1 = (zp(kp+1)-1000.)/(zp(kp+1)-zp(kp))
           w2 = 1.0 - w1
           refl10cm_1km(i) = w1*dBZ1d(kp) + w2*dBZ1d(kp+1)
-!          refl10cm_1km_max(i) = max(refl10cm_1km_max(i),refl10cm_1km(i))
+          refl10cm_1km_max(i) = max(refl10cm_1km_max(i),refl10cm_1km(i))
        enddo
        enddo
 
@@ -1010,7 +1241,6 @@
        if(allocated(zp)   ) deallocate(zp   )
 
     case default
-
  end select microp_select
  call mpas_log_write("end compute 3d reflectivity")
  end subroutine compute_radar_reflectivity
@@ -1083,7 +1313,7 @@ subroutine compute_hourly_max_radar_reflectivity(configs,diag_physics,its,ite)
 
        !if(allocated(dBz1d)) deallocate(dBZ1d)
        !if(allocated(zp)   ) deallocate(zp   )
-    case ("mp_wsm6","mp_thompson")
+    case ("mp_wsm6","mp_tempo")
        do i = its,ite
           refl10cm_1km_max(i) = max(refl10cm_1km_max(i),refl10cm_1km(i))
        enddo

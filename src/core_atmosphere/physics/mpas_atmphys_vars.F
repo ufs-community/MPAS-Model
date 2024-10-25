@@ -8,6 +8,8 @@
 !=================================================================================================================
  module mpas_atmphys_vars
  use mpas_kind_types
+
+ use NoahmpIOVarType
  
  implicit none
  public
@@ -213,6 +215,11 @@
     nwfa_p,           &!
     nifa_p,             zrw_p, zgw_p, zhw_p
 
+ real(kind=RKIND),dimension(:,:),allocatable:: &
+    muc_p,            &!
+    ntc_p,            &!
+    nifa2d_p
+      
 !... arrays located at w (vertical velocity) points, or at interface between layers:
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
     w_p,              &!vertical velocity                                                     [m/s]
@@ -279,15 +286,11 @@
     sr_p,             &!
     nwfa2d_p
 
-!... added for the thompson and wsm6 cloud microphysics:
  integer:: & 
     has_reqc,         &!
     has_reqi,         &!
     has_reqs
 
- real(kind=RKIND),dimension(:,:),allocatable:: &
-    ntc_p,            &!
-    muc_p              !
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
     rainprod_p,       &!
     evapprod_p,       &!
@@ -454,7 +457,10 @@
 
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
     rqsblten_p,       &!tendency of snow mixing ratio due to PBL processes.
-    rniblten_p         !tendency of cloud ice number concentration due to PBL processes.
+    rncblten_p,       &!tendency of cloud liquid water number concentration due to PBL processes.
+    rniblten_p,       &!tendency of cloud ice number concentration due to PBL processes.
+    rnifablten_p,     &!tendency of ice-friendly aerosol number concentration due to PBL processes.
+    rnwfablten_p       !tendency of water-friendly aerosol number concentration due to PBL processes.
 
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
     pattern_spp_pbl    !stochastic forcing for the MYMM PBL and surface layer schemes.
@@ -466,6 +472,7 @@
  real(kind=RKIND),dimension(:,:),allocatable:: &
     chlowq_p,         &!
     mixht_p            !
+
 !=================================================================================================================
 !... variables and arrays related to parameterization of gravity wave drag over orography:
 !=================================================================================================================
@@ -677,6 +684,35 @@
     albsi_p,          &!surface albedo over seaice                                                             [-]
     snowsi_p,         &!snow depth over seaice                                                                 [m]
     icedepth_p         !seaice thickness                                                                       [m]
+
+!=================================================================================================================
+!... variables and arrays related to the calculation of the optical properties of aerosols: to date, the only kind
+!    of aerosols included in MPAS are the "water-friendly" and "ice-friendly" aerosols used in the Thompson cloud
+!    cloud microphysics scheme.
+!=================================================================================================================
+
+ integer,parameter:: taer_aod550_opt = 2!input option for nwfa, nifa optical depth at 500 nm.
+ integer,parameter:: taer_angexp_opt = 3!input option for nwfa, nifa aerosol Angstrom exponent.
+ integer,parameter:: taer_ssa_opt    = 3!input option for nwfa, nifa aerosol single-scattering albedo.
+ integer,parameter:: taer_asy_opt    = 3!input option for nwfa, nifa aerosol asymmetry factor.
+
+ integer:: aer_opt                      !=[0,3]  : 0 for no aerosols, 3 for "water-" and "ice-friendly" aerosols.
+ integer,dimension(:,:),allocatable:: &
+                     taer_type_p        !=[1,2,3]: 1 for rural, 2 is urban and 3 is maritime in WRF. In MPAS,
+                                        !aer_type is initialized as a function of landmask (=1 over land; =2 over
+                                        !oceans.
+
+ real(kind=RKIND),parameter:: aer_aod550_val = 0.12
+ real(kind=RKIND),parameter:: aer_angexp_val = 1.3
+ real(kind=RKIND),parameter:: aer_ssa_val    = 0.85
+ real(kind=RKIND),parameter:: aer_asy_val    = 0.9
+
+ real(kind=RKIND),dimension(:,:),allocatable  ::   taod5502d_p!total aerosol optical depth at 550 nm           [-]
+ real(kind=RKIND),dimension(:,:,:),allocatable::   taod5503d_p!aerosol optical depth at 550 nm                 [-]
+
+ real(kind=RKIND),dimension(:,:,:,:),allocatable:: tauaer_p   !aerosol optical depth in RRTMG SW               [-]
+ real(kind=RKIND),dimension(:,:,:,:),allocatable:: ssaaer_p   !aerosol single scatterin albedo in RRTMG SW     [-]
+ real(kind=RKIND),dimension(:,:,:,:),allocatable:: asyaer_p   !aerosol asymmetry factor in RRTMG SW            [-]
 
 !=================================================================================================================
 !... variables and arrays related to parameterization of short-wave radiation:
@@ -894,6 +930,12 @@
  real(kind=RKIND),dimension(:,:),allocatable:: &
     frc_urb_p,        &!urban fraction                                                                         [-]
     ust_urb_p          !urban u* in similarity theory                                                        [m/s]
+
+!=================================================================================================================
+!.. variables and arrays related to the Noahmp land-surface parameterization:
+!=================================================================================================================
+
+ type(NoahmpIO_type):: mpas_noahmp
 
 !-- arrays needed to run RUC LSM
  real(kind=RKIND), dimension(:,:), allocatable:: &
