@@ -206,7 +206,7 @@
           if(.not.allocated(fh_sea)) allocate(fh_sea(ims:ime,jms:jme))
           if(.not.allocated(fm_sea)) allocate(fm_sea(ims:ime,jms:jme))
        endif
-   
+
        sfclayer2_select: select case(sfclayer_scheme)
 
           case("sf_monin_obukhov_rev")
@@ -225,12 +225,6 @@
        if(config_frac_seaice) then
           if(.not.allocated(ch_sea)) allocate(ch_sea(ims:ime,jms:jme))
        endif
-
-       if(.not.allocated(cov_p)     ) allocate(cov_p(ims:ime,kms:kme,jms:jme)     )
-       if(.not.allocated(qsq_p)     ) allocate(qsq_p(ims:ime,kms:kme,jms:jme)     )
-       if(.not.allocated(tsq_p)     ) allocate(tsq_p(ims:ime,kms:kme,jms:jme)     )
-       if(.not.allocated(sh3d_p)    ) allocate(sh3d_p(ims:ime,kms:kme,jms:jme)    )
-       if(.not.allocated(elpbl_p)   ) allocate(elpbl_p(ims:ime,kms:kme,jms:jme)   )
 
    case("sf_mynnsfclay")
        if(.not.allocated(snowh_p)) allocate(snowh_p(ims:ime,jms:jme))
@@ -305,7 +299,7 @@
  if(allocated(cka_p)   ) deallocate(cka_p   )
  if(allocated(cpm_p)   ) deallocate(cpm_p   )
  if(allocated(cqs2_p)  ) deallocate(cqs2_p  )
- if(allocated(cqs_p)   ) deallocate(cqs_p    )
+ if(allocated(cqs_p)   ) deallocate(cqs_p   )
  if(allocated(gz1oz0_p)) deallocate(gz1oz0_p)
  if(allocated(flhc_p)  ) deallocate(flhc_p  )
  if(allocated(flqc_p)  ) deallocate(flqc_p  )
@@ -339,8 +333,12 @@
     if(allocated(xice_p)     ) deallocate(xice_p     )
 
     if(allocated(br_sea)     ) deallocate(br_sea     )
-    if(allocated(flhc_p)     ) deallocate(flhc_sea   )
-    if(allocated(flqc_p)     ) deallocate(flqc_sea   )
+    if(allocated(chs_sea)    ) deallocate(chs_sea    )
+    if(allocated(chs2_sea)   ) deallocate(chs2_sea   )
+    if(allocated(cqs2_sea)   ) deallocate(cqs2_sea   )
+    if(allocated(cqs_sea)    ) deallocate(cqs_sea    )
+    if(allocated(flhc_sea)   ) deallocate(flhc_sea   )
+    if(allocated(flqc_sea)   ) deallocate(flqc_sea   )
     if(allocated(gz1oz0_sea) ) deallocate(gz1oz0_sea )
     if(allocated(mol_sea)    ) deallocate(mol_sea    )
     if(allocated(psih_sea)   ) deallocate(psih_sea   )
@@ -396,12 +394,6 @@
           if(allocated(ch_sea)) deallocate(ch_sea)
        endif
 
-       if(allocated(cov_p)     ) deallocate(cov_p     )
-       if(allocated(qsq_p)     ) deallocate(qsq_p     )
-       if(allocated(tsq_p)     ) deallocate(tsq_p     )
-       if(allocated(sh3d_p)    ) deallocate(sh3d_p    )
-       if(allocated(elpbl_p)   ) deallocate(elpbl_p   )
-
     case("sf_mynnsfclay")
        if(allocated(snowh_p)) deallocate(snowh_p)
        if(allocated(ch_p)   ) deallocate(ch_p   )
@@ -456,7 +448,7 @@
  type(mpas_pool_type),intent(in):: mesh
  type(mpas_pool_type),intent(in):: sfc_input
  type(mpas_pool_type),intent(inout):: diag_physics
- 
+
  integer,intent(in):: its,ite
 
 !local variables:
@@ -473,7 +465,6 @@
  real(kind=RKIND),dimension(:),pointer:: br,cpm,chs,chs2,cqs,cqs2,flhc,flqc,gz1oz0,hfx,qfx,  &
                                          qgh,qsfc,lh,mol,psim,psih,regime,rmol,ust,ustm, &
                                          wspd,znt,zol
-
 
 !local pointers specific to monin_obukhov:
  real(kind=RKIND),dimension(:),pointer:: fh,fm
@@ -1573,7 +1564,6 @@
 
     case("sf_mynn")
        call mpas_timer_start('sf_mynn')
-       call mpas_log_write('--- enter subroutine sfclay_mynn:')
        call sfclay_mynn( &
                    p3d      = pres_hyd_p , pi3d      = pi_p     , psfcpa   = psfc_p      , &
                    th3d     = th_p       , t3d       = t_p      , u3d      = u_p         , &
