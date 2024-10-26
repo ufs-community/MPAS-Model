@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
+#include <stdarg.h>
 #include "ezxml.h"
 #include "registry_types.h"
 
