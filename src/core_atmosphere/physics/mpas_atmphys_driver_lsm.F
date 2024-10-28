@@ -19,8 +19,10 @@
 
 !wrf physics
  use module_sf_noahdrv
+ use module_sf_noah_seaice_drv
  use module_ruc_land
  use module_sf_sfcdiags
+ 
  implicit none
  private
  public:: init_lsm,       &
@@ -184,9 +186,6 @@
  if(.not.allocated(xland_p)     ) allocate(xland_p(ims:ime,jms:jme)     )
  if(.not.allocated(z0_p)        ) allocate(z0_p(ims:ime,jms:jme)        )
  if(.not.allocated(znt_p)       ) allocate(znt_p(ims:ime,jms:jme)       )
- if(.not.allocated(t2m_p)       ) allocate(t2m_p(ims:ime,jms:jme)       )
- if(.not.allocated(th2m_p)      ) allocate(th2m_p(ims:ime,jms:jme)      )
- if(.not.allocated(q2_p)        ) allocate(q2_p(ims:ime,jms:jme)        )
  if(.not.allocated(flxsnow_p)   ) allocate(flxsnow_p(ims:ime,jms:jme)   )
  if(.not.allocated(fvbsnow_p)   ) allocate(fvbsnow_p(ims:ime,jms:jme)   )
  if(.not.allocated(fbursnow_p)  ) allocate(fbursnow_p(ims:ime,jms:jme)  )
@@ -294,9 +293,6 @@
  if(allocated(xland_p)     ) deallocate(xland_p     )
  if(allocated(z0_p)        ) deallocate(z0_p        )
  if(allocated(znt_p)       ) deallocate(znt_p       )
- if(allocated(t2m_p)       ) deallocate(t2m_p       )
- if(allocated(th2m_p)      ) deallocate(th2m_p      )
- if(allocated(q2_p)        ) deallocate(q2_p        )
  if(allocated(flxsnow_p)   ) deallocate(flxsnow_p   )
  if(allocated(fvbsnow_p)   ) deallocate(fvbsnow_p   )
  if(allocated(fbursnow_p)  ) deallocate(fbursnow_p  )
@@ -381,42 +377,39 @@
  call mpas_pool_get_config(configs,'config_microp_scheme'    ,config_microp_scheme    )
  call mpas_pool_get_config(configs,'config_lsm_scheme'       ,config_lsm_scheme       )
 
- call mpas_pool_get_array(diag_physics,'acsnom'           ,acsnom           )
- call mpas_pool_get_array(diag_physics,'acsnow'           ,acsnow           )
- call mpas_pool_get_array(diag_physics,'canwat'           ,canwat           )
- call mpas_pool_get_array(diag_physics,'chs'              ,chs              )
- call mpas_pool_get_array(diag_physics,'chs2'             ,chs2             )
- call mpas_pool_get_array(diag_physics,'chklowq'          ,chklowq          )
- call mpas_pool_get_array(diag_physics,'cpm'              ,cpm              )
- call mpas_pool_get_array(diag_physics,'cqs2'             ,cqs2             )
- call mpas_pool_get_array(diag_physics,'glw'              ,glw              )
- call mpas_pool_get_array(diag_physics,'grdflx'           ,grdflx           )
- call mpas_pool_get_array(diag_physics,'gsw'              ,gsw              )
- call mpas_pool_get_array(diag_physics,'hfx'              ,hfx              )
- call mpas_pool_get_array(diag_physics,'lai'              ,lai              )
- call mpas_pool_get_array(diag_physics,'lh'               ,lh               )
- call mpas_pool_get_array(diag_physics,'noahres'          ,noahres          )
- call mpas_pool_get_array(diag_physics,'potevp'           ,potevp           )
- call mpas_pool_get_array(diag_physics,'qfx'              ,qfx              )
- call mpas_pool_get_array(diag_physics,'qgh'              ,qgh              )
- call mpas_pool_get_array(diag_physics,'qsfc'             ,qsfc             )
- call mpas_pool_get_array(diag_physics,'br'               ,br               )
- call mpas_pool_get_array(diag_physics,'sfc_albedo'       ,sfc_albedo       )
- call mpas_pool_get_array(diag_physics,'sfc_emibck'       ,sfc_emibck       )
- call mpas_pool_get_array(diag_physics,'sfc_emiss'        ,sfc_emiss        )
- call mpas_pool_get_array(diag_physics,'sfcrunoff'        ,sfcrunoff        )
- call mpas_pool_get_array(diag_physics,'smstav'           ,smstav           )
- call mpas_pool_get_array(diag_physics,'smstot'           ,smstot           )
- call mpas_pool_get_array(diag_physics,'snotime'          ,snotime          )
- call mpas_pool_get_array(diag_physics,'snopcx'           ,snopcx           )
- call mpas_pool_get_array(diag_physics,'swddif'           ,swddif           )
- call mpas_pool_get_array(diag_physics,'swddir'           ,swddir           )
- call mpas_pool_get_array(diag_physics,'udrunoff'         ,udrunoff         )
- call mpas_pool_get_array(diag_physics,'z0'               ,z0               )
- call mpas_pool_get_array(diag_physics,'znt'              ,znt              )
- call mpas_pool_get_array(diag_physics,'t2m'              ,t2m              )
- call mpas_pool_get_array(diag_physics,'th2m'             ,th2m             )
- call mpas_pool_get_array(diag_physics,'q2'               ,q2               )
+ call mpas_pool_get_array(diag_physics,'acsnom'    ,acsnom    )
+ call mpas_pool_get_array(diag_physics,'acsnow'    ,acsnow    )
+ call mpas_pool_get_array(diag_physics,'canwat'    ,canwat    )
+ call mpas_pool_get_array(diag_physics,'chs'       ,chs       )
+ call mpas_pool_get_array(diag_physics,'chs2'      ,chs2      )
+ call mpas_pool_get_array(diag_physics,'chklowq'   ,chklowq   )
+ call mpas_pool_get_array(diag_physics,'cpm'       ,cpm       )
+ call mpas_pool_get_array(diag_physics,'cqs2'      ,cqs2      )
+ call mpas_pool_get_array(diag_physics,'glw'       ,glw       )
+ call mpas_pool_get_array(diag_physics,'grdflx'    ,grdflx    )
+ call mpas_pool_get_array(diag_physics,'gsw'       ,gsw       )
+ call mpas_pool_get_array(diag_physics,'hfx'       ,hfx       )
+ call mpas_pool_get_array(diag_physics,'lai'       ,lai       )
+ call mpas_pool_get_array(diag_physics,'lh'        ,lh        )
+ call mpas_pool_get_array(diag_physics,'noahres'   ,noahres   )
+ call mpas_pool_get_array(diag_physics,'potevp'    ,potevp    )
+ call mpas_pool_get_array(diag_physics,'qfx'       ,qfx       )
+ call mpas_pool_get_array(diag_physics,'qgh'       ,qgh       )
+ call mpas_pool_get_array(diag_physics,'qsfc'      ,qsfc      )
+ call mpas_pool_get_array(diag_physics,'br'        ,br        )
+ call mpas_pool_get_array(diag_physics,'sfc_albedo',sfc_albedo)
+ call mpas_pool_get_array(diag_physics,'sfc_emibck',sfc_emibck)
+ call mpas_pool_get_array(diag_physics,'sfc_emiss' ,sfc_emiss )
+ call mpas_pool_get_array(diag_physics,'sfcrunoff' ,sfcrunoff )
+ call mpas_pool_get_array(diag_physics,'smstav'    ,smstav    )
+ call mpas_pool_get_array(diag_physics,'smstot'    ,smstot    )
+ call mpas_pool_get_array(diag_physics,'snotime'   ,snotime   )
+ call mpas_pool_get_array(diag_physics,'snopcx'    ,snopcx    )
+ call mpas_pool_get_array(diag_physics,'swddif'    ,swddif    )
+ call mpas_pool_get_array(diag_physics,'swddir'    ,swddir    )
+ call mpas_pool_get_array(diag_physics,'udrunoff'  ,udrunoff  )
+ call mpas_pool_get_array(diag_physics,'z0'        ,z0        )
+ call mpas_pool_get_array(diag_physics,'znt'       ,znt       )
  if (config_lsm_scheme .eq. "sf_ruc") then
    call mpas_pool_get_array(diag_physics,'rhosnf'         ,rhosnf           )
    call mpas_pool_get_array(diag_physics,'precipfr'       ,precipfr         )
@@ -543,9 +536,6 @@
     udrunoff_p(i,j)   = udrunoff(i)
     z0_p(i,j)         = z0(i)
     znt_p(i,j)        = znt(i)
-    t2m_p(i,j)        = t2m(i)
-    th2m_p(i,j)       = th2m(i)
-    q2_p(i,j)         = q2(i)
 
     isltyp_p(i,j)     = isltyp(i)
     ivgtyp_p(i,j)     = ivgtyp(i)
@@ -654,9 +644,9 @@
 
  integer,dimension(:),pointer:: isltyp,ivgtyp
 
- real(kind=RKIND),dimension(:),pointer  :: acsnom,acsnow,canwat,chs,chs2,chklowq,cpm,cqs2,glw,  &
-                                           grdflx,gsw,hfx,lai,lh,noahres,potevp,qfx,qgh,qsfc,   &
-                                           br,sfc_albedo,sfc_emibck,sfc_emiss,sfcrunoff,        &
+ real(kind=RKIND),dimension(:),pointer  :: acsnom,acsnow,canwat,chs,chs2,chklowq,cpm,cqs2,glw, &
+                                           grdflx,gsw,hfx,lai,lh,noahres,potevp,qfx,qgh,qsfc,  &
+                                           br,sfc_albedo,sfc_emibck,sfc_emiss,sfcrunoff,       &
                                            smstav,smstot,snotime,snopcx,sr,udrunoff,z0,znt
  real(kind=RKIND),dimension(:),pointer  :: rhosnf,precipfr,qsg,qvg,dew,soilt1,tsnav,acrunoff,   &
                                            snowfallac,graupelncv,snowncv,qcg,                   &
@@ -737,24 +727,24 @@
    call mpas_pool_get_array(diag_physics,'mavail'         ,mavail     )
  endif
 
- call mpas_pool_get_array(sfc_input,'isltyp'       ,isltyp    )
- call mpas_pool_get_array(sfc_input,'ivgtyp'       ,ivgtyp    )
- call mpas_pool_get_array(sfc_input,'shdmin'       ,shdmin    )
- call mpas_pool_get_array(sfc_input,'shdmax'       ,shdmax    )
- call mpas_pool_get_array(sfc_input,'snoalb'       ,snoalb    )
- call mpas_pool_get_array(sfc_input,'sfc_albbck'   ,sfc_albbck)
- call mpas_pool_get_array(sfc_input,'snow'         ,snow      )
- call mpas_pool_get_array(sfc_input,'snowc'        ,snowc     )
- call mpas_pool_get_array(sfc_input,'snowh'        ,snowh     )
- call mpas_pool_get_array(sfc_input,'tmn'          ,tmn       )
- call mpas_pool_get_array(sfc_input,'skintemp'     ,skintemp  )
- call mpas_pool_get_array(sfc_input,'vegfra'       ,vegfra    )
- call mpas_pool_get_array(sfc_input,'xice'         ,xice      )
- call mpas_pool_get_array(sfc_input,'xland'        ,xland     )
- call mpas_pool_get_array(sfc_input,'sh2o'         ,sh2o      )
- call mpas_pool_get_array(sfc_input,'smcrel'       ,smcrel    )
- call mpas_pool_get_array(sfc_input,'smois'        ,smois     )
- call mpas_pool_get_array(sfc_input,'tslb'         ,tslb      )
+ call mpas_pool_get_array(sfc_input,'isltyp'    ,isltyp    )
+ call mpas_pool_get_array(sfc_input,'ivgtyp'    ,ivgtyp    )
+ call mpas_pool_get_array(sfc_input,'shdmin'    ,shdmin    )
+ call mpas_pool_get_array(sfc_input,'shdmax'    ,shdmax    )
+ call mpas_pool_get_array(sfc_input,'snoalb'    ,snoalb    )
+ call mpas_pool_get_array(sfc_input,'sfc_albbck',sfc_albbck)
+ call mpas_pool_get_array(sfc_input,'snow'      ,snow      )
+ call mpas_pool_get_array(sfc_input,'snowc'     ,snowc     )
+ call mpas_pool_get_array(sfc_input,'snowh'     ,snowh     )
+ call mpas_pool_get_array(sfc_input,'tmn'       ,tmn       )
+ call mpas_pool_get_array(sfc_input,'skintemp'  ,skintemp  )
+ call mpas_pool_get_array(sfc_input,'vegfra'    ,vegfra    )
+ call mpas_pool_get_array(sfc_input,'xice'      ,xice      )
+ call mpas_pool_get_array(sfc_input,'xland'     ,xland     )
+ call mpas_pool_get_array(sfc_input,'sh2o'      ,sh2o      )
+ call mpas_pool_get_array(sfc_input,'smcrel'    ,smcrel    )
+ call mpas_pool_get_array(sfc_input,'smois'     ,smois     )
+ call mpas_pool_get_array(sfc_input,'tslb'      ,tslb      )
 
  do j = jts,jte
  do n = 1,num_soils
@@ -804,9 +794,6 @@
     udrunoff(i)   = udrunoff_p(i,j)
     z0(i)         = z0_p(i,j)
     znt(i)        = znt_p(i,j)
-    t2m(i)        = t2m_p(i,j)
-    th2m(i)       = th2m_p(i,j)
-    q2(i)         = q2_p(i,j)
 
     snoalb(i)     = snoalb_p(i,j)
     sfc_albbck(i) = sfc_albbck_p(i,j)
@@ -841,9 +828,6 @@
     endif
  enddo
  enddo
-
- 
-
 
  if(config_microp_scheme .ne. 'off') then
     call mpas_pool_get_array(diag_physics,'sr',sr) 

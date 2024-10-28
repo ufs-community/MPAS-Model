@@ -1,6 +1,6 @@
 !=================================================================================================================
  module bl_mynn_pre
- use ccpp_kinds,only: kind_phys
+ use ccpp_kind_types,only: kind_phys
 
  implicit none
  private
@@ -72,7 +72,7 @@
  integer,intent(in):: its,ite
  integer,intent(in):: kte
 
- real(kind=kind_phys),intent(in),dimension(1:kte):: &
+ real(kind=kind_phys),intent(in),dimension(its:ite,1:kte):: &
     qv,        &!
     qc,        &!
     qi,        &!
@@ -86,7 +86,7 @@
  integer,intent(out):: &
     errflg      ! output error flag (-).
 
- real(kind=kind_phys),intent(out),dimension(1:kte):: &
+ real(kind=kind_phys),intent(out),dimension(its:ite,1:kte):: &
     sqv,       &!
     sqc,       &!
     sqi ,      &!
@@ -94,36 +94,46 @@
 
 
 !--- local variables:
- integer:: k,kts
+ integer:: i,k,kts
 
 !-----------------------------------------------------------------------------------------------------------------
 
 !--- initialization:
  kts = 1
  do k = kts,kte
-    sqc(k) = 0._kind_phys
-    sqi(k) = 0._kind_phys
+    do i = its,ite
+       sqc(i,k) = 0._kind_phys
+       sqi(i,k) = 0._kind_phys
+    enddo
  enddo
 
 !--- conversion from water vapor mixing ratio to specific humidity:
  do k = kts,kte
-    sqv(k) = qv(k)/(1.+qv(k))
+    do i = its,ite
+       sqv(i,k) = qv(i,k)/(1.+qv(i,k))
+    enddo
  enddo
 
 !--- conversion from cloud liquid water,cloud ice,and snow mixing ratios to specific contents:
  if(f_qc) then
     do k = kts,kte
-       sqc(k) = qc(k)/(1.+qv(k))
+       do i = its,ite
+          sqc(i,k) = qc(i,k)/(1.+qv(i,k))
+       enddo
     enddo
  endif
  if(f_qi) then
     do k = kts,kte
-       sqi(k) = qi(k)/(1.+qv(k))
+       do i = its,ite
+          sqi(i,k) = qi(i,k)/(1.+qv(i,k))
+       enddo
     enddo
  endif
  if(f_qs) then
     do k = kts,kte
-          sqs(k) = qs(k)/(1.+qs(k))
+       do i = its,ite
+          sqs(i,k) = qs(i,k)/(1.+qs(i,k))
+       enddo
     enddo
  endif
 

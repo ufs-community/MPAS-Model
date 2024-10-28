@@ -15,9 +15,9 @@ build_tables.o: \
 	atmphys_build_tables_thompson.o
 
 atmphys_build_tables_thompson.o: \
-	../physics/TEMPO/module_mp_thompson.o \
-	../physics/TEMPO/module_mp_thompson_utils.o \
-	../physics/TEMPO/module_mp_thompson_params.o
+	../physics/TEMPO/module_mp_tempo.o \
+	../physics/TEMPO/module_mp_tempo_utils.o \
+	../physics/TEMPO/module_mp_tempo_params.o
 
 clean:
 	$(RM) ../../../build_tables
