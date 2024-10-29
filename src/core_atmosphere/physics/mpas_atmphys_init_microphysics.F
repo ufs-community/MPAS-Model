@@ -15,13 +15,12 @@
  use mpas_pool_routines
 
  use mpas_atmphys_utilities
- use module_mp_tempo_params !, only: Nt_c_l, Nt_c_o, aero_max, nwfa_default
-!use module_mp_thompson, only: is_aerosol_aware,naCCN0,naCCN1,naIN0,naIN1,ntb_arc,ntb_arw,ntb_art,ntb_arr, &
-!                              ntb_ark,tnccn_act
+ use module_mp_thompson, only: is_aerosol_aware,naCCN0,naCCN1,naIN0,naIN1,ntb_arc,ntb_arw,ntb_art,ntb_arr, &
+                               ntb_ark,tnccn_act
 
  implicit none
  private
- public:: init_thompson_clouddroplets_forMPAS, init_thompson_nwfa_emissions, &
+ public:: init_thompson_clouddroplets_forMPAS, &
           init_thompson_aerosols_forMPAS
 
 !MPAS main initialization of the Thompson parameterization of cloud microphysics with nucleation of cloud
@@ -46,59 +45,6 @@
 
  contains
 
-
-!=================================================================================================================
- !  routine init_thompson_nwfa_emissions
- !
- !> \brief Initialize nwfa emissions for thompson microphysics
- !> \author Anders Jensen
- !> \date   13 June 2024
- !> \details
- !>  This routine sets surface emssions for water-friendly aerosols
- !>  based on the lowest-model level value of 3D aerosols and the 
- !>  vertical grid space at the lowest-model level as is done in CCPP.
- !
- subroutine init_thompson_nwfa_emissions(mesh,state,diag_physics)
-!=================================================================================================================
-
-!input variables:
- type(mpas_pool_type),intent(in):: mesh
- type(mpas_pool_type),intent(in):: state
-
-!inout variables:
- type(mpas_pool_type),intent(inout):: diag_physics
-
-!local variables and pointers:
- integer,pointer:: nCellsSolve
- integer,pointer:: index_nwfa
- real(kind=RKIND),dimension(:,:,:),pointer:: scalars
- real(kind=RKIND),dimension(:,:),pointer:: zgrid
- real(kind=RKIND),dimension(:),pointer:: nwfa_emissions
-
-  ! local variables:
- integer,parameter:: k_sfc = 1
- real(kind=RKIND):: deltaz
- integer:: iCell, i
-
-!-----------------------------------------------------------------------------------------------------------------
- call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
-
- call mpas_pool_get_array(mesh,'zgrid',zgrid)
- call mpas_pool_get_array(state,'scalars',scalars)
- call mpas_pool_get_dimension(state,'index_nwfa',index_nwfa)
- call mpas_pool_get_array(diag_physics,'nwfa_emissions',nwfa_emissions)
- 
- do iCell = 1, nCellsSolve
-    deltaz = zgrid(k_sfc+1,iCell)-zgrid(k_sfc,iCell)
-    if (deltaz < 9.0) then
-       deltaz = 9.0
-    endif
-    nwfa_emissions(iCell) = max(nwfa_default, min(aero_max, scalars(index_nwfa,k_sfc,iCell))) * &
-         0.000196 * 50.0 / deltaz
- enddo
- call physics_message('Setting surface wfa emissions for tempo microphysics')
-
-end subroutine init_thompson_nwfa_emissions
 
 !=================================================================================================================
  subroutine init_thompson_clouddroplets_forMPAS(mesh,sfc_input,diag_physics)
@@ -134,9 +80,9 @@ end subroutine init_thompson_nwfa_emissions
 !is set to 100 per cc (100.E6 m^-3) for maritime cases and 300 per cc (300.E6 m^-3) for continental cases.
  do iCell = 1, nCellsSolve
     if(landmask(iCell) .eq. 1) then
-       nt_c(iCell) = Nt_c_l
+       nt_c(iCell) = 300.e6 
     elseif(landmask(iCell) .eq. 0) then
-       nt_c(iCell) = Nt_c_o
+       nt_c(iCell) = 100.e6
     endif
     mu_c(iCell) = MIN(15., (1000.e6/nt_c(iCell) + 2.))
  enddo
@@ -184,7 +130,7 @@ end subroutine init_thompson_nwfa_emissions
 !-----------------------------------------------------------------------------------------------------------------
 !call mpas_log_write('--- enter subroutine init_thompson_aerosols_forMPAS:')
 
-! is_aerosol_aware = .true.
+ is_aerosol_aware = .true.
 
 !... read a static file containing CCN activation of aerosols. The data were created from a parcel model by
 !... Feingold & Heymsfield with further changes by Eidhammer and Kriedenweis.
