@@ -10,7 +10,6 @@
  use mpas_kind_types
  use mpas_pool_routines
  use mpas_timer,only: mpas_timer_start,mpas_timer_stop
- use mpas_timer,only: mpas_timer_start,mpas_timer_stop
 
  use mpas_atmphys_constants
  use mpas_atmphys_manager, only: gmt,curr_julday,julday,year
