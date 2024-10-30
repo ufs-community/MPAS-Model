@@ -14,6 +14,7 @@
 
  use mpas_atmphys_constants
  use mpas_atmphys_init_microphysics
+ use mpas_atmphys_init_tempo
  use mpas_atmphys_interface
  use mpas_atmphys_vars
 
@@ -455,7 +456,7 @@
              call init_thompson_aerosols_forMPAS(do_restart,dminfo,mesh,state,time_lev,diag_physics)
 
           case("tempo_aerosolaware")
-             call init_thompson_aerosols_forMPAS(do_restart,dminfo,mesh,state,time_lev,diag_physics)
+             call init_tempo_aerosols_forMPAS(do_restart,dminfo,mesh,state,time_lev,diag_physics)
 
           case default
        end select microp2_select

@@ -37,6 +37,7 @@ OBJS = \
 	mpas_atmphys_finalize.o            \
 	mpas_atmphys_init.o                \
 	mpas_atmphys_init_microphysics.o   \
+	mpas_atmphys_init_tempo.o          \
 	mpas_atmphys_interface.o           \
 	mpas_atmphys_landuse.o             \
 	mpas_atmphys_lsm_noahinit.o        \
@@ -142,6 +143,7 @@ mpas_atmphys_driver_lsm_noahmp.o: \
 mpas_atmphys_driver_microphysics.o: \
 	mpas_atmphys_constants.o \
 	mpas_atmphys_init_microphysics.o \
+	mpas_atmphys_init_tempo.o \
 	mpas_atmphys_interface.o \
 	mpas_atmphys_vars.o
 
