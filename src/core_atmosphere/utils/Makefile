@@ -4,17 +4,23 @@ ifdef PHYSICS
     UTILS = build_tables
 endif
 
-all: $(UTILS)
+all: $(UTILS) build_tables_tempo
 
 build_tables: build_tables.o atmphys_build_tables_thompson.o
 	$(LINKER) $(LDFLAGS) -o build_tables build_tables.o atmphys_build_tables_thompson.o -L../../framework -L../physics -lphys -lframework $(LIBS) -L../../external/esmf_time_f90 -lesmf_time -L$(NETCDF)/lib -lnetcdff -I$(NETCDF)/include
 	mv build_tables ../../..
 
+build_tables_tempo: build_tables_tempo.o atmphys_build_tables_tempo.o
+	$(LINKER) $(LDFLAGS) -o build_tables_tempo build_tables_tempo.o atmphys_build_tables_tempo.o -L../../framework -L../physics -lphys -lframework $(LIBS) -L../../external/esmf_time_f90 -lesmf_time
+	mv build_tables_tempo ../../..
 
 build_tables.o: \
 	atmphys_build_tables_thompson.o
 
-atmphys_build_tables_thompson.o: \
+build_tables_tempo.o: \
+	atmphys_build_tables_tempo.o
+
+atmphys_build_tables_tempo.o: \
 	../physics/TEMPO/module_mp_tempo.o \
 	../physics/TEMPO/module_mp_tempo_utils.o \
 	../physics/TEMPO/module_mp_tempo_params.o
