@@ -296,12 +296,14 @@
 
 !local variables:
  integer:: i,k,j
- character(len=StrKIND),pointer:: gwdo_scheme,convection_scheme,microp_scheme
+ character(len=StrKIND),pointer:: gwdo_scheme
+ character(len=StrKIND),pointer:: convection_scheme,microp_scheme
  logical,pointer:: ugwp_diags,ngw_scheme
  real(kind=RKIND),parameter :: rad2deg = 180./3.1415926 
 
 !local pointers:
- integer,dimension(:),pointer:: kpbl,jindx1_tau,jindx2_tau
+ integer,dimension(:),pointer:: kpbl
+ integer,dimension(:),pointer:: jindx1_tau,jindx2_tau
  real(kind=RKIND),pointer:: len_disp
  real(kind=RKIND),dimension(:),pointer  :: meshDensity
  real(kind=RKIND),dimension(:),pointer  :: oa1,oa2,oa3,oa4,ol1,ol2,ol3,ol4,con,var2d
@@ -310,11 +312,12 @@
  real(kind=RKIND),dimension(:),pointer  :: oa1ss,oa2ss,oa3ss,oa4ss,ol1ss,ol2ss,       &
                                            ol3ss,ol4ss,conss,var2dss
  real(kind=RKIND),dimension(:),pointer  :: dusfcg,dvsfcg
- real(kind=RKIND),dimension(:,:),pointer:: dtaux3d,dtauy3d,rublten,rvblten,rthblten
+ real(kind=RKIND),dimension(:,:),pointer:: dtaux3d,dtauy3d,rublten,rvblten
+ real(kind=RKIND),dimension(:,:),pointer:: rthblten
  real(kind=RKIND),dimension(:),pointer  :: dusfc_ls,dvsfc_ls,dusfc_bl,dvsfc_bl,     &
                                            dusfc_ss,dvsfc_ss,dusfc_fd,dvsfc_fd
- real(kind=RKIND),dimension(:),pointer  :: hpbl,xland,br1,latCell,ddy_j1tau,ddy_j2tau
- real(kind=RKIND),dimension(:),pointer  :: raincv,rainncv
+ real(kind=RKIND),dimension(:),pointer  :: hpbl,xland,br1
+ real(kind=RKIND),dimension(:),pointer  :: latCell,ddy_j1tau,ddy_j2tau,raincv,rainncv
  real(kind=RKIND),dimension(:,:),pointer:: dtaux3d_ls,dtauy3d_ls,dtaux3d_bl,dtauy3d_bl, &
                                            dtaux3d_ss,dtauy3d_ss,dtaux3d_fd,dtauy3d_fd
  real(kind=RKIND),dimension(:,:),pointer:: dudt_ngw,dvdt_ngw,dtdt_ngw
@@ -566,8 +569,8 @@
 
 !local pointers:
  real(kind=RKIND),dimension(:),pointer  :: dusfcg,dvsfcg
- real(kind=RKIND),dimension(:,:),pointer:: dtaux3d,dtauy3d,rubldiff,rvbldiff,         &
-                                           rublten,rvblten,rthblten
+ real(kind=RKIND),dimension(:,:),pointer:: dtaux3d,dtauy3d,rubldiff,rvbldiff,rublten,rvblten
+ real(kind=RKIND),dimension(:,:),pointer:: rthblten
 
  real(kind=RKIND),dimension(:),pointer  :: oa1ls,oa2ls,oa3ls,oa4ls,ol1ls,ol2ls,       &
                                            ol3ls,ol4ls,conls,var2dls

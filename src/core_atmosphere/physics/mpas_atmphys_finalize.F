@@ -41,9 +41,9 @@
  type(mpas_pool_type),intent(in):: configs
 
 !local variables and pointers:
- character(len=StrKIND),pointer:: config_lsm_scheme,    &
-                                  config_microp_scheme, &
-                                  config_gwdo_scheme
+ character(len=StrKIND),pointer:: config_lsm_scheme,   &
+                                  config_microp_scheme
+ character(len=StrKIND),pointer:: config_gwdo_scheme
  logical,pointer:: config_ngw_scheme
 
 !----------------------------------------------------------------------------------------------------------------- 
