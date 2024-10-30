@@ -436,6 +436,7 @@
 
 !local variables:
  character(len=StrKIND),pointer:: config_microp_scheme
+ logical,pointer:: config_tempo_hailaware
  logical:: l_qr_acr_qg,l_qr_acr_qs,l_qi_aut_qs,l_freezeH2O
 
 !-----------------------------------------------------------------------------------------------------------------
@@ -448,6 +449,34 @@
     if(config_microp_scheme /= "mp_thompson" .or. &
        config_microp_scheme /= "mp_tempo" .or. &
        config_microp_scheme /= "mp_thompson_aerosols") return
+
+    if (config_microp_scheme == "mp_tempo") then
+       l_qr_acr_qg = .false.
+       l_qr_acr_qs = .false.
+       l_qi_aut_qs = .false.
+       l_freezeH2O = .false.
+
+       ! hailaware scheme needs hailaware table, non hailaware scheme can use either table
+       call mpas_pool_get_config(configs,'config_tempo_hailaware',config_tempo_hailaware)
+       if (config_tempo_hailaware) then
+          inquire(file='MP_TEMPO_HAILAWARE_QRacrQG_DATA.DBL'  ,exist=l_qr_acr_qg)
+       else
+          inquire(file='MP_TEMPO_HAILAWARE_QRacrQG_DATA.DBL'  ,exist=l_qr_acr_qg)
+          if (.not. l_qr_acr_qg) then
+             inquire(file='MP_TEMPO_QRacrQG_DATA.DBL'  ,exist=l_qr_acr_qg)
+          endif
+       endif
+       inquire(file='MP_TEMPO_QRacrQS_DATA.DBL'  ,exist=l_qr_acr_qs)
+       inquire(file='MP_TEMPO_QIautQS_DATA.DBL'  ,exist=l_qi_aut_qs)
+       inquire(file='MP_TEMPO_freezeH2O_DATA.DBL',exist=l_freezeH2O)
+
+       if(.not. (l_qr_acr_qg .and. l_qr_acr_qs .and. l_qi_aut_qs .and. l_freezeH2O)) then
+          write(mpas_err_message,'(A)') &
+               '--- tables to run the TEMPO cloud microphysics do not exist: run build_tables_tempo first.'
+          call physics_error_fatal(mpas_err_message)
+       endif
+       !   call mpas_log_write('l_mp_tables = $l',logicArgs=(/l_mp_tables/))
+    else
 
     l_qr_acr_qg = .false.
     l_qr_acr_qs = .false.
@@ -472,6 +501,7 @@
        call physics_error_fatal(mpas_err_message)
     endif
 !   call mpas_log_write('l_mp_tables = $l',logicArgs=(/l_mp_tables/))
+    endif
 
  endif
 
