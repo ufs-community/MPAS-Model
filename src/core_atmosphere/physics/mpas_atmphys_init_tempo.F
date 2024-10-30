@@ -8,91 +8,29 @@
 #define DM_BCAST_MACRO(A) call mpas_dmpar_bcast_real4s(dminfo,size(A),A)
 
 !=================================================================================================================
- module mpas_atmphys_init_microphysics
+ module mpas_atmphys_init_tempo
  use mpas_dmpar
  use mpas_kind_types
  use mpas_log
  use mpas_pool_routines
 
  use mpas_atmphys_utilities
- use module_mp_thompson, only: is_aerosol_aware,naCCN0,naCCN1,naIN0,naIN1,ntb_arc,ntb_arw,ntb_art,ntb_arr, &
-                               ntb_ark,tnccn_act
-
+ use module_mp_tempo_params, only: ntb_arc,ntb_arw,ntb_art,ntb_arr,ntb_ark,tnccn_act, &
+      naCCN1,naCCN0,naIN0,naIN1,nwfa_default,aero_max
+                              
  implicit none
  private
- public:: init_thompson_clouddroplets_forMPAS, &
-          init_thompson_aerosols_forMPAS
+ public:: init_tempo_aerosols_forMPAS
 
-!MPAS main initialization of the Thompson parameterization of cloud microphysics with nucleation of cloud
+!MPAS main initialization of the TEMPO parameterization of cloud microphysics with nucleation of cloud
 !droplets based on distributions of CCNs and INs (aerosol-aware parameterization).
-!Laura D. Fowler (send comments to laura@ucar.edu).
-!2016-03-28.
-!
-! add-ons and modifications to sourcecode:
-! ----------------------------------------
-! * added "use mpas_dmpar" at the top of the module.
-!   Laura D. Fowler (laura@ucar.edu) / 2016-04-04.
-! * modified the initialization of nifa and nwfa.If nifa and nwfa are already available in the initial conditions
-!   using the climatological GOCART data,do not recalculate nifa and nwfa using an exponential profile of CCN and
-!   IN as a function of height.
-!   Laura D. Fowler (laura@ucar.edu) / 2016-05-27.
-! * modified the subroutine init_thompson_aerosols_forMPAS for exact restartibility when using the microphysics
-!   option "mp_thompson_aerosols".
-!   Laura D. Fowler (laura@ucar.edu) / 2018-02-23.
-! * changed the definition of DM_BCAST_MACRO to compile table_ccnAct with the default DOUBLE PRECISION.
-!   Laura D. Fowler (laura@ucar.edu) / 2018-03-07.
 
-
+ 
  contains
 
 
 !=================================================================================================================
- subroutine init_thompson_clouddroplets_forMPAS(mesh,sfc_input,diag_physics)
-!=================================================================================================================
-
-!input variables:
- type(mpas_pool_type),intent(in):: mesh
- type(mpas_pool_type),intent(in):: sfc_input
-
-!inout variables:
- type(mpas_pool_type),intent(inout):: diag_physics
-
-!local variables and pointers:
- integer,pointer:: nCellsSolve
- integer,dimension(:),pointer:: landmask
-
- real(kind=RKIND),dimension(:),pointer:: nt_c,mu_c
-
- integer:: iCell
-
-!-----------------------------------------------------------------------------------------------------------------
-!call mpas_log_write('')
-!call mpas_log_write('--- enter subroutine init_thompson_clouddroplets_forMPAS:')
-
- call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
-
- call mpas_pool_get_array(sfc_input,'landmask',landmask)
- call mpas_pool_get_array(diag_physics,'nt_c',nt_c)
- call mpas_pool_get_array(diag_physics,'mu_c',mu_c)
-
-!... initialize the prescribed number of cloud droplets, and mu_c (parameter in the exponential of the generalized
-!gamma distribution) as a function of the land-cean mask. as set in the thompson cloud microphysics scheme, nt_c
-!is set to 100 per cc (100.E6 m^-3) for maritime cases and 300 per cc (300.E6 m^-3) for continental cases.
- do iCell = 1, nCellsSolve
-    if(landmask(iCell) .eq. 1) then
-       nt_c(iCell) = 300.e6 
-    elseif(landmask(iCell) .eq. 0) then
-       nt_c(iCell) = 100.e6
-    endif
-    mu_c(iCell) = MIN(15., (1000.e6/nt_c(iCell) + 2.))
- enddo
-
-!call mpas_log_write('--- end subroutine init_thompson_clouddroplets_forMPAS.')
-
- end subroutine init_thompson_clouddroplets_forMPAS 
-
-!=================================================================================================================
- subroutine init_thompson_aerosols_forMPAS(do_restart,dminfo,mesh,state,time_lev,diag_physics)
+ subroutine init_tempo_aerosols_forMPAS(do_restart,dminfo,mesh,state,time_lev,diag_physics)
 !=================================================================================================================
 
 !input variables:
@@ -120,7 +58,7 @@
  integer:: iCell, k
 
  real(kind=RKIND):: max_test
- real(kind=RKIND):: airmass
+ real(kind=RKIND):: airmass, deltaz
  real(kind=RKIND):: h_01
  real(kind=RKIND):: niIN3,niCCN3
  real(kind=RKIND):: nifa_max,nifa_min,global_nifa_max,global_nifa_min
@@ -128,9 +66,7 @@
  real(kind=RKIND),dimension(:,:),allocatable:: hgt
 
 !-----------------------------------------------------------------------------------------------------------------
-!call mpas_log_write('--- enter subroutine init_thompson_aerosols_forMPAS:')
-
- is_aerosol_aware = .true.
+!call mpas_log_write('--- enter subroutine init_tempo_aerosols_forMPAS:')
 
 !... read a static file containing CCN activation of aerosols. The data were created from a parcel model by
 !... Feingold & Heymsfield with further changes by Eidhammer and Kriedenweis.
@@ -238,9 +174,16 @@
 
  k = 1
  do iCell = 1, nCellsSolve
-    airmass = rho_zz(k,iCell)*zz(k,iCell)
-    airmass = airmass*(zgrid(k+1,iCell)-zgrid(k,iCell))*areaCell(iCell) ! (in kg)
-    nwfa2d(iCell) = nwfa(k,iCell)*0.000196*airmass*0.5e-10
+    ! airmass = rho_zz(k,iCell)*zz(k,iCell)
+    ! airmass = airmass*(zgrid(k+1,iCell)-zgrid(k,iCell))*areaCell(iCell) ! (in kg)
+    ! nwfa2d(iCell) = nwfa(k,iCell)*0.000196*airmass*0.5e-10
+
+    deltaz = zgrid(k+1,iCell)-zgrid(k,iCell)
+    if (deltaz < 9.0) then
+       deltaz = 9.0
+    endif
+    nwfa2d(iCell) = max(nwfa_default, min(aero_max, nwfa(k,iCell))) * &
+         0.000196 * 50.0 / deltaz
     nifa2d(iCell) = 0._RKIND
 !   call mpas_log_write('$i $r $r $r',intArgs=(/iCell/),realArgs=(/airmass,nwfa2d(iCell),nifa2d(iCell)/))
  enddo
@@ -248,9 +191,9 @@
 !... deallocate local arrays:
  if(allocated(hgt)) deallocate(hgt)
 
-!call mpas_log_write('--- end subroutine init_thompson_aerosols_forMPAS.')
+!call mpas_log_write('--- end subroutine init_tempo_aerosols_forMPAS.')
 
- end subroutine init_thompson_aerosols_forMPAS
+ end subroutine init_tempo_aerosols_forMPAS
 
 !=================================================================================================================
  subroutine table_ccnAct(dminfo)
@@ -312,5 +255,5 @@
  end subroutine table_ccnAct
 
 !=================================================================================================================
- end module mpas_atmphys_init_microphysics
+ end module mpas_atmphys_init_tempo
 !=================================================================================================================
