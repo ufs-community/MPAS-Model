@@ -1692,7 +1692,7 @@ contains
       endif
 
       if(newsn > 0. ) then
-         snowfracnewsn=min(1.,snowfallac*1.e-3/snhei_crit_newsn)
+         snowfracnewsn=min(1.,snowfallac/snhei_crit_newsn)
       endif
 
 !24nov15 - snowfrac for urban category < 0.75 
@@ -1989,7 +1989,7 @@ contains
 
 !  run-total accumulated snow based on snowfall and snowmelt in [m]
 
-      snowfallac = snowfallac + newsn * 1.e3    ! accumulated snow depth [mm], using variable snow den
+      snowfallac = snowfallac + newsn   ! accumulated snow depth [m], using variable snow den
       !snowfallac = snowfallac + max(0.,(newsn - rhowater/rhonewsn*smelt*delt*newsnowratio))
 
    else
