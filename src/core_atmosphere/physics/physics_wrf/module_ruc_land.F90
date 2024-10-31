@@ -5346,7 +5346,7 @@ print *, 'd9sn,soilt,tsob : ', d9sn,soilt,tsob
      print *,'i,j,gswin,lai,f1,fsol',i,j,gswin,lai,f1,fsol
     endif
 !--- total conductance
-     totcnd =(cmin + (cmax - cmin)*pctot*ftem*fsol)/cmax
+     totcnd = (cmin + (cmax - cmin)*ftem*fsol)/cmax
 
     if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
      print *,'i,j,iland,rgltbl(iland),rstbl(iland),rsmax_data,totcnd'  &
@@ -5354,12 +5354,12 @@ print *, 'd9sn,soilt,tsob : ', d9sn,soilt,tsob
     endif
 
 !-- transum - total for the rooting zone
-          transum=0.
-        do k=1,nroot
+     transum = 0.
+     do k=1,nroot
 ! linear root distribution
-         tranf(k)=max(cmin,tranf(k)*totcnd)
-         transum=transum+tranf(k)
-        end do
+       tranf(k) = tranf(k)*totcnd*pctot
+       transum  = transum+tranf(k)
+     end do
     if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
       print *,'i,j,transum,tranf',i,j,transum,tranf
     endif
