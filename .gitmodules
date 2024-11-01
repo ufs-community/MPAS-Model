@@ -4,3 +4,6 @@
 [submodule "src/core_atmosphere/physics/UGWP"]
 	path = src/core_atmosphere/physics/UGWP
 	url = https://github.com/mdtoyNOAA/UGWP.git
+[submodule "src/core_atmosphere/physics/MYNN-EDMF"]
+	path = src/core_atmosphere/physics/MYNN-EDMF
+	url = https://github.com/NCAR/MYNN-EDMF.git
