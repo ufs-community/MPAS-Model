@@ -139,6 +139,8 @@
  integer,pointer:: nCells,nVertLevels
  character(len=StrKIND),pointer:: gwdo_scheme
  logical,pointer:: ngw_scheme
+ integer,pointer:: ntau_d1y
+ real(kind=RKIND),dimension(:),pointer:: ugwp_taulat
  integer,dimension(:),pointer:: jindx1_tau, jindx2_tau
  real(kind=RKIND),dimension(:),pointer:: ddy_j1tau, ddy_j2tau
  real(kind=RKIND),dimension(:),pointer:: latCell
@@ -209,12 +211,6 @@
  call mpas_pool_get_array(diag_physics,'tlag'        ,tlag        )
  call mpas_pool_get_array(diag_physics,'sstsk'       ,sstsk       )
  call mpas_pool_get_array(diag_physics,'xicem'       ,xicem       )
-
- call mpas_pool_get_array(diag_physics,'jindx1_tau'  ,jindx1_tau  )
- call mpas_pool_get_array(diag_physics,'jindx2_tau'  ,jindx2_tau  )
- call mpas_pool_get_array(diag_physics,'ddy_j1tau'   ,ddy_j1tau   )
- call mpas_pool_get_array(diag_physics,'ddy_j2tau'   ,ddy_j2tau   )
- call mpas_pool_get_array(mesh,'latCell',latCell)
 
  call mpas_pool_get_array(sfc_input,'sst' ,sst )
  call mpas_pool_get_array(sfc_input,'tmn' ,tmn )
@@ -435,8 +431,16 @@
 !initialization of non-stationary gravity wave drag
  if(trim(gwdo_scheme).eq.'bl_ugwp_gwdo' .and. ngw_scheme) then
     call mpas_log_write('Initializing non-stationary GWD scheme',masterOnly=.true.)
-    call ugwpv1_ngw_init(latCell,nVertLevels,config_dt,rdzw,dzu,   &
-                         jindx1_tau,jindx2_tau,ddy_j1tau,ddy_j2tau)
+    call mpas_pool_get_dimension(mesh,'lat',ntau_d1y)
+    call mpas_pool_get_array(diag_physics,'LATS',ugwp_taulat)
+    call mpas_pool_get_array(diag_physics,'jindx1_tau'  ,jindx1_tau  )
+    call mpas_pool_get_array(diag_physics,'jindx2_tau'  ,jindx2_tau  )
+    call mpas_pool_get_array(diag_physics,'ddy_j1tau'   ,ddy_j1tau   )
+    call mpas_pool_get_array(diag_physics,'ddy_j2tau'   ,ddy_j2tau   )
+    call mpas_pool_get_array(mesh,'latCell',latCell)
+print *, "Ahoj svete in physics_init: ugwp_taulat =", ugwp_taulat
+    call ugwpv1_ngw_init(latCell,nVertLevels,config_dt,rdzw,dzu,           &
+            ntau_d1y,ugwp_taulat,jindx1_tau,jindx2_tau,ddy_j1tau,ddy_j2tau)
  endif
 
 ! call mpas_log_write('')

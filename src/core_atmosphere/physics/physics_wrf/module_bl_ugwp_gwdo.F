@@ -21,7 +21,8 @@
                  dusfc_ls,dvsfc_ls,dusfc_bl,dvsfc_bl,dusfc_ss,dvsfc_ss,       &
                  dusfc_fd,dvsfc_fd,ugwp_diags,ngw_scheme,xlatd,               &
                  jindx1_tau,jindx2_tau,ddy_j1tau,ddy_j2tau,r_DoY,             &
-                 raincv,rainncv,dudt_ngw,dvdt_ngw,dtdt_ngw,                   &
+                 raincv,rainncv,ntau_d1y,ntau_d2t,days_limb,tau_limb,         &
+                 dudt_ngw,dvdt_ngw,dtdt_ngw,                                  &
                  var2dls,oc12dls,oa2d1ls,oa2d2ls,oa2d3ls,oa2d4ls,ol2d1ls,     &
                  ol2d2ls,ol2d3ls,ol2d4ls,var2dss,oc12dss,oa2d1ss,oa2d2ss,     &
                  oa2d3ss,oa2d4ss,ol2d1ss,ol2d2ss,ol2d3ss,ol2d4ss,             &
@@ -107,6 +108,11 @@
                             xlatd,raincv,rainncv,ddy_j1tau,ddy_j2tau
  integer,intent(in),dimension(ims:ime,jms:jme),optional::             &
                                                jindx1_tau,jindx2_tau
+ integer,intent(in):: ntau_d1y,ntau_d2t
+ real(kind=kind_phys),intent(in),dimension(ntau_d2t),optional::          &
+                            days_limb
+ real(kind=kind_phys),intent(in),dimension(ntau_d1y,ntau_d2t),optional:: &
+                            tau_limb
  real(kind=kind_phys),intent(in)                           :: r_DoY
 
  real(kind=kind_phys),intent(in),dimension(ims:ime,jms:jme):: &
@@ -358,7 +364,8 @@
                           ,r_DoY=r_DoY,kdt=itimestep,dtp=dt                    &
                           ,ugrs=u3d_hv,vgrs=v3d_hv                             &
                           ,tgrs=t3d_hv,q1=qv3d_hv,prsl=p3d_hv,prslk=pi3d_hv    &
-                          ,prsi=p3di_hv,zl=z_hv,zi=zi_hv                       &
+                          ,prsi=p3di_hv,zl=z_hv,zi=zi_hv,ntau_d2t=ntau_d2t     &
+                          ,days_limb=days_limb,tau_limb=tau_limb               &
                           ,rublten=rublten_hv,rvblten=rvblten_hv               &
                           ,rthblten=rthblten_hv,ugwp_diags=ugwp_diags          &
                           ,dudt_ngw=dudt_ngw_hv,dvdt_ngw=dvdt_ngw_hv           &

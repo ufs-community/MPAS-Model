@@ -706,6 +706,12 @@
 !local variables:
  character(len=StrKIND),pointer:: gwdo_scheme
  logical,pointer:: ugwp_diags,ngw_scheme
+ integer,pointer:: ntau_d1y_ptr,ntau_d2t_ptr
+ real(kind=RKIND),dimension(:),pointer :: days_limb_ptr
+ real(kind=RKIND),dimension(:,:),pointer:: tau_limb_ptr
+ integer:: ntau_d1y,ntau_d2t
+ real(kind=RKIND),dimension(:),allocatable::   days_limb
+ real(kind=RKIND),dimension(:,:),allocatable:: tau_limb
 
  integer:: i,iCell,iEdge
  real(kind=RKIND),dimension(:),allocatable:: dx_max
@@ -725,6 +731,20 @@
  call mpas_pool_get_config(configs,'config_gwdo_scheme',gwdo_scheme)
  call mpas_pool_get_config(configs,'config_ugwp_diags',ugwp_diags)
  call mpas_pool_get_config(configs,'config_ngw_scheme',ngw_scheme)
+
+ ! Call up variables needed for NGW scheme
+ if (ngw_scheme) then
+    call mpas_pool_get_dimension(mesh,'lat',ntau_d1y_ptr)
+    call mpas_pool_get_dimension(mesh,'days',ntau_d2t_ptr)
+    call mpas_pool_get_array(diag_physics,'DAYS',days_limb_ptr)
+    call mpas_pool_get_array(diag_physics,'ABSMF',tau_limb_ptr)
+    ntau_d1y = ntau_d1y_ptr
+    ntau_d2t = ntau_d2t_ptr
+    if(.not.allocated(days_limb)) allocate(days_limb(ntau_d1y))
+    if(.not.allocated(tau_limb) ) allocate(tau_limb (ntau_d1y,ntau_d2t))
+    days_limb(:)   = days_limb_ptr(:)
+    tau_limb (:,:) = tau_limb_ptr(:,:)
+ endif
 
 !copy MPAS arrays to local arrays:
  call gwdo_from_MPAS(configs,mesh,sfc_input,diag_physics,tend_physics,its,ite)
@@ -782,13 +802,18 @@
                   dtauy3d_fd = dtauy3d_fd_p, ugwp_diags = ugwp_diags  , ngw_scheme = ngw_scheme,   &
                   xlatd = xlat_p, jindx1_tau = jindx1_tau_p,  jindx2_tau = jindx2_tau_p,     &
                   ddy_j1tau = ddy_j1tau_p  , ddy_j2tau = ddy_j2tau_p, r_DoY = curr_julday,   &
-                  raincv = raincv_p     , rainncv = rainncv_p    ,                           &
+                  raincv = raincv_p     , rainncv = rainncv_p    , ntau_d1y = ntau_d1y,      &
+                  ntau_d2t = ntau_d2t   , days_limb = days_limb  , tau_limb = tau_limb,      &
                   dudt_ngw = dudt_ngw_p , dvdt_ngw = dvdt_ngw_p  , dtdt_ngw = dtdt_ngw_p ,   &
                   errmsg    = errmsg    , errflg    = errflg     ,                           &
                   ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde ,    &
                   ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme ,    &
                   its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte      &
                  )
+       if (ngw_scheme) then
+          if(allocated(days_limb)) deallocate(days_limb)
+          if(allocated(tau_limb) ) deallocate(tau_limb )
+       endif
        call mpas_timer_stop('bl_ugwp_gwdo')
 
      case default

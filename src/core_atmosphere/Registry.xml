@@ -52,6 +52,10 @@
 		    description="Number of landuse categories in the input data"/>
 		<dim name="nscat"
                     description="Number of soil categories in the input data"/>
+                <dim name="lat"
+                    description="Number of latitude points in the input ugwp_limb_tau NGW file"/>
+                <dim name="days"
+                    description="Number of day-of-year points in the input ugwp_limb_tau NGW file"/>
 #endif
         </dims>
 
@@ -1274,6 +1278,17 @@
                         <var name="ol2ss"/>
                         <var name="ol3ss"/>
                         <var name="ol4ss"/>
+                </stream>
+
+                <stream name="ugwp_ngw_in"
+                        type="input"
+                        filename_template="ugwp_limb_tau.nc"
+                        input_interval="initial_only"
+                        immutable="true">
+
+                        <var name="LATS"/>
+                        <var name="DAYS"/>
+                        <var name="ABSMF"/>
                 </stream>
 
 		<stream name="da_state"
@@ -3322,6 +3337,15 @@
 
                 <var name="ddy_j2tau" type="real" dimensions="nCells" units="unitless"
                      description="latitude interpolation weight for absolute momentum flux due to nonorographic gravity wave drag"/>
+
+                <var name="LATS" type="real" dimensions="lat" units="degrees"
+                     description="latitude in the input ugwp_limb_tau NGW file"/>
+
+                <var name="DAYS" type="real" dimensions="days" units="unitless"
+                     description="day of year in the input ugwp_limb_tau NGW file"/>
+
+                <var name="ABSMF" type="real" dimensions="lat days" units="Pa"
+                     description="gravity wave absolute momentum flux from NGW file"/>
 
                 <var name="dudt_ngw" type="real" dimensions="nVertLevels nCells Time" units="m s^{-2}"
                      description="u-momentum tendency due to non-stationary gravity wave drag"/>
