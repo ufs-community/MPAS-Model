@@ -121,14 +121,19 @@
 
 
 !=================================================================================================================
- subroutine allocate_lsm(config_lsm_scheme)
+ subroutine allocate_lsm(configs)
 !=================================================================================================================
- character(len=StrKIND),pointer, intent(in) :: config_lsm_scheme
-!-----------------------------------------------------------------------------------------------------------------
+
+!input arguments:
+ type(mpas_pool_type),intent(in):: configs
+
+!local pointers:
+ character(len=StrKIND),pointer:: lsm_scheme
+
+ call mpas_pool_get_config(configs,'config_lsm_scheme',lsm_scheme)
 
 !arrays for soil layer properties:
  if(.not.allocated(dzs_p)   ) allocate(dzs_p(1:num_soils)                   )
- if(.not.allocated(zs_p)    ) allocate(zs_p(1:num_soils)                    )
  if(.not.allocated(smcrel_p)) allocate(smcrel_p(ims:ime,1:num_soils,jms:jme))
  if(.not.allocated(sh2o_p)  ) allocate(sh2o_p(ims:ime,1:num_soils,jms:jme)  )
  if(.not.allocated(smois_p) ) allocate(smois_p(ims:ime,1:num_soils,jms:jme) )
@@ -195,47 +200,53 @@
  if(.not.allocated(utype_urb_p) ) allocate(utype_urb_p(ims:ime,jms:jme) )
 
 
- if(config_lsm_scheme=='sf_ruc') then
-    if(.not.allocated(rhosnf_p)   )  allocate(rhosnf_p(ims:ime,jms:jme)    )
-    if(.not.allocated(precipfr_p) )  allocate(precipfr_p(ims:ime,jms:jme)  )
-    if(.not.allocated(qcg_p)      )  allocate(qcg_p(ims:ime,jms:jme)       )
-    if(.not.allocated(qsg_p)      )  allocate(qsg_p(ims:ime,jms:jme)       )
-    if(.not.allocated(qvg_p)      )  allocate(qvg_p(ims:ime,jms:jme)       )
-    if(.not.allocated(dew_p)      )  allocate(dew_p(ims:ime,jms:jme)       )
-    if(.not.allocated(soilt1_p)   )  allocate(soilt1_p(ims:ime,jms:jme)    )
-    if(.not.allocated(tsnav_p)    )  allocate(tsnav_p(ims:ime,jms:jme)     )
-    if(.not.allocated(acrunoff_p) )  allocate(acrunoff_p(ims:ime,jms:jme) )
-    if(.not.allocated(snowfallac_p)) allocate(snowfallac_p(ims:ime,jms:jme))
-    if(.not.allocated(graupelncv_p)) allocate(graupelncv_p(ims:ime,jms:jme))
-    if(.not.allocated(snowncv_p)  )  allocate(snowncv_p(ims:ime,jms:jme)   )
-    if(.not.allocated(rainncv_p)  )  allocate(rainncv_p(ims:ime,jms:jme)   )
-    if(.not.allocated(flqc_p)     )  allocate(flqc_p(ims:ime,jms:jme)      )
-    if(.not.allocated(flhc_p)     )  allocate(flhc_p(ims:ime,jms:jme)      )
-    if(.not.allocated(sfcexc_p)   )  allocate(sfcexc_p(ims:ime,jms:jme)    )
-    if(.not.allocated(sfcevp_p)   )  allocate(sfcevp_p(ims:ime,jms:jme)    )
-    if(.not.allocated(lakemask_p) )  allocate(lakemask_p(ims:ime,jms:jme)  )
-    if(.not.allocated(mavail_p)   )  allocate(mavail_p(ims:ime,jms:jme)    )
-    if(.not.allocated(smfr3d_p)   )  allocate(smfr3d_p(ims:ime,1:num_soils,jms:jme))
-    if(.not.allocated(landusef_p) )  allocate(landusef_p(ims:ime,1:num_landcat,jms:jme))
-    if(.not.allocated(soilf_p)    )  allocate(soilf_p(ims:ime,1:num_soilcat,jms:jme))
-    if(.not.allocated(keepfr3d_p) )  allocate(keepfr3d_p(ims:ime,1:num_soils,jms:jme))
-    if(.not.allocated(field_sf)   )  allocate(field_sf(ims:ime,1:num_soils,jms:jme))
-    if(.not.allocated(pattern_spp_lsm))  allocate(pattern_spp_lsm(ims:ime,1:num_soils,jms:jme))
+ if(lsm_scheme=='sf_ruc') then
+    if(.not.allocated(zs_p)           ) allocate(zs_p(1:num_soils)                           )
+    if(.not.allocated(rhosnf_p)       ) allocate(rhosnf_p(ims:ime,jms:jme)                   )
+    if(.not.allocated(precipfr_p)     ) allocate(precipfr_p(ims:ime,jms:jme)                 )
+    if(.not.allocated(qcg_p)          ) allocate(qcg_p(ims:ime,jms:jme)                      )
+    if(.not.allocated(qsg_p)          ) allocate(qsg_p(ims:ime,jms:jme)                      )
+    if(.not.allocated(qvg_p)          ) allocate(qvg_p(ims:ime,jms:jme)                      )
+    if(.not.allocated(dew_p)          ) allocate(dew_p(ims:ime,jms:jme)                      )
+    if(.not.allocated(soilt1_p)       ) allocate(soilt1_p(ims:ime,jms:jme)                   )
+    if(.not.allocated(tsnav_p)        ) allocate(tsnav_p(ims:ime,jms:jme)                    )
+    if(.not.allocated(acrunoff_p)     ) allocate(acrunoff_p(ims:ime,jms:jme)                 )
+    if(.not.allocated(snowfallac_p)   ) allocate(snowfallac_p(ims:ime,jms:jme)               )
+    if(.not.allocated(graupelncv_p)   ) allocate(graupelncv_p(ims:ime,jms:jme)               )
+    if(.not.allocated(snowncv_p)      ) allocate(snowncv_p(ims:ime,jms:jme)                  )
+    if(.not.allocated(rainncv_p)      ) allocate(rainncv_p(ims:ime,jms:jme)                  )
+    if(.not.allocated(flqc_p)         ) allocate(flqc_p(ims:ime,jms:jme)                     )
+    if(.not.allocated(flhc_p)         ) allocate(flhc_p(ims:ime,jms:jme)                     )
+    if(.not.allocated(sfcexc_p)       ) allocate(sfcexc_p(ims:ime,jms:jme)                   )
+    if(.not.allocated(sfcevp_p)       ) allocate(sfcevp_p(ims:ime,jms:jme)                   )
+    if(.not.allocated(lakemask_p)     ) allocate(lakemask_p(ims:ime,jms:jme)                 )
+    if(.not.allocated(mavail_p)       ) allocate(mavail_p(ims:ime,jms:jme)                   )
+    if(.not.allocated(smfr3d_p)       ) allocate(smfr3d_p(ims:ime,1:num_soils,jms:jme)       )
+    if(.not.allocated(landusef_p)     ) allocate(landusef_p(ims:ime,1:num_landcat,jms:jme)   )
+    if(.not.allocated(soilf_p)        ) allocate(soilf_p(ims:ime,1:num_soilcat,jms:jme)      )
+    if(.not.allocated(keepfr3d_p)     ) allocate(keepfr3d_p(ims:ime,1:num_soils,jms:jme)     )
+    if(.not.allocated(field_sf)       ) allocate(field_sf(ims:ime,1:num_soils,jms:jme)       )
+    if(.not.allocated(pattern_spp_lsm)) allocate(pattern_spp_lsm(ims:ime,1:num_soils,jms:jme))
  endif
 
  end subroutine allocate_lsm
 
 !=================================================================================================================
- subroutine deallocate_lsm(config_lsm_scheme)
+ subroutine deallocate_lsm(configs)
 !=================================================================================================================
 
- character(len=StrKIND),pointer, intent(in) :: config_lsm_scheme
+!input arguments:
+ type(mpas_pool_type),intent(in):: configs
+
+!local pointers:
+ character(len=StrKIND),pointer:: lsm_scheme
 
 !-----------------------------------------------------------------------------------------------------------------
 
+ call mpas_pool_get_config(configs,'config_lsm_scheme',lsm_scheme)
+
 !arrays for soil layer properties:
  if(allocated(dzs_p)   ) deallocate(dzs_p   )
- if(allocated(zs_p)    ) deallocate(zs_p    )
  if(allocated(smcrel_p)) deallocate(smcrel_p)
  if(allocated(sh2o_p)  ) deallocate(sh2o_p  )
  if(allocated(smois_p) ) deallocate(smois_p )
@@ -303,31 +314,32 @@
 
 
  if (config_lsm_scheme == "sf_ruc") then
-    if(allocated(rhosnf_p)    ) deallocate(rhosnf_p    )
-    if(allocated(precipfr_p)  ) deallocate(precipfr_p  )
-    if(allocated(qsg_p)       ) deallocate(qsg_p       )
-    if(allocated(qvg_p)       ) deallocate(qvg_p       )
-    if(allocated(qcg_p)       ) deallocate(qcg_p       )
-    if(allocated(dew_p)       ) deallocate(dew_p       )
-    if(allocated(soilt1_p)    ) deallocate(soilt1_p    )
-    if(allocated(tsnav_p)     ) deallocate(tsnav_p     )
-    if(allocated(acrunoff_p)  ) deallocate(acrunoff_p  )
-    if(allocated(smfr3d_p)    ) deallocate(smfr3d_p    )
-    if(allocated(graupelncv_p)) deallocate(graupelncv_p)
-    if(allocated(snowncv_p)   ) deallocate(snowncv_p   )
-    if(allocated(rainncv_p)   ) deallocate(rainncv_p   )
-    if(allocated(flqc_p)      ) deallocate(flqc_p      )
-    if(allocated(flhc_p)      ) deallocate(flhc_p      )
-    if(allocated(sfcexc_p)    ) deallocate(sfcexc_p    )
-    if(allocated(sfcevp_p)    ) deallocate(sfcevp_p    )
-    if(allocated(lakemask_p)  ) deallocate(lakemask_p  )
-    if(allocated(mavail_p)    ) deallocate(mavail_p    )
-    if(allocated(landusef_p)  ) deallocate(landusef_p  )
-    if(allocated(soilf_p)     ) deallocate(soilf_p     )
-    if(allocated(smfr3d_p)    ) deallocate(smfr3d_p    )
-    if(allocated(keepfr3d_p)  ) deallocate(keepfr3d_p  )
-    if(allocated(field_sf)    ) deallocate(field_sf    )
-    if(allocated(pattern_spp_lsm)) deallocate(pattern_spp_lsm )
+    if(allocated(zs_p)           ) deallocate(zs_p           )
+    if(allocated(rhosnf_p)       ) deallocate(rhosnf_p       )
+    if(allocated(precipfr_p)     ) deallocate(precipfr_p     )
+    if(allocated(qsg_p)          ) deallocate(qsg_p          )
+    if(allocated(qvg_p)          ) deallocate(qvg_p          )
+    if(allocated(qcg_p)          ) deallocate(qcg_p          )
+    if(allocated(dew_p)          ) deallocate(dew_p          )
+    if(allocated(soilt1_p)       ) deallocate(soilt1_p       )
+    if(allocated(tsnav_p)        ) deallocate(tsnav_p        )
+    if(allocated(acrunoff_p)     ) deallocate(acrunoff_p     )
+    if(allocated(smfr3d_p)       ) deallocate(smfr3d_p       )
+    if(allocated(graupelncv_p)   ) deallocate(graupelncv_p   )
+    if(allocated(snowncv_p)      ) deallocate(snowncv_p      )
+    if(allocated(rainncv_p)      ) deallocate(rainncv_p      )
+    if(allocated(flqc_p)         ) deallocate(flqc_p         )
+    if(allocated(flhc_p)         ) deallocate(flhc_p         )
+    if(allocated(sfcexc_p)       ) deallocate(sfcexc_p       )
+    if(allocated(sfcevp_p)       ) deallocate(sfcevp_p       )
+    if(allocated(lakemask_p)     ) deallocate(lakemask_p     )
+    if(allocated(mavail_p)       ) deallocate(mavail_p       )
+    if(allocated(landusef_p)     ) deallocate(landusef_p     )
+    if(allocated(soilf_p)        ) deallocate(soilf_p        )
+    if(allocated(smfr3d_p)       ) deallocate(smfr3d_p       )
+    if(allocated(keepfr3d_p)     ) deallocate(keepfr3d_p     )
+    if(allocated(field_sf)       ) deallocate(field_sf       )
+    if(allocated(pattern_spp_lsm)) deallocate(pattern_spp_lsm)
 
  endif
 
@@ -356,15 +368,15 @@
                                            br,sfc_albedo,sfc_emibck,sfc_emiss,sfcrunoff,smstav,  &
                                            smstot,snotime,snopcx,sr,swddif,swddir,udrunoff,      &
                                            z0,znt
-  real(kind=RKIND),dimension(:),pointer  :: rhosnf,precipfr,qsg,qvg,dew,soilt1,tsnav,acrunoff,   &
-                                           snowfallac,graupelncv,snowncv,qcg,                    &
-                                           flqc,flhc,sfcexc,sfcevp
  real(kind=RKIND),dimension(:),pointer  :: shdmin,shdmax,snoalb,sfc_albbck,snow,snowc,snowh,tmn, &
-                                           skintemp,vegfra,xice,xland,mavail
- real(kind=RKIND),dimension(:),pointer  :: t2m,th2m,q2
+                                           skintemp,vegfra,xice,xland
  real(kind=RKIND),dimension(:),pointer  :: raincv,rainncv
- real(kind=RKIND),dimension(:,:),pointer:: sh2o,smcrel,smois,tslb,dzs,zs
- real(kind=RKIND),dimension(:,:),pointer:: smfr3d,landusef,soilf,keepfr3d
+ real(kind=RKIND),dimension(:,:),pointer:: sh2o,smcrel,smois,tslb,dzs
+
+ real(kind=RKIND),dimension(:),pointer  :: rhosnf,precipfr,qsg,qvg,dew,soilt1,tsnav,acrunoff,   &
+                                           snowfallac,graupelncv,snowncv,qcg,                   &
+                                           flqc,flhc,sfcexc,sfcevp,mavail,t2m,th2m,q2
+ real(kind=RKIND),dimension(:,:),pointer:: smfr3d,landusef,soilf,keepfr3d,zs
 
 !local variables and arrays:
  logical:: do_fill
@@ -450,20 +462,23 @@
  call mpas_pool_get_array(sfc_input,'xice'      ,xice      )
  call mpas_pool_get_array(sfc_input,'xland'     ,xland     )
  call mpas_pool_get_array(sfc_input,'dzs'       ,dzs       )
- call mpas_pool_get_array(sfc_input,'zs'        ,zs        )
  call mpas_pool_get_array(sfc_input,'sh2o'      ,sh2o      )
  call mpas_pool_get_array(sfc_input,'smcrel'    ,smcrel    )
  call mpas_pool_get_array(sfc_input,'smois'     ,smois     )
  call mpas_pool_get_array(sfc_input,'tslb'      ,tslb      )
  if(config_lsm_scheme .eq. "sf_ruc") then
-   call mpas_pool_get_array(sfc_input,'landusef'       ,landusef         )
-   call mpas_pool_get_array(sfc_input,'soilf'          ,soilf            )
+   call mpas_pool_get_array(sfc_input,'landusef'  ,landusef  )
+   call mpas_pool_get_array(sfc_input,'soilf'     ,soilf     )
+   call mpas_pool_get_array(sfc_input,'zs'        ,zs        )
  endif
+
 !In Registry.xml, dzs is a function of nCells. In the Noah lsm scheme, dzs is independent
-!of cell locations
+!of cell locations:
  do n = 1,num_soils
     dzs_p(n) = dzs(n,its)
-    zs_p(n) = zs(n,its)
+    if(config_lsm_scheme .eq. "sf_ruc") then
+       zs_p(n) = zs(n,its)
+    endif
  enddo
 
  do j = jts,jte
@@ -638,7 +653,6 @@
  integer,intent(in):: its,ite
 
 !local pointers:
-
  character(len=StrKIND),pointer:: config_microp_scheme, &
                                   config_lsm_scheme
 
@@ -648,14 +662,13 @@
                                            grdflx,gsw,hfx,lai,lh,noahres,potevp,qfx,qgh,qsfc,  &
                                            br,sfc_albedo,sfc_emibck,sfc_emiss,sfcrunoff,       &
                                            smstav,smstot,snotime,snopcx,sr,udrunoff,z0,znt
- real(kind=RKIND),dimension(:),pointer  :: rhosnf,precipfr,qsg,qvg,dew,soilt1,tsnav,acrunoff,   &
-                                           snowfallac,graupelncv,snowncv,qcg,                   &
-                                           flqc,flhc,sfcexc,sfcevp
  real(kind=RKIND),dimension(:),pointer  :: shdmin,shdmax,snoalb,sfc_albbck,snow,snowc,snowh,tmn, &
-                                           skintemp,vegfra,xice,xland,mavail
- real(kind=RKIND),dimension(:),pointer  :: t2m,th2m,q2                                           
+                                           skintemp,vegfra,xice,xland
  real(kind=RKIND),dimension(:),pointer  :: raincv,rainncv
  real(kind=RKIND),dimension(:,:),pointer:: sh2o,smcrel,smois,tslb
+ real(kind=RKIND),dimension(:),pointer  :: rhosnf,precipfr,qsg,qvg,dew,soilt1,tsnav,acrunoff,   &
+                                           snowfallac,graupelncv,snowncv,qcg,                   &
+                                           flqc,flhc,sfcexc,sfcevp,mavail,t2m,th2m,q2
  real(kind=RKIND),dimension(:,:),pointer:: smfr3d,keepfr3d
 
 !local variables and arrays:
@@ -700,9 +713,6 @@
  call mpas_pool_get_array(diag_physics,'udrunoff'  ,udrunoff  )
  call mpas_pool_get_array(diag_physics,'z0'        ,z0        )
  call mpas_pool_get_array(diag_physics,'znt'       ,znt       )
- call mpas_pool_get_array(diag_physics,'t2m'       ,t2m       )
- call mpas_pool_get_array(diag_physics,'th2m'      ,th2m      )
- call mpas_pool_get_array(diag_physics,'q2'        ,q2        )
  if (config_lsm_scheme .eq. "sf_ruc") then
    call mpas_pool_get_array(diag_physics,'rhosnf'         ,rhosnf     )
    call mpas_pool_get_array(diag_physics,'precipfr'       ,precipfr   )
@@ -725,6 +735,9 @@
    call mpas_pool_get_array(diag_physics,'smfr3d'         ,smfr3d     )
    call mpas_pool_get_array(diag_physics,'keepfr3d'       ,keepfr3d   )
    call mpas_pool_get_array(diag_physics,'mavail'         ,mavail     )
+   call mpas_pool_get_array(diag_physics,'t2m'            ,t2m        )
+   call mpas_pool_get_array(diag_physics,'th2m'           ,th2m       )
+   call mpas_pool_get_array(diag_physics,'q2'             ,q2         )
  endif
 
  call mpas_pool_get_array(sfc_input,'isltyp'    ,isltyp    )
@@ -860,13 +873,15 @@
 !-----------------------------------------------------------------------------------------------------------------
 
  call mpas_pool_get_config(configs,'config_lsm_scheme',lsm_scheme)
- call physics_message(lsm_scheme)
+
  lsm_select: select case (trim(lsm_scheme))
 
     case ("sf_noah")
        call noah_init_forMPAS(dminfo,mesh,configs,diag_physics,sfc_input)
+    
     case ("sf_ruc") 
        call ruc_init_forMPAS(dminfo,mesh,configs,diag_physics,sfc_input)
+
     case default
  
  end select lsm_select
@@ -892,11 +907,12 @@
  logical,pointer:: config_sfc_albedo
  character(len=StrKIND),pointer:: lsm_scheme
  character(len=StrKIND),pointer:: mminlu
- integer,pointer:: isice,lakemodel,iswater
- integer,pointer:: spp_lsm_loc ,mosaic_lu,mosaic_soil
+ integer,pointer:: isice
+ integer,pointer:: lakemodel,iswater,spp_lsm_loc,mosaic_lu,mosaic_soil
  integer,pointer:: globalCells(:)
 !local variables
  logical:: myjpbl
+
 !-----------------------------------------------------------------------------------------------------------------
 !call mpas_log_write('')
 !call mpas_log_write('--- enter subroutine driver_lsm:')
@@ -911,6 +927,7 @@
  call mpas_pool_get_array(diag_physics,'mosaic_lu', mosaic_lu)
  call mpas_pool_get_array(diag_physics,'mosaic_soil', mosaic_soil)
  call mpas_pool_get_array(mesh,'indexToCellID',globalCells)
+
 !copy MPAS arrays to local arrays:
  call lsm_from_MPAS(configs,mesh,diag_physics,sfc_input,its,ite)
 !write(0,*) '--- end lsm_from_MPAS'
