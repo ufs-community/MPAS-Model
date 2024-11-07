@@ -162,7 +162,7 @@ module mpas_io_streams
       type (MPAS_Time_type) :: time0, time1, time2, timeGuess, timeGuessData
       type (MPAS_TimeInterval_type) :: timeInterval
 
-      call mpas_log_write('Called MPAS_seekStream')
+!      call mpas_log_write('Called MPAS_seekStream')
 
       !
       ! Initialize output arguments
