@@ -246,8 +246,8 @@
 !-----READ IN VEGETATION PROPERTIES FROM VEGPARM.TBL
 
 !-----------------------------------------------------------------------------------------------------------------
-call mpas_log_write('')
-call mpas_log_write('       enter subroutine soil_veg_gen_parm:')
+!call mpas_log_write('')
+!call mpas_log_write('       enter subroutine soil_veg_gen_parm:')
 
 !read in the vegetation properties from vegparm.tbl:
 
