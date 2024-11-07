@@ -321,8 +321,8 @@
     
  elseif(.not. (config_lsm_scheme .eq. 'off '    .or. &
                config_lsm_scheme .eq. 'sf_noah' .or. &
-               config_lsm_scheme .eq. 'sf_noahmp' .or. &
-               config_lsm_scheme .eq. 'sf_ruc')) then
+               config_lsm_scheme .eq. 'ruc'     .or. &
+               config_lsm_scheme .eq. 'sf_noahmp')) then
  
     write(mpas_err_message,'(A,A20)') 'illegal value for land surface scheme: ', &
           trim(config_lsm_scheme)
