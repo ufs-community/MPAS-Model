@@ -128,9 +128,9 @@
  type(mpas_pool_type),intent(in):: configs
 
 !local pointers:
- character(len=StrKIND),pointer:: lsm_scheme
+ character(len=StrKIND),pointer:: config_lsm_scheme
 
- call mpas_pool_get_config(configs,'config_lsm_scheme',lsm_scheme)
+ call mpas_pool_get_config(configs,'config_lsm_scheme',config_lsm_scheme)
 
 !arrays for soil layer properties:
  if(.not.allocated(dzs_p)   ) allocate(dzs_p(1:num_soils)                   )
@@ -200,7 +200,7 @@
  if(.not.allocated(utype_urb_p) ) allocate(utype_urb_p(ims:ime,jms:jme) )
 
 
- if(lsm_scheme=='sf_ruc') then
+ if(config_lsm_scheme=='sf_ruc') then
     if(.not.allocated(zs_p)           ) allocate(zs_p(1:num_soils)                           )
     if(.not.allocated(rhosnf_p)       ) allocate(rhosnf_p(ims:ime,jms:jme)                   )
     if(.not.allocated(precipfr_p)     ) allocate(precipfr_p(ims:ime,jms:jme)                 )
@@ -239,11 +239,11 @@
  type(mpas_pool_type),intent(in):: configs
 
 !local pointers:
- character(len=StrKIND),pointer:: lsm_scheme
+ character(len=StrKIND),pointer:: config_lsm_scheme
 
 !-----------------------------------------------------------------------------------------------------------------
 
- call mpas_pool_get_config(configs,'config_lsm_scheme',lsm_scheme)
+ call mpas_pool_get_config(configs,'config_lsm_scheme',config_lsm_scheme)
 
 !arrays for soil layer properties:
  if(allocated(dzs_p)   ) deallocate(dzs_p   )
