@@ -24,8 +24,6 @@
  use mpas_atmphys_o3climatology
  use mpas_atmphys_lsm_noahmpinit,only: init_lsm_noahmp
 
- use bl_ugwpv1_ngw, only: ugwpv1_ngw_init
-
  implicit none
  private
  public:: physics_init
@@ -134,16 +132,6 @@
  real(kind=RKIND),pointer:: config_oml_hml0
  real(kind=RKIND),dimension(:),pointer:: t_oml,t_oml_initial,t_oml_200m_initial
  real(kind=RKIND),dimension(:),pointer:: h_oml,h_oml_initial,hu_oml,hv_oml
- real(kind=RKIND),dimension(:),pointer:: rdzw,dzu
- real(kind=RKIND), pointer:: config_dt
- integer,pointer:: nCells,nVertLevels
- character(len=StrKIND),pointer:: gwdo_scheme
- logical,pointer:: ngw_scheme
- integer,pointer:: ntau_d1y
- real(kind=RKIND),dimension(:),pointer:: ugwp_taulat
- integer,dimension(:),pointer:: jindx1_tau, jindx2_tau
- real(kind=RKIND),dimension(:),pointer:: ddy_j1tau, ddy_j2tau
- real(kind=RKIND),dimension(:),pointer:: latCell
 
 !local variables and arrays:
  type(MPAS_Time_Type):: currTime
@@ -223,16 +211,8 @@
  call mpas_pool_get_array(diag_physics,'h_oml_initial'     ,h_oml_initial)
  call mpas_pool_get_array(diag_physics,'hu_oml'            ,hu_oml)
  call mpas_pool_get_array(diag_physics,'hv_oml'            ,hv_oml)
-
  call mpas_pool_get_config(configs,'config_oml1d'          ,config_oml1d  )
  call mpas_pool_get_config(configs,'config_oml_hml0'       ,config_oml_hml0  )
- call mpas_pool_get_config(configs,'config_gwdo_scheme'    ,gwdo_scheme )
- call mpas_pool_get_config(configs,'config_ngw_scheme'     ,ngw_scheme  )
- call mpas_pool_get_config(configs,'config_dt'             ,config_dt  )
- call mpas_pool_get_dimension(mesh,'nCells',nCells)
- call mpas_pool_get_dimension(mesh,'nVertLevels',nVertLevels  )
- call mpas_pool_get_array(mesh,'rdzw'   ,rdzw   )
- call mpas_pool_get_array(mesh,'dzu'    ,dzu    )
 
  currTime = mpas_get_clock_time(clock,MPAS_NOW,ierr)
  call mpas_get_time(curr_time=currTime,DoY=julday,ierr=ierr)
@@ -426,21 +406,6 @@
     else
        call init_radiation_lw(dminfo,configs)
     endif
- endif
-
-!initialization of non-stationary gravity wave drag
- if(trim(gwdo_scheme).eq.'bl_ugwp_gwdo' .and. ngw_scheme) then
-    call mpas_log_write('Initializing non-stationary GWD scheme',masterOnly=.true.)
-    call mpas_pool_get_dimension(mesh,'lat',ntau_d1y)
-    call mpas_pool_get_array(diag_physics,'LATS',ugwp_taulat)
-    call mpas_pool_get_array(diag_physics,'jindx1_tau'  ,jindx1_tau  )
-    call mpas_pool_get_array(diag_physics,'jindx2_tau'  ,jindx2_tau  )
-    call mpas_pool_get_array(diag_physics,'ddy_j1tau'   ,ddy_j1tau   )
-    call mpas_pool_get_array(diag_physics,'ddy_j2tau'   ,ddy_j2tau   )
-    call mpas_pool_get_array(mesh,'latCell',latCell)
-print *, "Ahoj svete in physics_init: ugwp_taulat =", ugwp_taulat
-    call ugwpv1_ngw_init(latCell,nVertLevels,config_dt,rdzw,dzu,           &
-            ntau_d1y,ugwp_taulat,jindx1_tau,jindx2_tau,ddy_j1tau,ddy_j2tau)
  endif
 
 ! call mpas_log_write('')
