@@ -52,9 +52,9 @@
 		    description="Number of landuse categories in the input data"/>
 		<dim name="nscat"
                     description="Number of soil categories in the input data"/>
-                <dim name="lat"
+                <dim name="lat"                definition="1"
                     description="Number of latitude points in the input ugwp_limb_tau NGW file"/>
-                <dim name="days"
+                <dim name="days"               definition="1"
                     description="Number of day-of-year points in the input ugwp_limb_tau NGW file"/>
 #endif
         </dims>
