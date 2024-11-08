@@ -316,7 +316,12 @@ module init_atm_cases
                                    diag, diag_physics, block_ptr % dimensions, block_ptr % configs)
 
             if (config_met_interp) then
-               call init_atm_thompson_aerosols(block_ptr, mesh, block_ptr % configs, diag, state)
+               rap_aerosols = use_rap_aerosols(block_ptr % configs, block_ptr, mesh, state)
+               if (rap_aerosols) then
+                  call mpas_log_write('Using interpolated aerosols from first guess for ICs. Skipping monthly climatolgy interpolation')
+               else
+                  call init_atm_thompson_aerosols(block_ptr, mesh, block_ptr % configs, diag, state)
+               endif
                call physics_initialize_real(mesh, fg, domain % dminfo, block_ptr % dimensions, block_ptr % configs)
             end if
 
@@ -404,7 +409,12 @@ module init_atm_cases
                                       diag, lbc_state, block_ptr % dimensions, block_ptr % configs)
 
                call mpas_get_time(start_time, dateTimeString=timeStart)
-               call init_atm_thompson_aerosols_lbc(timeString, timeStart, block_ptr, mesh, diag, state, lbc_state)
+               rap_aerosols = use_rap_aerosols(block_ptr % configs, block_ptr, mesh, state)
+               if (rap_aerosols) then
+                  call mpas_log_write('Using interpolated aerosols from first guess for LBCs. Skipping monthly climatolgy interpolation')
+               else
+                  call init_atm_thompson_aerosols_lbc(timeString, timeStart, block_ptr, mesh, diag, state, lbc_state)
+               endif
                block_ptr => block_ptr % next
             end do
 
