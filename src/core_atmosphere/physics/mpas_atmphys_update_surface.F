@@ -89,11 +89,11 @@
  call mpas_pool_get_array(sfc_input,'sfc_albbck', sfc_albbck)
 
  call mpas_pool_get_array(sfc_input,'greenfrac' , greenfrac )
- call mpas_pool_get_array(sfc_input,'lai12m'    , lai12m    )
- call mpas_pool_get_array(diag_physics,'lai   '    , lai    )
  call mpas_pool_get_array(sfc_input,'vegfra'    , vegfra    )
  call mpas_pool_get_array(sfc_input,'shdmin'    , shdmin    )
  call mpas_pool_get_array(sfc_input,'shdmax'    , shdmax    )
+ call mpas_pool_get_array(sfc_input,'lai12m'    , lai12m    )
+ call mpas_pool_get_array(diag_physics,'lai   '    , lai    )
 
 !updates the surface background albedo for the current date as a function of the monthly-mean
 !surface background albedo valid on the 15th day of the month, if config_sfc_albedo is true:
@@ -117,13 +117,17 @@
  endif
 
 !updates the leaf area index for the current date as a function of the leaf area index
-!valid on the 15th day of the month :
- call monthly_interp_to_date(nCellsSolve,current_date,lai12m,lai)
 
-  call mpas_pool_get_array(mesh,'indexToCellID',globalCells)
-  do iCell = 1,nCellsSolve
-    lai(iCell) = lai(iCell) / 10.
-  enddo
+ if(associated(lai12m)) then 
+
+   call monthly_interp_to_date(nCellsSolve,current_date,lai12m,lai)
+
+   do iCell = 1,nCellsSolve
+     lai(iCell) = lai(iCell) / 10.
+   enddo
+
+ end if
+
  end subroutine physics_update_surface
 
 !=================================================================================================================
