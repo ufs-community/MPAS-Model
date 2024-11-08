@@ -101,6 +101,10 @@ module init_atm_cases
       real (kind=RKIND), dimension(1), TARGET :: dummyn1
       integer, dimension(1), TARGET :: idummyn1
 
+      logical :: rap_aerosols
+
+      rap_aerosols = .false.
+
       latCell => dummyn1
       lonCell => dummyn1
       ter     => dummyn1
@@ -9864,6 +9868,79 @@ call mpas_log_write('Done with soil consistency check')
       ierr = 0
 
    end function read_text_array
+
+   !-----------------------------------------------------------------------
+   !  logical function
+   !
+   !> \brief Whether to use RAP aerosols or monthly climo with TEMPO
+   !> \author Anders Jensen
+   !> \date   08 November 2024
+   !> \details
+   !>  This function returns .true. if RAP aerosols will be used with TEMPO
+   !>  microphysics, meaning that RAP values of nwfa and nifa will be in
+   !>  the initial and boundary condition files. For this function to
+   !>  be .true., config_tempo_rap must be .true. in the core_init_atmosphere
+   !>  Registry and aerosols from the parent model must have both global max
+   !>  values of nwfa and nifa that are non-zero.
+   !
+   !-----------------------------------------------------------------------
+   logical function use_rap_aerosols(configs, block, mesh, state)
+
+     implicit none
+
+     type(block_type), intent(in), target :: block
+     type (mpas_pool_type), intent(in):: mesh
+     type (mpas_pool_type), intent(in):: state
+     type (mpas_pool_type), intent(in):: configs
+
+     type(dm_info), pointer:: dminfo
+
+     integer, pointer :: index_nwfa
+     integer, pointer :: index_nifa
+     integer, pointer :: nCellsSolve
+     logical, pointer :: config_tempo_rap
+     real(kind=RKIND), dimension(:,:), pointer :: nifa,nwfa
+     real(kind=RKIND), dimension(:,:,:), pointer :: scalars
+
+     real(kind=RKIND) :: nifa_max,global_nifa_max
+     real(kind=RKIND) :: nwfa_max,global_nwfa_max
+
+     use_rap_aerosols = .false.
+
+     dminfo => block%domain%dminfo
+
+     call mpas_pool_get_config(configs,'config_tempo_rap',config_tempo_rap)
+     if (.not. config_tempo_rap) then
+        call mpas_log_write('config_tempo_rap is false, monthly climatology will be used for nwfa and nifa')
+        return
+     else
+        call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
+        call mpas_pool_get_dimension(state, 'index_nwfa', index_nwfa)
+        call mpas_pool_get_dimension(state, 'index_nifa', index_nifa)
+        call mpas_pool_get_array(state, 'scalars', scalars)
+
+        nifa => scalars(index_nifa,:,:)
+        nwfa => scalars(index_nwfa,:,:)
+
+        global_nwfa_max = 0._RKIND
+        nwfa_max = maxval(nwfa(:,1:nCellsSolve))
+        call mpas_dmpar_max_real(dminfo,nwfa_max,global_nwfa_max)
+
+        global_nifa_max = 0._RKIND
+        nifa_max = maxval(nifa(:,1:nCellsSolve))
+        call mpas_dmpar_max_real(dminfo,nifa_max,global_nifa_max)
+
+        call mpas_log_write('--- global_nwfa_max = $r',realArgs=(/global_nwfa_max/))
+        call mpas_log_write('--- global_nifa_max = $r',realArgs=(/global_nifa_max/))
+
+        if (global_nwfa_max /= 0._RKIND .and. global_nifa_max /= 0._RKIND) then
+           call mpas_log_write('config_tempo_rap is true and non-zero global values found for nwfa and nifa')
+           call mpas_log_write('...aerosols from parent model (likely the RAP) will be used')
+           use_rap_aerosols = .true.
+        endif
+     endif
+
+   end function use_rap_aerosols
 
    !-----------------------------------------------------------------------
    !  routine init_microphysics_aerosols

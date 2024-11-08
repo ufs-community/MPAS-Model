@@ -321,6 +321,11 @@
                      description="Whether to use monthly climatology for water- and ice-friendly aerosols"
                      possible_values="true or false"/>
 
+		<nml_option name="config_tempo_rap"            type="logical"       default_value="false"
+                     units="-"
+                     description="Whether to use aerosols from RAP for TEMPO microphysics instead of the monthly climatology"
+                     possible_values="true or false"/>
+
                 <nml_option name="config_input_sst"             type="logical"       default_value="false"
                      units="-"
                      description="Whether to re-compute SST and sea-ice fields from surface input data set; should be set to .true. when running case 8"
