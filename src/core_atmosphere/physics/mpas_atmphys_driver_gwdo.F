@@ -725,7 +725,7 @@
  real(kind=RKIND),dimension(:),allocatable::   days_limb
  real(kind=RKIND),dimension(:,:),allocatable:: tau_limb
 
- integer:: i,iCell,iEdge
+ integer:: i
  real(kind=RKIND),dimension(:),allocatable:: dx_max
 
 !CCPP-compliant flags:
