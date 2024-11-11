@@ -3323,29 +3323,8 @@
 
 
                 <!-- ================================================================================================== -->
-                <!-- ... PARAMETERIZATION OF NON-STATIONARY (NON-OROGRAPHIC) GRAVITY WAVE:                              -->
+                <!-- ... PARAMETERIZATION OF NON-STATIONARY (NON-OROGARPHIC) GRAVITY WAVE DRAG:                         -->
                 <!-- ================================================================================================== -->
-
-                <var name="jindx1_tau" type="integer" dimensions="nCells" units="unitless"
-                     description="lower latitude index of absolute momentum flux due to nonorographic gravity wave drag for interpolation"/>
-
-                <var name="jindx2_tau" type="integer" dimensions="nCells" units="unitless"
-                     description="upper latitude index of absolute momentum flux due to nonorographic gravity wave drag for interpolation"/>
-
-                <var name="ddy_j1tau" type="real" dimensions="nCells" units="unitless"
-                     description="latitude interpolation weight complement for absolute momentum flux due to nonorographic gravity wave drag"/>
-
-                <var name="ddy_j2tau" type="real" dimensions="nCells" units="unitless"
-                     description="latitude interpolation weight for absolute momentum flux due to nonorographic gravity wave drag"/>
-
-                <var name="LATS" type="real" dimensions="lat" units="degrees"
-                     description="latitude in the input ugwp_limb_tau NGW file"/>
-
-                <var name="DAYS" type="real" dimensions="days" units="unitless"
-                     description="day of year in the input ugwp_limb_tau NGW file"/>
-
-                <var name="ABSMF" type="real" dimensions="lat days" units="Pa"
-                     description="gravity wave absolute momentum flux from NGW file"/>
 
                 <var name="dudt_ngw" type="real" dimensions="nVertLevels nCells Time" units="m s^{-2}"
                      description="u-momentum tendency due to non-stationary gravity wave drag"/>
@@ -3988,6 +3967,36 @@
 
                 <var name="ozmixm" type="real" dimensions="nMonths nOznLevels nCells" units="mol mol^{-1}"
                      description="monthly-mean climatological ozone defined at fixed pressure levels"/>
+        </var_struct>
+
+
+                <!-- ================================================================================================== -->
+                <!-- ... VARIABLES NEEDED FROM UGWP LOOK-UP TABLE (NETCDF) FOR NON-STATIONARY GWD PARAMETERIZATION:     -->
+                <!-- ================================================================================================== -->
+
+        <var_struct name="ngw_input" time_levs="1">
+
+                <var name="jindx1_tau" type="integer" dimensions="nCells" units="unitless"
+                     description="lower latitude index of absolute momentum flux due to nonorographic gravity wave drag for interpolation"/>
+
+                <var name="jindx2_tau" type="integer" dimensions="nCells" units="unitless"
+                     description="upper latitude index of absolute momentum flux due to nonorographic gravity wave drag for interpolation"/>
+
+                <var name="ddy_j1tau" type="real" dimensions="nCells" units="unitless"
+                     description="latitude interpolation weight complement for absolute momentum flux due to nonorographic gravity wave drag"/>
+
+                <var name="ddy_j2tau" type="real" dimensions="nCells" units="unitless"
+                     description="latitude interpolation weight for absolute momentum flux due to nonorographic gravity wave drag"/>
+
+                <var name="LATS" type="real" dimensions="lat" units="degrees"
+                     description="latitude in the input ugwp_limb_tau NGW file"/>
+
+                <var name="DAYS" type="real" dimensions="days" units="unitless"
+                     description="day of year in the input ugwp_limb_tau NGW file"/>
+
+                <var name="ABSMF" type="real" dimensions="lat days" units="Pa"
+                     description="gravity wave absolute momentum flux from NGW file"/>
+
         </var_struct>
 
 

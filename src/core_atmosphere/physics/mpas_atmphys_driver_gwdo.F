@@ -284,13 +284,14 @@
  end subroutine deallocate_gwdo
 
 !=================================================================================================================
- subroutine gwdo_from_MPAS(configs,mesh,sfc_input,diag_physics,tend_physics,its,ite)
+ subroutine gwdo_from_MPAS(configs,mesh,sfc_input,ngw_input,diag_physics,tend_physics,its,ite)
 !=================================================================================================================
 
 !input arguments:
  type(mpas_pool_type),intent(in):: configs
  type(mpas_pool_type),intent(in):: mesh
  type(mpas_pool_type),intent(in):: sfc_input
+ type(mpas_pool_type),intent(in):: ngw_input
  type(mpas_pool_type),intent(in):: diag_physics
  type(mpas_pool_type),intent(in):: tend_physics
 
@@ -478,10 +479,10 @@
             call mpas_pool_get_array(diag_physics,'raincv',raincv)
          if(trim(microp_scheme) /= "off") &
             call mpas_pool_get_array(diag_physics,'rainncv',rainncv)
-         call mpas_pool_get_array(diag_physics,'jindx1_tau',jindx1_tau)
-         call mpas_pool_get_array(diag_physics,'jindx2_tau',jindx2_tau)
-         call mpas_pool_get_array(diag_physics,'ddy_j1tau', ddy_j1tau)
-         call mpas_pool_get_array(diag_physics,'ddy_j2tau', ddy_j2tau)
+         call mpas_pool_get_array(ngw_input,'jindx1_tau',jindx1_tau)
+         call mpas_pool_get_array(ngw_input,'jindx2_tau',jindx2_tau)
+         call mpas_pool_get_array(ngw_input,'ddy_j1tau', ddy_j1tau)
+         call mpas_pool_get_array(ngw_input,'ddy_j2tau', ddy_j2tau)
          do j = jts,jte
          do i = its,ite
             xlat_p(i,j) = latCell(i)*rad2deg   ! latitude in degrees
@@ -690,7 +691,7 @@
  end subroutine gwdo_to_MPAS
  
 !=================================================================================================================
- subroutine driver_gwdo(itimestep,configs,mesh,sfc_input,diag_physics,tend_physics,its,ite)
+ subroutine driver_gwdo(itimestep,configs,mesh,sfc_input,ngw_input,diag_physics,tend_physics,its,ite)
 !=================================================================================================================
 
  use mpas_log, only : mpas_log_write
@@ -704,6 +705,7 @@
  integer,intent(in):: itimestep
 
 !inout arguments:
+ type(mpas_pool_type),intent(inout):: ngw_input
  type(mpas_pool_type),intent(inout):: diag_physics
  type(mpas_pool_type),intent(inout):: tend_physics
 
@@ -746,8 +748,8 @@
  if (ngw_scheme) then
     call mpas_pool_get_dimension(mesh,'lat',ntau_d1y_ptr)
     call mpas_pool_get_dimension(mesh,'days',ntau_d2t_ptr)
-    call mpas_pool_get_array(diag_physics,'DAYS',days_limb_ptr)
-    call mpas_pool_get_array(diag_physics,'ABSMF',tau_limb_ptr)
+    call mpas_pool_get_array(ngw_input,'DAYS',days_limb_ptr)
+    call mpas_pool_get_array(ngw_input,'ABSMF',tau_limb_ptr)
     ntau_d1y = ntau_d1y_ptr
     ntau_d2t = ntau_d2t_ptr
     if(.not.allocated(days_limb)) allocate(days_limb(ntau_d2t))
@@ -756,11 +758,11 @@
     tau_limb (:,:) = tau_limb_ptr(:,:)
     ! If at first timestep, initialize variables needed for NGW scheme
     if (itimestep==1) then
-       call mpas_pool_get_array(diag_physics,'jindx1_tau',jindx1_tau_init)
-       call mpas_pool_get_array(diag_physics,'jindx2_tau',jindx2_tau_init)
-       call mpas_pool_get_array(diag_physics,'ddy_j1tau', ddy_j1tau_init)
-       call mpas_pool_get_array(diag_physics,'ddy_j2tau', ddy_j2tau_init) 
-       call mpas_pool_get_array(diag_physics,'LATS',ugwp_taulat)
+       call mpas_pool_get_array(ngw_input,'jindx1_tau',jindx1_tau_init)
+       call mpas_pool_get_array(ngw_input,'jindx2_tau',jindx2_tau_init)
+       call mpas_pool_get_array(ngw_input,'ddy_j1tau', ddy_j1tau_init)
+       call mpas_pool_get_array(ngw_input,'ddy_j2tau', ddy_j2tau_init) 
+       call mpas_pool_get_array(ngw_input,'LATS',ugwp_taulat)
        call mpas_pool_get_array(mesh,'latCell',latCell)
        call mpas_pool_get_dimension(mesh,'nVertLevels',nVertLevels  )
        call mpas_pool_get_config(configs,'config_dt'  ,config_dt  )
@@ -776,7 +778,7 @@
 
 
 !copy MPAS arrays to local arrays:
- call gwdo_from_MPAS(configs,mesh,sfc_input,diag_physics,tend_physics,its,ite)
+ call gwdo_from_MPAS(configs,mesh,sfc_input,ngw_input,diag_physics,tend_physics,its,ite)
 
  gwdo_select: select case (trim(gwdo_scheme))
 
