@@ -34,7 +34,7 @@
  logical,parameter:: rdmaxalb = .false. !use snow albedo from geogrid;false use table values
  logical,parameter:: myj      = .false. !true if using Mellor-Yamada PBL scheme.
  logical,parameter:: frpcpn   = .false.
- logical,parameter:: rdlai2d  = .true.
+ logical          :: rdlai2d  = .false.
 
 !urban physics: MPAS does not plan to run the urban physics option.
  integer,parameter:: sf_urban_physics = 0 !activate urban canopy model (=0: no urban canopy) 
@@ -970,6 +970,7 @@
     case("sf_ruc")
        call mpas_timer_start('sf_ruc')
        myjpbl = .false.
+       rdlai2d = .true.
 
        call mpas_log_write('--- call subroutine ruc_land:')
        call ruc_land( spp_lsm      = spp_lsm_loc   , lakemodel    = lakemodel   , lakemask  = lakemask_p,  &

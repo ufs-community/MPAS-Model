@@ -31,9 +31,6 @@ OBJS = \
 	module_mp_thompson_aerosols.o  \
 	module_mp_thompson_cldfra3.o   \
 	module_mp_wsm6.o               \
-	module_mynnedmf.o	       \
-        module_mynnedmf_driver.o       \
-        module_mynnedmf_common.o       \
 	module_ra_cam.o                \
 	module_ra_cam_support.o        \
 	module_ra_rrtmg_lw.o           \
@@ -78,16 +75,6 @@ physics_wrf_lib:
 module_bl_mynn.o: \
         bl_mynn_post.o \
         bl_mynn_pre.o
-
-module_mynnedmf_common.o: \
-	../mpas_atmphys_constants.o
-
-module_mynnedmf.o: \
-        module_cam_error_function.o \
-        module_mynnedmf_common.o
-
-module_mynnedmf_driver.o: \
-        module_mynnedmf.o
 
 module_mynnsfclay_driver.o: \
 	module_mynnsfclay.o \

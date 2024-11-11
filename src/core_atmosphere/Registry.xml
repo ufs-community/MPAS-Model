@@ -4010,12 +4010,14 @@
                      description="dominant soil category"/>
 
 		<var name="soilf" type="real" dimensions="nscat nCells" units="unitless"
+                     packages="lsm_ruc_in"
                      description="fraction of each soil category present"/>
 
                 <var name="ivgtyp" type="integer" dimensions="nCells" units="unitless"
                      description="dominant vegetation category"/>
 
 		<var name="landusef" type="real" dimensions="nlcat nCells" units="unitless"
+                     packages="lsm_ruc_in"
 		     description="fraction of each vegetation category present"/>
 
                 <var name="mminlu" type="text" dimensions="" units="unitless"
@@ -4046,6 +4048,7 @@
                      description="monthly-mean climatological surface albedo"/>
 
 		<var name="lai12m" type="real" dimensions="nMonths nCells" units="unitless"
+                     packages="lsm_ruc_in"
                      description="monthly-mean climatological leaf area index"/>
 
                 <var name="greenfrac" type="real" dimensions="nMonths nCells" units="unitless"
