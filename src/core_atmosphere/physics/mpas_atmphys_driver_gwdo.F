@@ -302,7 +302,7 @@
  character(len=StrKIND),pointer:: gwdo_scheme
  character(len=StrKIND),pointer:: convection_scheme,microp_scheme
  logical,pointer:: ugwp_diags,ngw_scheme
- real(kind=RKIND),parameter :: rad2deg = 180./3.1415926 
+ real(kind=RKIND),parameter :: rad2deg = 180./3.1415926
 
 !local pointers:
  integer,dimension(:),pointer:: kpbl
@@ -761,7 +761,7 @@
        call mpas_pool_get_array(ngw_input,'jindx1_tau',jindx1_tau_init)
        call mpas_pool_get_array(ngw_input,'jindx2_tau',jindx2_tau_init)
        call mpas_pool_get_array(ngw_input,'ddy_j1tau', ddy_j1tau_init)
-       call mpas_pool_get_array(ngw_input,'ddy_j2tau', ddy_j2tau_init) 
+       call mpas_pool_get_array(ngw_input,'ddy_j2tau', ddy_j2tau_init)
        call mpas_pool_get_array(ngw_input,'LATS',ugwp_taulat)
        call mpas_pool_get_array(mesh,'latCell',latCell)
        call mpas_pool_get_dimension(mesh,'nVertLevels',nVertLevels  )

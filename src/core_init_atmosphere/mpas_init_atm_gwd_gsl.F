@@ -184,7 +184,7 @@ module mpas_init_atm_gwd_gsl
             oa1ls(iCell) = oa1ss(iCell)
             oa2ls(iCell) = oa2ss(iCell)
             oa3ls(iCell) = oa3ss(iCell)
-            oa4ls(iCell) = oa4ss(iCell) 
+            oa4ls(iCell) = oa4ss(iCell)
             ol1ls(iCell) = ol1ss(iCell)
             ol2ls(iCell) = ol2ss(iCell)
             ol3ls(iCell) = ol3ss(iCell)

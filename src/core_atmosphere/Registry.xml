@@ -48,9 +48,9 @@
                      description="dimension of CAM radiation absorption save array"/>
                 <dim name="nVertLevelsP2"      definition="nVertLevels+2"
                      description="Two more than the number of atmospheric layers"/>
-		<dim name="nlcat"
+		<dim name="nlcat"              definition="1"
 		    description="Number of landuse categories in the input data"/>
-		<dim name="nscat"
+		<dim name="nscat"              definition="1"
                     description="Number of soil categories in the input data"/>
                 <dim name="lat"                definition="1"
                     description="Number of latitude points in the input ugwp_limb_tau NGW file"/>

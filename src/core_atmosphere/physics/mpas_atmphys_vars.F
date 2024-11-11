@@ -551,7 +551,7 @@
 !... variables for UGWP non-stationary gravity wave (NGW) drag:
 
  integer,dimension(:,:),allocatable:: &
-    jindx1_tau_p,        &!lower latitude index of NGW momentum flux for interpolation                         [-] 
+    jindx1_tau_p,        &!lower latitude index of NGW momentum flux for interpolation                         [-]
     jindx2_tau_p          !upper latitude index of NGW momentum flux for interpolation                         [-]
 
  real(kind=RKIND),dimension(:,:),allocatable:: &
