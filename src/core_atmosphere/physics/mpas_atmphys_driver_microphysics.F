@@ -926,7 +926,24 @@
           sr(i)         = 0._RKIND
        enddo
 
-    case ("mp_tempo","mp_nssl2m")
+    case ("mp_tempo")
+       do j = jts, jte
+       do i = its, ite
+          snowncv_p(i,j)    = 0._RKIND
+          graupelncv_p(i,j) = 0._RKIND
+          snownc_p(i,j)     = 0._RKIND
+          graupelnc_p(i,j)  = 0._RKIND
+          sr_p(i,j)         = 0._RKIND
+       enddo
+       enddo
+
+       do i = its,ite
+          snowncv(i)    = 0._RKIND
+          graupelncv(i) = 0._RKIND
+          sr(i)         = 0._RKIND
+       enddo
+
+    case ("mp_nssl2m")
        do j = jts, jte
        do i = its, ite
           snowncv_p(i,j)    = 0._RKIND
@@ -1038,7 +1055,21 @@
        enddo
        enddo
 
-    case ("mp_tempo","mp_nssl2m")
+    case ("mp_tempo")
+       do j = jts,jte
+       do i = its,ite
+          !time-step precipitation:
+          snowncv(i)    = snownc_p(i,j)
+          graupelncv(i) = graupelnc_p(i,j)
+          sr(i) = (snownc_p(i,j) + graupelnc_p(i,j)) / (rainnc_p(i,j)+1.e-12)
+
+          !accumulated precipitation:
+          snownc(i)    = snownc(i) + snowncv(i)
+          graupelnc(i) = graupelnc(i) + graupelncv(i)
+       enddo
+       enddo
+
+    case ("mp_nssl2m")
        do j = jts,jte
        do i = its,ite
           !time-step precipitation:
