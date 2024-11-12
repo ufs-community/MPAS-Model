@@ -943,6 +943,14 @@
           sr(i)         = 0._RKIND
        enddo
 
+       if (config_tempo_fzra) then
+          do j = jts, jte
+          do i = its, ite
+             frainnc_p(i,j)    = 0._RKIND
+          enddo
+          enddo
+       endif
+
     case ("mp_nssl2m")
        do j = jts, jte
        do i = its, ite
@@ -1068,6 +1076,16 @@
           graupelnc(i) = graupelnc(i) + graupelncv(i)
        enddo
        enddo
+
+       if (config_tempo_fzra) then
+          call mpas_pool_get_array(diag_physics,'frainnc',frainnc)
+          do j = jts,jte
+          do i = its,ite
+             !accumulated precipitation:
+             frainnc(i)    = frainnc(i) + frainnc_p(i,j)
+          enddo
+          enddo
+       endif
 
     case ("mp_nssl2m")
        do j = jts,jte
