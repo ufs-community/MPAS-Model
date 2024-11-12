@@ -287,7 +287,7 @@
     nwfa2d_p
 
  real(kind=RKIND),dimension(:,:),allocatable:: &
-    frainnc_p,        &!
+    frainnc_p
 
  integer:: & 
     has_reqc,         &!
