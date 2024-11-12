@@ -110,6 +110,7 @@
  character(len=StrKIND),pointer:: microp_scheme
  character(len=StrKIND),pointer:: nssl_moments
  logical,pointer:: config_tempo_hailaware, config_tempo_aerosolaware
+ logical,pointer:: config_tempo_fzra
 
 !-----------------------------------------------------------------------------------------------------------------
 
@@ -117,6 +118,7 @@
  call mpas_pool_get_config(configs,'config_nssl_moments',nssl_moments)
  call mpas_pool_get_config(configs,'config_tempo_hailaware',config_tempo_hailaware)
  call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
+ call mpas_pool_get_config(configs,'config_tempo_fzra',config_tempo_fzra)
 
 !sounding variables:
  if(.not.allocated(rho_p) ) allocate(rho_p(ims:ime,kms:kme,jms:jme) )
@@ -211,6 +213,10 @@
              if(.not.allocated(nwfa_p)  ) allocate(nwfa_p(ims:ime,kms:kme,jms:jme))
           endif
 
+          if (config_tempo_fzra) then
+             if(.not.allocated(frainnc_p) ) allocate(frainnc_p(ims:ime,jms:jme) )
+          endif
+
        case("mp_nssl2m")
           if(.not.allocated(qh_p) ) allocate(qh_p(ims:ime,kms:kme,jms:jme))
           if(.not.allocated(nc_p) ) allocate(nc_p(ims:ime,kms:kme,jms:jme))
@@ -260,6 +266,7 @@
  character(len=StrKIND),pointer:: microp_scheme
  character(len=StrKIND),pointer:: nssl_moments
  logical,pointer:: config_tempo_hailaware, config_tempo_aerosolaware
+ logical,pointer:: config_tempo_fzra
 
 !-----------------------------------------------------------------------------------------------------------------
 
@@ -267,6 +274,7 @@
  call mpas_pool_get_config(configs,'config_nssl_moments',nssl_moments)
  call mpas_pool_get_config(configs,'config_tempo_hailaware',config_tempo_hailaware)
  call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
+ call mpas_pool_get_config(configs,'config_tempo_fzra',config_tempo_fzra)
 
 !sounding variables:
  if(allocated(rho_p) ) deallocate(rho_p )
@@ -357,6 +365,10 @@
              if(allocated(nc_p)    ) deallocate(nc_p    )
              if(allocated(nifa_p)  ) deallocate(nifa_p  )
              if(allocated(nwfa_p)  ) deallocate(nwfa_p  )
+          endif
+
+          if (config_tempo_fzra) then
+             if(allocated(frainnc_p) ) deallocate(frainnc_p)
           endif
 
        case("mp_nssl2m")
@@ -589,7 +601,7 @@
                      re_cloud  = recloud_p   , re_ice     = reice_p      , re_snow    = resnow_p     , &
                      has_reqc  = has_reqc    , has_reqi   = has_reqi     , has_reqs   = has_reqs     , &
                      !! ntc       = ntc_p       , muc        = muc_p                                    , &
-                     refl_10cm  = refl10cm_p   , &
+                     refl_10cm  = refl10cm_p , frainnc    = frainnc_p                                , &
                      ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde           , &
                      ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme           , &
                      its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte             &
@@ -611,7 +623,7 @@
                         re_cloud  = recloud_p   , re_ice     = reice_p      , re_snow    = resnow_p     , &
                         has_reqc  = has_reqc    , has_reqi   = has_reqi     , has_reqs   = has_reqs     , &
                         !! ntc       = ntc_p       , muc        = muc_p                                    , &
-                        refl_10cm  = refl10cm_p   , &
+                        refl_10cm  = refl10cm_p , frainnc    = frainnc_p                                , &
                         ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde           , &
                         ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme           , &
                         its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte             &
@@ -632,7 +644,7 @@
                         re_cloud  = recloud_p   , re_ice     = reice_p      , re_snow    = resnow_p     , &
                         has_reqc  = has_reqc    , has_reqi   = has_reqi     , has_reqs   = has_reqs     , &
                         !! ntc       = ntc_p       , muc        = muc_p                                    , &
-                        refl_10cm  = refl10cm_p   , &
+                        refl_10cm  = refl10cm_p , frainnc    = frainnc_p                                , &
                         ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde           , &
                         ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme           , &
                         its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte             &
@@ -656,7 +668,7 @@
                      re_cloud  = recloud_p   , re_ice     = reice_p      , re_snow    = resnow_p     , &
                      has_reqc  = has_reqc    , has_reqi   = has_reqi     , has_reqs   = has_reqs     , &
                      !! ntc       = ntc_p       , muc        = muc_p                                    , &
-                     refl_10cm  = refl10cm_p   , &
+                     refl_10cm  = refl10cm_p , frainnc    = frainnc_p                                , &
                      ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde           , &
                      ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme           , &
                      its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte             &
@@ -867,6 +879,7 @@
  character(len=StrKIND),pointer:: nssl_moments
  integer,pointer:: nCellsSolve
  real,dimension(:),pointer:: graupelncv,rainncv,snowncv,sr
+ logical,pointer:: config_tempo_fzra
 
 !local variables and arrays:
  integer:: i,j
@@ -875,6 +888,7 @@
 
  call mpas_pool_get_config(configs,'config_microp_scheme',microp_scheme)
  call mpas_pool_get_config(configs,'config_nssl_moments',nssl_moments)
+ call mpas_pool_get_config(configs,'config_tempo_fzra',config_tempo_fzra)
 
  call mpas_pool_get_array(diag_physics,'graupelncv',graupelncv)
  call mpas_pool_get_array(diag_physics,'rainncv'   ,rainncv   )
@@ -955,6 +969,9 @@
  real(kind=RKIND),dimension(:),pointer:: graupelnc,rainnc,snownc
  real(kind=RKIND),dimension(:),pointer:: graupelncv,rainncv,snowncv,sr
 
+ logical,pointer:: config_tempo_fzra
+ real(kind=RKIND),dimension(:),pointer:: frainnc
+
 !local variables and arrays:
  integer:: i,j,k
  real(kind=RKIND):: rho_a
@@ -964,6 +981,7 @@
  call mpas_pool_get_config(configs,'config_microp_scheme',microp_scheme       )
  call mpas_pool_get_config(configs,'config_nssl_moments',nssl_moments)
  call mpas_pool_get_config(configs,'config_bucket_rainnc',config_bucket_rainnc)
+ call mpas_pool_get_config(configs,'config_tempo_fzra',config_tempo_fzra)
 
  call mpas_pool_get_array(diag_physics,'i_rainnc'  ,i_rainnc  )
  call mpas_pool_get_array(diag_physics,'precipw'   ,precipw   )
