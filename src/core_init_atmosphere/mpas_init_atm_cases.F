@@ -9929,7 +9929,7 @@ call mpas_log_write('Done with soil consistency check')
         call mpas_pool_get_dimension(state, 'index_nwfa', index_nwfa)
         call mpas_pool_get_dimension(state, 'index_nifa', index_nifa)
 
-        if present(lbc_state) then
+        if (present(lbc_state)) then
            call mpas_log_write('Checking for aerosols from parent model in LBCs')
            call mpas_pool_get_array(lbc_state, 'lbc_scalars', scalars)
         else
