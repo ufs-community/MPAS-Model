@@ -409,7 +409,7 @@ module init_atm_cases
                                       diag, lbc_state, block_ptr % dimensions, block_ptr % configs)
 
                call mpas_get_time(start_time, dateTimeString=timeStart)
-               rap_aerosols = use_rap_aerosols(block_ptr % configs, block_ptr, mesh, state)
+               rap_aerosols = use_rap_aerosols(block_ptr % configs, block_ptr, mesh, state, lbc_state)
                if (rap_aerosols) then
                   call mpas_log_write('Using interpolated aerosols from first guess for LBCs. Skipping monthly climatolgy interpolation')
                else
@@ -9894,13 +9894,14 @@ call mpas_log_write('Done with soil consistency check')
    !>  values of nwfa and nifa that are non-zero.
    !
    !-----------------------------------------------------------------------
-   logical function use_rap_aerosols(configs, block, mesh, state)
+   logical function use_rap_aerosols(configs, block, mesh, state, lbc_state)
 
      implicit none
 
      type(block_type), intent(in), target :: block
      type (mpas_pool_type), intent(in):: mesh
      type (mpas_pool_type), intent(in):: state
+     type (mpas_pool_type), intent(in), optional :: lbc_state
      type (mpas_pool_type), intent(in):: configs
 
      type(dm_info), pointer:: dminfo
@@ -9927,7 +9928,14 @@ call mpas_log_write('Done with soil consistency check')
         call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
         call mpas_pool_get_dimension(state, 'index_nwfa', index_nwfa)
         call mpas_pool_get_dimension(state, 'index_nifa', index_nifa)
-        call mpas_pool_get_array(state, 'scalars', scalars)
+
+        if present(lbc_state) then
+           call mpas_log_write('Checking for aerosols from parent model in LBCs')
+           call mpas_pool_get_array(lbc_state, 'lbc_scalars', scalars)
+        else
+           call mpas_log_write('Checking for aerosols from parent model in ICs')
+           call mpas_pool_get_array(state, 'scalars', scalars)
+        endif
 
         nifa => scalars(index_nifa,:,:)
         nwfa => scalars(index_nwfa,:,:)
