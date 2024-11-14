@@ -7497,20 +7497,20 @@ call mpas_log_write('Done with soil consistency check')
       call mpas_pool_get_dimension(dims, 'nCellsSolve', nCellsSolve)
       nVertLevelsP1 = nVertLevels + 1
 
-      call mpas_pool_get_dimension(state, 'index_qv', index_qv)
+      call mpas_pool_get_dimension(lbc_state, 'index_lbc_qv', index_qv)
 
-      call mpas_pool_get_dimension(state, 'index_nwfa', index_nwfa)
-      call mpas_pool_get_dimension(state, 'index_nifa', index_nifa)
-      call mpas_pool_get_dimension(state, 'index_qc', index_qc)
-      call mpas_pool_get_dimension(state, 'index_qi', index_qi)
-      call mpas_pool_get_dimension(state, 'index_qs', index_qs)
-      call mpas_pool_get_dimension(state, 'index_qg', index_qg)
-      call mpas_pool_get_dimension(state, 'index_qr', index_qr)
-      call mpas_pool_get_dimension(state, 'index_nc', index_nc)
-      call mpas_pool_get_dimension(state, 'index_ni', index_ni)
-      call mpas_pool_get_dimension(state, 'index_nr', index_nr)
-      call mpas_pool_get_dimension(state, 'index_ns', index_ns)
-      call mpas_pool_get_dimension(state, 'index_ng', index_ng)
+      call mpas_pool_get_dimension(lbc_state, 'index_lbc_nwfa', index_nwfa)
+      call mpas_pool_get_dimension(lbc_state, 'index_lbc_nifa', index_nifa)
+      call mpas_pool_get_dimension(lbc_state, 'index_lbc_qc', index_qc)
+      call mpas_pool_get_dimension(lbc_state, 'index_lbc_qi', index_qi)
+      call mpas_pool_get_dimension(lbc_state, 'index_lbc_qs', index_qs)
+      call mpas_pool_get_dimension(lbc_state, 'index_lbc_qg', index_qg)
+      call mpas_pool_get_dimension(lbc_state, 'index_lbc_qr', index_qr)
+      call mpas_pool_get_dimension(lbc_state, 'index_lbc_nc', index_nc)
+      call mpas_pool_get_dimension(lbc_state, 'index_lbc_ni', index_ni)
+      call mpas_pool_get_dimension(lbc_state, 'index_lbc_nr', index_nr)
+      call mpas_pool_get_dimension(lbc_state, 'index_lbc_ns', index_ns)
+      call mpas_pool_get_dimension(lbc_state, 'index_lbc_ng', index_ng)
 
       etavs = (1.0_RKIND - 0.252_RKIND) * pii / 2.0_RKIND
       rcv = rgas / (cp - rgas)
@@ -9926,14 +9926,16 @@ call mpas_log_write('Done with soil consistency check')
         return
      else
         call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
-        call mpas_pool_get_dimension(state, 'index_nwfa', index_nwfa)
-        call mpas_pool_get_dimension(state, 'index_nifa', index_nifa)
 
         if (present(lbc_state)) then
            call mpas_log_write('Checking for aerosols from parent model in LBCs')
+           call mpas_pool_get_dimension(lbc_state, 'index_lbc_nwfa', index_nwfa)
+           call mpas_pool_get_dimension(lbc_state, 'index_lbc_nifa', index_nifa)
            call mpas_pool_get_array(lbc_state, 'lbc_scalars', scalars)
         else
            call mpas_log_write('Checking for aerosols from parent model in ICs')
+           call mpas_pool_get_dimension(state, 'index_nwfa', index_nwfa)
+           call mpas_pool_get_dimension(state, 'index_nifa', index_nifa)
            call mpas_pool_get_array(state, 'scalars', scalars)
         endif
 
