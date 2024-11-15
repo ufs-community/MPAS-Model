@@ -19,8 +19,6 @@
  use module_bl_gwdo
  use module_bl_ugwp_gwdo
 
- use bl_ugwpv1_ngw, only: ugwpv1_ngw_init
-
  implicit none
  private
  public:: allocate_gwdo,   &
@@ -694,8 +692,6 @@
  subroutine driver_gwdo(itimestep,configs,mesh,sfc_input,ngw_input,diag_physics,tend_physics,its,ite)
 !=================================================================================================================
 
- use mpas_log, only : mpas_log_write
-
 !input arguments:
  type(mpas_pool_type),intent(in):: configs
  type(mpas_pool_type),intent(in):: mesh
@@ -712,14 +708,8 @@
 !local variables:
  character(len=StrKIND),pointer:: gwdo_scheme
  logical,pointer:: ugwp_diags,ngw_scheme
- integer,dimension(:),pointer:: jindx1_tau_init, jindx2_tau_init
- real(kind=RKIND),dimension(:),pointer:: ddy_j1tau_init, ddy_j2tau_init
- real(kind=RKIND),dimension(:),pointer:: latCell
- real(kind=RKIND),pointer:: config_dt
- integer,pointer::nVertLevels
  integer,pointer:: ntau_d1y_ptr,ntau_d2t_ptr
- real(kind=RKIND),dimension(:),pointer:: rdzw,dzu
- real(kind=RKIND),dimension(:),pointer :: ugwp_taulat,days_limb_ptr
+ real(kind=RKIND),dimension(:),pointer :: days_limb_ptr
  real(kind=RKIND),dimension(:,:),pointer:: tau_limb_ptr
  integer:: ntau_d1y,ntau_d2t
  real(kind=RKIND),dimension(:),allocatable::   days_limb
@@ -756,24 +746,6 @@
     if(.not.allocated(tau_limb) ) allocate(tau_limb (ntau_d1y,ntau_d2t))
     days_limb(:)   = days_limb_ptr(:)
     tau_limb (:,:) = tau_limb_ptr(:,:)
-    ! If at first timestep, initialize variables needed for NGW scheme
-    if (itimestep==1) then
-       call mpas_pool_get_array(ngw_input,'jindx1_tau',jindx1_tau_init)
-       call mpas_pool_get_array(ngw_input,'jindx2_tau',jindx2_tau_init)
-       call mpas_pool_get_array(ngw_input,'ddy_j1tau', ddy_j1tau_init)
-       call mpas_pool_get_array(ngw_input,'ddy_j2tau', ddy_j2tau_init)
-       call mpas_pool_get_array(ngw_input,'LATS',ugwp_taulat)
-       call mpas_pool_get_array(mesh,'latCell',latCell)
-       call mpas_pool_get_dimension(mesh,'nVertLevels',nVertLevels  )
-       call mpas_pool_get_config(configs,'config_dt'  ,config_dt  )
-       call mpas_pool_get_array(mesh,'rdzw'   ,rdzw   )
-       call mpas_pool_get_array(mesh,'dzu'    ,dzu    )
-       call mpas_log_write('--- Initializing UGWP non-stationary GWD parameters ---',masterOnly=.true.)
-       call ugwpv1_ngw_init(latCell,nVertLevels,config_dt,rdzw,dzu,       &
-               ntau_d1y,ugwp_taulat,jindx1_tau_init,jindx2_tau_init,      &
-               ddy_j1tau_init,ddy_j2tau_init)
-       call mpas_log_write('--- UGWP non-stationary GWD parameters initialized ---',masterOnly=.true.)
-    endif
  endif
 
 
