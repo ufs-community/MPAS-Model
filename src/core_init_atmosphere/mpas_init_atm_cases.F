@@ -287,7 +287,7 @@ module init_atm_cases
 
             if (config_native_gwd_gsl_static) then
                call mpas_log_write(' ')
-               call mpas_log_write('Computing GWDO static fields for GSL orog drag on the native MPAS mesh')
+               call mpas_log_write('Computing GWDO static fields for UGWP orog drag on the native MPAS mesh')
                call mpas_log_write(' ')
                call calc_gsl_oro_data(domain,ierr)
                if (ierr /= 0) then
