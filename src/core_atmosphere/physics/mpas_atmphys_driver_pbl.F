@@ -16,7 +16,7 @@
 
  use bl_mynn,only: bl_mynn_init
  use module_bl_mynn,only: mynn_bl_driver
- use module_mynnedmf_driver,only: mynnedmf_driver
+ use module_bl_mynnedmf_driver,only: mynnedmf_driver
  use module_bl_ysu
  use module_bl_myjpbl
 

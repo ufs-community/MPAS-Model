@@ -69,7 +69,7 @@ core_UGWP: core_physics_init
 	(cd UGWP; $(MAKE) all)
 
 core_mynnedmf: core_physics_init core_physics_mmm
-	(cd MYNN-EDMF; cp ./MPAS/Makefile .; cp ./MPAS/module_mynnedmf_driver.F90 .; cp ./MPAS/module_mynnedmf_common.F90 .; $(MAKE) all)
+	(cd MYNN-EDMF; cp ./MPAS/Makefile .; cp ./MPAS/module_bl_mynnedmf_driver.F90 .; cp ./MPAS/module_bl_mynnedmf_common.F90 .; $(MAKE) all)
 
 core_physics_wrf: core_physics_init core_physics_mmm core_UGWP
 	(cd physics_wrf; $(MAKE) all COREDEF="$(COREDEF)")
