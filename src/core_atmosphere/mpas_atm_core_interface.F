@@ -202,6 +202,17 @@ module atm_core_interface
                              messageType=MPAS_LOG_ERR)
       end if
 
+#ifdef DO_PHYSICS
+      !check that all the physics options are correctly defined and that at
+      !least one physics parameterization is called (using the logical moist_physics):
+      call physics_namelist_check(configs)
+
+      local_ierr = atmphys_setup_packages(configs, streamInfo, packages, iocontext)
+      if (local_ierr /= 0) then
+         ierr = ierr + 1
+         call mpas_log_write('Package setup failed for atmphys in core_atmosphere', messageType=MPAS_LOG_ERR)
+      end if
+
       !
       ! Optional gravity wave drag parameterization streams
       !
@@ -242,16 +253,6 @@ module atm_core_interface
                              messageType=MPAS_LOG_ERR)
       end if
 
-#ifdef DO_PHYSICS
-      !check that all the physics options are correctly defined and that at
-      !least one physics parameterization is called (using the logical moist_physics):
-      call physics_namelist_check(configs)
-
-      local_ierr = atmphys_setup_packages(configs, streamInfo, packages, iocontext)
-      if (local_ierr /= 0) then
-         ierr = ierr + 1
-         call mpas_log_write('Package setup failed for atmphys in core_atmosphere', messageType=MPAS_LOG_ERR)
-      end if
 #endif
 
    end function atm_setup_packages
