@@ -43,7 +43,7 @@
 
 
 !=================================================================================================================
- subroutine allocate_seaice (configs)
+ subroutine allocate_seaice(configs)
 !=================================================================================================================
 
 !input arguments:
@@ -143,7 +143,7 @@
  end subroutine allocate_seaice
 
 !=================================================================================================================
- subroutine deallocate_seaice (configs)
+ subroutine deallocate_seaice(configs)
 !=================================================================================================================
 
 !input arguments:
@@ -211,20 +211,13 @@
 
  if(allocated(tslb_p)) deallocate(tslb_p)
 
+ if(allocated(cqs_p)       ) deallocate(cqs_p       )
+ if(allocated(cqs_sea)     ) deallocate(cqs_sea     )
+
  if (config_lsm_scheme == "sf_ruc") then
-    if(allocated(cqs_p)       ) deallocate(cqs_p       )
     if(allocated(chklowq_p)   ) deallocate(chklowq_p   )
     if(allocated(gsw_p)       ) deallocate(gsw_p       )
     if(allocated(sfc_albbck_p)) deallocate(sfc_albbck_p)
-    if(allocated(chs_sea)     ) deallocate(chs_sea     )
-    if(allocated(chs2_sea)    ) deallocate(chs2_sea    )
-    if(allocated(cqs2_sea)    ) deallocate(cqs2_sea    )
-    if(allocated(cqs_sea)     ) deallocate(cqs_sea     )
-    if(allocated(hfx_sea)     ) deallocate(hfx_sea     )
-    if(allocated(qfx_sea)     ) deallocate(qfx_sea     )
-    if(allocated(qgh_sea)     ) deallocate(qgh_sea     )
-    if(allocated(qsfc_sea)    ) deallocate(qsfc_sea    )
-    if(allocated(lh_sea)      ) deallocate(lh_sea      )
     if(allocated(rhosnf_p)    ) deallocate(rhosnf_p    )
     if(allocated(precipfr_p)  ) deallocate(precipfr_p  )
     if(allocated(qcg_p)       ) deallocate(qcg_p       )
@@ -494,6 +487,7 @@
 !local pointers:
  character(len=StrKIND),pointer:: config_microp_scheme
  character(len=StrKIND),pointer:: config_lsm_scheme
+ character(len=StrKIND),pointer:: config_sfclayer_scheme
 
  real(kind=RKIND),dimension(:),pointer:: acsnom,acsnow,chs,chs2,cpm,cqs2,qgh,qsfc,grdflx,hfx, qfx,lh,noahres, &
                                          potevp,sfc_albedo,sfc_emiss,sfcrunoff,snopcx,z0,znt
@@ -512,6 +506,7 @@
 !call mpas_log_write('--- enter subroutine seaice_to_MPAS:')
 
  call mpas_pool_get_config(configs,'config_lsm_scheme',config_lsm_scheme)
+ call mpas_pool_get_config(configs,'config_sfclayer_scheme',config_sfclayer_scheme)
 
  if (config_lsm_scheme .eq. "sf_ruc") then
    call mpas_pool_get_array(mesh,'indexToCellID',globalCells)
@@ -562,7 +557,11 @@
        if(xice_p(i,j).ge.xice_threshold .and. xice_p(i,j).le.1._RKIND) then
           if (config_lsm_scheme .eq. "sf_ruc") then
            cpm_p(i,j)  = xice_p(i,j)*cpm_p(i,j)  + (1._RKIND-xice_p(i,j))*cpm_sea(i,j)
-           cqs_p(i,j)  = xice_p(i,j)*cqs_p(i,j)  + (1._RKIND-xice_p(i,j))*cqs_sea(i,j)
+           if(config_sfclayer_scheme .eq. "sf_mynnsfclay") then
+             cqs_p(i,j)  = xice_p(i,j)*cqs_p(i,j)  + (1._RKIND-xice_p(i,j))*cqs_sea(i,j)
+           else
+             cqs_p(i,j)  = xice_p(i,j)*chs_p(i,j)  + (1._RKIND-xice_p(i,j))*chs_sea(i,j)
+           endif
           else
            cpm(i) = xice_p(i,j)*cpm(i) + (1._RKIND-xice_p(i,j))*cpm_sea(i,j)
           endif
