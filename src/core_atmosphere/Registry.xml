@@ -516,6 +516,9 @@
 			<var name="snoalb"/>
 			<var name="albedo12m"/>
 			<var name="greenfrac"/>
+			<var name="landusef"/>
+			<var name="soilf"/>
+			<var name="lai12m"/>
 			<var name="var2d"/>
 			<var name="con"/>
 			<var name="oa1"/>
@@ -559,20 +562,6 @@
 			<var name="surface_pressure"/>
 
 #ifdef DO_PHYSICS
-			<var name="isltyp"/>
-			<var name="soilf"/>
-			<var name="ivgtyp"/>
-			<var name="landusef"/>
-			<var name="mminlu"/>
-			<var name="isice_lu"/>
-			<var name="iswater_lu"/>
-			<var name="landmask"/>
-			<var name="shdmin"/>
-			<var name="shdmax"/>
-			<var name="snoalb"/>
-			<var name="albedo12m"/>
-			<var name="greenfrac"/>
-			<var name="lai12m"/>
 			<var name="sfc_albbck"/>
 			<var name="skintemp"/>
 			<var name="snow"/>
@@ -865,20 +854,6 @@
 			<var name="rnwfablten"/>
 			<var name="rthratensw"/>
 			<var name="rthratenlw"/>
-			<var name="isltyp"/>
-			<var name="soilf"/>
-			<var name="ivgtyp"/>
-			<var name="landusef"/>
-			<var name="mminlu"/>
-			<var name="isice_lu"/>
-			<var name="iswater_lu"/>
-			<var name="landmask"/>
-			<var name="shdmin"/>
-			<var name="shdmax"/>
-			<var name="snoalb"/>
-			<var name="albedo12m"/>
-			<var name="greenfrac"/>
-			<var name="lai12m"/>
 			<var name="sfc_albbck"/>
 			<var name="skintemp"/>
 			<var name="snow"/>
@@ -891,7 +866,6 @@
 			<var name="xice"/>
 			<var name="xland"/>
 			<var name="dzs"/>
-			<var name="zs"/>
 			<var name="smcrel"/>
 			<var name="sh2o"/>
 			<var name="smois"/>
@@ -1287,10 +1261,6 @@
 			<var_array name="scalars"/>
 			<var name="initial_time"/>
 			<var name="xtime"/>
-			<var name="cldfrac"/>
-			<var name="re_cloud" packages="mp_thompson_in;mp_wsm6_in;mp_tempo_in"/>
-			<var name="re_ice" packages="mp_thompson_in;mp_wsm6_in;mp_tempo_in"/>
-			<var name="re_snow" packages="mp_thompson_in;mp_wsm6_in;mp_tempo_in"/>
 			<var name="u"/>
 			<var name="w"/>
 			<var name="rho"/>
@@ -1305,9 +1275,9 @@
 			<var name="surface_pressure"/>
 #ifdef DO_PHYSICS
 			<var name="cldfrac"/>
-			<var name="re_cloud" packages="mp_thompson_in;mp_wsm6_in"/>
-			<var name="re_ice" packages="mp_thompson_in;mp_wsm6_in"/>
-			<var name="re_snow" packages="mp_thompson_in;mp_wsm6_in"/>
+			<var name="re_cloud" packages="mp_thompson_in;mp_wsm6_in;mp_tempo_in"/>
+			<var name="re_ice" packages="mp_thompson_in;mp_wsm6_in;mp_tempo_in"/>
+			<var name="re_snow" packages="mp_thompson_in;mp_wsm6_in;mp_tempo_in"/>
 			<var name="refl10cm_max"/>
 			<var name="rainc"/>
 			<var name="rainnc"/>
