@@ -809,7 +809,7 @@
        trim(microp_scheme) == "mp_thompson_aerosols" .or. &
        trim(microp_scheme) == "mp_tempo" .or. &
        trim(microp_scheme) == "mp_nssl2m"   ) then
-       call mpas_log_write('Computing 3d reflectivity')
+!       call mpas_log_write('Computing 3d reflectivity')
        call compute_radar_reflectivity(configs,diag_physics,its,ite)
     else
        call mpas_log_write('*** NOTICE: NOT computing simulated radar reflectivity')
@@ -1243,7 +1243,7 @@
 
     case default
  end select microp_select
- call mpas_log_write("end compute 3d reflectivity")
+! call mpas_log_write("end compute 3d reflectivity")
  end subroutine compute_radar_reflectivity
 
 !=================================================================================================================
