@@ -152,7 +152,8 @@ module mpas_halo
 
         use mpas_derived_types, only : domain_type, mpas_pool_type, mpas_pool_iterator_type, MPAS_POOL_CONFIG, &
                                        MPAS_POOL_REAL, MPAS_HALO_REAL, mpas_halo_group, MPAS_LOG_CRIT, &
-                                       field1DReal, field2DReal, field3DReal
+                                       field2DReal, field3DReal, &
+                                       field1DReal
         use mpas_pool_routines, only : mpas_pool_get_subpool, mpas_pool_remove_subpool, mpas_pool_destroy_pool, &
                                        mpas_pool_begin_iteration, mpas_pool_get_next_member, mpas_pool_get_dimension, &
                                        mpas_pool_remove_field, mpas_pool_get_field
@@ -395,7 +396,8 @@ module mpas_halo
     subroutine mpas_halo_exch_group_add_field(domain, groupName, fieldName, timeLevel, haloLayers, iErr)
 
         use mpas_derived_types, only : domain_type, mpas_pool_type, mpas_pool_field_info_type, MPAS_POOL_REAL, &
-                                       field1DReal, field2DReal, field3DReal, MPAS_LOG_CRIT
+                                       field2DReal, field3DReal, MPAS_LOG_CRIT, &
+                                       field1DReal
         use mpas_pool_routines, only : mpas_pool_get_subpool, mpas_pool_add_config, mpas_pool_get_field_info, &
                                        mpas_pool_add_dimension, mpas_pool_get_field, mpas_pool_add_field
         use mpas_log, only : mpas_log_write

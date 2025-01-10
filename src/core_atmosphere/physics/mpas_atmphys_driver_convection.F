@@ -733,9 +733,10 @@
  integer,dimension(:),pointer:: kpbl,k22_shallow,kbcon_shallow,ktop_shallow,ktop_deep
  integer,dimension(:),pointer:: bdyMaskCell
  real(kind=RKIND),dimension(:),pointer  :: areaCell,meshDensity
- real(kind=RKIND),dimension(:),pointer  :: nca,cubot,cutop,cuprec,rainncv,raincv,vcpool
+ real(kind=RKIND),dimension(:),pointer  :: nca,cubot,cutop,cuprec,raincv
+ real(kind=RKIND),dimension(:),pointer  :: rainncv,vcpool,sigma_deep
  real(kind=RKIND),dimension(:),pointer  :: gsw,hfx,qfx,xland
- real(kind=RKIND),dimension(:),pointer  :: xmb_total,xmb_shallow,sigma_deep
+ real(kind=RKIND),dimension(:),pointer  :: xmb_total,xmb_shallow
  real(kind=RKIND),dimension(:,:),pointer:: zgrid
  real(kind=RKIND),dimension(:,:),pointer:: qc_cu,qi_cu
  real(kind=RKIND),dimension(:,:),pointer:: w0avg
@@ -985,12 +986,14 @@
  type(mpas_pool_type),intent(inout):: tend_physics
 
 !local variables:
- integer:: i,k,j,iCell,ineighbour
+ integer:: i,k,j
+ integer:: iCell,ineighbor
 
 !local pointers:
  character(len=StrKIND),pointer:: convection_scheme
  integer,dimension(:),pointer:: k22_shallow,kbcon_shallow,ktop_shallow,ktop_deep
- real(kind=RKIND),dimension(:),pointer  :: nca,cubot,cutop,cuprec,rainncv,raincv,vcpool,sigma_deep
+ real(kind=RKIND),dimension(:),pointer  :: nca,cubot,cutop,cuprec,raincv
+ real(kind=RKIND),dimension(:),pointer  :: rainncv,vcpool,sigma_deep
  real(kind=RKIND),dimension(:),pointer  :: xmb_total,xmb_shallow
  real(kind=RKIND),dimension(:,:),pointer:: qc_cu,qi_cu
  real(kind=RKIND),dimension(:,:),pointer:: w0avg
@@ -1116,21 +1119,21 @@
                  rucuten(k,iCell)  = rucuten(k,iCell)  + sigma_deep(iCell) * sub3d_rucuten(k,iCell)
                  rvcuten(k,iCell)  = rvcuten(k,iCell)  + sigma_deep(iCell) * sub3d_rvcuten(k,iCell)
                  do i = 1, nEdgesOnCell(iCell)
-                   ineighbour = cellsOnCell(i,iCell)
+                   ineighbor = cellsOnCell(i,iCell)
                    ! do not do this if there is no convection in that neighbour cell!
-                   if(sigma_deep(ineighbour) == 0.)cycle
+                   if(sigma_deep(ineighbor) == 0.)cycle
                    rthcuten(k,iCell) = rthcuten(k,iCell) + &
-                                       (1._RKIND - sigma_deep(ineighbour))*sub3d_rthcuten(k,ineighbour)/ &
-                                       real(nEdgesOnCell(ineighbour),RKIND)
+                                       (1._RKIND - sigma_deep(ineighbor))*sub3d_rthcuten(k,ineighbor)/ &
+                                       real(nEdgesOnCell(ineighbor),RKIND)
                    rqvcuten(k,iCell) = rqvcuten(k,iCell) + &
-                                       (1._RKIND - sigma_deep(ineighbour))*sub3d_rqvcuten(k,ineighbour)/ &
-                                       real(nEdgesOnCell(ineighbour),RKIND)
+                                       (1._RKIND - sigma_deep(ineighbor))*sub3d_rqvcuten(k,ineighbor)/ &
+                                       real(nEdgesOnCell(ineighbor),RKIND)
                    rucuten(k,iCell) = rucuten(k,iCell) + &
-                                       (1._RKIND - sigma_deep(ineighbour))*sub3d_rucuten(k,ineighbour)/ &
-                                       real(nEdgesOnCell(ineighbour),RKIND)
+                                       (1._RKIND - sigma_deep(ineighbor))*sub3d_rucuten(k,ineighbor)/ &
+                                       real(nEdgesOnCell(ineighbor),RKIND)
                    rvcuten(k,iCell) = rvcuten(k,iCell) + &
-                                       (1._RKIND - sigma_deep(ineighbour))*sub3d_rvcuten(k,ineighbour)/ &
-                                       real(nEdgesOnCell(ineighbour),RKIND)
+                                       (1._RKIND - sigma_deep(ineighbor))*sub3d_rvcuten(k,ineighbor)/ &
+                                       real(nEdgesOnCell(ineighbor),RKIND)
                  enddo
               enddo
             enddo
