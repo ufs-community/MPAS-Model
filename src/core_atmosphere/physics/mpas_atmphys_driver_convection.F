@@ -24,7 +24,14 @@
  use mpas_dmpar, only : IO_NODE
 
  implicit none
- !--srf
+ private
+ public:: allocate_convection,     &
+          deallocate_convection,   &
+          init_convection,         &
+          driver_convection,       &
+          update_convection_step1, &
+          update_convection_step2
+ !
  ! Abstract interface for routine used to communicate halos of fields
  ! in a named group
  !
@@ -39,14 +46,6 @@
 
       end subroutine halo_exchange_routine
  end interface
- !--srf
- private
- public:: allocate_convection,     &
-          deallocate_convection,   &
-          init_convection,         &
-          driver_convection,       &
-          update_convection_step1, &
-          update_convection_step2
 
 
 !MPAS driver for parameterization of convection.
