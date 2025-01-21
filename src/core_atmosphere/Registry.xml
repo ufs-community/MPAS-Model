@@ -429,6 +429,7 @@
                 <package name="ugwp_orog_stream" description="Input stream (and variables) for UGWP orography"/>
                 <package name="ugwp_ngw_stream"  description="Input stream (and variables) for UGWP NGW lookup table"/>
                 <package name="ugwp_diags_stream" description="Output stream (and variables) for UGWP output diagnostics"/>
+		<package name="gf_sub3d" description="GF 3d lateral spreading of the env subsidence"/>
         </packages>
 
 
@@ -872,6 +873,12 @@
 			<var name="rnwfablten"/>
 			<var name="rthratensw"/>
 			<var name="rthratenlw"/>
+			<var name="vcpool" packages="cu_grell_freitas_in"/>
+                        <var name="sub3d_rthcuten" packages="cu_grell_freitas_in"/>
+                        <var name="sub3d_rqvcuten" packages="cu_grell_freitas_in"/>
+                        <var name="sub3d_rucuten" packages="cu_grell_freitas_in"/>
+                        <var name="sub3d_rvcuten" packages="cu_grell_freitas_in"/>
+                        <var name="sigma_deep" packages="cu_grell_freitas_in"/>
 			<var name="isltyp"/>
 			<var name="soilf"/>
 			<var name="ivgtyp"/>
@@ -1138,6 +1145,7 @@
                         <var name="swupt"/>
 			<var name="rainc"/>
 			<var name="rainnc"/>
+			<var name="vcpool"/>
 			<var name="refl10cm"/>
 			<var name="refl10cm_max"/>
 			<var name="refl10cm_1km"/>
@@ -1471,6 +1479,9 @@
                 <var name="nEdgesOnCell" type="integer" dimensions="nCells" units="-"
                      description="Number of edges forming the boundary of a cell"/>
 
+	        <var name="nCellsOnCellsOnCell" type="integer" dimensions="nCells" units="-"
+                     description="Number of cells that are outer neighbors of CellsOnCell"/>
+
                 <var name="nEdgesOnEdge" type="integer" dimensions="nEdges" units="-"
                      description="Number of edges involved in reconstruction of tangential velocity for an edge"/>
 
@@ -1521,6 +1532,9 @@
 
                 <var name="cellsOnCell" type="integer" dimensions="maxEdges nCells" units="-"
                      description="IDs of cells neighboring a cell"/>
+
+	        <var name="cellsOnCellsOnCell" type="integer" dimensions="maxEdges2 nCells" units="-"
+                     description="IDs of outer neighbors of cellsOnCell"/>
 
                 <var name="verticesOnCell" type="integer" dimensions="maxEdges nCells" units="-"
                      description="IDs of vertices (corner points) of a cell"/>
@@ -2484,6 +2498,11 @@
                      description="configuration for convection schemes"
                      possible_values="`suite',`cu_kain_fritsch',`cu_tiedtke',`cu_ntiedtke',`cu_grell_freitas',`off'"/>
 
+	        <nml_option name="config_gf_sub3d" type="integer" default_value="0" in_defaults="false"
+                     units="-"
+                     description="Option for the lateral subsidence spread for the Grell-Freitas scheme"
+                     possible_values="0,1,2"/>
+
                 <nml_option name="config_lsm_scheme" type="character" default_value="suite" in_defaults="false"
                      units="-"
                      description="configuration for land-surface schemes"
@@ -2869,6 +2888,14 @@
 
 	       <var name="refl10cm_cu" type="real" dimensions="nVertLevels nCells Time" units="dBZ"
                      description="10 cm radar reflectivity in the Grell-Freitas cloud model"
+                     packages="cu_grell_freitas_in"/>
+
+	       <var name="vcpool" type="real" dimensions="nCells Time" units="m s^{-1}"
+                     description="Cold pool gust front horizontal speed "
+                     packages="cu_grell_freitas_in"/>
+
+               <var name="sigma_deep" type="real" dimensions="nCells Time" units="-"
+                     description="scale-aware parameter for deep convection"
                      packages="cu_grell_freitas_in"/>
 
 
@@ -3915,6 +3942,23 @@
 
 	        <!-- MGD should we add packages to the field below? -->
 	        <var name="rucuten_Edge" type="real"     dimensions="nVertLevels nEdges Time"/>
+
+		<!-- GRELL FREITAS LI -->
+                <var name="sub3d_rthcuten" type="real" dimensions="nVertLevels nCells Time" units="K s^{-1}"
+                     description="tendency of potential temperature due to the subsidence created by cumulus convection"
+                     packages="cu_grell_freitas_in;gf_sub3d"/>
+
+                <var name="sub3d_rqvcuten" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1} s^{-1}"
+                     description="tendency of water vapor mixing ratio due to the subsidence created by cumulus convection"
+                     packages="cu_grell_freitas_in;gf_sub3d"/>
+
+                <var name="sub3d_rucuten" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1} s^{-1}"
+                     description="tendency of zonal wind due to the subsidence created by cumulus convection"
+                     packages="cu_grell_freitas_in;gf_sub3d"/>
+
+                <var name="sub3d_rvcuten" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1} s^{-1}"
+                     description="tendency of meridional wind due to the subsidence created by cumulus convection"
+                     packages="cu_grell_freitas_in;gf_sub3d"/>
 
 
                 <!-- ================================================================================================== -->
