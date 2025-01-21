@@ -771,8 +771,8 @@
  call mpas_pool_get_dimension(mesh,'nVertLevels'  ,nVertLevels  )
  call mpas_pool_get_dimension(mesh,'nMonths'      ,nMonths      )
 
- call mpas_pool_get_dimension(state,'index_nifa',index_nifa)
- call mpas_pool_get_dimension(state,'index_nwfa',index_nwfa)
+ call mpas_pool_get_dimension(lbc_state,'index_lbc_nifa',index_nifa)
+ call mpas_pool_get_dimension(lbc_state,'index_lbc_nwfa',index_nwfa)
 
  call mpas_pool_get_array(diag,'pressure_base',pressure)
 

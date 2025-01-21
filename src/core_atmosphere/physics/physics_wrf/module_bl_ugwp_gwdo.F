@@ -1,7 +1,8 @@
 !=================================================================================================================
  module module_bl_ugwp_gwdo
  use mpas_kind_types,only: kind_phys => RKIND
- use bl_ugwp
+ use bl_ugwp,only: bl_ugwp_run
+ use bl_ugwpv1_ngw,only: ugwpv1_ngw_run
 
  implicit none
  private
@@ -13,16 +14,19 @@
 
 !=================================================================================================================
  subroutine gwdo_ugwp(u3d,v3d,t3d,qv3d,p3d,p3di,pi3d,z,pblh,kpbl2d,br1,xland, &
-                 rublten,rvblten,                                             &
+                 rublten,rvblten,rthblten,                                    &
                  dtaux3d,dtauy3d,dusfcg,dvsfcg,                               &
                  dtaux3d_ls,dtauy3d_ls,dtaux3d_bl,dtauy3d_bl,                 &
                  dtaux3d_ss,dtauy3d_ss,dtaux3d_fd,dtauy3d_fd,                 &
                  dusfc_ls,dvsfc_ls,dusfc_bl,dvsfc_bl,dusfc_ss,dvsfc_ss,       &
-                 dusfc_fd,dvsfc_fd,ugwp_diags,                                &
+                 dusfc_fd,dvsfc_fd,ugwp_diags,ngw_scheme,xlatd,               &
+                 jindx1_tau,jindx2_tau,ddy_j1tau,ddy_j2tau,r_DoY,             &
+                 raincv,rainncv,ntau_d1y,ntau_d2t,days_limb,tau_limb,         &
+                 dudt_ngw,dvdt_ngw,dtdt_ngw,                                  &
                  var2dls,oc12dls,oa2d1ls,oa2d2ls,oa2d3ls,oa2d4ls,ol2d1ls,     &
                  ol2d2ls,ol2d3ls,ol2d4ls,var2dss,oc12dss,oa2d1ss,oa2d2ss,     &
                  oa2d3ss,oa2d4ss,ol2d1ss,ol2d2ss,ol2d3ss,ol2d4ss,             &
-                 sina,cosa,dz,znu,znw,p_top,                                  &
+                 sina,cosa,zi,dz,znu,znw,p_top,                               &
                  cp,g,rd,rv,ep1,pi,                                           &
                  dt,dx,itimestep,                                             &
                  ids,ide, jds,jde, kds,kde,                                   &
@@ -45,13 +49,15 @@
 !-- xland       land mask (1 for land, 2 for water)
 !-- rublten     u tendency due to pbl parameterization (m/s/s) 
 !-- rvblten     v tendency due to pbl parameterization (m/s/s)
+!-- rthblten    potential temperature tendency due to pbl parameterization (K/s)
 !-- sina        sine rotation angle
 !-- cosa        cosine rotation angle
 !-- znu         eta values (sigma values)
 !-- cp          heat capacity at constant pressure for dry air (j/kg/k)
 !-- g           acceleration due to gravity (m/s^2)
 !-- rd          gas constant for dry air (j/kg/k)
-!-- z           height above sea level (m)
+!-- z           height above sea level of layer centers (m)
+!-- zi          height above sea level of layer interfaces (m)
 !-- dz          layer thickness (m)
 !-- rv          gas constant for water vapor (j/kg/k)
 !-- dt          time step (s)
@@ -96,7 +102,18 @@
  real(kind=kind_phys),intent(in),dimension(ims:ime,jms:jme)::         &
                                                                   dx, &
                                                            sina,cosa, &
-                                                      pblh,br1,xland
+                                                 pblh,br1,xland
+
+ real(kind=kind_phys),intent(in),dimension(ims:ime,jms:jme),optional::&
+                            xlatd,raincv,rainncv,ddy_j1tau,ddy_j2tau
+ integer,intent(in),dimension(ims:ime,jms:jme),optional::             &
+                                               jindx1_tau,jindx2_tau
+ integer,intent(in):: ntau_d1y,ntau_d2t
+ real(kind=kind_phys),intent(in),dimension(ntau_d2t),optional::          &
+                            days_limb
+ real(kind=kind_phys),intent(in),dimension(ntau_d1y,ntau_d2t),optional:: &
+                            tau_limb
+ real(kind=kind_phys),intent(in)                           :: r_DoY
 
  real(kind=kind_phys),intent(in),dimension(ims:ime,jms:jme):: &
                                                      var2dls,var2dss, &
@@ -115,12 +132,13 @@
                                                                  u3d, &
                                                                  v3d, &
                                                                    z, &
+                                                                  zi, &
                                                                   dz
 
  real(kind=kind_phys),intent(in),dimension(ims:ime,kms:kme,jms:jme):: &
                                                                  p3di
 
- logical,intent(in)::                                      ugwp_diags
+ logical,intent(in)::                           ugwp_diags,ngw_scheme
 
 !--- output arguments:
  character(len=*),intent(out)::  errmsg
@@ -130,21 +148,23 @@
  real(kind=kind_phys),intent(out),dimension(ims:ime,jms:jme)::    &
                                                    dusfcg,dvsfcg
 
- real(kind=kind_phys),intent(out),dimension(:,:)::                &
+ real(kind=kind_phys),intent(out),dimension(:,:),optional::       &
                              dusfc_ls,dusfc_bl,dusfc_ss,dusfc_fd, &
                              dvsfc_ls,dvsfc_bl,dvsfc_ss,dvsfc_fd
 
  real(kind=kind_phys),intent(out),dimension(ims:ime,kms:kme,jms:jme ):: &
                                                        dtaux3d,dtauy3d
 
- real(kind=kind_phys),intent(out),dimension(:,:,:)::                    &
+ real(kind=kind_phys),intent(out),dimension(:,:,:),optional::           &
                            dtaux3d_ls,dtaux3d_bl,dtaux3d_ss,dtaux3d_fd, &
                            dtauy3d_ls,dtauy3d_bl,dtauy3d_ss,dtauy3d_fd
 
+ real(kind=kind_phys),intent(out),dimension(:,:,:),optional::           &
+                           dudt_ngw,dvdt_ngw,dtdt_ngw
+
 !--- inout arguments:
  real(kind=kind_phys),intent(inout),dimension(ims:ime,kms:kme,jms:jme):: &
-                                                             rublten,    &
-                                                             rvblten
+                           rublten,rvblten,rthblten
 
 !--- local variables and arrays:
  integer:: i,j,k
@@ -164,19 +184,26 @@
 
  real(kind=kind_phys),dimension(:),allocatable::   &
     dusfc_ls_hv,dvsfc_ls_hv,dusfc_bl_hv,dvsfc_bl_hv, &
-    dusfc_ss_hv,dvsfc_ss_hv,dusfc_fd_hv,dvsfc_fd_hv
+    dusfc_ss_hv,dvsfc_ss_hv,dusfc_fd_hv,dvsfc_fd_hv, &
+    xlatd_hv,raincv_hv,rainncv_hv,                   &
+    ddy_j1tau_hv,ddy_j2tau_hv
+
+ integer,dimension(:),allocatable::                &
+    jindx1_tau_hv,jindx2_tau_hv
 
  real(kind=kind_phys),dimension(its:ite,kts:kte):: &
     u3d_hv,v3d_hv,t3d_hv,qv3d_hv,pi3d_hv,p3d_hv,z_hv,dz_hv
 
  real(kind=kind_phys),dimension(its:ite,kts:kte):: &
-    rublten_hv,rvblten_hv,dtaux3d_hv,dtauy3d_hv
+    rublten_hv,rvblten_hv,rthblten_hv,dtaux3d_hv,dtauy3d_hv
  real(kind=kind_phys),dimension(:,:),allocatable:: &
     dtaux3d_ls_hv,dtauy3d_ls_hv,dtaux3d_bl_hv,dtauy3d_bl_hv,  &
     dtaux3d_ss_hv,dtauy3d_ss_hv,dtaux3d_fd_hv,dtauy3d_fd_hv
+ real(kind=kind_phys),dimension(:,:),allocatable:: &
+    dudt_ngw_hv,dvdt_ngw_hv,dtdt_ngw_hv
 
  real(kind=kind_phys),dimension(its:ite,kms:kme):: &
-    p3di_hv
+    p3di_hv,zi_hv
 
 !-----------------------------------------------------------------------------------------------------------------
 
@@ -199,6 +226,7 @@
     do k = kts,kte+1
        do i = its,ite
           p3di_hv(i,k) = p3di(i,k,j)
+          zi_hv(i,k)   = zi(i,k,j)
        enddo
     enddo
 
@@ -207,6 +235,7 @@
        do i = its,ite
           rublten_hv(i,k) = rublten(i,k,j)
           rvblten_hv(i,k) = rvblten(i,k,j)
+         rthblten_hv(i,k) = rthblten(i,k,j)
               u3d_hv(i,k) =     u3d(i,k,j)
               v3d_hv(i,k) =     v3d(i,k,j)
               t3d_hv(i,k) =     t3d(i,k,j)
@@ -248,8 +277,26 @@
        ol2d3ss_hv(i) = ol2d3ss(i,j)
        ol2d4ss_hv(i) = ol2d4ss(i,j)
     enddo
+    if (ngw_scheme) then
+       allocate (xlatd_hv(its:ite))
+       allocate (raincv_hv(its:ite))
+       allocate (rainncv_hv(its:ite))
+       allocate (ddy_j1tau_hv(its:ite))
+       allocate (ddy_j2tau_hv(its:ite))
+       allocate (jindx1_tau_hv(its:ite))
+       allocate (jindx2_tau_hv(its:ite))
+       do i = its,ite
+          xlatd_hv(i)      = xlatd(i,j)
+          raincv_hv(i)     = raincv(i,j)
+          rainncv_hv(i)    = rainncv(i,j)
+          ddy_j1tau_hv(i)  = ddy_j1tau(i,j)
+          ddy_j2tau_hv(i)  = ddy_j2tau(i,j)
+          jindx1_tau_hv(i) = jindx1_tau(i,j)
+          jindx2_tau_hv(i) = jindx2_tau(i,j)
+       enddo
+    endif
 
-    ! Allocate ugwp_diags variables if needed
+    ! Allocate ugwp_diags and/or variables if needed
     if (ugwp_diags) then
        allocate (dusfc_ls_hv(its:ite))
        allocate (dvsfc_ls_hv(its:ite))
@@ -267,6 +314,11 @@
        allocate (dtauy3d_ss_hv(its:ite,kts:kte))
        allocate (dtaux3d_fd_hv(its:ite,kts:kte))
        allocate (dtauy3d_fd_hv(its:ite,kts:kte))
+       if (ngw_scheme) then
+          allocate (dudt_ngw_hv(its:ite,kts:kte))
+          allocate (dvdt_ngw_hv(its:ite,kts:kte))
+          allocate (dtdt_ngw_hv(its:ite,kts:kte))
+       endif
     endif
 
     call bl_ugwp_run(sina=sina_hv,cosa=cosa_hv                &
@@ -302,6 +354,26 @@
                     ,its=its,ite=ite,kte=kte,kme=kte+1        &
                     ,errmsg=errmsg,errflg=errflg)
 
+!
+! Option to call non-stationary gravity wave drag
+!
+    if (ngw_scheme) then
+       call ugwpv1_ngw_run(xlatd=xlatd_hv,raincv=raincv_hv,rainncv=rainncv_hv  &
+                          ,ddy_j1tau=ddy_j1tau_hv,ddy_j2tau=ddy_j2tau_hv       &
+                          ,jindx1_tau=jindx1_tau_hv,jindx2_tau=jindx2_tau_hv   &
+                          ,r_DoY=r_DoY,kdt=itimestep,dtp=dt                    &
+                          ,ugrs=u3d_hv,vgrs=v3d_hv                             &
+                          ,tgrs=t3d_hv,q1=qv3d_hv,prsl=p3d_hv,prslk=pi3d_hv    &
+                          ,prsi=p3di_hv,zl=z_hv,zi=zi_hv,ntau_d2t=ntau_d2t     &
+                          ,days_limb=days_limb,tau_limb=tau_limb               &
+                          ,rublten=rublten_hv,rvblten=rvblten_hv               &
+                          ,rthblten=rthblten_hv,ugwp_diags=ugwp_diags          &
+                          ,dudt_ngw=dudt_ngw_hv,dvdt_ngw=dvdt_ngw_hv           &
+                          ,dtdt_ngw=dtdt_ngw_hv,its=its,ite=ite,levs=kte)
+    endif
+
+
+
     !  Variables that are INTENT(OUT) or INTENT(INOUT):
 
     !  3d, layers:
@@ -309,6 +381,7 @@
        do i = its,ite
           rublten(i,k,j) = rublten_hv(i,k)
           rvblten(i,k,j) = rvblten_hv(i,k)
+          rthblten(i,k,j)= rthblten_hv(i,k)
           dtaux3d(i,k,j) = dtaux3d_hv(i,k)
           dtauy3d(i,k,j) = dtauy3d_hv(i,k)
        enddo
@@ -324,6 +397,15 @@
              dtauy3d_ss(i,k,j) = dtauy3d_ss_hv(i,k)
              dtaux3d_fd(i,k,j) = dtaux3d_fd_hv(i,k)
              dtauy3d_fd(i,k,j) = dtauy3d_fd_hv(i,k)
+          enddo
+       enddo
+    endif
+    if (ugwp_diags.and.ngw_scheme) then
+       do k = kts,kte
+          do i = its,ite
+             dudt_ngw(i,k,j) = dudt_ngw_hv(i,k)
+             dvdt_ngw(i,k,j) = dvdt_ngw_hv(i,k)
+             dtdt_ngw(i,k,j) = dtdt_ngw_hv(i,k)
           enddo
        enddo
     endif
@@ -346,7 +428,7 @@
        enddo
     endif
 
-    ! Deallocate ugwp_diags variables if used
+    ! Deallocate ugwp_diags and/or ngw_scheme variables if used
     if (ugwp_diags) then
        deallocate (dusfc_ls_hv)
        deallocate (dvsfc_ls_hv)
@@ -364,6 +446,20 @@
        deallocate (dtauy3d_ss_hv)
        deallocate (dtaux3d_fd_hv)
        deallocate (dtauy3d_fd_hv)
+       if (ngw_scheme) then
+          deallocate (dudt_ngw_hv)
+          deallocate (dvdt_ngw_hv)
+          deallocate (dtdt_ngw_hv)
+       endif
+    endif
+    if (ngw_scheme) then
+       deallocate (xlatd_hv     )
+       deallocate (raincv_hv    )
+       deallocate (rainncv_hv   )
+       deallocate (ddy_j1tau_hv )
+       deallocate (ddy_j2tau_hv )
+       deallocate (jindx1_tau_hv)
+       deallocate (jindx2_tau_hv)
     endif
 
  enddo ! Outer J-loop
