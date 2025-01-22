@@ -344,6 +344,7 @@
     integer, parameter:: ishallow  = 1 !shallow convection used with grell scheme.
 
  integer,dimension(:,:),allocatable:: &
+    bilbc_p,          &!
     k22_shallow_p,    &!
     kbcon_shallow_p,  &!
     ktop_shallow_p,   &!
@@ -352,7 +353,8 @@
 
  real(kind=RKIND),dimension(:,:),allocatable:: &
     xmb_total_p,      &!
-    xmb_shallow_p      !
+    xmb_shallow_p,    &!
+    sigma_deep_p       !
 
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
     rthdynten_p,      &!
@@ -367,6 +369,17 @@
     rqvdynten_p,      &!
     rqvdynblten_p,    &!
     rthdynblten_p      !
+
+ real(kind=RKIND),dimension(:,:,:),allocatable:: &
+    sub3d_rthcuten_p,        &!
+    sub3d_rqvcuten_p,        &!
+    sub3d_rucuten_p,         &!
+    sub3d_rvcuten_p           !
+
+ real(kind=RKIND),dimension(:,:),allocatable:: &
+    !wlpool_p,     &!
+    sgsgustcu_p,    &
+    vcpool_p
 
 !... ntiedtke specific arrays:
  real(kind=RKIND),dimension(:,:,:),allocatable:: &

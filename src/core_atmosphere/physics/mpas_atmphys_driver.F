@@ -31,6 +31,21 @@
  private
  public:: physics_driver
 
+ !
+ ! Abstract interface for routine used to communicate halos of fields
+ ! in a named group
+ !
+ abstract interface
+      subroutine halo_exchange_routine(domain, halo_group, ierr)
+
+         use mpas_derived_types, only : domain_type
+
+         type (domain_type), intent(inout) :: domain
+         character(len=*), intent(in) :: halo_group
+         integer, intent(out), optional :: ierr
+
+      end subroutine halo_exchange_routine
+ end interface
 
 !MPAS top physics driver.
 !Laura D. Fowler (send comments to laura@ucar.edu).
@@ -107,12 +122,13 @@
 
 
 !=================================================================================================================
- subroutine physics_driver(domain,itimestep,xtime_s)
+ subroutine physics_driver(domain,itimestep,xtime_s,exchange_halo_group)
 !=================================================================================================================
 
 !input arguments:
  integer,intent(in):: itimestep
  real(kind=RKIND),intent(in):: xtime_s
+ procedure (halo_exchange_routine) :: exchange_halo_group
 
 !inout arguments:
  type(domain_type),intent(inout):: domain
@@ -344,8 +360,8 @@
        call allocate_convection(block%configs)
 !$OMP PARALLEL DO
        do thread=1,nThreads
-          call driver_convection(itimestep,block%configs,mesh,sfc_input,diag_physics,tend_physics, &
-                                 cellSolveThreadStart(thread),cellSolveThreadEnd(thread))
+          call driver_convection(itimestep,block%configs,mesh,sfc_input,diag_physics,tend_physics,diag,domain%dminfo, &
+                                 cellSolveThreadStart(thread),cellSolveThreadEnd(thread),exchange_halo_group,block)
        end do
 !$OMP END PARALLEL DO
        call deallocate_convection(block%configs)
