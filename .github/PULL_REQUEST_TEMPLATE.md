@@ -8,3 +8,13 @@ See the below examples for more information.
 https://github.com/MPAS-Dev/MPAS/pull/930
 https://github.com/MPAS-Dev/MPAS/pull/931
 
+Information on running mandatory regression tests on Jet can be found [here](https://github.com/barlage/mpas_testcase) and the results pasted below.
+
+<details>
+  <summary>
+    regression test case results
+  </summary>
+`` `
+PASTE compare_run_testcases AND/OR compare_create_testcases TEXT HERE
+```
+</details>
