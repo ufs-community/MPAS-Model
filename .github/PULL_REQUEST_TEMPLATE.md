@@ -14,7 +14,8 @@ Information on running mandatory regression tests on Jet can be found [here](htt
   <summary>
     regression test case results
   </summary>
-`` `
+  
+```
 PASTE compare_run_testcases AND/OR compare_create_testcases TEXT HERE
 ```
 </details>
