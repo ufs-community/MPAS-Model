@@ -583,7 +583,7 @@
 
  lsm_select: select case (trim(config_lsm_scheme))
 
-    case("sf_noah")
+    case("sf_noah","sf_noahmp")
        call sfcdiags( &
                      hfx   = hfx_p  , qfx     = qfx_p   , tsk  = tsk_p , qsfc = qsfc_p , chs = chs_p , &
                      chs2  = chs2_p , cqs2    = cqs2_p  , t2   = t2m_p , th2  = th2m_p , q2  = q2_p  , &
@@ -713,7 +713,7 @@
 
  lsm_select: select case (trim(config_lsm_scheme))
 
-    case("sf_noah")
+    case("sf_noah","sf_noahmp")
 
        call seaice_noah( &
              dz8w      = dz_p        , p8w3d   = pres2_hyd_p  , t3d      = t_p      , &
