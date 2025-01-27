@@ -13,6 +13,7 @@
 
  use mpas_atmphys_constants
  use mpas_atmphys_vars
+ use mpas_atmphys_manager,only: curr_julday
 
 !wrf physics:
  use module_bl_gwdo
@@ -63,6 +64,8 @@
 !   Laura D. Fowler (laura@ucar.edu) / 2019-01-30.
 ! * added the flags errmsg and errflg in the call to subroutine gwdo for compliance with the CCPP framework.
 !   Laura D. Fowler (laura@ucar.edu) / 2023-05-15.
+! * added the NOAA UFS unified gravity wave drag scheme
+!   Michael D. Toy (michael.toy@noaa.gov) / 2024-10-21
 
 
  contains
@@ -77,10 +80,11 @@
 
  !local variables:
  character(len=StrKIND),pointer:: gwdo_scheme
- logical,pointer:: ugwp_diags
+ logical,pointer:: ugwp_diags,ngw_scheme
 
  call mpas_pool_get_config(configs,'config_gwdo_scheme',gwdo_scheme)
  call mpas_pool_get_config(configs,'config_ugwp_diags',ugwp_diags)
+ call mpas_pool_get_config(configs,'config_ngw_scheme',ngw_scheme)
 
  if(.not.allocated(cosa_p)  ) allocate(cosa_p(ims:ime,jms:jme)  )
  if(.not.allocated(sina_p)  ) allocate(sina_p(ims:ime,jms:jme)  )
@@ -93,6 +97,7 @@
  if(.not.allocated(dtauy3d_p)) allocate(dtauy3d_p(ims:ime,kms:kme,jms:jme))
  if(.not.allocated(rublten_p)) allocate(rublten_p(ims:ime,kms:kme,jms:jme))
  if(.not.allocated(rvblten_p)) allocate(rvblten_p(ims:ime,kms:kme,jms:jme))
+ if(.not.allocated(rthblten_p)) allocate(rthblten_p(ims:ime,kms:kme,jms:jme))
 
  gwdo_select: select case (trim(gwdo_scheme))
 
@@ -149,6 +154,20 @@
        if(.not.allocated(dtauy3d_ss_p)) allocate(dtauy3d_ss_p(ims:ime,kms:kme,jms:jme))
        if(.not.allocated(dtaux3d_fd_p)) allocate(dtaux3d_fd_p(ims:ime,kms:kme,jms:jme))
        if(.not.allocated(dtauy3d_fd_p)) allocate(dtauy3d_fd_p(ims:ime,kms:kme,jms:jme))
+       if (ngw_scheme) then
+          if(.not.allocated(dudt_ngw_p)) allocate(dudt_ngw_p(ims:ime,kms:kme,jms:jme))
+          if(.not.allocated(dvdt_ngw_p)) allocate(dvdt_ngw_p(ims:ime,kms:kme,jms:jme))
+          if(.not.allocated(dtdt_ngw_p)) allocate(dtdt_ngw_p(ims:ime,kms:kme,jms:jme))
+       endif
+    endif
+    if (ngw_scheme) then
+       if(.not.allocated(xlat_p)) allocate(xlat_p(ims:ime,jms:jme))
+       if(.not.allocated(raincv_p)  ) allocate(raincv_p(ims:ime,jms:jme)  )
+       if(.not.allocated(rainncv_p) ) allocate(rainncv_p(ims:ime,jms:jme) )
+       if(.not.allocated(jindx1_tau_p)) allocate(jindx1_tau_p(ims:ime,jms:jme))
+       if(.not.allocated(jindx2_tau_p)) allocate(jindx2_tau_p(ims:ime,jms:jme))
+       if(.not.allocated(ddy_j1tau_p)) allocate(ddy_j1tau_p(ims:ime,jms:jme))
+       if(.not.allocated(ddy_j2tau_p)) allocate(ddy_j2tau_p(ims:ime,jms:jme))
     endif
 
    case default
@@ -166,10 +185,11 @@
 
  !local variables:
  character(len=StrKIND),pointer:: gwdo_scheme
- logical,pointer:: ugwp_diags
+ logical,pointer:: ugwp_diags,ngw_scheme
 
  call mpas_pool_get_config(configs,'config_gwdo_scheme',gwdo_scheme)
  call mpas_pool_get_config(configs,'config_ugwp_diags',ugwp_diags)
+ call mpas_pool_get_config(configs,'config_ngw_scheme',ngw_scheme)
 
  if(allocated(cosa_p)  ) deallocate(cosa_p  )
  if(allocated(sina_p)  ) deallocate(sina_p  )
@@ -182,6 +202,7 @@
  if(allocated(dtauy3d_p)) deallocate(dtauy3d_p)
  if(allocated(rublten_p)) deallocate(rublten_p)
  if(allocated(rvblten_p)) deallocate(rvblten_p)
+ if(allocated(rthblten_p)) deallocate(rthblten_p)
 
  gwdo_select: select case (trim(gwdo_scheme))
 
@@ -238,6 +259,20 @@
        if(allocated(dtauy3d_ss_p)) deallocate(dtauy3d_ss_p)
        if(allocated(dtaux3d_fd_p)) deallocate(dtaux3d_fd_p)
        if(allocated(dtauy3d_fd_p)) deallocate(dtauy3d_fd_p)
+       if (ngw_scheme) then
+          if(allocated(dudt_ngw_p)) deallocate(dudt_ngw_p)
+          if(allocated(dvdt_ngw_p)) deallocate(dvdt_ngw_p)
+          if(allocated(dtdt_ngw_p)) deallocate(dtdt_ngw_p)
+       endif
+    endif
+    if (ngw_scheme) then
+       if(allocated(xlat_p)) deallocate(xlat_p)
+       if(allocated(raincv_p)  ) deallocate(raincv_p)
+       if(allocated(rainncv_p) ) deallocate(rainncv_p)
+       if(allocated(jindx1_tau_p)) deallocate(jindx1_tau_p)
+       if(allocated(jindx2_tau_p)) deallocate(jindx2_tau_p)
+       if(allocated(ddy_j1tau_p)) deallocate(ddy_j1tau_p)
+       if(allocated(ddy_j2tau_p)) deallocate(ddy_j2tau_p)
     endif
 
    case default
@@ -247,13 +282,14 @@
  end subroutine deallocate_gwdo
 
 !=================================================================================================================
- subroutine gwdo_from_MPAS(configs,mesh,sfc_input,diag_physics,tend_physics,its,ite)
+ subroutine gwdo_from_MPAS(configs,mesh,sfc_input,ngw_input,diag_physics,tend_physics,its,ite)
 !=================================================================================================================
 
 !input arguments:
  type(mpas_pool_type),intent(in):: configs
  type(mpas_pool_type),intent(in):: mesh
  type(mpas_pool_type),intent(in):: sfc_input
+ type(mpas_pool_type),intent(in):: ngw_input
  type(mpas_pool_type),intent(in):: diag_physics
  type(mpas_pool_type),intent(in):: tend_physics
 
@@ -262,10 +298,13 @@
 !local variables:
  integer:: i,k,j
  character(len=StrKIND),pointer:: gwdo_scheme
- logical,pointer:: ugwp_diags
+ character(len=StrKIND),pointer:: convection_scheme,microp_scheme
+ logical,pointer:: ugwp_diags,ngw_scheme
+ real(kind=RKIND),parameter :: rad2deg = 180./3.1415926
 
 !local pointers:
  integer,dimension(:),pointer:: kpbl
+ integer,dimension(:),pointer:: jindx1_tau,jindx2_tau
  real(kind=RKIND),pointer:: len_disp
  real(kind=RKIND),dimension(:),pointer  :: meshDensity
  real(kind=RKIND),dimension(:),pointer  :: oa1,oa2,oa3,oa4,ol1,ol2,ol3,ol4,con,var2d
@@ -275,17 +314,23 @@
                                            ol3ss,ol4ss,conss,var2dss
  real(kind=RKIND),dimension(:),pointer  :: dusfcg,dvsfcg
  real(kind=RKIND),dimension(:,:),pointer:: dtaux3d,dtauy3d,rublten,rvblten
+ real(kind=RKIND),dimension(:,:),pointer:: rthblten
  real(kind=RKIND),dimension(:),pointer  :: dusfc_ls,dvsfc_ls,dusfc_bl,dvsfc_bl,     &
                                            dusfc_ss,dvsfc_ss,dusfc_fd,dvsfc_fd
  real(kind=RKIND),dimension(:),pointer  :: hpbl,xland,br1
+ real(kind=RKIND),dimension(:),pointer  :: latCell,ddy_j1tau,ddy_j2tau,raincv,rainncv
  real(kind=RKIND),dimension(:,:),pointer:: dtaux3d_ls,dtauy3d_ls,dtaux3d_bl,dtauy3d_bl, &
                                            dtaux3d_ss,dtauy3d_ss,dtaux3d_fd,dtauy3d_fd
+ real(kind=RKIND),dimension(:,:),pointer:: dudt_ngw,dvdt_ngw,dtdt_ngw
 
 !-----------------------------------------------------------------------------------------------------------------
 
  call mpas_pool_get_config(configs,'config_len_disp',len_disp)
  call mpas_pool_get_config(configs,'config_gwdo_scheme',gwdo_scheme)
  call mpas_pool_get_config(configs,'config_ugwp_diags',ugwp_diags)
+ call mpas_pool_get_config(configs,'config_ngw_scheme',ngw_scheme)
+ call mpas_pool_get_config(configs,'config_convection_scheme',convection_scheme)
+ call mpas_pool_get_config(configs,'config_microp_scheme',microp_scheme)
  call mpas_pool_get_array(mesh,'meshDensity',meshDensity)
 
 
@@ -412,6 +457,60 @@
          enddo
          enddo
       endif
+      if (ugwp_diags.and.ngw_scheme) then
+         call mpas_pool_get_array(diag_physics,'dudt_ngw',dudt_ngw)
+         call mpas_pool_get_array(diag_physics,'dvdt_ngw',dvdt_ngw)
+         call mpas_pool_get_array(diag_physics,'dtdt_ngw',dtdt_ngw)
+         do j = jts,jte
+         do k = kts,kte
+         do i = its,ite
+            dudt_ngw_p(i,k,j) = dudt_ngw(k,i)
+            dvdt_ngw_p(i,k,j) = dvdt_ngw(k,i)
+            dtdt_ngw_p(i,k,j) = dtdt_ngw(k,i)
+         enddo
+         enddo
+         enddo
+      endif
+      if (ngw_scheme) then
+         call mpas_pool_get_array(mesh,'latCell',latCell)
+         if(trim(convection_scheme) /= "off") &
+            call mpas_pool_get_array(diag_physics,'raincv',raincv)
+         if(trim(microp_scheme) /= "off") &
+            call mpas_pool_get_array(diag_physics,'rainncv',rainncv)
+         call mpas_pool_get_array(ngw_input,'jindx1_tau',jindx1_tau)
+         call mpas_pool_get_array(ngw_input,'jindx2_tau',jindx2_tau)
+         call mpas_pool_get_array(ngw_input,'ddy_j1tau', ddy_j1tau)
+         call mpas_pool_get_array(ngw_input,'ddy_j2tau', ddy_j2tau)
+         do j = jts,jte
+         do i = its,ite
+            xlat_p(i,j) = latCell(i)*rad2deg   ! latitude in degrees
+            jindx1_tau_p(i,j) = jindx1_tau(i)
+            jindx2_tau_p(i,j) = jindx2_tau(i)
+            ddy_j1tau_p(i,j)  = ddy_j1tau(i)
+            ddy_j2tau_p(i,j)  = ddy_j2tau(i)
+         enddo
+         enddo
+         ! Treat rain rates conditionally
+         if(trim(convection_scheme) == "off") then
+            raincv_p(:,:) = 0._RKIND
+         else
+            do j = jts,jte
+            do i = its,ite
+               raincv_p(i,j) = raincv(i)
+            enddo
+            enddo
+         endif
+         if(trim(microp_scheme) == "off") then
+            rainncv_p(:,:) = 0._RKIND
+         else
+            do j = jts,jte
+            do i = its,ite
+               rainncv_p(i,j) = rainncv(i)
+            enddo
+            enddo
+         endif
+
+      endif
 
    case default
 
@@ -425,6 +524,7 @@
  call mpas_pool_get_array(diag_physics,'dtauy3d' ,dtauy3d )
  call mpas_pool_get_array(tend_physics,'rublten' ,rublten )
  call mpas_pool_get_array(tend_physics,'rvblten' ,rvblten )
+ call mpas_pool_get_array(tend_physics,'rthblten',rthblten)
 
  do j = jts,jte
  do i = its,ite
@@ -444,6 +544,7 @@
     dtauy3d_p(i,k,j) = dtauy3d(k,i)
     rublten_p(i,k,j) = rublten(k,i)
     rvblten_p(i,k,j) = rvblten(k,i)
+    rthblten_p(i,k,j) = rthblten(k,i)
  enddo
  enddo
  enddo
@@ -465,25 +566,28 @@
 !local variables:
  integer:: i,k,j
  character(len=StrKIND),pointer:: gwdo_scheme
- logical,pointer:: ugwp_diags
+ logical,pointer:: ugwp_diags,ngw_scheme
 
 !local pointers:
  real(kind=RKIND),dimension(:),pointer  :: dusfcg,dvsfcg
  real(kind=RKIND),dimension(:,:),pointer:: dtaux3d,dtauy3d,rubldiff,rvbldiff,rublten,rvblten
+ real(kind=RKIND),dimension(:,:),pointer:: rthblten
 
  real(kind=RKIND),dimension(:),pointer  :: oa1ls,oa2ls,oa3ls,oa4ls,ol1ls,ol2ls,       &
                                            ol3ls,ol4ls,conls,var2dls
  real(kind=RKIND),dimension(:),pointer  :: oa1ss,oa2ss,oa3ss,oa4ss,ol1ss,ol2ss,       &
                                            ol3ss,ol4ss,conss,var2dss
- real(kind=RKIND),dimension(:),pointer  :: dusfc_ls,dvsfc_ls,dusfc_bl,dvsfc_bl,     &
+ real(kind=RKIND),dimension(:),pointer  :: dusfc_ls,dvsfc_ls,dusfc_bl,dvsfc_bl,       &
                                            dusfc_ss,dvsfc_ss,dusfc_fd,dvsfc_fd
  real(kind=RKIND),dimension(:,:),pointer:: dtaux3d_ls,dtauy3d_ls,dtaux3d_bl,dtauy3d_bl, &
                                            dtaux3d_ss,dtauy3d_ss,dtaux3d_fd,dtauy3d_fd
+ real(kind=RKIND),dimension(:,:),pointer:: dudt_ngw,dvdt_ngw,dtdt_ngw
 
 !-----------------------------------------------------------------------------------------------------------------
 
  call mpas_pool_get_config(configs,'config_gwdo_scheme',gwdo_scheme)
  call mpas_pool_get_config(configs,'config_ugwp_diags',ugwp_diags)
+ call mpas_pool_get_config(configs,'config_ngw_scheme',ngw_scheme)
  call mpas_pool_get_array(diag_physics,'dusfcg'  ,dusfcg  )
  call mpas_pool_get_array(diag_physics,'dvsfcg'  ,dvsfcg  )
  call mpas_pool_get_array(diag_physics,'dtaux3d' ,dtaux3d )
@@ -492,6 +596,7 @@
  call mpas_pool_get_array(diag_physics,'rvbldiff',rvbldiff)
  call mpas_pool_get_array(tend_physics,'rublten' ,rublten )
  call mpas_pool_get_array(tend_physics,'rvblten' ,rvblten )
+ call mpas_pool_get_array(tend_physics,'rthblten',rthblten)
 
 
  gwdo_select: select case (trim(gwdo_scheme))
@@ -540,6 +645,20 @@
          enddo
          enddo
          enddo
+         if (ngw_scheme) then
+            call mpas_pool_get_array(diag_physics,'dudt_ngw' ,dudt_ngw )
+            call mpas_pool_get_array(diag_physics,'dvdt_ngw' ,dvdt_ngw )
+            call mpas_pool_get_array(diag_physics,'dtdt_ngw' ,dtdt_ngw )
+            do j = jts,jte
+            do k = kts,kte
+            do i = its,ite
+               dudt_ngw(k,i) = dudt_ngw_p(i,k,j)
+               dvdt_ngw(k,i) = dvdt_ngw_p(i,k,j)
+               dtdt_ngw(k,i) = dtdt_ngw_p(i,k,j)
+            enddo
+            enddo
+            enddo
+         endif
       endif
 
    case default
@@ -562,6 +681,7 @@
     rvbldiff(k,i) = rvblten_p(i,k,j)-rvblten(k,i) 
     rublten(k,i)  = rublten_p(i,k,j)
     rvblten(k,i)  = rvblten_p(i,k,j)
+    rthblten(k,i) = rthblten_p(i,k,j)
  enddo
  enddo
  enddo
@@ -569,7 +689,7 @@
  end subroutine gwdo_to_MPAS
  
 !=================================================================================================================
- subroutine driver_gwdo(itimestep,configs,mesh,sfc_input,diag_physics,tend_physics,its,ite)
+ subroutine driver_gwdo(itimestep,configs,mesh,sfc_input,ngw_input,diag_physics,tend_physics,its,ite)
 !=================================================================================================================
 
 !input arguments:
@@ -581,14 +701,21 @@
  integer,intent(in):: itimestep
 
 !inout arguments:
+ type(mpas_pool_type),intent(inout):: ngw_input
  type(mpas_pool_type),intent(inout):: diag_physics
  type(mpas_pool_type),intent(inout):: tend_physics
 
 !local variables:
  character(len=StrKIND),pointer:: gwdo_scheme
- logical,pointer:: ugwp_diags
+ logical,pointer:: ugwp_diags,ngw_scheme
+ integer,pointer:: ntau_d1y_ptr,ntau_d2t_ptr
+ real(kind=RKIND),dimension(:),pointer :: days_limb_ptr
+ real(kind=RKIND),dimension(:,:),pointer:: tau_limb_ptr
+ integer:: ntau_d1y,ntau_d2t
+ real(kind=RKIND),dimension(:),allocatable::   days_limb
+ real(kind=RKIND),dimension(:,:),allocatable:: tau_limb
 
- integer:: i,iCell,iEdge
+ integer:: i
  real(kind=RKIND),dimension(:),allocatable:: dx_max
 
 !CCPP-compliant flags:
@@ -605,9 +732,25 @@
 
  call mpas_pool_get_config(configs,'config_gwdo_scheme',gwdo_scheme)
  call mpas_pool_get_config(configs,'config_ugwp_diags',ugwp_diags)
+ call mpas_pool_get_config(configs,'config_ngw_scheme',ngw_scheme)
+
+ ! Call up variables needed for NGW scheme
+ if (ngw_scheme) then
+    call mpas_pool_get_dimension(mesh,'lat',ntau_d1y_ptr)
+    call mpas_pool_get_dimension(mesh,'days',ntau_d2t_ptr)
+    call mpas_pool_get_array(ngw_input,'DAYS',days_limb_ptr)
+    call mpas_pool_get_array(ngw_input,'ABSMF',tau_limb_ptr)
+    ntau_d1y = ntau_d1y_ptr
+    ntau_d2t = ntau_d2t_ptr
+    if(.not.allocated(days_limb)) allocate(days_limb(ntau_d2t))
+    if(.not.allocated(tau_limb) ) allocate(tau_limb (ntau_d1y,ntau_d2t))
+    days_limb(:)   = days_limb_ptr(:)
+    tau_limb (:,:) = tau_limb_ptr(:,:)
+ endif
+
 
 !copy MPAS arrays to local arrays:
- call gwdo_from_MPAS(configs,mesh,sfc_input,diag_physics,tend_physics,its,ite)
+ call gwdo_from_MPAS(configs,mesh,sfc_input,ngw_input,diag_physics,tend_physics,its,ite)
 
  gwdo_select: select case (trim(gwdo_scheme))
 
@@ -639,7 +782,8 @@
                   p3d       = pres_hydd_p , p3di      = pres2_hydd_p , pi3d    = pi_p      , &
                   u3d       = u_p         , v3d       = v_p          , t3d     = t_p       , &
                   qv3d      = qv_p        , z         = zmid_p       , rublten = rublten_p , &
-                  rvblten   = rvblten_p   , dtaux3d   = dtaux3d_p    , dtauy3d = dtauy3d_p , &
+                  rvblten   = rvblten_p   , rthblten  = rthblten_p   ,                       &
+                  dtaux3d   = dtaux3d_p   , dtauy3d   = dtauy3d_p    ,                       &
                   dusfcg    = dusfcg_p    , dvsfcg    = dvsfcg_p     , kpbl2d  = kpbl_p    , &
                   itimestep = itimestep   , dt        = dt_pbl       , dx      = dx_p      , &
                   pblh      = hpbl_p      , br1       = br_p         , xland   = xland_p   , &
@@ -652,18 +796,27 @@
                   ol2d4ls   = ol4ls_p     , var2dss   = var2dss_p    , oc12dss   = conss_p , & 
                   oa2d1ss = oa1ss_p       , oa2d2ss   = oa2ss_p      , oa2d3ss   = oa3ss_p , & 
                   oa2d4ss = oa4ss_p       , ol2d1ss   = ol1ss_p      , ol2d2ss   = ol2ss_p , &
-                  ol2d3ss = ol3ss_p       , ol2d4ss   = ol4ss_p      ,                       &
+                  ol2d3ss = ol3ss_p       , ol2d4ss   = ol4ss_p      , zi      = z_p       , &
                   dusfc_ls = dusfc_ls_p , dvsfc_ls = dvsfc_ls_p  , dusfc_bl = dusfc_bl_p,    &
                   dvsfc_bl = dvsfc_bl_p , dusfc_ss = dusfc_ss_p  , dvsfc_ss = dvsfc_ss_p,    &
                   dusfc_fd = dusfc_fd_p , dvsfc_fd = dvsfc_fd_p  , dtaux3d_ls = dtaux3d_ls_p,      &
                   dtauy3d_ls = dtauy3d_ls_p, dtaux3d_bl = dtaux3d_bl_p, dtauy3d_bl = dtauy3d_bl_p, &
                   dtaux3d_ss = dtaux3d_ss_p, dtauy3d_ss = dtauy3d_ss_p, dtaux3d_fd = dtaux3d_fd_p, &
-                  dtauy3d_fd = dtauy3d_fd_p, ugwp_diags = ugwp_diags,                              &
-                  errmsg    = errmsg      , errflg    = errflg       ,                       &
+                  dtauy3d_fd = dtauy3d_fd_p, ugwp_diags = ugwp_diags  , ngw_scheme = ngw_scheme,   &
+                  xlatd = xlat_p, jindx1_tau = jindx1_tau_p,  jindx2_tau = jindx2_tau_p,     &
+                  ddy_j1tau = ddy_j1tau_p  , ddy_j2tau = ddy_j2tau_p, r_DoY = curr_julday,   &
+                  raincv = raincv_p     , rainncv = rainncv_p    , ntau_d1y = ntau_d1y,      &
+                  ntau_d2t = ntau_d2t   , days_limb = days_limb  , tau_limb = tau_limb,      &
+                  dudt_ngw = dudt_ngw_p , dvdt_ngw = dvdt_ngw_p  , dtdt_ngw = dtdt_ngw_p ,   &
+                  errmsg    = errmsg    , errflg    = errflg     ,                           &
                   ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde ,    &
                   ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme ,    &
                   its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte      &
                  )
+       if (ngw_scheme) then
+          if(allocated(days_limb)) deallocate(days_limb)
+          if(allocated(tau_limb) ) deallocate(tau_limb )
+       endif
        call mpas_timer_stop('bl_ugwp_gwdo')
 
      case default

@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<registry model="mpas" core="init_atmosphere" core_abbrev="init_atm" version="8.2.2">
+<registry model="mpas" core="init_atmosphere" core_abbrev="init_atm" version="8.2.2-1.2">
 
 <!-- **************************************************************************************** -->
 <!-- ************************************** Dimensions ************************************** -->
@@ -296,7 +296,7 @@
                      description="Whether to recompute subgrid-scale orography statistics directly on the native MPAS mesh (case 7 only)"
                      possible_values="true or false"/>
 
-                <nml_option name="config_native_gwd_gsl_static"     type="logical"       default_value="true"
+                <nml_option name="config_native_gwd_gsl_static"     type="logical"       default_value="false"
                      units="-"
                      description="Whether to recompute subgrid-scale orography statistics for the GSL drag directly on the native MPAS mesh (case 7 only)"
                      possible_values="true or false"/>
@@ -319,6 +319,11 @@
 		<nml_option name="config_aerosol_climo"            type="logical"       default_value="false"
                      units="-"
                      description="Whether to use monthly climatology for water- and ice-friendly aerosols"
+                     possible_values="true or false"/>
+
+		<nml_option name="config_tempo_rap"            type="logical"       default_value="false"
+                     units="-"
+                     description="Whether to use aerosols from RAP for TEMPO microphysics instead of the monthly climatology"
                      possible_values="true or false"/>
 
                 <nml_option name="config_input_sst"             type="logical"       default_value="false"
@@ -385,9 +390,8 @@
                 <package name="sfc_update" description="Used by test cases that produce surface updates."/>
                 <package name="lbcs" description="Active when lateral boundary conditions are interpolated and written."/>
                 <package name="gwd_stage_in" description="Active only if GWD static fields are be generated and other static fields are not being generated"/>
-                <package name="gwd_gsl_stage_in" description="Active only if GSL GWD static fields are be generated and other static fields are not being generated"/>
                 <package name="gwd_stage_out" description="Active only if GWD static fields are be generated and other static fields are not being generated"/>
-                <package name="gwd_gsl_stage_out" description="Active only if GSL GWD static fields are be generated and other static fields are not being generated"/>
+                <package name="gwd_gsl_stage_out" description="Active only if GSL GWD static fields are be generated"/>
                 <package name="vertical_stage_in" description="Active only if a vertical grid is being generated"/>
                 <package name="vertical_stage_out" description="Active only if a vertical grid is being generated"/>
                 <package name="met_stage_in" description="Active only if meteorological fields are being interpolated"/>
@@ -456,27 +460,27 @@
                         <var name="bdyMaskCell"/>
                         <var name="bdyMaskEdge"/>
                         <var name="bdyMaskVertex"/>
-                        <var name="edgeNormalVectors" packages="gwd_stage_in;gwd_gsl_stage_in;vertical_stage_in;met_stage_in"/>
-                        <var name="localVerticalUnitVectors" packages="gwd_stage_in;gwd_gsl_stage_in;vertical_stage_in;met_stage_in"/>
-                        <var name="cellTangentPlane" packages="gwd_stage_in;gwd_gsl_stage_in;vertical_stage_in;met_stage_in"/>
-                        <var name="fEdge" packages="gwd_stage_in;gwd_gsl_stage_in;vertical_stage_in;met_stage_in"/>
-                        <var name="fVertex" packages="gwd_stage_in;gwd_gsl_stage_in;vertical_stage_in;met_stage_in"/>
-                        <var name="ter" packages="gwd_stage_in;gwd_gsl_stage_in;vertical_stage_in;met_stage_in"/>
-                        <var name="landmask" packages="gwd_stage_in;gwd_gsl_stage_in;vertical_stage_in;met_stage_in"/>
-                        <var name="mminlu" packages="gwd_stage_in;gwd_gsl_stage_in;vertical_stage_in;met_stage_in"/>
-                        <var name="isice_lu" packages="gwd_stage_in;gwd_gsl_stage_in;vertical_stage_in;met_stage_in"/>
-                        <var name="iswater_lu" packages="gwd_stage_in;gwd_gsl_stage_in;vertical_stage_in;met_stage_in"/>
-                        <var name="ivgtyp" packages="gwd_stage_in;gwd_gsl_stage_in;vertical_stage_in;met_stage_in"/>
-                        <var name="isltyp" packages="gwd_stage_in;gwd_gsl_stage_in;vertical_stage_in;met_stage_in"/>
-                        <var name="landusef" packages="gwd_stage_in;gwd_gsl_stage_in;vertical_stage_in;met_stage_in"/>
-                        <var name="soilf" packages="gwd_stage_in;gwd_gsl_stage_in;vertical_stage_in;met_stage_in"/>
-                        <var name="snoalb" packages="gwd_stage_in;gwd_gsl_stage_in;vertical_stage_in;met_stage_in"/>
-                        <var name="soiltemp" packages="gwd_stage_in;gwd_gsl_stage_in;vertical_stage_in;met_stage_in"/>
-                        <var name="greenfrac" packages="gwd_stage_in;gwd_gsl_stage_in;vertical_stage_in;met_stage_in"/>
-                        <var name="shdmin" packages="gwd_stage_in;gwd_gsl_stage_in;vertical_stage_in;met_stage_in"/>
-                        <var name="shdmax" packages="gwd_stage_in;gwd_gsl_stage_in;vertical_stage_in;met_stage_in"/>
-                        <var name="albedo12m" packages="gwd_stage_in;gwd_gsl_stage_in;vertical_stage_in;met_stage_in"/>
-                        <var name="lai12m" packages="gwd_stage_in;gwd_gsl_stage_in;vertical_stage_in;met_stage_in"/>
+                        <var name="edgeNormalVectors" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
+                        <var name="localVerticalUnitVectors" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
+                        <var name="cellTangentPlane" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
+                        <var name="fEdge" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
+                        <var name="fVertex" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
+                        <var name="ter" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
+                        <var name="landmask" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
+                        <var name="mminlu" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
+                        <var name="isice_lu" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
+                        <var name="iswater_lu" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
+                        <var name="ivgtyp" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
+                        <var name="isltyp" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
+                        <var name="landusef" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
+                        <var name="soilf" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
+                        <var name="snoalb" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
+                        <var name="soiltemp" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
+                        <var name="greenfrac" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
+                        <var name="shdmin" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
+                        <var name="shdmax" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
+                        <var name="albedo12m" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
+                        <var name="lai12m" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
                         <var name="soilcomp" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
                         <var name="soilcl1" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
                         <var name="soilcl2" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
@@ -492,12 +496,12 @@
                         <var name="ol2" packages="vertical_stage_in;met_stage_in"/>
                         <var name="ol3" packages="vertical_stage_in;met_stage_in"/>
                         <var name="ol4" packages="vertical_stage_in;met_stage_in"/>
-                        <var name="deriv_two" packages="gwd_stage_in;gwd_gsl_stage_in;vertical_stage_in;met_stage_in"/>
-                        <var name="defc_a" packages="gwd_stage_in;gwd_gsl_stage_in;vertical_stage_in;met_stage_in"/>
-                        <var name="defc_b" packages="gwd_stage_in;gwd_gsl_stage_in;vertical_stage_in;met_stage_in"/>
-                        <var name="cell_gradient_coef_x" packages="gwd_stage_in;gwd_gsl_stage_in;vertical_stage_in;met_stage_in"/>
-                        <var name="cell_gradient_coef_y" packages="gwd_stage_in;gwd_gsl_stage_in;vertical_stage_in;met_stage_in"/>
-                        <var name="coeffs_reconstruct" packages="gwd_stage_in;gwd_gsl_stage_in;vertical_stage_in;met_stage_in"/>
+                        <var name="deriv_two" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
+                        <var name="defc_a" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
+                        <var name="defc_b" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
+                        <var name="cell_gradient_coef_x" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
+                        <var name="cell_gradient_coef_y" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
+                        <var name="coeffs_reconstruct" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
                         <var name="cf1" packages="met_stage_in"/>
                         <var name="cf2" packages="met_stage_in"/>
                         <var name="cf3" packages="met_stage_in"/>
@@ -667,9 +671,9 @@
                         type="output"
                         filename_template="x1.40962.ugwp_oro_data.nc"
                         output_interval="initial_only"
-                        immutable="true">
+                        immutable="true"
+                        packages="gwd_gsl_stage_out">
 
-                        <var name="xtime"/>
                         <var name="var2dls"/>
                         <var name="conls"/>
                         <var name="oa1ls"/>
@@ -975,65 +979,85 @@
 
                 <!-- GSL GWDO fields - meso-scale -->
                 <var name="var2dls" type="real" dimensions="nCells" units="m"
-                     description="standard deviation of subgrid-scale orography (meso-scale GWD)"/>
+                     description="standard deviation of subgrid-scale orography (meso-scale GWD)"
+                     packages="gwd_gsl_stage_out"/>
 
                 <var name="conls" type="real" dimensions="nCells" units="unitless"
-                     description="orographic convexity (meso-scale GWD)"/>
+                     description="orographic convexity (meso-scale GWD)"
+                     packages="gwd_gsl_stage_out"/>
 
                 <var name="oa1ls" type="real" dimensions="nCells" units="unitless"
-                     description="asymmetry of subgrid-scale orography for westerly flow (meso-scale GWD)"/>
+                     description="asymmetry of subgrid-scale orography for westerly flow (meso-scale GWD)"
+                     packages="gwd_gsl_stage_out"/>
 
                 <var name="oa2ls" type="real" dimensions="nCells" units="unitless"
-                     description="asymmetry of subgrid-scale orography for southerly flow (meso-scale GWD)"/>
+                     description="asymmetry of subgrid-scale orography for southerly flow (meso-scale GWD)"
+                     packages="gwd_gsl_stage_out"/>
 
                 <var name="oa3ls" type="real" dimensions="nCells" units="unitless"
-                     description="asymmetry of subgrid-scale orography for south-westerly flow (meso-scale GWD)"/>
+                     description="asymmetry of subgrid-scale orography for south-westerly flow (meso-scale GWD)"
+                     packages="gwd_gsl_stage_out"/>
 
                 <var name="oa4ls" type="real" dimensions="nCells" units="unitless"
-                     description="asymmetry of subgrid-scale orography for north-westerly flow (meso-scale GWD)"/>
+                     description="asymmetry of subgrid-scale orography for north-westerly flow (meso-scale GWD)"
+                     packages="gwd_gsl_stage_out"/>
 
                 <var name="ol1ls" type="real" dimensions="nCells" units="unitless"
-                     description="effective orographic length for westerly flow (meso-scale GWD)"/>
+                     description="effective orographic length for westerly flow (meso-scale GWD)"
+                     packages="gwd_gsl_stage_out"/>
 
                 <var name="ol2ls" type="real" dimensions="nCells" units="unitless"
-                     description="effective orographic length for southerly flow (meso-scale GWD)"/>
+                     description="effective orographic length for southerly flow (meso-scale GWD)"
+                     packages="gwd_gsl_stage_out"/>
 
                 <var name="ol3ls" type="real" dimensions="nCells" units="unitless"
-                     description="effective orographic length for south-westerly flow (meso-scale GWD)"/>
+                     description="effective orographic length for south-westerly flow (meso-scale GWD)"
+                     packages="gwd_gsl_stage_out"/>
 
                 <var name="ol4ls" type="real" dimensions="nCells" units="unitless"
-                     description="effective orographic length for north-westerly flow (meso-scale GWD)"/>
+                     description="effective orographic length for north-westerly flow (meso-scale GWD)"
+                     packages="gwd_gsl_stage_out"/>
 
                 <!-- GSL GWDO fields - small-scale -->
                 <var name="var2dss" type="real" dimensions="nCells" units="m"
-                     description="standard deviation of subgrid-scale orography (small-scale GWD)"/>
+                     description="standard deviation of subgrid-scale orography (small-scale GWD)"
+                     packages="gwd_gsl_stage_out"/>
 
                 <var name="conss" type="real" dimensions="nCells" units="unitless"
-                     description="orographic convexity (small-scale GWD)"/>
+                     description="orographic convexity (small-scale GWD)"
+                     packages="gwd_gsl_stage_out"/>
 
                 <var name="oa1ss" type="real" dimensions="nCells" units="unitless"
-                     description="asymmetry of subgrid-scale orography for westerly flow (small-scale GWD)"/>
+                     description="asymmetry of subgrid-scale orography for westerly flow (small-scale GWD)"
+                     packages="gwd_gsl_stage_out"/>
 
                 <var name="oa2ss" type="real" dimensions="nCells" units="unitless"
-                     description="asymmetry of subgrid-scale orography for southerly flow (small-scale GWD)"/>
+                     description="asymmetry of subgrid-scale orography for southerly flow (small-scale GWD)"
+                     packages="gwd_gsl_stage_out"/>
 
                 <var name="oa3ss" type="real" dimensions="nCells" units="unitless"
-                     description="asymmetry of subgrid-scale orography for south-westerly flow (small-scale GWD)"/>
+                     description="asymmetry of subgrid-scale orography for south-westerly flow (small-scale GWD)"
+                     packages="gwd_gsl_stage_out"/>
 
                 <var name="oa4ss" type="real" dimensions="nCells" units="unitless"
-                     description="asymmetry of subgrid-scale orography for north-westerly flow (small-scale GWD)"/>
+                     description="asymmetry of subgrid-scale orography for north-westerly flow (small-scale GWD)"
+                     packages="gwd_gsl_stage_out"/>
 
                 <var name="ol1ss" type="real" dimensions="nCells" units="unitless"
-                     description="effective orographic length for westerly flow (small-scale GWD)"/>
+                     description="effective orographic length for westerly flow (small-scale GWD)"
+                     packages="gwd_gsl_stage_out"/>
 
                 <var name="ol2ss" type="real" dimensions="nCells" units="unitless"
-                     description="effective orographic length for southerly flow (small-scale GWD)"/>
+                     description="effective orographic length for southerly flow (small-scale GWD)"
+                     packages="gwd_gsl_stage_out"/>
 
                 <var name="ol3ss" type="real" dimensions="nCells" units="unitless"
-                     description="effective orographic length for south-westerly flow (small-scale GWD)"/>
+                     description="effective orographic length for south-westerly flow (small-scale GWD)"
+                     packages="gwd_gsl_stage_out"/>
 
                 <var name="ol4ss" type="real" dimensions="nCells" units="unitless"
-                     description="effective orographic length for north-westerly flow (small-scale GWD)"/>
+                     description="effective orographic length for north-westerly flow (small-scale GWD)"
+                     packages="gwd_gsl_stage_out"/>
 
                 <!-- GOCART aerosol fields -->
                 <var name="nifa_gocart_clim" type="real" dimensions="nMonths nGocartLevels nCells" units="nb kg^{-1}"

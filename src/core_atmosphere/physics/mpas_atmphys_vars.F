@@ -347,6 +347,7 @@
     integer, parameter:: ishallow  = 1 !shallow convection used with grell scheme.
 
  integer,dimension(:,:),allocatable:: &
+    bilbc_p,          &!
     k22_shallow_p,    &!
     kbcon_shallow_p,  &!
     ktop_shallow_p,   &!
@@ -355,7 +356,8 @@
 
  real(kind=RKIND),dimension(:,:),allocatable:: &
     xmb_total_p,      &!
-    xmb_shallow_p      !
+    xmb_shallow_p,    &!
+    sigma_deep_p       !
 
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
     rthdynten_p,      &!
@@ -370,6 +372,17 @@
     rqvdynten_p,      &!
     rqvdynblten_p,    &!
     rthdynblten_p      !
+
+ real(kind=RKIND),dimension(:,:,:),allocatable:: &
+    sub3d_rthcuten_p,        &!
+    sub3d_rqvcuten_p,        &!
+    sub3d_rucuten_p,         &!
+    sub3d_rvcuten_p           !
+
+ real(kind=RKIND),dimension(:,:),allocatable:: &
+    !wlpool_p,     &!
+    sgsgustcu_p,    &
+    vcpool_p
 
 !... ntiedtke specific arrays:
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
@@ -507,7 +520,7 @@
     dtaux3d_p,        &!gravity wave drag over orography u-stress                                          [m s-1]
     dtauy3d_p          !gravity wave drag over orography u-stress                                          [m s-1]
 
-!... variables for GSL orographic gravity wave drag:
+!... variables for UGWP orographic gravity wave drag:
 
  real(kind=RKIND),dimension(:,:),allocatable:: &
     var2dls_p,          &!orographic variance (meso-scale orographic variation)                                [m]
@@ -550,6 +563,21 @@
     dtauy3d_ss_p,        &!small-scale orog gravity wave drag v-tendency                                      [m s-2]
     dtaux3d_fd_p,        &!turb orog form drag u-tendency                                                     [m s-2]
     dtauy3d_fd_p          !turb orog form drag u-tendency                                                     [m s-2]
+
+!... variables for UGWP non-stationary gravity wave (NGW) drag:
+
+ integer,dimension(:,:),allocatable:: &
+    jindx1_tau_p,        &!lower latitude index of NGW momentum flux for interpolation                         [-]
+    jindx2_tau_p          !upper latitude index of NGW momentum flux for interpolation                         [-]
+
+ real(kind=RKIND),dimension(:,:),allocatable:: &
+    ddy_j1tau_p,         &!latitude interpolation weight complement for NGW momentum flux                      [-]
+    ddy_j2tau_p           !latitude interpolation weight for NGW momentum flux                                 [-]
+
+ real(kind=RKIND),dimension(:,:,:),allocatable:: &
+    dudt_ngw_p,          &!u-momentum tendency due to non-stationary gravity wave drag                        [m s-2]
+    dvdt_ngw_p,          &!v-momentum tendency due to non-stationary gravity wave drag                        [m s-2]
+    dtdt_ngw_p            !temperature tendency due to non-stationary gravity wave drag                       [K s-1]
 
 !=================================================================================================================
 !... variables and arrays related to parameterization of surface layer:

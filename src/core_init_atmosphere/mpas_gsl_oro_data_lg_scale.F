@@ -1,5 +1,5 @@
 ! This module calculates the parameters required for the subgrid-
-! scale orographic gravity-wave drag (GWDO) scheme on the FV3
+! scale orographic gravity-wave drag (GWDO) scheme on the MPAS
 ! grid.  These parameters are for the large-scale GWDO and blocking
 ! schemes of the GSL drag suite.  2.5minute (~5km) global topography
 ! is used. The topographic data comes from the 'fix' file
@@ -67,7 +67,7 @@ contains
 
 subroutine calc_gsl_oro_data_lg_scale(nCells,lat_MPAS,lon_MPAS_raw,area_MPAS,  &
                                   Re,std_dev,convexity,OA1,OA2,OA3,OA4,        &
-                                  OL1,OL2,OL3,OL4,domain)
+                                  OL1,OL2,OL3,OL4,domain,duplicate_oro_data)
 
 implicit none
 
@@ -79,6 +79,7 @@ real (kind=RKIND), dimension(:), intent(in) :: area_MPAS  ! approx area of MPAS 
 real (kind=RKIND), intent(in) :: Re
 real (kind=RKIND), dimension(:), intent(out) :: std_dev,convexity,OA1,OA2,OA3,OA4, &
                                                 OL1,OL2,OL3,OL4
+logical, dimension(:), intent(in) :: duplicate_oro_data
 
 integer (c_int) :: istatus
 integer :: ix, iy
@@ -89,9 +90,6 @@ type (c_ptr) :: tile_ptr
 character(len=StrKIND) :: filename
 character(kind=c_char), dimension(StrKIND+1) :: c_filename
 
-
-real (kind=RKIND) :: min_area      ! minimum grid area in m^2
-real (kind=RKIND) :: min_DX        ! minimum grid size in km
 
 integer :: i,j,ii,jj
 integer :: iErr
@@ -218,7 +216,7 @@ OL4(:) = 0._RKIND
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! This is a loop over all the FV3 (coarse) grid cells
+! This is a loop over all the MPAS (coarse) grid cells
 ! The subgrid-scale topographic variables needed for the large-scale
 ! orographic gravity wave drag schemes are calculated by the following steps:
 ! 1) Sample the fine-scale (2.5min) topography contained within each
@@ -233,8 +231,11 @@ OL4(:) = 0._RKIND
 
 do i = 1,nCells
 
+      ! Skip calculation if grid size less than 7.5km
+      if ( duplicate_oro_data(i) ) cycle
+
       ! Calculate approximate side-lengths of square lat-long "coarse" grid
-      ! cell centered on FV3 cell (units = radians)
+      ! cell centered on MPAS cell (units = radians)
       dlta_lat = sqrt(area_MPAS(i))/Re
       dlta_lon = sqrt(area_MPAS(i))/(Re*COS(lat_MPAS(i)))
 
@@ -1002,7 +1003,7 @@ elseif ( lat_in.le.lat1d_fine(1) ) then
    nearest_j_south = 1
 else
    j = 2
-   do while ( (lat1d_fine(j).le.lat).and.(j.le.topo_y) )
+   do while ( (lat1d_fine(j).le.lat).and.(j.lt.topo_y) )
       j = j + 1
    end do
    nearest_j_south = j - 1

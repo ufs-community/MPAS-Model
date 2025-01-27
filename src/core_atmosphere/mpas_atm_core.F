@@ -393,6 +393,7 @@ module atm_core
       type (mpas_pool_type), pointer :: sfc_input
       type (mpas_pool_type), pointer :: diag_physics
       type (mpas_pool_type), pointer :: diag_physics_noahmp
+      type (mpas_pool_type), pointer :: ngw_input
       type (mpas_pool_type), pointer :: atm_input
       type (mpas_pool_type), pointer :: output_noahmp
 
@@ -554,6 +555,7 @@ module atm_core
          call mpas_pool_get_subpool(block % structs, 'tend', tend)
          call mpas_pool_get_subpool(block % structs, 'diag_physics', diag_physics)
          call mpas_pool_get_subpool(block % structs, 'diag_physics_noahmp', diag_physics_noahmp)
+         call mpas_pool_get_subpool(block % structs, 'ngw_input', ngw_input)
          call mpas_pool_get_subpool(block % structs, 'atm_input', atm_input)
          call mpas_pool_get_subpool(block % structs, 'output_noahmp', output_noahmp)
          call physics_tables_init(dminfo, block % configs)
@@ -561,14 +563,16 @@ module atm_core
          call physics_run_init(block % configs, mesh, state, clock, stream_manager)
 
          !initialization of all physics:
-         call physics_init(dminfo, clock, block % configs, mesh, diag, tend, state, 1, diag_physics, &
-                           diag_physics_noahmp, atm_input, sfc_input, output_noahmp)
+         call physics_init(dminfo, stream_manager, clock, block % configs, mesh, diag, tend, state, 1,       &
+                           diag_physics, diag_physics_noahmp, ngw_input, atm_input, sfc_input, output_noahmp)
       endif
 #endif
    
       call atm_compute_mesh_scaling(mesh, block % configs)
 
       call atm_compute_damping_coefs(mesh, block % configs)
+
+      call atm_compute_cellsOnCellsOnCell(mesh, block % configs)
 
       !
       ! Set up mask fields used in limited-area simulations
@@ -1001,7 +1005,7 @@ module atm_core
       !proceed with physics if moist_physics is set to true:
       if(moist_physics) then
          call physics_timetracker(domain,dt,clock,itimestep,xtime_s)
-         call physics_driver(domain,itimestep,xtime_s)
+         call physics_driver(domain,itimestep,xtime_s,exchange_halo_group)
       endif
 #endif
 
@@ -1437,6 +1441,110 @@ module atm_core
 
    end subroutine atm_couple_coef_3rd_order
 
+   subroutine atm_compute_cellsOnCellsOnCell(mesh, configs)
+
+      implicit none
+
+      type (mpas_pool_type), intent(inout) :: mesh
+      type (mpas_pool_type), intent(in) :: configs
+
+      integer, pointer :: nCells, nCellsSolve, maxEdges, maxEdges2
+      integer, dimension(:), pointer :: nEdgesOnCell, nCellsOnCellsOnCell
+      integer, dimension(:,:), pointer :: cellsOnCell, cellsOnCellsOnCell
+
+      real (kind=RKIND), dimension(:), pointer :: xCell, yCell, zCell
+
+      integer :: iCell, jCell, candidate, i, j, k
+      logical :: isNeighbor
+      integer :: cellGroup(50), nCellsGroup, nOuterRow, nInnerRow
+      real (kind=RKIND) :: dc
+
+      logical, parameter :: debug_print = .false.
+
+      call mpas_pool_get_array(mesh, 'nEdgesOnCell', nEdgesOnCell)
+      call mpas_pool_get_array(mesh, 'nCellsOnCellsOnCell',nCellsOnCellsOnCell)
+      call mpas_pool_get_array(mesh, 'cellsOnCell', cellsOnCell)
+      call mpas_pool_get_array(mesh, 'cellsOnCellsOnCell',cellsOnCellsOnCell)
+
+      call mpas_pool_get_array(mesh, 'xCell',xCell)
+      call mpas_pool_get_array(mesh, 'yCell',yCell)
+      call mpas_pool_get_array(mesh, 'zCell',zCell)
+
+      call mpas_pool_get_dimension(mesh, 'nCells', nCells)
+      call mpas_pool_get_dimension(mesh, 'nCellsSolve', nCellsSolve)
+      call mpas_pool_get_dimension(mesh, 'maxEdges',maxEdges)
+      call mpas_pool_get_dimension(mesh, 'maxEdges2',maxEdges2)
+
+      if(debug_print) then
+         call mpas_log_write('computing cellsOnCellsOnCell')
+         call mpas_log_write('nCells, nCellsSolve $i $i ',intArgs=(/nCells, nCellsSolve/))
+      end if
+
+      do iCell = 1, nCellsSolve  ! for each owned cell
+
+         cellGroup(:) = 0
+         nCellsGroup = 1 + nEdgesOnCell(iCell)
+         nInnerRow = nCellsGroup
+         cellGroup(1) = iCell
+         cellGroup(2:nCellsGroup) = cellsOnCell(1:nCellsGroup-1,iCell)
+
+         ! here cellGroup is a list of cells including iCell and its neighbors.
+         ! we'll add the neighbors of the neighbors next
+
+         do i = 1, nEdgesOnCell(iCell)
+
+            jCell = cellsOnCell(i,iCell)
+            do j=1,nEdgesOnCell(jCell)
+
+               candidate = cellsOnCell(j,jCell)
+               isNeighbor = .true.
+
+               do k=1,nCellsGroup
+                if(cellGroup(k) .eq. candidate) isNeighbor = .false.
+               end do
+               if(isNeighbor) then
+                  cellGroup(nCellsGroup+1) = candidate
+                  nCellsGroup = nCellsGroup +1
+               end if
+            end do
+         end do
+
+         nOuterRow = nCellsGroup - nInnerRow
+
+         if (nOuterRow .gt. maxEdges2) then
+            call mpas_log_write('MaxEdges2 < nOuterRow in CellsOnCellsOnCell ', messageType=MPAS_LOG_ERR)
+            call mpas_log_write('MaxEdges2 = $i', intArgs=(/MaxEdges2/), messageType=MPAS_LOG_ERR)
+            call mpas_log_write('nOuterRow = $i', intArgs=(/nOuterRow/), messageType=MPAS_LOG_ERR)
+            call mpas_log_write('Critical Error', messageType=MPAS_LOG_CRIT)
+         end if
+
+         do i=1,nOuterRow
+            cellsOnCellsOnCell(i,iCell) = cellGroup(i+nInnerRow)
+         end do
+
+         nCellsOnCellsOnCell(iCell) = nOuterRow
+
+         if(debug_print .and. (iCell .lt. 10)) then
+            call mpas_log_write('cellsOnCell for cell  $i $i', intArgs=(/iCell,nEdgesOnCell(iCell)/))
+            call mpas_log_write('cellsOnCell, $i $i $i $i $i $i', \
+              intArgs=(/cellsOnCell(1,iCell),cellsOnCell(2,iCell),cellsOnCell(3,iCell),cellsOnCell(4,iCell),cellsOnCell(5,iCell),cellsOnCell(6,iCell)/))
+            call mpas_log_write('cellsOnCellsOnCell for cell  $i $i', intArgs=(/iCell,nOuterRow/))
+            call mpas_log_write('cells, $i $i $i $i $i $i', \
+            intArgs=(/cellsOnCellsOnCell(1,iCell),cellsOnCellsOnCell(2,iCell),cellsOnCellsOnCell(3,iCell), \
+                      cellsOnCellsOnCell(4,iCell),cellsOnCellsOnCell(5,iCell),cellsOnCellsOnCell(6,iCell)/))
+            call mpas_log_write('cells, $i $i $i $i $i $i', \
+                       intArgs=(/cellsOnCellsOnCell(7,iCell),cellsOnCellsOnCell(8,iCell),cellsOnCellsOnCell(9,iCell), \
+                       cellsOnCellsOnCell(10,iCell),cellsOnCellsOnCell(11,iCell),cellsOnCellsOnCell(12,iCell)/))
+            do i=1, nOuterRow
+               jCell = cellsOnCellsOnCell(i,iCell)
+               dc = sqrt((xCell(iCell)-xCell(jCell))**2 + (yCell(iCell)-yCell(jCell))**2 + (zCell(iCell)-zCell(jCell))**2)
+               call mpas_log_write('distance $i $i $r',intArgs=(/iCell,jCell/),realArgs=(/dc/))
+            end do
+       end if
+
+    end do
+
+   end subroutine atm_compute_cellsOnCellsOnCell
 
    !-----------------------------------------------------------------------
    !  routine mpas_atm_run_compatibility
