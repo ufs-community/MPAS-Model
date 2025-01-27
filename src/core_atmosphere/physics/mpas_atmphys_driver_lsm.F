@@ -375,7 +375,7 @@
 
  real(kind=RKIND),dimension(:),pointer  :: rhosnf,precipfr,qsg,qvg,dew,soilt1,tsnav,acrunoff,   &
                                            snowfallac,graupelncv,snowncv,qcg,                   &
-                                           flqc,flhc,sfcexc,sfcevp,mavail,t2m,th2m,q2
+                                           flqc,flhc,sfcexc,sfcevp,mavail
  real(kind=RKIND),dimension(:,:),pointer:: smfr3d,landusef,soilf,keepfr3d,zs
 
 !local variables and arrays:
@@ -668,7 +668,7 @@
  real(kind=RKIND),dimension(:,:),pointer:: sh2o,smcrel,smois,tslb
  real(kind=RKIND),dimension(:),pointer  :: rhosnf,precipfr,qsg,qvg,dew,soilt1,tsnav,acrunoff,   &
                                            snowfallac,graupelncv,snowncv,qcg,                   &
-                                           flqc,flhc,sfcexc,sfcevp,mavail,t2m,th2m,q2
+                                           flqc,flhc,sfcexc,sfcevp,mavail
  real(kind=RKIND),dimension(:,:),pointer:: smfr3d,keepfr3d
 
 !local variables and arrays:
@@ -735,9 +735,6 @@
    call mpas_pool_get_array(diag_physics,'smfr3d'         ,smfr3d     )
    call mpas_pool_get_array(diag_physics,'keepfr3d'       ,keepfr3d   )
    call mpas_pool_get_array(diag_physics,'mavail'         ,mavail     )
-   call mpas_pool_get_array(diag_physics,'t2m'            ,t2m        )
-   call mpas_pool_get_array(diag_physics,'th2m'           ,th2m       )
-   call mpas_pool_get_array(diag_physics,'q2'             ,q2         )
  endif
 
  call mpas_pool_get_array(sfc_input,'isltyp'    ,isltyp    )
