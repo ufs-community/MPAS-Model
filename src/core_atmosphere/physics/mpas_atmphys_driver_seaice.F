@@ -555,9 +555,9 @@
  do j = jts,jte
     do i = its,ite
        if(xice_p(i,j).ge.xice_threshold .and. xice_p(i,j).le.1._RKIND) then
-          if (config_lsm_scheme .eq. "sf_ruc") then
+          if (trim(config_lsm_scheme) .eq. "sf_ruc") then
            cpm_p(i,j)  = xice_p(i,j)*cpm_p(i,j)  + (1._RKIND-xice_p(i,j))*cpm_sea(i,j)
-           if(config_sfclayer_scheme .eq. "sf_mynnsfclay") then
+           if(trim(config_sfclayer_scheme) .eq. "sf_mynnsfclay") then
              cqs_p(i,j)  = xice_p(i,j)*cqs_p(i,j)  + (1._RKIND-xice_p(i,j))*cqs_sea(i,j)
            else
              cqs_p(i,j)  = xice_p(i,j)*chs_p(i,j)  + (1._RKIND-xice_p(i,j))*chs_sea(i,j)
@@ -603,7 +603,7 @@
              endif
           enddo
        enddo
-       if (minval(cqs_p) == 0.0 .and. maxval(cqs_p) == 0.0) cqs_p = chs_p
+       if (trim(config_sfclayer_scheme) .ne. "sf_mynnsfclay") cqs_p = chs_p
        call sfcdiags_ruclsm( &
                      hfx     = hfx_p  , qfx     = qfx_p   , tsk  = tsk_p       , qsfc = qsfc_p , chs = chs_p , &
                      chs2    = chs2_p , cqs2    = cqs2_p  , t2   = t2m_p       , th2  = th2m_p , q2  = q2_p  , &
