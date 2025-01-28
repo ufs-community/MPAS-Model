@@ -2463,11 +2463,11 @@ contains
 ! field capacity
    fc=ref
    fex_fc=1.
-   if(soilmois(1) > fc .or. (qvatm-qvg) > 0.) then
+   if((soilmois(1)+qmin) > fc .or. (qvatm-qvg) > 0.) then
       soilres = 1.
    else
-      fex_fc=min(1.,soilmois(1)/fc)
-      !fex_fc=max(fex_fc,0.01)
+      fex_fc=min(1.,(soilmois(1)+qmin)/fc)
+      fex_fc=max(fex_fc,0.01)
       soilres=0.25*(1.-cos(piconst*fex_fc))**2.
    endif
    !if ( wrf_at_debug_level(lsmruc_dbg_lvl) ) then
@@ -5139,7 +5139,7 @@ print *, 'd9sn,soilt,tsob : ', d9sn,soilt,tsob
            h=max(0.,(soilmoism(k)+qmin-a)/(max(1.e-8,(ws-a))))
            facd=1.
         if(a.ne.0.)facd=1.-a/max(1.e-8,soilmoism(k))
-          ame=max(1.e-8,ws-a)
+          ame=max(1.e-8,ws-riw*soilicem(k))
 !--- diffu is diffusional conductivity of soil water
           diffu(k)=-bclh*ksat*psis/ame*                             &
                   (ws/ame)**3.                                     &
