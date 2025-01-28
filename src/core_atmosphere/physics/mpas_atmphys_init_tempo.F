@@ -183,7 +183,7 @@
        deltaz = 9.0
     endif
     nwfa2d(iCell) = max(nwfa_default, min(aero_max, nwfa(k,iCell))) * &
-         0.000196 * 50.0 / deltaz
+         0.000196 * (5.0 / deltaz) * (areaCell(iCell) / 9.e6)
     nifa2d(iCell) = 0._RKIND
 !   call mpas_log_write('$i $r $r $r',intArgs=(/iCell/),realArgs=(/airmass,nwfa2d(iCell),nifa2d(iCell)/))
  enddo

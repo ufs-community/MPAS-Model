@@ -459,19 +459,20 @@
        call thompson_init(l_mp_tables)
        call init_thompson_clouddroplets_forMPAS(mesh,sfc_input,diag_physics)
 
-    case("mp_tempo")
-       call tempo_init(l_mp_tables=l_mp_tables, &
-            hail_aware_flag=config_tempo_hailaware, aerosol_aware_flag=config_tempo_aerosolaware)
-
        microp2_select: select case(trim(microp_scheme))
           case("mp_thompson_aerosols")
              call init_thompson_aerosols_forMPAS(do_restart,dminfo,mesh,state,time_lev,diag_physics)
 
-          case("tempo_aerosolaware")
-             call init_tempo_aerosols_forMPAS(do_restart,dminfo,mesh,state,time_lev,diag_physics)
-
           case default
        end select microp2_select
+
+    case("mp_tempo")
+       call tempo_init(l_mp_tables=l_mp_tables, &
+            hail_aware_flag=config_tempo_hailaware, aerosol_aware_flag=config_tempo_aerosolaware)
+
+       if (config_tempo_aerosolaware) then
+          call init_tempo_aerosols_forMPAS(do_restart,dminfo,mesh,state,time_lev,diag_physics)
+       endif
 
     case("mp_wsm6")
        call mp_wsm6_init(den0=rho_a,denr=rho_r,dens=rho_s,cl=cliq,cpv=cpv, &
