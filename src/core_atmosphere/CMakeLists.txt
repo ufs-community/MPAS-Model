@@ -55,7 +55,7 @@ set(ATMOSPHERE_CORE_PHYSICS_WRF_SOURCES
     module_cam_error_function.F
     module_cam_shr_kind_mod.F
     module_cam_support.F
-    module_cu_gf.mpas.F
+    module_cu_gf_mpas.F
     module_mp_kessler.F
     module_mp_radar.F
     module_mp_thompson.F
