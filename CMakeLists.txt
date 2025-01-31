@@ -11,7 +11,7 @@ include(GNUInstallDirs)
 
 # Options
 set(MPAS_ALL_CORES atmosphere init_atmosphere)
-set(MPAS_CORES atmosphere CACHE STRING "MPAS cores to build. Options: ${MPAS_ALL_CORES}")
+set(MPAS_CORES init_atmosphere atmosphere CACHE STRING "MPAS cores to build. Options: ${MPAS_ALL_CORES}")
 if(MPAS_CORES MATCHES " ") #Convert strings separated with spaces to CMake list separated with ';'
     string(REPLACE " " ";" MPAS_CORES ${MPAS_CORES})
     set(MPAS_CORES ${MPAS_CORES} CACHE STRING "MPAS cores to build. Options: ${MPAS_ALL_CORES}" FORCE)
