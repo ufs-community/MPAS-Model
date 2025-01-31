@@ -264,9 +264,8 @@
    lsm_ruc_in = .true.
  endif
 
- call mpas_log_write('    lsm_noah_in              = $l', logicArgs=(/lsm_noah_in/))
- call mpas_log_write('    lsm_ruc_in               = $l', logicArgs=(/lsm_ruc_in/))
- call mpas_log_write('')
+ call mpas_log_write('    lsm_noah_in             = $l', logicArgs=(/lsm_noah_in/))
+ call mpas_log_write('    lsm_ruc_in              = $l', logicArgs=(/lsm_ruc_in/))
 
 !--- initialization of all packages for parameterizations of land surface processes:
 

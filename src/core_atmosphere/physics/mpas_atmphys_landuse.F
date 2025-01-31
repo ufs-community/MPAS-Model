@@ -174,10 +174,10 @@
  endif
 
 
-call mpas_log_write('')
-call mpas_log_write('--- enter subroutine landuse_init_forMPAS: julian day=$i' , intArgs=(/julday/))
-call mpas_log_write('--- config_frac_seaice = $1',logicArgs=(/config_frac_seaice/))
-call mpas_log_write('--- xice_threshold     = $r',realArgs=(/xice_threshold/))
+!call mpas_log_write('')
+!call mpas_log_write('--- enter subroutine landuse_init_forMPAS: julian day=$i' , intArgs=(/julday/))
+!call mpas_log_write('--- config_frac_seaice = $1',logicArgs=(/config_frac_seaice/))
+!call mpas_log_write('--- xice_threshold     = $r',realArgs=(/xice_threshold/))
 
 !reads in the landuse properties from landuse.tbl:
  if(dminfo % my_proc_id == IO_NODE) then
@@ -261,9 +261,9 @@ call mpas_log_write('--- xice_threshold     = $r',realArgs=(/xice_threshold/))
  DM_BCAST_MACRO(therin)
  DM_BCAST_MACRO(sfhc)
  DM_BCAST_MACRO(scfx)
-call mpas_log_write('--- isice   =$i',intArgs=(/isice/))
-call mpas_log_write('--- iswater =$i',intArgs=(/iswater/))
-call mpas_log_write('--- isurban =$i',intArgs=(/isurban/))
+!call mpas_log_write('--- isice   =$i',intArgs=(/isice/))
+!call mpas_log_write('--- iswater =$i',intArgs=(/iswater/))
+!call mpas_log_write('--- isurban =$i',intArgs=(/isurban/))
  if(config_do_restart) then
     call mpas_log_write('--- config_do_restart =$l', logicArgs=(/config_do_restart/))
     call mpas_log_write('--- skip the end of landuse_init_forMPAS')
@@ -325,7 +325,7 @@ call mpas_log_write('--- isurban =$i',intArgs=(/isurban/))
 
  enddo
 
- call mpas_log_write('--- end subroutine landuse_init_forMPAS')
+!call mpas_log_write('--- end subroutine landuse_init_forMPAS')
 
  end subroutine landuse_init_forMPAS
 
