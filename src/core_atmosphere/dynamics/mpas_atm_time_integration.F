@@ -529,7 +529,7 @@ module atm_time_integration
 
 
       !
-       call mpas_log_write(' Retrieve configuration options ')
+      ! Retrieve configuration options
       !
       call mpas_pool_get_config(block % configs, 'config_number_of_sub_steps', config_number_of_sub_steps)
       call mpas_pool_get_config(block % configs, 'config_time_integration_order', config_time_integration_order)
@@ -548,7 +548,7 @@ module atm_time_integration
 #endif
 
       !
-       call mpas_log_write(' Retrieve field structures ')
+      ! Retrieve field structures
       !
       call mpas_pool_get_subpool(block % structs, 'state', state)
       call mpas_pool_get_subpool(block % structs, 'mesh', mesh)
@@ -620,7 +620,7 @@ module atm_time_integration
       endif
 
       !
-       call mpas_log_write(' allocate storage for physics tendency save ')
+      ! allocate storage for physics tendency save
       !
       allocate(qtot(nVertLevels,nCells+1))
       qtot(:,nCells+1) = 0.0_RKIND
@@ -644,7 +644,7 @@ module atm_time_integration
       tend_ru_physics(:,nEdges+1) = 0.0_RKIND
 
       !
-      call mpas_log_write(' Initialize RK weights ')
+      ! Initialize RK weights
       !
 
       dynamics_split = config_dynamics_split

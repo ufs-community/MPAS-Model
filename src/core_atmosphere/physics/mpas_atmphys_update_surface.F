@@ -79,7 +79,7 @@
  
 !local variables:
  integer:: iCell
- integer, pointer :: globalCells(:)
+
 !-----------------------------------------------------------------------------------------------------------------
 
  call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)

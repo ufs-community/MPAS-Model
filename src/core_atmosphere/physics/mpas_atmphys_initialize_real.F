@@ -88,7 +88,7 @@
  real(kind=RKIND),dimension(:,:),pointer:: albedo12m
 
  real(kind=RKIND),dimension(:),pointer:: seaice,xice,xland
- real(kind=RKIND),dimension(:),pointer:: vegfra,shdmin,shdmax,canwat
+ real(kind=RKIND),dimension(:),pointer:: vegfra,shdmin,shdmax
  real(kind=RKIND),dimension(:),pointer:: snow,snowc,snowh
  real(kind=RKIND),dimension(:,:),pointer:: greenfrac
 
@@ -125,7 +125,6 @@
  call mpas_pool_get_array(fg, 'snow', snow)
  call mpas_pool_get_array(fg, 'snowc', snowc)
  call mpas_pool_get_array(fg, 'snowh', snowh)
- call mpas_pool_get_array(fg, 'canwat', canwat)
  call mpas_pool_get_array(fg, 'skintemp', skintemp)
  call mpas_pool_get_array(fg, 'sst', sst)
  call mpas_pool_get_array(fg, 'seaice', seaice)
@@ -326,15 +325,17 @@
 
  selectcase (config_nsoillevels)
  case( 4 )
-   do iCell = 1, nCellsSolve
+ do iCell = 1, nCellsSolve
     iSoil = 1
     zs_fg(iSoil,iCell) = 0.5_RKIND * dzs_fg(iSoil,iCell)
     do iSoil = 2, nFGSoilLevels
        zs_fg(iSoil,iCell) = zs_fg(iSoil-1,iCell)        &
                           + 0.5_RKIND * dzs_fg(iSoil-1,iCell) &
                           + 0.5_RKIND * dzs_fg(iSoil,iCell)
-   enddo
+    enddo
+ enddo
 
+ do iCell = 1, nCellsSolve
     dzs(1,iCell) = 0.10_RKIND
     dzs(2,iCell) = 0.30_RKIND
     dzs(3,iCell) = 0.60_RKIND
@@ -347,7 +348,8 @@
                        + 0.5_RKIND * dzs(iSoil-1,iCell) &
                        + 0.5_RKIND * dzs(iSoil,iCell)
     enddo
-   enddo
+
+ enddo
 
  case(9)
    if(.not.allocated(zs2)) allocate(zs2(nSoilLevels))
@@ -401,12 +403,13 @@
  
  real(kind=RKIND),dimension(:,:),allocatable:: zhave,sm_input,st_input
 
- real(kind=RKIND),dimension(:),pointer  :: skintemp,tmn,ter,soilz
+ real(kind=RKIND),dimension(:),pointer  :: skintemp,tmn
+ real(kind=RKIND),dimension(:),pointer  :: ter,soilz
  real(kind=RKIND),dimension(:,:),pointer:: dzs,zs,tslb,smois,sh2o,smcrel
  real(kind=RKIND),dimension(:,:),pointer:: sm_fg,st_fg,zs_fg
 
  integer, pointer :: config_nsoillevels
- 
+
  character(len=StrKIND) :: errstring
 
 !-----------------------------------------------------------------------------------------------------------------
@@ -431,6 +434,7 @@
  call mpas_pool_get_array(fg, 'tmn', tmn)
  call mpas_pool_get_array(mesh, 'ter', ter)
  call mpas_pool_get_array(fg, 'soilz', soilz)
+
  call mpas_pool_get_config(configs, 'config_nsoillevels', config_nsoillevels)
 
  call mpas_log_write('nSoilLevels   = $i',intArgs=(/nSoilLevels/))
@@ -443,9 +447,7 @@
  num_st = 0
  do iCell = 1, nCellsSolve
     do ifgSoil = 1, nFGSoilLevels
-       if(st_fg(ifgSoil,iCell) .le. 0._RKIND) then
-           num_st = num_st + 1
-        endif
+       if(st_fg(ifgSoil,iCell) .le. 0._RKIND) num_st = num_st + 1
        if(sm_fg(ifgSoil,iCell) .lt. 0._RKIND) num_sm = num_sm + 1
     enddo
  enddo
@@ -521,7 +523,6 @@ end subroutine init_soil_layers_properties
  if(.not.allocated(st_input)) allocate(st_input(nFGSoilLevels+2,nCellsSolve))
  if(.not.allocated(sm_input)) allocate(sm_input(nFGSoilLevels+2,nCellsSolve))
 
-!... 
  do iCell = 1, nCellsSolve
 
     ifgSoil = 1
@@ -530,14 +531,14 @@ end subroutine init_soil_layers_properties
     sm_input(ifgSoil,iCell) = sm_fg(ifgSoil+1,iCell)
 
     do ifgSoil = 1, nFGSoilLevels
-       zhave(ifgSoil+1,iCell) = zs_fg(ifgSoil,iCell) / 100._RKIND ! convert to meters
-       st_input(ifgSoil+1,iCell) = st_fg(ifgSoil,iCell)  !fill in stemp array
-       sm_input(ifgSoil+1,iCell) = sm_fg(ifgSoil,iCell)  !fill in smois array
+       zhave(ifgSoil+1,iCell) = zs_fg(ifgSoil,iCell) / 100._RKIND
+       st_input(ifgSoil+1,iCell) = st_fg(ifgSoil,iCell)
+       sm_input(ifgSoil+1,iCell) = sm_fg(ifgSoil,iCell)
     enddo
 
-    zhave(nFGSoilLevels+2,iCell) = 300._RKIND/100._RKIND ! Set depth of bottom of last layer to 3m
-    st_input(nFGSoilLevels+2,iCell) = tmn(iCell)         ! Set T at bottom interface to deep layer temp
-    sm_input(nFGSoilLevels+2,iCell) = sm_input(nFGSoilLevels,iCell) ! Set smois at bottom interface to value of lowest layer
+    zhave(nFGSoilLevels+2,iCell) = 300._RKIND/100._RKIND
+    st_input(nFGSoilLevels+2,iCell) = tmn(iCell)
+    sm_input(nFGSoilLevels+2,iCell) = sm_input(nFGSoilLevels,iCell)
 
     if(iCell .eq. 1) then
        do ifgSoil = 1,nFGSoilLevels+2
@@ -947,7 +948,6 @@ end subroutine init_soil_layers_properties
  logical, pointer :: config_frac_seaice
  character(len=StrKIND),pointer:: config_landuse_data
  integer,pointer:: isice_lu
- integer,pointer:: nvegopt
 
 !note that this threshold is also defined in module_physics_vars.F.It is defined here to avoid
 !adding "use module_physics_vars" since this subroutine is only used for the initialization of
@@ -964,7 +964,6 @@ end subroutine init_soil_layers_properties
 
  call mpas_pool_get_dimension(dims, 'nCellsSolve', nCellsSolve)
  call mpas_pool_get_dimension(dims, 'nSoilLevels', nSoilLevels)
- call mpas_pool_get_dimension(dims, 'nVegOpt', nvegopt)
 
  call mpas_pool_get_array(mesh, 'isice_lu', isice_lu)
  call mpas_pool_get_array(mesh, 'landmask', landmask)
@@ -1042,7 +1041,7 @@ end subroutine init_soil_layers_properties
 
  enddo
  call mpas_log_write('')
- write(mess,fmt='(A,i12)') 'number of initialized ice cells =', &
+ write(mess,fmt='(A,i12)') 'number of seaice cells converted to land cells 2 =', &
        num_seaice_changes
  call physics_message(mess)
 
