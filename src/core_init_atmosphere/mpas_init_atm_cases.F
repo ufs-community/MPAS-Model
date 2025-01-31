@@ -5546,7 +5546,8 @@ module init_atm_cases
                dzs_fg(k,:) = 289.-100.
                zs_fg(k,:) = 289.
              else if (trim(field % field) == 'SOILM000') then
-               call mpas_log_write('Interpolating SOILM000 min $r max $r', realArgs=(/minval(field%slab),maxval(field%slab)/))
+               !call mpas_log_write('Interpolating SOILM000 min $r max $r', realArgs=(/minval(field%slab),maxval(field%slab)/))
+               call mpas_log_write('Interpolating SOILM000')
 
                interp_list(1) = FOUR_POINT
                interp_list(2) = W_AVERAGE4
