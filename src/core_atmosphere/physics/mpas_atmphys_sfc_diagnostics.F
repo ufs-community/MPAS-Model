@@ -64,6 +64,7 @@
 !call mpas_log_write('--- enter subroutine atmphys_sfc_diagnostics:')
 
  call mpas_pool_get_config(configs,'config_lsm_scheme',lsm_scheme)
+ call mpas_pool_get_config(configs,'config_sfclayer_scheme',sfclayer_scheme)
 
  call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
 
