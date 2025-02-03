@@ -522,7 +522,7 @@
  call mpas_pool_get_config(configs,'config_lsm_scheme',lsm_scheme)
  call mpas_pool_get_config(configs,'config_sfclayer_scheme',config_sfclayer_scheme)
 
- if (config_lsm_scheme .eq. "sf_ruc") then
+ if (lsm_scheme .eq. "sf_ruc") then
    call mpas_pool_get_array(mesh,'indexToCellID',globalCells)
    call mpas_pool_get_array(diag_physics,'dew'       ,dew       )
    call mpas_pool_get_array(diag_physics,'qcg'       ,qcg       )
@@ -563,7 +563,7 @@
  do j = jts,jte
     do i = its,ite
        if(xice_p(i,j).ge.xice_threshold .and. xice_p(i,j).le.1._RKIND) then
-          if (trim(config_lsm_scheme) .eq. "sf_ruc") then
+          if (trim(lsm_scheme) .eq. "sf_ruc") then
            cpm_p(i,j)  = xice_p(i,j)*cpm_p(i,j)  + (1._RKIND-xice_p(i,j))*cpm_sea(i,j)
            if(trim(config_sfclayer_scheme) .eq. "sf_mynnsfclay") then
              cqs_p(i,j)  = xice_p(i,j)*cqs_p(i,j)  + (1._RKIND-xice_p(i,j))*cqs_sea(i,j)
@@ -619,6 +619,7 @@
        lh(i)   = lh_p(i,j)
        sfc_albedo(i) = sfc_albedo_p(i,j)
        sfc_emiss(i)  = sfc_emiss_p(i,j)
+
     enddo
  enddo
 
@@ -638,15 +639,19 @@
        enddo
 
     case("sf_ruc")
-       cpm(i)  = cpm_p(i,j)
-       cqs(i)  = cqs_p(i,j)
-       qcg(i) = qcg_p(i,j)
-       qsg(i) = qsg_p(i,j)
-       qvg(i) = qvg_p(i,j)
-       dew(i) = dew_p(i,j)
-       soilt1(i) = soilt1_p(i,j)
-       tsnav(i) = tsnav_p(i,j)
-       snowfallac(i) = snowfallac_p(i,j)
+       do j = jts,jte
+          do i = its,ite
+             cpm(i)  = cpm_p(i,j)
+             cqs(i)  = cqs_p(i,j)
+             qcg(i) = qcg_p(i,j)
+             qsg(i) = qsg_p(i,j)
+             qvg(i) = qvg_p(i,j)
+             dew(i) = dew_p(i,j)
+             soilt1(i) = soilt1_p(i,j)
+             tsnav(i) = tsnav_p(i,j)
+             snowfallac(i) = snowfallac_p(i,j)
+          enddo
+       enddo
 
     case default
  end select sf_select

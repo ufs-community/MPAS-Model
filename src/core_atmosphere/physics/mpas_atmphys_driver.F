@@ -323,7 +323,6 @@
        enddo
 !$OMP END PARALLEL DO
        call deallocate_seaice(block%configs)
-    endif
 
 !$OMP PARALLEL DO
        do thread=1,nThreads
