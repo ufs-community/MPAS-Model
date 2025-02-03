@@ -16,7 +16,6 @@
  use module_sf_noah_seaice_drv
  use module_sf_sfcdiags
  use module_ruc_ice
- use module_sf_sfcdiags_ruclsm
 
  implicit none
  private
@@ -502,7 +501,7 @@
 
 !local pointers:
  character(len=StrKIND),pointer:: lsm_scheme
- character(len=StrKIND),pointer:: config_sfclayer_scheme
+ character(len=StrKIND),pointer:: sfclayer_scheme
 
  real(kind=RKIND),dimension(:),pointer:: acsnom,acsnow,chs,chs2,cpm,cqs2,qgh,qsfc,grdflx,hfx, qfx,lh,noahres, &
                                          potevp,sfc_albedo,sfc_emiss,sfcrunoff,snopcx,z0,znt
@@ -520,7 +519,7 @@
 !call mpas_log_write('--- enter subroutine seaice_to_MPAS:')
 
  call mpas_pool_get_config(configs,'config_lsm_scheme',lsm_scheme)
- call mpas_pool_get_config(configs,'config_sfclayer_scheme',config_sfclayer_scheme)
+ call mpas_pool_get_config(configs,'config_sfclayer_scheme',sfclayer_scheme)
 
  if (lsm_scheme .eq. "sf_ruc") then
    call mpas_pool_get_array(mesh,'indexToCellID',globalCells)
@@ -565,7 +564,7 @@
        if(xice_p(i,j).ge.xice_threshold .and. xice_p(i,j).le.1._RKIND) then
           if (trim(lsm_scheme) .eq. "sf_ruc") then
            cpm_p(i,j)  = xice_p(i,j)*cpm_p(i,j)  + (1._RKIND-xice_p(i,j))*cpm_sea(i,j)
-           if(trim(config_sfclayer_scheme) .eq. "sf_mynnsfclay") then
+           if(trim(sfclayer_scheme) .eq. "sf_mynnsfclay") then
              cqs_p(i,j)  = xice_p(i,j)*cqs_p(i,j)  + (1._RKIND-xice_p(i,j))*cqs_sea(i,j)
            else
              cqs_p(i,j)  = xice_p(i,j)*chs_p(i,j)  + (1._RKIND-xice_p(i,j))*chs_sea(i,j)
