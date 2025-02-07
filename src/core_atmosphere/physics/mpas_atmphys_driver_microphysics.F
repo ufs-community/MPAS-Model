@@ -110,7 +110,6 @@
  character(len=StrKIND),pointer:: microp_scheme
  character(len=StrKIND),pointer:: nssl_moments
  logical,pointer:: config_tempo_hailaware, config_tempo_aerosolaware
- logical,pointer:: config_tempo_fzra
 
 !-----------------------------------------------------------------------------------------------------------------
 
@@ -118,7 +117,6 @@
  call mpas_pool_get_config(configs,'config_nssl_moments',nssl_moments)
  call mpas_pool_get_config(configs,'config_tempo_hailaware',config_tempo_hailaware)
  call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
- call mpas_pool_get_config(configs,'config_tempo_fzra',config_tempo_fzra)
 
 !sounding variables:
  if(.not.allocated(rho_p) ) allocate(rho_p(ims:ime,kms:kme,jms:jme) )
@@ -197,6 +195,7 @@
           if(.not.allocated(nr_p) ) allocate(nr_p(ims:ime,kms:kme,jms:jme))
           if(.not.allocated(refl10cm_p)  ) allocate(refl10cm_p(ims:ime,kms:kme,jms:jme) )
           if(.not.allocated(refl10cm_1km_p)  ) allocate(refl10cm_1km_p(ims:ime,jms:jme) )
+          if(.not.allocated(frainnc_p) ) allocate(frainnc_p(ims:ime,jms:jme) )
 
           ! Allocate TEMPO options based on config flags insead of adding more nested select cases
           ! These flags are associated with appropriate packages in mpas_atmphys_packages.F
@@ -211,10 +210,6 @@
              if(.not.allocated(nc_p)    ) allocate(nc_p(ims:ime,kms:kme,jms:jme)  )
              if(.not.allocated(nifa_p)  ) allocate(nifa_p(ims:ime,kms:kme,jms:jme))
              if(.not.allocated(nwfa_p)  ) allocate(nwfa_p(ims:ime,kms:kme,jms:jme))
-          endif
-
-          if (config_tempo_fzra) then
-             if(.not.allocated(frainnc_p) ) allocate(frainnc_p(ims:ime,jms:jme) )
           endif
 
        case("mp_nssl2m")
@@ -266,7 +261,6 @@
  character(len=StrKIND),pointer:: microp_scheme
  character(len=StrKIND),pointer:: nssl_moments
  logical,pointer:: config_tempo_hailaware, config_tempo_aerosolaware
- logical,pointer:: config_tempo_fzra
 
 !-----------------------------------------------------------------------------------------------------------------
 
@@ -274,7 +268,6 @@
  call mpas_pool_get_config(configs,'config_nssl_moments',nssl_moments)
  call mpas_pool_get_config(configs,'config_tempo_hailaware',config_tempo_hailaware)
  call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
- call mpas_pool_get_config(configs,'config_tempo_fzra',config_tempo_fzra)
 
 !sounding variables:
  if(allocated(rho_p) ) deallocate(rho_p )
@@ -353,6 +346,7 @@
           if(allocated(nr_p) ) deallocate(nr_p )
           if(allocated(refl10cm_p)  ) deallocate(refl10cm_p  )
           if(allocated(refl10cm_1km_p)) deallocate(refl10cm_1km_p)
+          if(allocated(frainnc_p) ) deallocate(frainnc_p)
 
           if (config_tempo_hailaware) then
              if(allocated(ng_p) ) deallocate(ng_p )
@@ -365,10 +359,6 @@
              if(allocated(nc_p)    ) deallocate(nc_p    )
              if(allocated(nifa_p)  ) deallocate(nifa_p  )
              if(allocated(nwfa_p)  ) deallocate(nwfa_p  )
-          endif
-
-          if (config_tempo_fzra) then
-             if(allocated(frainnc_p) ) deallocate(frainnc_p)
           endif
 
        case("mp_nssl2m")
@@ -880,7 +870,6 @@
  character(len=StrKIND),pointer:: nssl_moments
  integer,pointer:: nCellsSolve
  real,dimension(:),pointer:: graupelncv,rainncv,snowncv,sr
- logical,pointer:: config_tempo_fzra
 
 !local variables and arrays:
  integer:: i,j
@@ -889,7 +878,6 @@
 
  call mpas_pool_get_config(configs,'config_microp_scheme',microp_scheme)
  call mpas_pool_get_config(configs,'config_nssl_moments',nssl_moments)
- call mpas_pool_get_config(configs,'config_tempo_fzra',config_tempo_fzra)
 
  call mpas_pool_get_array(diag_physics,'graupelncv',graupelncv)
  call mpas_pool_get_array(diag_physics,'rainncv'   ,rainncv   )
@@ -935,6 +923,7 @@
           snownc_p(i,j)     = 0._RKIND
           graupelnc_p(i,j)  = 0._RKIND
           sr_p(i,j)         = 0._RKIND
+          frainnc_p(i,j)    = 0._RKIND
        enddo
        enddo
 
@@ -943,14 +932,6 @@
           graupelncv(i) = 0._RKIND
           sr(i)         = 0._RKIND
        enddo
-
-       if (config_tempo_fzra) then
-          do j = jts, jte
-          do i = its, ite
-             frainnc_p(i,j)    = 0._RKIND
-          enddo
-          enddo
-       endif
 
     case ("mp_nssl2m")
        do j = jts, jte
@@ -994,8 +975,6 @@
  real(kind=RKIND),dimension(:),pointer:: precipw
  real(kind=RKIND),dimension(:),pointer:: graupelnc,rainnc,snownc
  real(kind=RKIND),dimension(:),pointer:: graupelncv,rainncv,snowncv,sr
-
- logical,pointer:: config_tempo_fzra
  real(kind=RKIND),dimension(:),pointer:: frainnc
 
 !local variables and arrays:
@@ -1007,7 +986,6 @@
  call mpas_pool_get_config(configs,'config_microp_scheme',microp_scheme       )
  call mpas_pool_get_config(configs,'config_nssl_moments',nssl_moments)
  call mpas_pool_get_config(configs,'config_bucket_rainnc',config_bucket_rainnc)
- call mpas_pool_get_config(configs,'config_tempo_fzra',config_tempo_fzra)
 
  call mpas_pool_get_array(diag_physics,'i_rainnc'  ,i_rainnc  )
  call mpas_pool_get_array(diag_physics,'precipw'   ,precipw   )
@@ -1065,6 +1043,8 @@
        enddo
 
     case ("mp_tempo")
+       call mpas_pool_get_array(diag_physics,'frainnc',frainnc)
+
        do j = jts,jte
        do i = its,ite
           !time-step precipitation:
@@ -1075,18 +1055,11 @@
           !accumulated precipitation:
           snownc(i)    = snownc(i) + snowncv(i)
           graupelnc(i) = graupelnc(i) + graupelncv(i)
-       enddo
-       enddo
 
-       if (config_tempo_fzra) then
-          call mpas_pool_get_array(diag_physics,'frainnc',frainnc)
-          do j = jts,jte
-          do i = its,ite
-             !accumulated precipitation:
-             frainnc(i)    = frainnc(i) + frainnc_p(i,j)
-          enddo
-          enddo
-       endif
+          !accumulated freezing rain precipitation:
+          frainnc(i)    = frainnc(i) + frainnc_p(i,j)
+       enddo
+       enddo
 
     case ("mp_nssl2m")
        do j = jts,jte
