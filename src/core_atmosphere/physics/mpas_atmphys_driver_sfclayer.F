@@ -9,7 +9,6 @@
  module mpas_atmphys_driver_sfclayer
  use mpas_kind_types
  use mpas_pool_routines
- use mpas_dmpar
  use mpas_timer, only : mpas_timer_start, mpas_timer_stop
 
  use mpas_atmphys_constants
@@ -123,7 +122,6 @@
  if(.not.allocated(cka_p)   ) allocate(cka_p(ims:ime,jms:jme)   )
  if(.not.allocated(cpm_p)   ) allocate(cpm_p(ims:ime,jms:jme)   )
  if(.not.allocated(cqs2_p)  ) allocate(cqs2_p(ims:ime,jms:jme)  )
- if(.not.allocated(cqs_p)   ) allocate(cqs_p(ims:ime,jms:jme)   )
  if(.not.allocated(gz1oz0_p)) allocate(gz1oz0_p(ims:ime,jms:jme))
  if(.not.allocated(flhc_p)  ) allocate(flhc_p(ims:ime,jms:jme)  )
  if(.not.allocated(flqc_p)  ) allocate(flqc_p(ims:ime,jms:jme)  )
@@ -160,7 +158,6 @@
     if(.not.allocated(chs_sea)    ) allocate(chs_sea(ims:ime,jms:jme)    )
     if(.not.allocated(chs2_sea)   ) allocate(chs2_sea(ims:ime,jms:jme)   )
     if(.not.allocated(cqs2_sea)   ) allocate(cqs2_sea(ims:ime,jms:jme)   )
-    if(.not.allocated(cqs_sea)    ) allocate(cqs_sea(ims:ime,jms:jme)    )
     if(.not.allocated(cpm_sea)    ) allocate(cpm_sea(ims:ime,jms:jme)    )
     if(.not.allocated(flhc_sea)   ) allocate(flhc_sea(ims:ime,jms:jme)   )
     if(.not.allocated(flqc_sea)   ) allocate(flqc_sea(ims:ime,jms:jme)   )
@@ -229,9 +226,11 @@
    case("sf_mynnsfclay")
        if(.not.allocated(snowh_p)) allocate(snowh_p(ims:ime,jms:jme))
        if(.not.allocated(ch_p)   ) allocate(ch_p(ims:ime,jms:jme)   )
+       if(.not.allocated(cqs_p)  ) allocate(cqs_p(ims:ime,jms:jme)  )
        if(.not.allocated(qcg_p)  ) allocate(qcg_p(ims:ime,jms:jme)  )
        if(config_frac_seaice) then
-          if(.not.allocated(ch_sea)) allocate(ch_sea(ims:ime,jms:jme))
+          if(.not.allocated(ch_sea) ) allocate(ch_sea(ims:ime,jms:jme) )
+          if(.not.allocated(cqs_sea)) allocate(cqs_sea(ims:ime,jms:jme))
        endif
        
     case("sf_myj")
@@ -299,7 +298,6 @@
  if(allocated(cka_p)   ) deallocate(cka_p   )
  if(allocated(cpm_p)   ) deallocate(cpm_p   )
  if(allocated(cqs2_p)  ) deallocate(cqs2_p  )
- if(allocated(cqs_p)   ) deallocate(cqs_p   )
  if(allocated(gz1oz0_p)) deallocate(gz1oz0_p)
  if(allocated(flhc_p)  ) deallocate(flhc_p  )
  if(allocated(flqc_p)  ) deallocate(flqc_p  )
@@ -333,10 +331,6 @@
     if(allocated(xice_p)     ) deallocate(xice_p     )
 
     if(allocated(br_sea)     ) deallocate(br_sea     )
-    if(allocated(chs_sea)    ) deallocate(chs_sea    )
-    if(allocated(chs2_sea)   ) deallocate(chs2_sea   )
-    if(allocated(cqs2_sea)   ) deallocate(cqs2_sea   )
-    if(allocated(cqs_sea)    ) deallocate(cqs_sea    )
     if(allocated(flhc_sea)   ) deallocate(flhc_sea   )
     if(allocated(flqc_sea)   ) deallocate(flqc_sea   )
     if(allocated(gz1oz0_sea) ) deallocate(gz1oz0_sea )
@@ -462,9 +456,10 @@
  real(kind=RKIND),dimension(:),pointer:: meshDensity
  real(kind=RKIND),dimension(:),pointer:: skintemp,sst,xice,xland
  real(kind=RKIND),dimension(:),pointer:: hpbl,mavail
- real(kind=RKIND),dimension(:),pointer:: br,cpm,chs,chs2,cqs,cqs2,flhc,flqc,gz1oz0,hfx,qfx,  &
+ real(kind=RKIND),dimension(:),pointer:: br,cpm,chs,chs2,cqs2,flhc,flqc,gz1oz0,hfx,qfx,  &
                                          qgh,qsfc,lh,mol,psim,psih,regime,rmol,ust,ustm, &
                                          wspd,znt,zol
+ real(kind=RKIND),dimension(:),pointer:: cqs
 
 !local pointers specific to monin_obukhov:
  real(kind=RKIND),dimension(:),pointer:: fh,fm
@@ -477,7 +472,7 @@
                                          th10, qshltr, q10, pshltr
  real(kind=RKIND),dimension(:,:),pointer:: zgrid,tke_pbl 
  integer,dimension(:),pointer:: lowlyr
- real(kind=RKIND) :: scalar_min, scalar_max
+
 !-----------------------------------------------------------------------------------------------------------------
 
 !input variables:
@@ -497,7 +492,6 @@
  call mpas_pool_get_array(diag_physics,'chs'     ,chs     )
  call mpas_pool_get_array(diag_physics,'chs2'    ,chs2    )
  call mpas_pool_get_array(diag_physics,'cqs2'    ,cqs2    )
- call mpas_pool_get_array(diag_physics,'cqs'     ,cqs     )
  call mpas_pool_get_array(diag_physics,'flhc'    ,flhc    )
  call mpas_pool_get_array(diag_physics,'flqc'    ,flqc    )
  call mpas_pool_get_array(diag_physics,'gz1oz0'  ,gz1oz0  )
@@ -532,7 +526,6 @@
     chs_p(i,j)    = chs(i)
     chs2_p(i,j)   = chs2(i)
     cqs2_p(i,j)   = cqs2(i)
-    cqs_p(i,j)    = cqs(i)
     flhc_p(i,j)   = flhc(i)
     flqc_p(i,j)   = flqc(i)
     gz1oz0_p(i,j) = gz1oz0(i)
@@ -585,7 +578,6 @@
        chs_sea(i,j)     = chs(i)
        chs2_sea(i,j)    = chs2(i)
        cqs2_sea(i,j)    = cqs2(i)
-       cqs_sea(i,j)     = cqs(i)
        flhc_sea(i,j)    = flhc(i)
        flqc_sea(i,j)    = flqc(i)
        gz1oz0_sea(i,j)  = gz1oz0(i)
@@ -690,7 +682,8 @@
        call mpas_pool_get_array(diag_physics,'qcg'  ,qcg  )
        call mpas_pool_get_array(sfc_input   ,'snowh',snowh)
        !inout variables:
-       call mpas_pool_get_array(diag_physics,'ch',ch)
+       call mpas_pool_get_array(diag_physics,'ch' ,ch )
+       call mpas_pool_get_array(diag_physics,'cqs',cqs)
 
        do j = jts,jte
        do i = its,ite
@@ -699,8 +692,10 @@
           qcg_p(i,j)   = qcg(i)
           !inout variables:
           ch_p(i,j)    = ch(i)
+          cqs_p(i,j)   = cqs(i)
           if(config_frac_seaice) then
-             ch_sea(i,j) = ch(i)
+             ch_sea(i,j)  = ch(i)
+             cqs_sea(i,j) = cqs(i)
           endif
        enddo
        enddo
@@ -770,114 +765,7 @@
           enddo
           enddo
        endif
-!              call mpas_log_write("BEFORE MYJSFC")
-! call mpas_dmpar_min_real(domain % dminfo, minval(qsfc), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(qsfc), scalar_max)
-!call mpas_log_write('MIN/MAX qsfc_p = $r,=$r',realArgs=(/scalar_min,scalar_max/))
-!!
-! call mpas_dmpar_min_real(domain % dminfo, minval(thz0), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(thz0), scalar_max)
-!call mpas_log_write('MIN/MAX thz0_p = $r,$r',realArgs=(/scalar_min,scalar_max/))
-!!
-!call mpas_dmpar_min_real(domain % dminfo, minval(qz0), scalar_min)
-!call mpas_dmpar_min_real(domain % dminfo, maxval(qz0), scalar_max)
-!call mpas_log_write('MIN/MAX qz0_p = $r, $r',realArgs=(/scalar_min,scalar_max/))
-!!
-!call mpas_dmpar_min_real(domain % dminfo, minval(uz0), scalar_min)
-!call mpas_dmpar_min_real(domain % dminfo, maxval(uz0), scalar_max)
-!call mpas_log_write('MIN/MAX uz0_p = $r, $r',realArgs=(/scalar_min,scalar_max/))
-!!
-! call mpas_dmpar_min_real(domain % dminfo, minval(vz0), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(vz0), scalar_max)
-!call mpas_log_write('MIN/MAX vz0_p = $r, $r',realArgs=(/scalar_min,scalar_max/))
-!!
-! call mpas_dmpar_min_real(domain % dminfo, minval(ust), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(ust), scalar_max)
-!call mpas_log_write('MIN/MAX ust_p = $r, $r',realArgs=(/scalar_min,scalar_max/))
-!!
-! call mpas_dmpar_min_real(domain % dminfo, minval(hpbl), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(hpbl), scalar_max)
-!call mpas_log_write('MIN/MAX hpbl_p = $r,$r',realArgs=(/scalar_min,scalar_max/))
-!
-! call mpas_dmpar_min_real(domain % dminfo, minval(rmol), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(rmol), scalar_max)
-!call mpas_log_write('MIN/MAX rmol_p = $r,$r',realArgs=(/scalar_min,scalar_max/))
-!
-!call mpas_dmpar_min_real(domain % dminfo, minval(znt), scalar_min)
-!call mpas_dmpar_min_real(domain % dminfo, maxval(znt), scalar_max)
-!call mpas_log_write('MIN/MAX znt_p = $r, $r',realArgs=(/scalar_min,scalar_max/))
-!!
-!call mpas_dmpar_min_real(domain % dminfo, minval(akhs), scalar_min)
-!call mpas_dmpar_min_real(domain % dminfo, maxval(akhs), scalar_max)
-!call mpas_log_write('MIN/MAX akhs_p = $r,$r',realArgs=(/scalar_min,scalar_max/))
-!!
-! call mpas_dmpar_min_real(domain % dminfo, minval(akms), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(akms), scalar_max)
-!call mpas_log_write('MIN/MAX akms_p = $r, $r',realArgs=(/scalar_min,scalar_max/))
-!
-! call mpas_dmpar_min_real(domain % dminfo, minval(akms), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(akms), scalar_max)
-!call mpas_log_write('MIN/MAX akms_p = $r, $r',realArgs=(/scalar_min,scalar_max/))
-!
-! call mpas_dmpar_min_real(domain % dminfo, minval(br), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(br), scalar_max)
-!call mpas_log_write('MIN/MAX br_p = $r, $r', realArgs=(/scalar_min,scalar_max/))
-!!
-! call mpas_dmpar_min_real(domain % dminfo, minval(chs), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(chs), scalar_max)
-!call mpas_log_write('MIN/MAX chs_p = $r, $r',realArgs=(/scalar_min,scalar_max/))
-!!
-! call mpas_dmpar_min_real(domain % dminfo, minval(chs2), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(chs2), scalar_max)
-!call mpas_log_write('MIN/MAX chs2_p = $r, $r',realArgs=(/scalar_min,scalar_max/))
-!!
-! call mpas_dmpar_min_real(domain % dminfo, minval(cqs2), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(cqs2), scalar_max)
-!call mpas_log_write('MIN/MAX cqs2_p = $r, $r',realArgs=(/scalar_min,scalar_max/))
-!!
-! call mpas_dmpar_min_real(domain % dminfo, minval(hfx), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(hfx), scalar_max)
-!call mpas_log_write('MIN/MAX hfx_p = $r, $r',realArgs=(/scalar_min,scalar_max/))
-!!
-! call mpas_dmpar_min_real(domain % dminfo, minval(qfx), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(qfx), scalar_max)
-!call mpas_log_write('MIN/MAX qfx_p = $r, $r',realArgs=(/scalar_min,scalar_max/))
-!!
-! call mpas_dmpar_min_real(domain % dminfo, minval(lh), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(lh), scalar_max)
-!call mpas_log_write('MIN/MAX lh_p = $r, $r', realArgs=(/scalar_min,scalar_max/))
-!!
-! call mpas_dmpar_min_real(domain % dminfo, minval(flhc), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(flhc), scalar_max)
-!call mpas_log_write('MIN/MAX flhc_p = $r, $r',realArgs=(/scalar_min,scalar_max/))
-!!
-! call mpas_dmpar_min_real(domain % dminfo, minval(flqc), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(flqc), scalar_max)
-!call mpas_log_write('MIN/MAX flqc_p = $r, $r',realArgs=(/scalar_min,scalar_max/))
-!!
-! call mpas_dmpar_min_real(domain % dminfo, minval(qgh), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(qgh), scalar_max)
-!call mpas_log_write('MIN/MAX qgh_p = $r, $r',realArgs=(/scalar_min,scalar_max/))
-!!
-! call mpas_dmpar_min_real(domain % dminfo, minval(cpm), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(cpm), scalar_max)
-!call mpas_log_write('MIN/MAX cpm_p = $r, $r',realArgs=(/scalar_min,scalar_max/))
-!!
-! call mpas_dmpar_min_real(domain % dminfo, minval(tshltr), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(tshltr), scalar_max)
-!call mpas_log_write('MIN/MAX tshltr_p = $r, $r',realArgs=(/scalar_min,scalar_max/))
-!!
-! call mpas_dmpar_min_real(domain % dminfo, minval(th10), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(th10), scalar_max)
-!call mpas_log_write('MIN/MAX th10_p = $r, $r',realArgs=(/scalar_min,scalar_max/))
-!!
-! call mpas_dmpar_min_real(domain % dminfo, minval(qshltr), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(qshltr), scalar_max)
-!call mpas_log_write('MIN/MAX qshltr_p = $r, $r',realArgs=(/scalar_min,scalar_max/))
-!!
-! call mpas_dmpar_min_real(domain % dminfo, minval(q10), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(q10), scalar_max)
-!call mpas_log_write('MIN/MAX q10_p = $r, $r',realArgs=(/scalar_min,scalar_max/))
+
     case default
 
  end select sfclayer_select
@@ -903,9 +791,10 @@
  logical,pointer:: config_frac_seaice
  character(len=StrKIND),pointer:: sfclayer_scheme
 
- real(kind=RKIND),dimension(:),pointer:: br,cpm,chs,chs2,cqs,cqs2,flhc,flqc,gz1oz0,hfx,qfx,  &
+ real(kind=RKIND),dimension(:),pointer:: br,cpm,chs,chs2,cqs2,flhc,flqc,gz1oz0,hfx,qfx,  &
                                          qgh,qsfc,lh,mol,psim,psih,regime,rmol,ust,wspd, &
                                          znt,zol
+ real(kind=RKIND),dimension(:),pointer:: cqs
  real(kind=RKIND),dimension(:),pointer:: q2,t2m,th2m,u10,v10
  real(kind=RKIND),dimension(:),pointer:: cd,cda,ck,cka,ustm
  real(kind=RKIND),dimension(:),pointer:: xice
@@ -920,7 +809,7 @@
  real(kind=RKIND),dimension(:),pointer:: thz0, qz0, uz0, vz0, z0, akhs, akms, ct, tshltr, &
                                          th10, qshltr, q10, pshltr, hpbl
  real(kind=RKIND),dimension(:,:),pointer:: zgrid
-  real(kind=RKIND) :: scalar_min, scalar_max
+
 !-----------------------------------------------------------------------------------------------------------------
 
  call mpas_pool_get_config(configs,'config_frac_seaice'    ,config_frac_seaice)
@@ -932,7 +821,6 @@
  call mpas_pool_get_array(diag_physics,'chs'   ,chs   )
  call mpas_pool_get_array(diag_physics,'chs2'  ,chs2  )
  call mpas_pool_get_array(diag_physics,'cqs2'  ,cqs2  )
- call mpas_pool_get_array(diag_physics,'cqs'   ,cqs   )
  call mpas_pool_get_array(diag_physics,'flhc'  ,flhc  )
  call mpas_pool_get_array(diag_physics,'flqc'  ,flqc  )
  call mpas_pool_get_array(diag_physics,'gz1oz0',gz1oz0)
@@ -979,7 +867,6 @@
     chs(i)    = chs_p(i,j)
     chs2(i)   = chs2_p(i,j)
     cqs2(i)   = cqs2_p(i,j)
-    cqs(i)    = cqs_p(i,j)
     flhc(i)   = flhc_p(i,j)
     flqc(i)   = flqc_p(i,j)
     gz1oz0(i) = gz1oz0_p(i,j)
@@ -1090,11 +977,13 @@
        endif
 
     case("sf_mynnsfclay")
-       call mpas_pool_get_array(diag_physics,'ch',ch)
+       call mpas_pool_get_array(diag_physics,'ch' ,ch )
+       call mpas_pool_get_array(diag_physics,'cqs',cqs)
 
        do j = jts,jte
        do i = its,ite
           ch(i) = ch_p(i,j)
+          cqs(i)= cqs_p(i,j)
        enddo
        enddo
        if(config_frac_seaice) then
@@ -1102,7 +991,8 @@
           do j = jts,jte
           do i = its,ite
              if(xice(i).ge.xice_threshold .and. xice(i).le.1._RKIND) then
-                ch(i) = ch_p(i,j)*xice(i) + (1._RKIND-xice(i))*ch_sea(i,j)
+                ch(i)  =  ch_p(i,j)*xice(i) + (1._RKIND-xice(i))*ch_sea(i,j)
+                cqs(i) = cqs_p(i,j)*xice(i) + (1._RKIND-xice(i))*cqs_sea(i,j)
              endif
           enddo
           enddo
@@ -1161,135 +1051,7 @@
           enddo
           enddo
        endif
-!                     call mpas_log_write("AFTER MYJSFC")
-!!
-! call mpas_dmpar_min_real(domain % dminfo, minval(qsfc), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(qsfc), scalar_max)
-!call mpas_log_write('MIN/MAX qsfc_p =$r,=$r',realArgs=(/scalar_min,scalar_max/))
-!!
-! call mpas_dmpar_min_real(domain % dminfo, minval(thz0), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(thz0), scalar_max)
-!call mpas_log_write('MIN/MAX thz0_p = $r,$r',realArgs=(/scalar_min,scalar_max/))
-!!
-!call mpas_dmpar_min_real(domain % dminfo, minval(qz0), scalar_min)
-!call mpas_dmpar_min_real(domain % dminfo, maxval(qz0), scalar_max)
-!call mpas_log_write('MIN/MAX qz0_p = $r, $r',realArgs=(/scalar_min,scalar_max/))
-!!
-!call mpas_dmpar_min_real(domain % dminfo, minval(uz0), scalar_min)
-!call mpas_dmpar_min_real(domain % dminfo, maxval(uz0), scalar_max)
-!call mpas_log_write('MIN/MAX uz0_p = $r, $r',realArgs=(/scalar_min,scalar_max/))
-!!
-! call mpas_dmpar_min_real(domain % dminfo, minval(vz0), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(vz0), scalar_max)
-!call mpas_log_write('MIN/MAX vz0_p = $r, $r',realArgs=(/scalar_min,scalar_max/))
-!!
-! call mpas_dmpar_min_real(domain % dminfo, minval(ust), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(ust), scalar_max)
-!call mpas_log_write('MIN/MAX ust_p = $r, $r',realArgs=(/scalar_min,scalar_max/))
-!!
-! call mpas_dmpar_min_real(domain % dminfo, minval(hpbl), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(hpbl), scalar_max)
-!call mpas_log_write('MIN/MAX hpbl_p = $r,$r',realArgs=(/scalar_min,scalar_max/))
-!
-! call mpas_dmpar_min_real(domain % dminfo, minval(rmol), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(rmol), scalar_max)
-!call mpas_log_write('MIN/MAX rmol_p = $r,$r',realArgs=(/scalar_min,scalar_max/))
-!
-!call mpas_dmpar_min_real(domain % dminfo, minval(znt), scalar_min)
-!call mpas_dmpar_min_real(domain % dminfo, maxval(znt), scalar_max)
-!call mpas_log_write('MIN/MAX znt_p = $r, $r',realArgs=(/scalar_min,scalar_max/))
-!!
-!call mpas_dmpar_min_real(domain % dminfo, minval(akhs), scalar_min)
-!call mpas_dmpar_min_real(domain % dminfo, maxval(akhs), scalar_max)
-!call mpas_log_write('MIN/MAX akhs_p = $r,$r',realArgs=(/scalar_min,scalar_max/))
-!!
-! call mpas_dmpar_min_real(domain % dminfo, minval(akms), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(akms), scalar_max)
-!call mpas_log_write('MIN/MAX akms_p = $r,$r',realArgs=(/scalar_min,scalar_max/))
-!
-! call mpas_dmpar_min_real(domain % dminfo, minval(akms), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(akms), scalar_max)
-!call mpas_log_write('MIN/MAX akms_p = $r,$r',realArgs=(/scalar_min,scalar_max/))
-!
-! call mpas_dmpar_min_real(domain % dminfo, minval(br), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(br), scalar_max)
-!call mpas_log_write('MIN/MAX br_p = $r, $r', realArgs=(/scalar_min,scalar_max/))
-!!
-! call mpas_dmpar_min_real(domain % dminfo, minval(chs), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(chs), scalar_max)
-!call mpas_log_write('MIN/MAX chs_p = $r, $r',realArgs=(/scalar_min,scalar_max/))
-!!
-! call mpas_dmpar_min_real(domain % dminfo, minval(chs2), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(chs2), scalar_max)
-!call mpas_log_write('MIN/MAX chs2_p = $r,$r',realArgs=(/scalar_min,scalar_max/))
-!!
-! call mpas_dmpar_min_real(domain % dminfo, minval(cqs2), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(cqs2), scalar_max)
-!call mpas_log_write('MIN/MAX cqs2_p = $r,$r',realArgs=(/scalar_min,scalar_max/))
-!!
-! call mpas_dmpar_min_real(domain % dminfo, minval(hfx), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(hfx), scalar_max)
-!call mpas_log_write('MIN/MAX hfx_p = $r, $r',realArgs=(/scalar_min,scalar_max/))
-!!
-! call mpas_dmpar_min_real(domain % dminfo, minval(qfx), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(qfx), scalar_max)
-!call mpas_log_write('MIN/MAX qfx_p = $r, $r',realArgs=(/scalar_min,scalar_max/))
-!!
-! call mpas_dmpar_min_real(domain % dminfo, minval(lh), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(lh), scalar_max)
-!call mpas_log_write('MIN/MAX lh_p = $r, $r', realArgs=(/scalar_min,scalar_max/))
-!!
-! call mpas_dmpar_min_real(domain % dminfo, minval(flhc), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(flhc), scalar_max)
-!call mpas_log_write('MIN/MAX flhc_p = $r,$r',realArgs=(/scalar_min,scalar_max/))
-!!
-! call mpas_dmpar_min_real(domain % dminfo, minval(flqc), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(flqc), scalar_max)
-!call mpas_log_write('MIN/MAX flqc_p = $r,$r',realArgs=(/scalar_min,scalar_max/))
-!!
-! call mpas_dmpar_min_real(domain % dminfo, minval(qgh), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(qgh), scalar_max)
-!call mpas_log_write('MIN/MAX qgh_p = $r, $r',realArgs=(/scalar_min,scalar_max/))
-!!
-! call mpas_dmpar_min_real(domain % dminfo, minval(cpm), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(cpm), scalar_max)
-!call mpas_log_write('MIN/MAX cpm_p = $r, $r',realArgs=(/scalar_min,scalar_max/))
-!!
-! call mpas_dmpar_min_real(domain % dminfo, minval(u10), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(u10), scalar_max)
-!call mpas_log_write('MIN/MAX u10_p = $r, $r',realArgs=(/scalar_min,scalar_max/))
-!!
-! call mpas_dmpar_min_real(domain % dminfo, minval(v10), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(v10), scalar_max)
-!call mpas_log_write('MIN/MAX v10_p = $r, $r',realArgs=(/scalar_min,scalar_max/))
-!!
-! call mpas_dmpar_min_real(domain % dminfo, minval(t2m), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(t2m), scalar_max)
-!call mpas_log_write('MIN/MAX t2m_p = $r, $r',realArgs=(/scalar_min,scalar_max/))
-!!
-! call mpas_dmpar_min_real(domain % dminfo, minval(th2m), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(th2m), scalar_max)
-!call mpas_log_write('MIN/MAX th2m_p = $r,$r',realArgs=(/scalar_min,scalar_max/))
-!!
-! call mpas_dmpar_min_real(domain % dminfo, minval(tshltr), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(tshltr), scalar_max)
-!call mpas_log_write('MIN/MAX tshltr_p = $r,$r',realArgs=(/scalar_min,scalar_max/))
-!!
-! call mpas_dmpar_min_real(domain % dminfo, minval(th10), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(th10), scalar_max)
-!call mpas_log_write('MIN/MAX th10_p = $r,$r',realArgs=(/scalar_min,scalar_max/))
-!!
-! call mpas_dmpar_min_real(domain % dminfo, minval(q2), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(q2), scalar_max)
-!call mpas_log_write('MIN/MAX q2_p = $r, $r', realArgs=(/scalar_min,scalar_max/))
-!!
-! call mpas_dmpar_min_real(domain % dminfo, minval(qshltr), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(qshltr), scalar_max)
-!call mpas_log_write('MIN/MAX qshltr_p = $r,$r',realArgs=(/scalar_min,scalar_max/))
-!!
-! call mpas_dmpar_min_real(domain % dminfo, minval(q10), scalar_min)
-! call mpas_dmpar_min_real(domain % dminfo, maxval(q10), scalar_max)
-!call mpas_log_write('MIN/MAX q10_p = $r, $r',realArgs=(/scalar_min,scalar_max/))
+
     case default
 
  end select sfclayer_select
@@ -1326,13 +1088,6 @@
  errflg = 0
 
  call mpas_pool_get_config(configs,'config_sfclayer_scheme',sfclayer_scheme)
- call mpas_pool_get_config(configs,'config_do_restart'     ,config_do_restart )
- call mpas_pool_get_array(diag_physics, 'lowlyr', lowlyr)
- call mpas_pool_get_array(diag_physics, 'ust', ust)
- call mpas_pool_get_array(diag_physics, 'z0', z0)
- call mpas_pool_get_array(sfc_input, 'xland', xland)
- call mpas_pool_get_array(sfc_input, 'xice', xice)
- call mpas_pool_get_array(sfc_input, 'ivgtyp', ivgtyp)
 
  sfclayer_select: select case (trim(sfclayer_scheme))
 
@@ -1349,6 +1104,14 @@
        call mynnsfclay_init(errmsg,errflg)
        
     case("sf_myj") 
+       call mpas_pool_get_config(configs,'config_do_restart'     ,config_do_restart )
+       call mpas_pool_get_array(diag_physics, 'lowlyr', lowlyr)
+       call mpas_pool_get_array(diag_physics, 'ust', ust)
+       call mpas_pool_get_array(diag_physics, 'z0', z0)
+       call mpas_pool_get_array(sfc_input, 'xland', xland)
+       call mpas_pool_get_array(sfc_input, 'xice', xice)
+       call mpas_pool_get_array(sfc_input, 'ivgtyp', ivgtyp)
+
        ! only lowlyr, ust, z0 inout, rest in only
        if (.not.allocated(lowlyr_p)) allocate(lowlyr_p(ims:ime,jms:jme))
        if (.not.allocated(ust_p)   ) allocate(ust_p(ims:ime,jms:jme)   )
@@ -1408,7 +1171,7 @@
 
 !local variables:
  integer:: initflag
- real(kind=RKIND):: dx,scalar_min,scalar_max
+ real(kind=RKIND):: dx
 
 !CCPP-compliant flags:
  character(len=StrKIND):: errmsg

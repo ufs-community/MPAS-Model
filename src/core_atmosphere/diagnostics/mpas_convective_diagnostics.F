@@ -564,7 +564,7 @@ module mpas_convective_diagnostics
                                                           + kiteAreasOnVertex(j,i)*vorticity(1:nVertLevels,i)
                   end do
                 end do
-                call mpas_log_write('Min, max uh_neg 1 = $r, $r',realArgs=(/minval(updraft_helicity_neg),maxval(updraft_helicity_neg)/))
+!                call mpas_log_write('Min, max uh_neg 1 = $r, $r',realArgs=(/minval(updraft_helicity_neg),maxval(updraft_helicity_neg)/))
                 do iCell=1,nCells
                   do k=1,nVertLevels
                     updraft_helicity(k,iCell) =  max(0.,0.5*(w(k,iCell)+w(k+1,iCell)))  &
@@ -671,7 +671,7 @@ module mpas_convective_diagnostics
                   endif
 
                 end do
-                call mpas_log_write('Min, max uh_min = $r, $r',realArgs=(/minval(updraft_helicity_min),maxval(updraft_helicity_min)/))
+!                call mpas_log_write('Min, max uh_min = $r, $r',realArgs=(/minval(updraft_helicity_min),maxval(updraft_helicity_min)/))
                 deallocate(updraft_helicity, updraft_helicity_neg)
             end if
 
