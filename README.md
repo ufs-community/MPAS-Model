@@ -1,4 +1,4 @@
-MPAS-v8.2.2-2.4
+MPAS-v8.2.2-2.6
 ====
 
 The Model for Prediction Across Scales (MPAS) is a collaborative project for
