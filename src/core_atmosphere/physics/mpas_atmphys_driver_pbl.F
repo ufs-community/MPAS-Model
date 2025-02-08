@@ -1200,6 +1200,8 @@
                    bl_mynn_edmf_tke,    &
                    bl_mynn_edmf_output, &
                    bl_mynn_mixscalars,  &
+                   bl_mynn_mixaerosols, &
+                   bl_mynn_mixnumcon,   &
                    bl_mynn_cloudmix,    &
                    bl_mynn_mixqt,       &
                    bl_mynn_tkebudget,   &
@@ -1390,6 +1392,8 @@
        call mpas_pool_get_config(configs,'config_mynn_edmf_output',bl_mynn_edmf_output)
        call mpas_pool_get_config(configs,'config_mynn_closure'    ,bl_mynn_closure    )
        call mpas_pool_get_config(configs,'config_mynn_mixscalars' ,bl_mynn_mixscalars )
+       call mpas_pool_get_config(configs,'config_mynn_mixaerosols',bl_mynn_mixaerosols)
+       call mpas_pool_get_config(configs,'config_mynn_mixnumcon'  ,bl_mynn_mixnumcon  )
        call mpas_pool_get_config(configs,'config_mynn_mixclouds'  ,bl_mynn_cloudmix   )
        call mpas_pool_get_config(configs,'config_mynn_mixqt'      ,bl_mynn_mixqt      )
        call mpas_pool_get_config(configs,'config_mynn_tkeadvect'  ,bl_mynn_tkeadvect  )
@@ -1477,6 +1481,8 @@
                   bl_mynn_edmf_tke   = bl_mynn_edmf_tke    ,                                              &
                   bl_mynn_output     = bl_mynn_edmf_output ,                                              &
                   bl_mynn_mixscalars = bl_mynn_mixscalars  ,                                              &
+                  bl_mynn_mixaerosols= bl_mynn_mixaerosols ,                                              &
+                  bl_mynn_mixnumcon  = bl_mynn_mixnumcon   ,                                              &
                   bl_mynn_cloudmix   = bl_mynn_cloudmix    ,                                              &
                   bl_mynn_mixqt      = bl_mynn_mixqt       ,                                              &
                   ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde ,                 &
