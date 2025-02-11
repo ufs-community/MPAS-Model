@@ -56,7 +56,6 @@ set(ATMOSPHERE_CORE_PHYSICS_WRF_SOURCES
     module_bl_gwdo.F
     module_bl_ugwp_gwdo.F
     module_bl_ysu.F
-    module_bl_mynn.F
     module_bl_myjpbl.F
     module_cam_error_function.F
     module_cam_shr_kind_mod.F
@@ -64,9 +63,6 @@ set(ATMOSPHERE_CORE_PHYSICS_WRF_SOURCES
     module_cu_gf_deep.F
     module_cu_gf_sh.F
     module_cu_gf_mpas.F
-    module_cu_kfeta.F
-    module_cu_ntiedtke.F
-    module_cu_tiedtke.F
     module_mp_kessler.F
     module_mp_radar.F
     module_mp_thompson.F
@@ -79,7 +75,6 @@ set(ATMOSPHERE_CORE_PHYSICS_WRF_SOURCES
     module_ra_rrtmg_lw.F
     module_ra_rrtmg_sw.F
     module_ra_rrtmg_vinterp.F
-    module_ra_cam.F
     module_sf_bem.F
     module_sf_bep.F
     module_sf_bep_bem.F
@@ -95,12 +90,17 @@ set(ATMOSPHERE_CORE_PHYSICS_WRF_SOURCES
     module_sf_sfclay.F
     module_sf_sfclayrev.F
     module_sf_urban.F
-    module_sf_mynn.F
     module_sf_myjsfc.F
     bl_mynn_post.F
     bl_mynn_pre.F
     module_ruc_ice.F90
     module_ruc_land.F90
+    module_bl_mynn.F
+    module_cu_kfeta.F
+    module_cu_ntiedtke.F
+    module_cu_tiedtke.F
+    module_ra_cam.F
+    module_sf_mynn.F
     sf_mynn_pre.F
     sf_sfclayrev_pre.F
     module_mynnsfclay_driver.F90
