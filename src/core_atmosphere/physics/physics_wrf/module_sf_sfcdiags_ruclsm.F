@@ -51,8 +51,8 @@ contains
 
       logical :: flux
 
-      flux = .true. ! used in RAP and HRRR
-      !flux = .false. ! used in UFS (RRFS)
+      !flux = .true. ! used in RAP and HRRR
+      flux = .false. ! used in UFS (RRFS)
 
       do j=jts,jte
         do i=its,ite
