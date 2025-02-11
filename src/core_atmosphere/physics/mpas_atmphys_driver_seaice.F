@@ -514,11 +514,14 @@
 
 !local variables and arrays:
  integer:: i,j,n
+!local pointers:
+ logical,pointer:: config_frac_seaice
 
 !-----------------------------------------------------------------------------------------------------------------
 !call mpas_log_write('--- enter subroutine seaice_to_MPAS:')
 
  call mpas_pool_get_config(configs,'config_lsm_scheme',lsm_scheme)
+ call mpas_pool_get_config(configs,'config_frac_seaice',config_frac_seaice)
  call mpas_pool_get_config(configs,'config_sfclayer_scheme',sfclayer_scheme)
 
  if (lsm_scheme .eq. "sf_ruc") then
@@ -558,6 +561,7 @@
  call mpas_pool_get_array(sfc_input,'tslb'    ,tslb    )
  call mpas_pool_get_array(sfc_input,'xice'    ,xice    )
 
+if(config_frac_seaice) then
 !--- reconstruct local variables as functions of the seaice fraction:
  do j = jts,jte
     do i = its,ite
@@ -576,6 +580,8 @@
           chs_p(i,j)  = xice_p(i,j)*chs_p(i,j)  + (1._RKIND-xice_p(i,j))*chs_sea(i,j)
           chs2_p(i,j) = xice_p(i,j)*chs2_p(i,j) + (1._RKIND-xice_p(i,j))*chs2_sea(i,j)
           cqs2_p(i,j) = xice_p(i,j)*cqs2_p(i,j) + (1._RKIND-xice_p(i,j))*cqs2_sea(i,j)
+          flhc_p(i,j) = xice_p(i,j)*flhc_p(i,j) + (1._RKIND-xice_p(i,j))*flhc_sea(i,j)
+          flqc_p(i,j) = xice_p(i,j)*flqc_p(i,j) + (1._RKIND-xice_p(i,j))*flqc_sea(i,j)
           hfx_p(i,j)  = xice_p(i,j)*hfx_p(i,j)  + (1._RKIND-xice_p(i,j))*hfx_sea(i,j)
           lh_p(i,j)   = xice_p(i,j)*lh_p(i,j)   + (1._RKIND-xice_p(i,j))*lh_sea(i,j)
           qfx_p(i,j)  = xice_p(i,j)*qfx_p(i,j)  + (1._RKIND-xice_p(i,j))*qfx_sea(i,j)
@@ -587,6 +593,7 @@
        endif
     enddo
  enddo
+endif
 
 !--- update all variables:
  do j = jts,jte
