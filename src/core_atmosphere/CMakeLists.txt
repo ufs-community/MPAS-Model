@@ -84,7 +84,6 @@ set(ATMOSPHERE_CORE_PHYSICS_WRF_SOURCES
     module_sf_noahlsm.F
     module_sf_noahlsm_glacial_only.F
     module_sf_oml.F
-    module_sf_ruclsm.F
     module_sf_sfcdiags.F
     module_sf_sfcdiags_ruclsm.F
     module_sf_sfclay.F
