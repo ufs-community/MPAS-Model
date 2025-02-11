@@ -331,8 +331,6 @@
     if(allocated(xice_p)     ) deallocate(xice_p     )
 
     if(allocated(br_sea)     ) deallocate(br_sea     )
-    if(allocated(flhc_sea)   ) deallocate(flhc_sea   )
-    if(allocated(flqc_sea)   ) deallocate(flqc_sea   )
     if(allocated(gz1oz0_sea) ) deallocate(gz1oz0_sea )
     if(allocated(mol_sea)    ) deallocate(mol_sea    )
     if(allocated(psih_sea)   ) deallocate(psih_sea   )
@@ -611,6 +609,7 @@
        !overwrite some local variables for sea-ice cells:
        if(xice_p(i,j).ge.xice_threshold .and. xice_p(i,j).le.1._RKIND) then
           xland_sea(i,j)  = 2._RKIND
+          xland_p(i,j)    = 1._RKIND
           mavail_sea(i,j) = 1._RKIND
           znt_sea(i,j)    = 0.0001_RKIND
           tsk_sea(i,j)    = max(sst_p(i,j),271.4_RKIND)
@@ -905,8 +904,6 @@
     do i = its,ite
        if(xice(i).ge.xice_threshold .and. xice(i).le.1._RKIND) then
           br(i)     = br_p(i,j)*xice(i)     + (1._RKIND-xice(i))*br_sea(i,j)
-          flhc(i)   = flhc_p(i,j)*xice(i)   + (1._RKIND-xice(i))*flhc_sea(i,j)
-          flqc(i)   = flqc_p(i,j)*xice(i)   + (1._RKIND-xice(i))*flqc_sea(i,j)
           gz1oz0(i) = gz1oz0_p(i,j)*xice(i) + (1._RKIND-xice(i))*gz1oz0_sea(i,j)
           mol(i)    = mol_p(i,j)*xice(i)    + (1._RKIND-xice(i))*mol_sea(i,j)
           psih(i)   = psih_p(i,j)*xice(i)   + (1._RKIND-xice(i))*psih_sea(i,j)
