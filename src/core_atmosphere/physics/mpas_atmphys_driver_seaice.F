@@ -92,6 +92,7 @@
  if(.not.allocated(albsi_p)     ) allocate(albsi_p(ims:ime,jms:jme)     )
  if(.not.allocated(icedepth_p)  ) allocate(icedepth_p(ims:ime,jms:jme)  )
  if(.not.allocated(snowsi_p)    ) allocate(snowsi_p(ims:ime,jms:jme)    )
+ if(.not.allocated(cpm_sea)     ) allocate(cpm_sea(ims:ime,jms:jme)     )
 
  if(.not.allocated(tslb_p)) allocate(tslb_p(ims:ime,1:num_soils,jms:jme))
 
@@ -106,7 +107,6 @@
        if(.not.allocated(chklowq_p)   ) allocate(chklowq_p(ims:ime,jms:jme)   )
        if(.not.allocated(gsw_p)       ) allocate(gsw_p(ims:ime,jms:jme)       )
        if(.not.allocated(sfc_albbck_p)) allocate(sfc_albbck_p(ims:ime,jms:jme))
-       if(.not.allocated(cpm_sea)     ) allocate(cpm_sea(ims:ime,jms:jme)     )
        if(.not.allocated(chs_sea)     ) allocate(chs_sea(ims:ime,jms:jme)     )
        if(.not.allocated(chs2_sea)    ) allocate(chs2_sea(ims:ime,jms:jme)    )
        if(.not.allocated(cqs2_sea)    ) allocate(cqs2_sea(ims:ime,jms:jme)    )
@@ -360,10 +360,10 @@
        snoalb_p(i,j)    = snoalb(i)
        br_p(i,j)        = br(i)
        chs_p(i,j)       = chs(i)
+       cpm_p(i,j)       = cpm(i)
        swdown_p(i,j)    = gsw(i)/(1._RKIND-sfc_albedo(i))
 
        if (lsm_scheme == 'sf_ruc') then
-           cpm_p(i,j)       = cpm(i)
            gsw_p(i,j)       = gsw(i)
            chklowq_p(i,j)    = chklowq(i)
            isltyp_p(i,j)     = isltyp(i)
@@ -397,8 +397,8 @@
        icedepth_p(i,j)  = seaice_thickness_default
 
        if (lsm_scheme == 'sf_ruc') then
-           cqs_p(i,j)       = cqs(i)
            rhosnf_p(i,j) = rhosnf(i)
+           cqs_p(i,j) = cqs(i)
            qcg_p(i,j) = qcg(i)
            qsg_p(i,j) = qsg(i)
            qvg_p(i,j) = qvg(i)
@@ -428,7 +428,7 @@
        endif
 
        !modify the surface albedo and surface emissivity, and surface temperatures over sea-ice points:
-       if(xice(i).ge.xice_threshold .and. xice(i).le.1._RKIND) then
+       if(xice(i).ge.xice_threshold .and. xice(i).lt.1._RKIND) then
           sfc_albedo_p(i,j) = (sfc_albedo(i) - 0.08_RKIND*(1._RKIND-xice(i))) / xice(i)
           sfc_emiss_p(i,j)  = (sfc_emiss(i) - 0.98_RKIND*(1._RKIND-xice(i))) / xice(i)
        else
@@ -565,23 +565,21 @@ if(config_frac_seaice) then
 !--- reconstruct local variables as functions of the seaice fraction:
  do j = jts,jte
     do i = its,ite
-       if(xice_p(i,j).ge.xice_threshold .and. xice_p(i,j).le.1._RKIND) then
+       if(xice_p(i,j).ge.xice_threshold .and. xice_p(i,j).lt.1._RKIND) then
           if (trim(lsm_scheme) .eq. "sf_ruc") then
-           cpm_p(i,j)  = xice_p(i,j)*cpm_p(i,j)  + (1._RKIND-xice_p(i,j))*cpm_sea(i,j)
+           flhc_p(i,j) = xice_p(i,j)*flhc_p(i,j) + (1._RKIND-xice_p(i,j))*flhc_sea(i,j)
+           flqc_p(i,j) = xice_p(i,j)*flqc_p(i,j) + (1._RKIND-xice_p(i,j))*flqc_sea(i,j)
            if(trim(sfclayer_scheme) .eq. "sf_mynnsfclay") then
              cqs_p(i,j)  = xice_p(i,j)*cqs_p(i,j)  + (1._RKIND-xice_p(i,j))*cqs_sea(i,j)
            else
              cqs_p(i,j)  = xice_p(i,j)*chs_p(i,j)  + (1._RKIND-xice_p(i,j))*chs_sea(i,j)
            endif
-          else
-           cpm(i) = xice_p(i,j)*cpm(i) + (1._RKIND-xice_p(i,j))*cpm_sea(i,j)
           endif
 
+          cpm_p(i,j)  = xice_p(i,j)*cpm_p(i,j)  + (1._RKIND-xice_p(i,j))*cpm_sea(i,j)
           chs_p(i,j)  = xice_p(i,j)*chs_p(i,j)  + (1._RKIND-xice_p(i,j))*chs_sea(i,j)
           chs2_p(i,j) = xice_p(i,j)*chs2_p(i,j) + (1._RKIND-xice_p(i,j))*chs2_sea(i,j)
           cqs2_p(i,j) = xice_p(i,j)*cqs2_p(i,j) + (1._RKIND-xice_p(i,j))*cqs2_sea(i,j)
-          flhc_p(i,j) = xice_p(i,j)*flhc_p(i,j) + (1._RKIND-xice_p(i,j))*flhc_sea(i,j)
-          flqc_p(i,j) = xice_p(i,j)*flqc_p(i,j) + (1._RKIND-xice_p(i,j))*flqc_sea(i,j)
           hfx_p(i,j)  = xice_p(i,j)*hfx_p(i,j)  + (1._RKIND-xice_p(i,j))*hfx_sea(i,j)
           lh_p(i,j)   = xice_p(i,j)*lh_p(i,j)   + (1._RKIND-xice_p(i,j))*lh_sea(i,j)
           qfx_p(i,j)  = xice_p(i,j)*qfx_p(i,j)  + (1._RKIND-xice_p(i,j))*qfx_sea(i,j)
@@ -615,6 +613,7 @@ endif
        znt(i)       = znt_p(i,j)
        grdflx(i)    = grdflx_p(i,j)
 
+       cpm(i)  = cpm_p(i,j)
        chs(i)  = chs_p(i,j)
        chs2(i) = chs2_p(i,j)
        cqs2(i) = cqs2_p(i,j)
@@ -647,7 +646,8 @@ endif
     case("sf_ruc")
        do j = jts,jte
           do i = its,ite
-             cpm(i)  = cpm_p(i,j)
+             flhc(i) = flhc_p(i,j)
+             flqc(i) = flhc_p(i,j)
              cqs(i)  = cqs_p(i,j)
              qcg(i) = qcg_p(i,j)
              qsg(i) = qsg_p(i,j)
