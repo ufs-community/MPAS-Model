@@ -92,7 +92,6 @@
  if(.not.allocated(albsi_p)     ) allocate(albsi_p(ims:ime,jms:jme)     )
  if(.not.allocated(icedepth_p)  ) allocate(icedepth_p(ims:ime,jms:jme)  )
  if(.not.allocated(snowsi_p)    ) allocate(snowsi_p(ims:ime,jms:jme)    )
- if(.not.allocated(cpm_sea)     ) allocate(cpm_sea(ims:ime,jms:jme)     )
 
  if(.not.allocated(tslb_p)) allocate(tslb_p(ims:ime,1:num_soils,jms:jme))
 
@@ -189,6 +188,8 @@
  if(allocated(z0_p)        ) deallocate(z0_p        )
  if(allocated(znt_p)       ) deallocate(znt_p       )
 
+ if(allocated(flhc_sea)    ) deallocate(flhc_sea    )
+ if(allocated(flqc_sea)    ) deallocate(flqc_sea    )
  if(allocated(chs_sea)     ) deallocate(chs_sea     )
  if(allocated(chs2_sea)    ) deallocate(chs2_sea    )
  if(allocated(cqs2_sea)    ) deallocate(cqs2_sea    )
@@ -508,7 +509,7 @@
  real(kind=RKIND),dimension(:),pointer:: snow,snowc,snowh,skintemp,xice
  real(kind=RKIND),dimension(:,:),pointer:: tslb
 
- real(kind=RKIND),dimension(:),pointer  :: cqs,dew,qcg,qsg,qvg,snowfallac,soilt1,tsnav
+ real(kind=RKIND),dimension(:),pointer  :: cqs,flqc,flhc,dew,qcg,qsg,qvg,snowfallac,soilt1,tsnav
 
  integer,pointer:: globalCells(:)
 
@@ -534,6 +535,8 @@
    call mpas_pool_get_array(diag_physics,'soilt1'    ,soilt1    )
    call mpas_pool_get_array(diag_physics,'tsnav'     ,tsnav     )
    call mpas_pool_get_array(diag_physics,'cqs'       ,cqs       )
+   call mpas_pool_get_array(diag_physics,'flqc'      ,flqc      )
+   call mpas_pool_get_array(diag_physics,'flhc'      ,flhc      )
  endif
 
  call mpas_pool_get_array(diag_physics,'acsnom'    ,acsnom    )
@@ -648,7 +651,7 @@ endif
           do i = its,ite
              flhc(i) = flhc_p(i,j)
              flqc(i) = flhc_p(i,j)
-             cqs(i)  = cqs_p(i,j)
+             cqs(i) = cqs_p(i,j)
              qcg(i) = qcg_p(i,j)
              qsg(i) = qsg_p(i,j)
              qvg(i) = qvg_p(i,j)
