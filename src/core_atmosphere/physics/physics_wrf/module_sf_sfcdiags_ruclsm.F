@@ -2,7 +2,7 @@
 !
 module module_sf_sfcdiags_ruclsm
 
-       integer :: targetcell= 600422 ! 2087240 !99975 !81442 !107619
+       integer :: targetcell= 0 ! 600422 ! 2087240 !99975 !81442 !107619
 
 contains
 
