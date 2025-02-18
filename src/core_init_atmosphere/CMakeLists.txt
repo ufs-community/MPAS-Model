@@ -29,6 +29,7 @@ set(init_atm_core_srcs
         mpas_init_atm_core_interface.F
 	mpas_init_atm_thompson_aerosols.F
         mpas_init_atm_gwd.F
+        mpas_init_atm_gwd_gsl.F
         mpas_init_atm_hinterp.F
         mpas_init_atm_llxy.F
         mpas_init_atm_queue.F
@@ -39,6 +40,8 @@ set(init_atm_core_srcs
         mpas_kd_tree.F
         mpas_parse_geoindex.F
         mpas_stack.F
+        mpas_gsl_oro_data_sm_scale.F
+        mpas_gsl_oro_data_lg_scale.F
         read_geogrid.c)
 
 add_library(core_init_atmosphere ${init_atm_core_srcs})

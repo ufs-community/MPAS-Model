@@ -2,7 +2,7 @@
 !
 module module_sf_sfcdiags_ruclsm
 
-       integer :: targetcell= 0 !99975 !81442 !107619
+       integer :: targetcell= 600422 ! 2087240 !99975 !81442 !107619
 
 contains
 
@@ -93,6 +93,8 @@ contains
 
           if (globalcells(i)==targetcell) then          
             print *,' globalcells(i) =',globalcells(i)
+            print *,'chs,chs2',chs(i,j),chs2(i,j)
+            print *,'tsk,t3d,t2',tsk(i,j),t3d(i,1,j),t2(i,j)
             print *,'cqs,cqs2',cqs(i,j),cqs2(i,j)
             print *,'qsfc,qsfcmr,qsfcprox,qlev1',qsfc(i,j),qsfcmr,qsfcprox,qlev1
             print *,'(qsfcprox-qsfcmr)/qsfcmr =', (qsfcprox-qsfcmr)/qsfcmr

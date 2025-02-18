@@ -33,13 +33,16 @@ set(ATMOSPHERE_CORE_PHYSICS_SOURCES
     mpas_atmphys_driver_seaice.F
     mpas_atmphys_driver_sfclayer.F
     mpas_atmphys_init.F
+    mpas_atmphys_init_tempo.F
     mpas_atmphys_lsm_shared.F
+    mpas_atmphys_lsm_rucinit.F
     mpas_atmphys_packages.F
     mpas_atmphys_todynamics.F
     mpas_atmphys_vars.F
     mpas_atmphys_driver_lsm_noahmp.F
     mpas_atmphys_lsm_noahmpfinalize.F
     mpas_atmphys_lsm_noahmpinit.F
+    mpas_atmphys_sfc_diagnostics.F
 )
 list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_SOURCES PREPEND physics/)
 
@@ -51,17 +54,22 @@ set(ATMOSPHERE_CORE_PHYSICS_WRF_SOURCES
     cu_ntiedtke_pre.F
     module_bep_bem_helper.F
     module_bl_gwdo.F
+    module_bl_ugwp_gwdo.F
     module_bl_ysu.F
+    module_bl_myjpbl.F
     module_cam_error_function.F
     module_cam_shr_kind_mod.F
     module_cam_support.F
-    module_cu_gf.mpas.F
+    module_cu_gf_deep.F
+    module_cu_gf_sh.F
+    module_cu_gf_mpas.F
     module_mp_kessler.F
     module_mp_radar.F
     module_mp_thompson.F
     module_mp_thompson_cldfra3.F
     module_mp_thompson_aerosols.F
     module_mp_wsm6.F
+    module_mp_nssl_2mom.F
     module_ra_rrtmg_sw_aerosols.F
     module_ra_cam_support.F
     module_ra_rrtmg_lw.F
@@ -77,11 +85,15 @@ set(ATMOSPHERE_CORE_PHYSICS_WRF_SOURCES
     module_sf_noahlsm_glacial_only.F
     module_sf_oml.F
     module_sf_sfcdiags.F
+    module_sf_sfcdiags_ruclsm.F
     module_sf_sfclay.F
     module_sf_sfclayrev.F
     module_sf_urban.F
+    module_sf_myjsfc.F
     bl_mynn_post.F
     bl_mynn_pre.F
+    module_ruc_ice.F90
+    module_ruc_land.F90
     module_bl_mynn.F
     module_cu_kfeta.F
     module_cu_ntiedtke.F
@@ -90,10 +102,41 @@ set(ATMOSPHERE_CORE_PHYSICS_WRF_SOURCES
     module_sf_mynn.F
     sf_mynn_pre.F
     sf_sfclayrev_pre.F
+    module_mynnsfclay_driver.F90
+    module_mynnsfclay.F90
+    module_mynnsfclay_pre.F90
 )
 
 list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_WRF_SOURCES PREPEND physics/physics_wrf/)
 
+# physics/UGWP/
+set(ATMOSPHERE_CORE_PHYSICS_UGWP_SOURCES
+    bl_ugwp.F
+    bl_ugwpv1_ngw.F
+    cires_tauamf_data.F
+    cires_ugwpv1_initialize.F
+    cires_ugwpv1_module.F
+    cires_ugwpv1_solv2.F
+    cires_ugwpv1_triggers.F
+)
+list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_UGWP_SOURCES PREPEND physics/UGWP/)
+
+# physics/TEMPO/
+set(ATMOSPHERE_CORE_PHYSICS_TEMPO_SOURCES
+    module_mp_tempo_main.F90
+    module_mp_tempo_params.F90
+    module_mp_tempo_utils.F90
+    drivers/mpas/module_mp_tempo.F90
+)
+list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_TEMPO_SOURCES PREPEND physics/TEMPO/)
+
+# physics/MYNN-EDMF/
+set(ATMOSPHERE_CORE_PHYSICS_MYNN-EDMF_SOURCES
+    module_bl_mynnedmf.F90
+    MPAS/module_bl_mynnedmf_common.F90
+    MPAS/module_bl_mynnedmf_driver.F90
+)
+list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_MYNN-EDMF_SOURCES PREPEND physics/MYNN-EDMF/)
 
 set(ATMOSPHERE_CORE_PHYSICS_MMM_DIR ${CMAKE_CURRENT_SOURCE_DIR}/physics/physics_mmm)
 
@@ -344,6 +387,9 @@ add_library(core_atmosphere ${ATMOSPHERE_CORE_SOURCES}
             ${ATMOSPHERE_CORE_PHYSICS_SOURCES}
             ${ATMOSPHERE_CORE_PHYSICS_MMM_SOURCES}
             ${ATMOSPHERE_CORE_PHYSICS_WRF_SOURCES}
+            ${ATMOSPHERE_CORE_PHYSICS_UGWP_SOURCES}
+            ${ATMOSPHERE_CORE_PHYSICS_TEMPO_SOURCES}
+            ${ATMOSPHERE_CORE_PHYSICS_MYNN-EDMF_SOURCES}
             ${ATMOSPHERE_CORE_DIAGNOSTIC_SOURCES}
             ${ATMOSPHERE_CORE_DYNAMICS_SOURCES})
 
