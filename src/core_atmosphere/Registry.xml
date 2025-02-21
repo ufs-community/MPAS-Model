@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 
-<registry model="mpas" core="atmosphere" core_abbrev="atm" version="8.2.2-2.6">
+<registry model="mpas" core="atmosphere" core_abbrev="atm" version="8.2.2-2.7">
 
 <!-- **************************************************************************************** -->
 <!-- ************************************** Dimensions ************************************** -->
@@ -2747,6 +2747,10 @@
                 <var name="rainnc" type="real" dimensions="nCells Time" units="mm"
                      description="accumulated total grid-scale precipitation"
                      packages="mp_kessler_in;mp_thompson_in;mp_thompson_aers_in;mp_wsm6_in;mp_nssl2m_in;mp_tempo_in"/>
+
+                <var name="frainnc" type="real" dimensions="nCells Time" units="mm"
+                     description="accumulated total grid-scale freezing rain"
+                     packages="mp_tempo_in"/>
 
                 <var name="snownc" type="real" dimensions="nCells Time" units="mm"
                      description="accumulated grid-scale precipitation of snow"

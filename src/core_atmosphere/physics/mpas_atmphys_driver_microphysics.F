@@ -195,6 +195,7 @@
           if(.not.allocated(nr_p) ) allocate(nr_p(ims:ime,kms:kme,jms:jme))
           if(.not.allocated(refl10cm_p)  ) allocate(refl10cm_p(ims:ime,kms:kme,jms:jme) )
           if(.not.allocated(refl10cm_1km_p)  ) allocate(refl10cm_1km_p(ims:ime,jms:jme) )
+          if(.not.allocated(frainnc_p) ) allocate(frainnc_p(ims:ime,jms:jme) )
 
           ! Allocate TEMPO options based on config flags insead of adding more nested select cases
           ! These flags are associated with appropriate packages in mpas_atmphys_packages.F
@@ -346,6 +347,7 @@
           if(allocated(nr_p) ) deallocate(nr_p )
           if(allocated(refl10cm_p)  ) deallocate(refl10cm_p  )
           if(allocated(refl10cm_1km_p)) deallocate(refl10cm_1km_p)
+          if(allocated(frainnc_p) ) deallocate(frainnc_p)
 
           if (config_tempo_hailaware) then
              if(allocated(qh_p) ) deallocate(qh_p )
@@ -592,7 +594,7 @@
                      re_cloud  = recloud_p   , re_ice     = reice_p      , re_snow    = resnow_p     , &
                      has_reqc  = has_reqc    , has_reqi   = has_reqi     , has_reqs   = has_reqs     , &
                      !! ntc       = ntc_p       , muc        = muc_p                                    , &
-                     refl_10cm  = refl10cm_p   , &
+                     refl_10cm  = refl10cm_p , frainnc    = frainnc_p                                , &
                      ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde           , &
                      ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme           , &
                      its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte             &
@@ -614,7 +616,7 @@
                         re_cloud  = recloud_p   , re_ice     = reice_p      , re_snow    = resnow_p     , &
                         has_reqc  = has_reqc    , has_reqi   = has_reqi     , has_reqs   = has_reqs     , &
                         !! ntc       = ntc_p       , muc        = muc_p                                    , &
-                        refl_10cm  = refl10cm_p   , &
+                        refl_10cm  = refl10cm_p , frainnc    = frainnc_p                                , &
                         ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde           , &
                         ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme           , &
                         its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte             &
@@ -635,7 +637,7 @@
                         re_cloud  = recloud_p   , re_ice     = reice_p      , re_snow    = resnow_p     , &
                         has_reqc  = has_reqc    , has_reqi   = has_reqi     , has_reqs   = has_reqs     , &
                         !! ntc       = ntc_p       , muc        = muc_p                                    , &
-                        refl_10cm  = refl10cm_p   , &
+                        refl_10cm  = refl10cm_p , frainnc    = frainnc_p                                , &
                         ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde           , &
                         ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme           , &
                         its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte             &
@@ -659,7 +661,7 @@
                      re_cloud  = recloud_p   , re_ice     = reice_p      , re_snow    = resnow_p     , &
                      has_reqc  = has_reqc    , has_reqi   = has_reqi     , has_reqs   = has_reqs     , &
                      !! ntc       = ntc_p       , muc        = muc_p                                    , &
-                     refl_10cm  = refl10cm_p   , &
+                     refl_10cm  = refl10cm_p , frainnc    = frainnc_p                                , &
                      ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde           , &
                      ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme           , &
                      its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte             &
@@ -915,7 +917,25 @@
           sr(i)         = 0._RKIND
        enddo
 
-    case ("mp_tempo","mp_nssl2m")
+    case ("mp_tempo")
+       do j = jts, jte
+       do i = its, ite
+          snowncv_p(i,j)    = 0._RKIND
+          graupelncv_p(i,j) = 0._RKIND
+          snownc_p(i,j)     = 0._RKIND
+          graupelnc_p(i,j)  = 0._RKIND
+          sr_p(i,j)         = 0._RKIND
+          frainnc_p(i,j)    = 0._RKIND
+       enddo
+       enddo
+
+       do i = its,ite
+          snowncv(i)    = 0._RKIND
+          graupelncv(i) = 0._RKIND
+          sr(i)         = 0._RKIND
+       enddo
+
+    case ("mp_nssl2m")
        do j = jts, jte
        do i = its, ite
           snowncv_p(i,j)    = 0._RKIND
@@ -957,6 +977,7 @@
  real(kind=RKIND),dimension(:),pointer:: precipw
  real(kind=RKIND),dimension(:),pointer:: graupelnc,rainnc,snownc
  real(kind=RKIND),dimension(:),pointer:: graupelncv,rainncv,snowncv,sr
+ real(kind=RKIND),dimension(:),pointer:: frainnc
 
 !local variables and arrays:
  integer:: i,j,k
@@ -1023,7 +1044,26 @@
        enddo
        enddo
 
-    case ("mp_tempo","mp_nssl2m")
+    case ("mp_tempo")
+       call mpas_pool_get_array(diag_physics,'frainnc',frainnc)
+
+       do j = jts,jte
+       do i = its,ite
+          !time-step precipitation:
+          snowncv(i)    = snownc_p(i,j)
+          graupelncv(i) = graupelnc_p(i,j)
+          sr(i) = (snownc_p(i,j) + graupelnc_p(i,j)) / (rainnc_p(i,j)+1.e-12)
+
+          !accumulated precipitation:
+          snownc(i)    = snownc(i) + snowncv(i)
+          graupelnc(i) = graupelnc(i) + graupelncv(i)
+
+          !accumulated freezing rain precipitation:
+          frainnc(i)    = frainnc(i) + frainnc_p(i,j)
+       enddo
+       enddo
+
+    case ("mp_nssl2m")
        do j = jts,jte
        do i = its,ite
           !time-step precipitation:
