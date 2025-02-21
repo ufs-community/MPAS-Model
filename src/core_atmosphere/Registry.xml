@@ -1744,7 +1744,7 @@
 
                         <var name="qh" array_group="moist" units="kg kg^{-1}"
                              description="Hail mixing ratio"
-                             packages="mp_nssl2m_in"/>
+                             packages="mp_nssl2m_in;tempo_hailaware_in"/>
 
                         <var name="ni" array_group="number" units="nb kg^{-1}"
                              description="Cloud ice number concentration"
@@ -2135,7 +2135,7 @@
 
                         <var name="tend_qh" name_in_code="qh" array_group="moist" units="kg m^{-3} s^{-1}"
                              description="Tendency of hail mass per unit volume divided by d(zeta)/dz"
-                             packages="mp_nssl2m_in"/>
+                             packages="mp_nssl2m_in;tempo_hailaware_in"/>
 
                         <var name="tend_ni" name_in_code="ni" array_group="number" units="nb m^{-3} s^{-1}"
                              description="Tendency of cloud ice number concentration multiplied by dry air density divided by d(zeta)/dz"
@@ -2251,7 +2251,7 @@
                              units="kg kg^{-1} s^{-1}"
                              description="Lateral boundary tendency of graupel mixing ratio"/>
 
-                        <var name="lbc_qh" name_in_code="qh" array_group="moist"  packages="mp_nssl2m_in" units="kg kg^{-1} s^{-1}"
+                        <var name="lbc_qh" name_in_code="qh" array_group="moist"  packages="mp_nssl2m_in;tempo_hailaware_in" units="kg kg^{-1} s^{-1}"
                              description="Lateral boundary tendency of hail mixing ratio"/>
 
                         <var name="lbc_nr" name_in_code="nr" array_group="number" packages="mp_thompson_in;mp_nssl2m_in;mp_thompson_aers_in;mp_tempo_in"

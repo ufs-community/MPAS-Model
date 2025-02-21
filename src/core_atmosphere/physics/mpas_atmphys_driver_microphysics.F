@@ -199,6 +199,7 @@
           ! Allocate TEMPO options based on config flags insead of adding more nested select cases
           ! These flags are associated with appropriate packages in mpas_atmphys_packages.F
           if (config_tempo_hailaware) then
+             if(.not.allocated(qh_p) ) allocate(qh_p(ims:ime,kms:kme,jms:jme))
              if(.not.allocated(ng_p) ) allocate(ng_p(ims:ime,kms:kme,jms:jme))
              if(.not.allocated(volg_p)) allocate(volg_p(ims:ime,kms:kme,jms:jme))
           endif
@@ -347,6 +348,7 @@
           if(allocated(refl10cm_1km_p)) deallocate(refl10cm_1km_p)
 
           if (config_tempo_hailaware) then
+             if(allocated(qh_p) ) deallocate(qh_p )
              if(allocated(ng_p) ) deallocate(ng_p )
              if(allocated(volg_p) ) deallocate(volg_p )
           endif
@@ -646,7 +648,7 @@
                      th        = th_p        , qv         = qv_p         , qc         = qc_p         , &
                      qr        = qr_p        , qi         = qi_p         , qs         = qs_p         , &
                      qg        = qg_p        , ni         = ni_p         , nr         = nr_p         , &
-                     ng        = ng_p        , qb         = volg_p                                   , &
+                     ng        = ng_p        , qb         = volg_p       , qh         = qh_p         , &
                      nc        = nc_p        , nwfa       = nwfa_p       , nifa       = nifa_p       , &
                      nwfa2d    = nwfa2d_p    , nifa2d     = nifa2d_p                                 , &
                      pii       = pi_p        , p          = pres_p       , dz         = dz_p         , &

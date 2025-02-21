@@ -867,14 +867,17 @@
 
              if (config_tempo_hailaware) then
                 call mpas_pool_get_dimension(state,'index_ng'  ,index_ng  )
+                call mpas_pool_get_dimension(state,'index_qh'  ,index_qh  )
                 call mpas_pool_get_dimension(state,'index_volg' ,index_volg  )
 
+                qh   => scalars(index_qh,:,:)
                 ng   => scalars(index_ng,:,:)
                 volg => scalars(index_volg,:,:)
 
                 do j = jts, jte
                 do k = kts, kte
                 do i = its, ite
+                   qh_p(i,k,j) = qh(k,i)
                    ng_p(i,k,j) = ng(k,i)
                    volg_p(i,k,j) = volg(k,i)
                 enddo
@@ -1352,15 +1355,18 @@
              endif
 
              if (config_tempo_hailaware) then
+                call mpas_pool_get_dimension(state,'index_qh'  ,index_qh  )
                 call mpas_pool_get_dimension(state,'index_ng'  ,index_ng  )
                 call mpas_pool_get_dimension(state,'index_volg' ,index_volg  )
 
+                qh   => scalars(index_qh,:,:)
                 ng   => scalars(index_ng,:,:)
                 volg => scalars(index_volg,:,:)
 
                 do j = jts, jte
                 do k = kts, kte
                 do i = its, ite
+                   qh(k,i) = qh_p(i,k,j)
                    ng(k,i) = ng_p(i,k,j)
                    volg(k,i) = volg_p(i,k,j)
                 enddo
