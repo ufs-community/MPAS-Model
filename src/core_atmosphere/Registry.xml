@@ -1303,6 +1303,20 @@
 			<var name="uReconstructMeridional"/>
 			<var name="surface_pressure"/>
 #ifdef DO_PHYSICS
+                        <var name="isltyp"/>
+                        <var name="soilf"/>
+                        <var name="ivgtyp"/>
+                        <var name="landusef"/>
+                        <var name="mminlu"/>
+                        <var name="isice_lu"/>
+                        <var name="iswater_lu"/>
+                        <var name="landmask"/>
+                        <var name="shdmin"/>
+                        <var name="shdmax"/>
+                        <var name="snoalb"/>
+                        <var name="albedo12m"/>
+                        <var name="greenfrac"/>
+                        <var name="lai12m"/>
 			<var name="cldfrac"/>
 			<var name="re_cloud" packages="mp_thompson_in;mp_wsm6_in;mp_tempo_in"/>
 			<var name="re_ice" packages="mp_thompson_in;mp_wsm6_in;mp_tempo_in"/>
