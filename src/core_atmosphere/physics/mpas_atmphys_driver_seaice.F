@@ -370,7 +370,11 @@
            isltyp_p(i,j)     = isltyp(i)
            ivgtyp_p(i,j)     = ivgtyp(i)
            sfc_emiss_p(i,j)  = sfc_emiss(i)
-           sfc_albbck_p(i,j) = sfc_albbck(i)
+           if(xice(i).ge.xice_threshold) then
+              sfc_albbck_p(i,j) = seaice_albedo_default
+           else
+              sfc_albbck_p(i,j) = sfc_albbck(i)
+           endif
            tmn_p(i,j)        = tmn(i)
            xland_p(i,j)      = xland(i)
            precipfr_p(i,j) = precipfr(i)
@@ -505,7 +509,7 @@
  character(len=StrKIND),pointer:: sfclayer_scheme
 
  real(kind=RKIND),dimension(:),pointer:: acsnom,acsnow,chs,chs2,cpm,cqs2,qgh,qsfc,grdflx,hfx, qfx,lh,noahres, &
-                                         potevp,sfc_albedo,sfc_emiss,sfcrunoff,snopcx,z0,znt
+                                         potevp,sfc_albedo,sfc_albbck,sfc_emiss,sfcrunoff,snopcx,z0,znt
  real(kind=RKIND),dimension(:),pointer:: snow,snowc,snowh,skintemp,xice
  real(kind=RKIND),dimension(:,:),pointer:: tslb
 
@@ -552,6 +556,7 @@
  call mpas_pool_get_array(diag_physics,'qfx'       ,qfx       )
  call mpas_pool_get_array(diag_physics,'lh'        ,lh        )
  call mpas_pool_get_array(diag_physics,'sfc_albedo',sfc_albedo)
+ call mpas_pool_get_array(diag_physics,'sfc_albbck',sfc_albbck)
  call mpas_pool_get_array(diag_physics,'sfc_emiss' ,sfc_emiss )
  call mpas_pool_get_array(diag_physics,'sfcrunoff' ,sfcrunoff )
  call mpas_pool_get_array(diag_physics,'z0'        ,z0        )
@@ -626,6 +631,7 @@ endif
        qfx(i)  = qfx_p(i,j)
        lh(i)   = lh_p(i,j)
        sfc_albedo(i) = sfc_albedo_p(i,j)
+       sfc_albbck(i) = sfc_albbck_p(i,j)
        sfc_emiss(i)  = sfc_emiss_p(i,j)
 
     enddo
