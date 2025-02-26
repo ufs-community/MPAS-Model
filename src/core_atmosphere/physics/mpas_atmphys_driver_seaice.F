@@ -541,6 +541,7 @@
    call mpas_pool_get_array(diag_physics,'cqs'       ,cqs       )
    call mpas_pool_get_array(diag_physics,'flqc'      ,flqc      )
    call mpas_pool_get_array(diag_physics,'flhc'      ,flhc      )
+   call mpas_pool_get_array(sfc_input,   'sfc_albbck',sfc_albbck)
  endif
 
  call mpas_pool_get_array(diag_physics,'acsnom'    ,acsnom    )
@@ -556,7 +557,6 @@
  call mpas_pool_get_array(diag_physics,'qfx'       ,qfx       )
  call mpas_pool_get_array(diag_physics,'lh'        ,lh        )
  call mpas_pool_get_array(diag_physics,'sfc_albedo',sfc_albedo)
- call mpas_pool_get_array(diag_physics,'sfc_albbck',sfc_albbck)
  call mpas_pool_get_array(diag_physics,'sfc_emiss' ,sfc_emiss )
  call mpas_pool_get_array(diag_physics,'sfcrunoff' ,sfcrunoff )
  call mpas_pool_get_array(diag_physics,'z0'        ,z0        )
@@ -631,7 +631,6 @@ endif
        qfx(i)  = qfx_p(i,j)
        lh(i)   = lh_p(i,j)
        sfc_albedo(i) = sfc_albedo_p(i,j)
-       sfc_albbck(i) = sfc_albbck_p(i,j)
        sfc_emiss(i)  = sfc_emiss_p(i,j)
 
     enddo
@@ -665,6 +664,7 @@ endif
              soilt1(i) = soilt1_p(i,j)
              tsnav(i) = tsnav_p(i,j)
              snowfallac(i) = snowfallac_p(i,j)
+             sfc_albbck(i) = sfc_albbck_p(i,j)
           enddo
        enddo
 
