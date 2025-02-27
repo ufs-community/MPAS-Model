@@ -507,20 +507,19 @@
 !local pointers:
  character(len=StrKIND),pointer:: lsm_scheme
  character(len=StrKIND),pointer:: sfclayer_scheme
+ logical,pointer:: config_frac_seaice
 
  real(kind=RKIND),dimension(:),pointer:: acsnom,acsnow,chs,chs2,cpm,cqs2,qgh,qsfc,grdflx,hfx, qfx,lh,noahres, &
-                                         potevp,sfc_albedo,sfc_albbck,sfc_emiss,sfcrunoff,snopcx,z0,znt
+                                         potevp,sfc_albedo,sfc_emiss,sfcrunoff,snopcx,z0,znt
  real(kind=RKIND),dimension(:),pointer:: snow,snowc,snowh,skintemp,xice
  real(kind=RKIND),dimension(:,:),pointer:: tslb
 
- real(kind=RKIND),dimension(:),pointer  :: cqs,flqc,flhc,dew,qcg,qsg,qvg,snowfallac,soilt1,tsnav
+ real(kind=RKIND),dimension(:),pointer  :: cqs,flqc,flhc,sfc_albbck,dew,qcg,qsg,qvg,snowfallac,soilt1,tsnav
 
  integer,pointer:: globalCells(:)
 
 !local variables and arrays:
  integer:: i,j,n
-!local pointers:
- logical,pointer:: config_frac_seaice
 
 !-----------------------------------------------------------------------------------------------------------------
 !call mpas_log_write('--- enter subroutine seaice_to_MPAS:')
