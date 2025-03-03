@@ -35,6 +35,7 @@
  logical,parameter:: myj      = .false. !true if using Mellor-Yamada PBL scheme.
  logical,parameter:: frpcpn   = .false.
  logical          :: rdlai2d  = .false.
+ logical,parameter:: frpcpn_ruc  = .true.
 
 !urban physics: MPAS does not plan to run the urban physics option.
  integer,parameter:: sf_urban_physics = 0 !activate urban canopy model (=0: no urban canopy) 
@@ -999,7 +1000,7 @@
                     sfcexc         = sfcexc_p      , sfcevp       = sfcevp_p    , myjpbl    = myjpbl,      &
                     dt             = dt_pbl        , ktau         = itimestep   , nsl       = num_soils,   &
                     rainbl         = rainbl_p      , snow         = snow_p      , snowh     = snowh_p,     &
-                    snowc          = snowc_p       , frzfrac      = sr_p        , frpcpn    = frpcpn,      &
+                    snowc          = snowc_p       , frzfrac      = sr_p        , frpcpn    = frpcpn_ruc,  &
                     z3d            = dz_p          , p8w          = pres2_hyd_p , t3d       = t_p,         &
                     qv3d           = qv_p          , qc3d         = qc_p        , rho3d     = rho_p,       &
                     glw            = glw_p         , gsw          = gsw_p       , emiss     = sfc_emiss_p, &
