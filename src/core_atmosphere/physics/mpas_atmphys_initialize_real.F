@@ -943,6 +943,7 @@ end subroutine init_soil_layers_properties
  real(kind=RKIND),dimension(:),pointer  :: vegfra
  real(kind=RKIND),dimension(:),pointer  :: seaice,snoalb,xice
  real(kind=RKIND),dimension(:),pointer  :: skintemp,tmn,xland
+ real(kind=RKIND),dimension(:),pointer  :: snow, snowh
  real(kind=RKIND),dimension(:,:),pointer:: tslb,smois,sh2o,smcrel
 
  logical, pointer :: config_frac_seaice
@@ -978,6 +979,9 @@ end subroutine init_soil_layers_properties
  call mpas_pool_get_array(input, 'skintemp', skintemp)
  call mpas_pool_get_array(input, 'tmn', tmn)
  call mpas_pool_get_array(input, 'xland', xland)
+
+ call mpas_pool_get_array(input, 'snow', snow)
+ call mpas_pool_get_array(input, 'snowh', snowh)
 
  call mpas_pool_get_array(input, 'tslb', tslb)
  call mpas_pool_get_array(input, 'smois', smois)
@@ -1020,6 +1024,9 @@ end subroutine init_soil_layers_properties
        vegfra(iCell) = 0._RKIND
        xland(iCell)  = 1._RKIND
        seaice(iCell) = 1._RKIND
+       !top limit on snow depth on sea ice: 40 cm or 120 mm swe
+       snowh(iCell) = min(snowh(iCell),0.4_RKIND)
+       snow(iCell)  = min(snow(iCell),120._RKIND)
 
        !... recalculate the soil temperature and soil moisture:
        do iSoil = 1, nSoilLevels
