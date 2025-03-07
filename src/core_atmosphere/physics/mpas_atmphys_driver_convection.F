@@ -1163,7 +1163,7 @@
                    enddo  ! j - second row
               enddo ! k
             enddo ! icell
-       else if (bdyMaskCell(icell) > 4  .or. config_gf_sub3d == 0 ) then
+       else !if (bdyMaskCell(icell) > 4  .or. config_gf_sub3d == 0 ) then
             do i = 1, nCellsSolve
             do k = 1, nVertLevels
                  rucuten(k,i)  = rucuten(k,i)  + sub3d_rucuten(k,i)
