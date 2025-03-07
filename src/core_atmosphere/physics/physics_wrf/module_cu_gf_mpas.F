@@ -63,8 +63,8 @@ CONTAINS
               ,rucuten,rvcuten,bilbc,sub3d                      &
               ,pbl_scheme, maxmf, qc3d, qi3d                    &
               ,qc_cu, qi_cu, cldfrac_cu, vcpool ,sig_deep       &
-              ,sub3d_rthcuten,sub3d_rqvcuten,sub3d_rucuten      &
-              ,sub3d_rvcuten,rainncv,refl10cm_cu                &
+              ,sig_deep_far,sub3d_rthcuten,sub3d_rqvcuten       &
+              ,sub3d_rucuten,sub3d_rvcuten,rainncv,refl10cm_cu  &
               ,ims, ime, jms, jme, kms,kme                      &
               ,ids, ide, jds, jde, kds,kde                      &
               ,its, ite, jts, jte, kts,kte)
@@ -120,7 +120,8 @@ CONTAINS
 !inout arguments:
  integer,dimension(ims:ime,jms:jme),intent(inout):: k22_shallow,kbcon_shallow,ktop_shallow
 
- real,dimension(ims:ime,jms:jme),intent(inout):: hbot,htop,raincv,pratec,xmb_total,xmb_shallow,vcpool,sig_deep
+ real,dimension(ims:ime,jms:jme),intent(inout):: hbot,htop,raincv,pratec,xmb_total,xmb_shallow  &
+                                                ,vcpool,sig_deep,sig_deep_far
  real,dimension(ims:ime,kms:kme,jms:jme),intent(inout):: rthcuten,rqvcuten,rqccuten,rqicuten
  real,dimension(ims:ime,kms:kme,jms:jme),intent(inout):: rucuten,rvcuten
  real,dimension(ims:ime,kms:kme,jms:jme),intent(inout),optional:: gdc,gdc2
@@ -140,7 +141,7 @@ CONTAINS
 
  real:: dp,dq,pahfs,pgeoh,pqhfl,zkhvfl,zrho,zws,psum,clwtot
  real,dimension(its:ite):: area_loc,dx_loc,vcpool_d,vcpool_m
- real,dimension(its:ite):: xlandi,hfxi,qfxi,factor,mc_thresh
+ real,dimension(its:ite):: xlandi,hfxi,qfxi,factor,mc_thresh,f_thresh,fm_thresh
  real,dimension(its:ite):: xmb,xmbm,xmbs,xmb_dumm
  real,dimension(its:ite):: ccn
  real,dimension(its:ite):: cuten,psur,pret,pretm,prets,ter11,zqexec,ztexec,pmean,umean,vmean
@@ -149,7 +150,8 @@ CONTAINS
  real,dimension(its:ite,kts:kte):: subten_h,subten_t,subten_q,subten_u,subten_v
  real,dimension(its:ite,kts:kte):: subtenm_h,subtenm_t,subtenm_q,subtenm_u,subtenm_v
  real,dimension(its:ite,kts:kte):: outtm,outqm,outqcm,cupclwm,outum,outvm
- real,dimension(its:ite,kts:kte):: outts,outqs,outqcs,cupclws,outus,outvs,dhdt,gf_mfx
+ real,dimension(its:ite,kts:kte):: outts,outqs,outqcs,cupclws,outus,outvs,dhdt
+ real,dimension(its:ite,kts:kte,jts:jte):: gf_mfx
 
  real,dimension(its:ite,jts:jte):: gswi,edti_out,massi_flx
 
@@ -171,27 +173,23 @@ CONTAINS
  ! local variables on output for diagnostics for new GF/C3 scheme
  !
  real,dimension (its:ite,10)       :: forcing,forcingm
- real,dimension (its:ite)          :: edto,edtd,edtm,frh_out,frhm,frhs
- real                              :: rain_thresh
+ real,dimension (its:ite)          :: edto,edtd,edtm,frh_out,frh_out_far,frhm,frhm_far,frhs
+ real                              :: rain_thresh,total_time
  real,dimension (its:ite,kts:kte)  :: zuo,zdo,zum,zus,zdm,zdd,cnvwt,cnvwtm,cnvwts
   
  itf = min(ite,ide-1)
  ktf = min(kte,kde-1)
  jtf = min(jte,jde-1)
-!write(0,*) '--- its = ', its
-!write(0,*) '--- kts = ', kts
-!write(0,*) '--- jts = ', jts
-!write(0,*) '--- itf = ', itf
-!write(0,*) '--- ktf = ', ktf
-!write(0,*) '--- jtf = ', jtf
 
  ipr = ite
  jpr = jte
-
- imid     = 0
+ total_time=float(itimestep)*dt
+ !print *,'total+_time = ',itimestep,dt,total_time
+ imid     = 1
  ishallow = ishallow_g3
  mc_thresh(:)=0.
- if (dx_loc(its)<6500.) imid = 0
+ f_thresh(:)=0.
+ fm_thresh(:)=0.
  if (trim(pbl_scheme)=="bl_mynn") ishallow = 0
  ishallow=0
  rain_thresh=0. ! (mm/hr)
@@ -207,7 +205,6 @@ CONTAINS
        kbcon_shallow(i,j) = 0
        ktop_shallow(i,j)  = 0
        xmb_shallow(i,j)   = 0.
-       !if(xland(i,j) < 1.)mc_thresh(i)=3.*1.e-4
     enddo
  enddo
 
@@ -272,9 +269,16 @@ CONTAINS
        xmbs(i)     = 0.
        xmb_dumm(i) = 0.
     enddo
-
     do i = its, itf
        dx_loc(i)   = dxCell(i,j)
+       !if(sub3d == 1 )mc_thresh(i)=3.25/dx_loc(i)
+       mc_thresh(i)=0.0
+       f_thresh(i)=1.1
+       !
+       ! for cold start, blend this part in...
+       !
+       if(total_time < 5400.)f_thresh(i) = min(1.,(1. - (total_time/5400. -1.)**2))*f_thresh(i)
+!       f_thresh(i) = 0.
        area_loc(i) = areaCell(i,j)
        ter11(i)    = max(0.,ht(i,j))
        zo(i,kts)   = ter11(i) + 0.5*dz8w(i,1,j)
@@ -301,6 +305,7 @@ CONTAINS
        vcpool_d(i)   = 0.
        vcpool_m(i)   = 0.
     enddo
+ if (dx_loc(its)<4500.) imid = 0
 
      do k = kts, ktf
        do i = its, itf
@@ -334,7 +339,7 @@ CONTAINS
           outvs(i,k)    = 0.
           outv(i,k)    = 0.
 
-          !shallow convection:
+          !shallow or congestus convection:
           tshall(i,k)  = t2d(i,k) + rthblten(i,k,j)*pi(i,k,j)*dt
           qshall(i,k)  = q2d(i,k) + rqvblten(i,k,j)*dt
           dhdt(i,k)    = cp*rthblten(i,k,j)*pi(i,k,j) + xlv*rqvblten(i,k,j)
@@ -378,13 +383,16 @@ CONTAINS
                 ierrm(i)=42 
                 mconv(i) = 0.
           endif
+          !if(rainncv(i,j)/dt*3600. > rain_thresh .and. sub3d == 1 )then
+          !         ierr(i)=44
+          !endif
        !   if((dx_loc(i)<6500.).and.(trim(pbl_scheme)=="bl_mynn").and.(maxmf(i,jts).gt.0.))ierr(i)=555
 ! fore regional domain, blend in tendencies in relaxation zone
           if(bilbc(i,j).eq.7)ierr(i)=556
           factor(i)=(6.-float(bilbc(i,j)))/7.+1./7.
           if(bilbc(i,j) == 0 )factor(i)=1.
-! for high resolution runs, turn off convection if there is already significant precipitation from microphysics          
-          if(rainncv(i,j)/dt*3600. > rain_thresh .and. dx_loc(i) < 6500. .and. sub3d == 1)ierr(i)=44
+          ! for high resolution runs, if subsidence spreading is turned on,
+          ! turn off convection if there is already significant precipitation from microphysics
        enddo
 
     if(use_excess.gt.0 .or. use_excess_sh.gt.0)then
@@ -444,7 +452,9 @@ CONTAINS
          zum(:,:)=0.
          zus(:,:)=0.
          frh_out(:)=0.
+         frh_out_far(:)=0.
          frhm(:)=0.
+         frhm_far(:)=0.
          frhs(:)=0.
 !
 ! if tracers need transporting and/or scavenged (will need to define fscav)
@@ -519,6 +529,7 @@ CONTAINS
               ,ktopm         &
               ,cupclwm       &
               ,frhm          &
+              ,frhm_far      &
               ,ierrm         &
               ,ierrcm        &
               ,nchem         &
@@ -545,7 +556,7 @@ CONTAINS
                                ! betwee -1 and +1
               ,do_capsuppress,cap_suppress_j &
               ,k22m          &
-              ,jminm)
+              ,jminm,mc_thresh,fm_thresh)
       call neg_check('mid',j,dt,q2d,outqm,subtenm_q,outtm,subtenm_t,outum,subtenm_u,  &
                        outvm,subtenm_v,outqcm,pretm   &
                      ,its,ite,kts,kte,itf,ktf,ktopm)
@@ -607,6 +618,7 @@ CONTAINS
               ,ktop          &  ! cloud top
               ,cupclw        &  ! used for direct coupling to radiation, but with tuning factors
               ,frh_out       &  ! fractional coverage
+              ,frh_out_far   &  ! fractional coverage
               ,ierr          &  ! ierr flags are error flags, used for debugging
               ,ierrc         &  ! the following should be set to zero if not available
               ,nchem         &
@@ -632,21 +644,13 @@ CONTAINS
                                 !! betwee -1 and +1
               ,do_capsuppress,cap_suppress_j    &    !         
               ,k22                              &    !
-              ,jmin)                         !
+              ,jmin,mc_thresh,f_thresh)                         !
       call neg_check('deep',j,dt,qcheck,outq,subten_q,outt,subten_t,  &
                       outu,subten_u,outv,subten_v,outqc,pret    &
                      ,its,ite,kts,kte,itf,ktf,ktop)
 
 !    !... shallow convection:
     if(ishallow == 1 )then
-!       call cup_gf_sh( &
-!               xmbs,zo,outqcs,j,aaeq,t2d,q2d,ter11,tshall,qshall,p2d,      &
-!               pret,p2d,outts,outqs,dt,itimestep,psur,us,vs,tcrit,ztexec,  &
-!               zqexec,ccn,ccnclean,rhoi,dx_loc,area_loc,dhdt,kpbli,kbcons, &
-!               ktops,cupclws,k22s,xlandi,gswi,tscl_kf,xlv,r_v,cp,g,        &
-!               ichoice_shallow,0,0,ierrs,ierrcs,autoconv,itf,jtf,ktf,      & 
-!               use_excess_sh,its,ite,jts,jte,kts,kte)
-             !> - Call shallow: cu_gf_sh_run()
 !
         do i = its, ite
           if(ierr(i).ne.0)ierrs(i)=999
@@ -671,17 +675,27 @@ CONTAINS
           ktop_shallow(i,j)  = ktopm(i)
        enddo
    endif
-
-    do i = its, ite
+!
+! turn off deep convection for 3d scale-aware approach,
+! if area coverages is large and microphysics is already active
+!
+        do i = its, ite
+           rain_thresh = 5. * (1.-frh_out(i))
+           if(rain_thresh <= 2.5) rain_thresh = 0.
+           if(ierr(i) == 0 .and. rainncv(i,j)/dt*3600. > rain_thresh .and. sub3d == 1 )then
+                    ierr(i)=44
+                    pret(i)=0.
+                    sig_deep(i,j)=0.
+                    sig_deep_far(i,j)=0.
+                    factor(i)=0.
+           endif
        if(pret(i) .gt. 0. .or. pretm(i).gt.0. .or. prets(i).gt.0.) then
           vcpool(i,j)      = vcpool_d(i)*frh_out(i)
           xmb_total(i,j) = factor(i)*(xmb(i)+xmbm(i)+xmbs(i))
-          sig_deep(i,j)=min(.999,1.-frh_out(i))
-          !sig_deep(i,j)=min(.999,frh_out(i))
+          sig_deep(i,j)=frh_out(i)
+          sig_deep_far(i,j)=frh_out_far(i)
           pratec(i,j)    = factor(i)*(pret(i)+pretm(i)+prets(i))
           raincv(i,j)    = factor(i)*(pret(i)+pretm(i)+prets(i))*dt
-!          if(outt(i,10)*86400. .lt.-1000. .or. subten_t(i,10)*86400. .gt. 1000)print*,'gfmpas1',outt(i,10)*86400.,subten_t(i,10)*86400.
-!          if(outt(i,10)*86400. .lt.-1000. .or. subten_t(i,10)*86400. .gt. 1000)print*,'gfmpas2',outt(i,25)*86400.,subten_t(i,25)*86400.
           ktopmax=max(ktopm(i),ktop(i),ktops(i))
           kbconmax=max(kbconm(i),kbcon(i),kbcons(i))
           
@@ -689,30 +703,26 @@ CONTAINS
           if(kbconmax < hbot(i,j)) hbot(i,j) = kbconmax + .001
        else if (ierr(i).gt.0) then
           sig_deep(i,j)=0.
+          sig_deep_far(i,j)=0.
           factor(i)=0.
        endif
     enddo
 
     !... always save the tendencies of potential temperature, water vapor, cloud water, and cloud ice:
+    !... only use spreading of subsidence for deep convection
     do k = kts, kte
        do i = its, ite
-          rthcuten(i,k,j) = factor(i)*(outts(i,k) + outt(i,k)+outtm(i,k))/pi(i,k,j)
-          rqvcuten(i,k,j) = factor(i)*(outqs(i,k) + outq(i,k)+outqm(i,k))
-          rucuten(i,k,j) = factor(i)*(outu(i,k)+outum(i,k)+outus(i,k))
-          rvcuten(i,k,j) = factor(i)*(outv(i,k)+outvm(i,k)+outvs(i,k))
+          rthcuten(i,k,j) = factor(i)*(outts(i,k) + outt(i,k)+outtm(i,k)+subtenm_t(i,k))/pi(i,k,j)
+          rqvcuten(i,k,j) = factor(i)*(outqs(i,k) + outq(i,k)+outqm(i,k)+subtenm_q (i,k))
+          rucuten(i,k,j) = factor(i)*(outu(i,k)+outum(i,k)+outus(i,k)+subtenm_u (i,k))
+          rvcuten(i,k,j) = factor(i)*(outv(i,k)+outvm(i,k)+outvs(i,k)+subtenm_v (i,k))
           sub3d_rthcuten(i,k,j) = factor(i)*subten_t(i,k)/pi(i,k,j)
           sub3d_rqvcuten(i,k,j) = factor(i)*subten_q (i,k)
           sub3d_rucuten (i,k,j) = factor(i)*subten_u (i,k)
           sub3d_rvcuten (i,k,j) = factor(i)*subten_v (i,k)
 
-!---temporary setting -- must be removed once the subsidence tendencies are correct
-                  !sub3d_rthcuten(i,k,j) = 2.e-5
-                  !sub3d_rqvcuten(i,k,j) = 3.e-8 
-                  !sub3d_rucuten (i,k,j) = 4.e-7 
-                  !sub3d_rvcuten (i,k,j) = 5.e-7
-!---temporary setting -- 
 
-          gf_mfx(i,k) =xmb(i)*zuo(i,k)+xmbm(i)*zum(i,k)+xmbs(i)*zus(i,k)
+          gf_mfx(i,k,j) =xmb(i)*zuo(i,k)+xmbm(i)*zum(i,k)+xmbs(i)*zus(i,k)
           if(t2d(i,k) .lt. tcrit) then
              rqccuten(i,k,j) = 0.
              rqicuten(i,k,j) = factor(i)*(outqcs(i,k) + outqc(i,k) + outqcm(i,k))
@@ -730,42 +740,57 @@ CONTAINS
 
  enddo j_loop
 
+ !-- take care of the j-dimension
  !--- coupling to radiation
       call calc_cldfraction_monan(cldfrac_cu, q, qc3d, qi3d,            &
-     &                 p,t,rho, xland, zo,kpbl,gf_mfx,                  &
+     &                 p,t,rho,xland,ht,kpbl,gf_mfx,dz8w,               &
      &                 ids,ide, jds,jde, kds,kde,                       &
      &                 ims,ime, jms,jme, kms,kme,                       &
      &                 its,ite, jts,jte, kts,kte                        )
 
  !-- convection contribution to radar reflectivity
-      call calc_cu_reflectivity(g,dt,raincv,zo,t,htop,refl10cm_cu,      &
-                                its,ite, jts,jte, kts,kte               )
+      call calc_cu_reflectivity(g,dt,raincv,ht,t,htop,dz8w,refl10cm_cu, &
+     &                 ids,ide, jds,jde, kds,kde,                       &
+     &                 ims,ime, jms,jme, kms,kme,                       &
+                       its,ite, jts,jte, kts,kte                        )
 
  end subroutine cu_grell_freitas
 
 !-----------------------------------------------------------------------------------------------------------------
- subroutine calc_cu_reflectivity(g,dt,raincv,zo,t,htop,refl10cm_cu,     &
-                                      its,ite, jts,jte, kts,kte         )
+ subroutine calc_cu_reflectivity(g,dt,raincv,ht,t,htop,dz8w,refl10cm_cu,&
+     &                 ids,ide, jds,jde, kds,kde,                       &
+     &                 ims,ime, jms,jme, kms,kme,                       &
+                       its,ite, jts,jte, kts,kte                        )
        implicit none
-       integer, intent(in):: its,ite,jts,jte,kts,kte
+       integer, intent(in):: ids,ide, jds,jde, kds,kde,                 &
+     &                       ims,ime, jms,jme, kms,kme,                 &
+     &                       its,ite, jts,jte, kts,kte
        real, intent(in):: g,dt
-       real, dimension(its:ite,kts:kte),intent(in):: zo, t
-       real, dimension(its:ite,jts:jte),intent(in):: htop
+       real, dimension(its:ite,jts:jte),intent(in):: htop, ht
        real, dimension(its:ite,jts:jte),intent(in):: raincv
-       real, dimension(its:ite,kts:kte),intent(out):: refl10cm_cu
-       real, dimension(its:ite)        :: factor, zfrz
+       real,dimension(ims:ime,kms:kme,jms:jme),intent(in):: t, dz8w
+       real,dimension(ims:ime,kms:kme,jms:jme),intent(out):: refl10cm_cu
+
+       real, dimension(its:ite,kts:kte):: zo
+       real, dimension(its:ite)        :: factor, zfrz, ter11
        real :: fctz, delz, cuprate, ze_conv, dbz_sum
        logical :: lfrz
-       integer :: i, k
+       integer :: i, k, j
 
 
+        do j=jts,jte
 
          do i=its,ite
+           ter11(i)    = max(0.,ht(i,j))
+           zo(i,kts)   = ter11(i) + 0.5*dz8w(i,1,j)
+           do k = kts+1, kte
+             zo(i,k) = zo(i,k-1) + 0.5*(dz8w(i,k-1,j)+dz8w(i,k,j))
+           enddo
            factor(i) = 0.0
            lfrz = .true.
            zfrz(i) = zo(i,1)
            do k = kte, kts, -1
-             if (t(i,k) >= 273.15 .and. lfrz) then
+             if (t(i,k,j) >= 273.15 .and. lfrz) then
               zfrz(i) = zo(i,k)
               lfrz = .false.
              endif
@@ -773,14 +798,14 @@ CONTAINS
          enddo
 !
          do i=its,ite
-           if(raincv (i,1) > 0.0 .and. htop(i,1) > 0) then
-             factor(i) = -2./max(1000., zo(i,htop(i,1)) - zfrz(i))
+           if(raincv (i,j) > 0.0 .and. htop(i,j) > 0) then
+             factor(i) = -2./max(1000., zo(i,htop(i,j)) - zfrz(i))
            endif
          enddo
 
          do k=kts,kte
            do i=its,ite
-             if(raincv(i,1) > 0. .and. k <= htop(i,1)) then
+             if(raincv(i,j) > 0. .and. k <= htop(i,j)) then
                fctz = 0.0
                delz = zo(i,k) - zfrz(i)
                if(delz <0.0) then
@@ -788,19 +813,21 @@ CONTAINS
                else
                  fctz = 10.**(factor(i)*delz)
                endif
-               cuprate = raincv(i,1) * 3.6e3 / dt  ! cu precip rate (mm/h)
+               cuprate = raincv(i,j) * 3.6e3 / dt  ! cu precip rate (mm/h)
                ze_conv = 300.0 * cuprate**1.4
                ze_conv = fctz * ze_conv
                dbz_sum = max(-20.0, 10.*log10(ze_conv))
-               refl10cm_cu(i,k) = dbz_sum
+               refl10cm_cu(i,k,j) = dbz_sum
              endif
            enddo
          enddo
 
+        enddo
+
       end subroutine calc_cu_reflectivity
 !=================================================================================================================
       subroutine calc_cldfraction_monan(CLDFRA, qv, qc, qi,             &
-     &                 p,t,rho, XLAND, zgrid,kpbl,gf_mfx,               &
+     &                 p,t,rho,XLAND,ht,kpbl,gf_mfx,dz8w,               &
      &                 ids,ide, jds,jde, kds,kde,                       &
      &                 ims,ime, jms,jme, kms,kme,                       &
      &                 its,ite, jts,jte, kts,kte                        )
@@ -887,9 +914,8 @@ CONTAINS
      &                      its,ite, jts,jte, kts,kte
       integer, dimension(ims:ime,jms:jme),      intent(in):: kpbl  !index of PBL top
       real, dimension(ims:ime,kms:kme,jms:jme), intent(in):: qv,p,t,rho
-      real, dimension(ims:ime,kms:kme,jms:jme), intent(in):: qc,qi
-      real, dimension(ims:ime,kms:kme), intent(in):: zgrid,gf_mfx
-      real, dimension(ims:ime,jms:jme),         intent(in):: xland
+      real, dimension(ims:ime,kms:kme,jms:jme), intent(in):: qc,qi,dz8w,gf_mfx
+      real, dimension(ims:ime,jms:jme), intent(in):: ht,xland
       ! fractional cloudiness (between 0 and 1)
       real, dimension(ims:ime,kms:kme,jms:jme), intent(inout):: cldfra  
 
@@ -904,6 +930,7 @@ CONTAINS
       real, dimension(its:ite,kts:kte) :: PMFLX  ! convective mass flux (kg/(s m^2))
       real, dimension(its:ite,kts:kte) :: PRC    ! grid scale r_c mixing ratio (kg/kg)
       real, dimension(its:ite,kts:kte) :: PRI    ! grid scale r_i (kg/kg)
+      real, dimension(its:ite,kts:kte) :: ZGRID
       !
       !
       integer  ::  JKT, JKP, JKM,K,i,j     ! loop index
@@ -912,6 +939,7 @@ CONTAINS
       real,    dimension(its:ite,kts:kte) :: PCLDFR          ! convective clouds
       integer, dimension(its:ite)   :: ITPL    ! top levels of tropopause/highest inversion
       real,    dimension(its:ite)   :: ZTMIN   ! min Temp. related to ITPL
+      real,    dimension(its:ite)   :: ter11
       !
       real :: ZTEMP, ZLV, ZLS, ZTL, ZPV, ZQSL, ZPIV, ZQSI, ZFRAC, ZCOND, ZCPD ! thermodynamics
       real :: ZLL, DZZ, ZZZ ! length scales
@@ -935,6 +963,13 @@ CONTAINS
       !-------------------------------------------------------------------------------
       !
       do j = jts,jte
+        do i = its,ite
+         ter11(i)    = max(0.,ht(i,j))
+         zgrid(i,kts)   = ter11(i) + 0.5*dz8w(i,1,j)
+         do k = kts+1, kte
+           zgrid(i,k) = zgrid(i,k-1) + 0.5*(dz8w(i,k-1,j)+dz8w(i,k,j))
+         enddo
+        enddo
       
       do k = kts,kte
       do i = its,ite
@@ -945,7 +980,7 @@ CONTAINS
          pt    (i,k)   =  t(i,k,j)
          ppabs (i,k)   =  p(i,k,j)
          pzz   (i,k)   =  zgrid(i,k)-zgrid(i,1)
-         pmflx (i,k)   =  gf_mfx(i,k)
+         pmflx (i,k)   =  gf_mfx(i,k,j)
       enddo
       enddo
 

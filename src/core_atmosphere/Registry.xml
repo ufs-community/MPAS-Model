@@ -479,6 +479,7 @@
 			<var name="localVerticalUnitVectors"/>
 			<var name="cellTangentPlane"/>
 			<var name="cellsOnCell"/>
+			<var name="cellsOnCellsOnCell"/>
 			<var name="verticesOnCell"/>
 			<var name="verticesOnEdge"/>
 			<var name="edgesOnVertex"/>
@@ -869,6 +870,7 @@
                         <var name="sub3d_rucuten" packages="cu_grell_freitas_in"/>
                         <var name="sub3d_rvcuten" packages="cu_grell_freitas_in"/>
                         <var name="sigma_deep" packages="cu_grell_freitas_in"/>
+			<var name="sigma_deep_far" packages="cu_grell_freitas_in"/>
 			<var name="sfc_albbck"/>
 			<var name="skintemp"/>
 			<var name="snow"/>
@@ -2881,6 +2883,10 @@
 
                <var name="sigma_deep" type="real" dimensions="nCells Time" units="-"
                      description="scale-aware parameter for deep convection"
+                     packages="cu_grell_freitas_in"/>
+
+	       <var name="sigma_deep_far" type="real" dimensions="nCells Time" units="-"
+                     description="Second gridpoint fractional coverage for deep convection"
                      packages="cu_grell_freitas_in"/>
 
 

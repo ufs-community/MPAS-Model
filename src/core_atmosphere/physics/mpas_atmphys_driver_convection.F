@@ -31,7 +31,6 @@
           driver_convection,       &
           update_convection_step1, &
           update_convection_step2
- !
  ! Abstract interface for routine used to communicate halos of fields
  ! in a named group
  !
@@ -183,6 +182,7 @@
        if(.not.allocated(xland_p)        ) allocate(xland_p(ims:ime,jms:jme)            )
 
        if(.not.allocated(sigma_deep_p)   ) allocate(sigma_deep_p(ims:ime,jms:jme)       )
+       if(.not.allocated(sigma_deep_f_p) ) allocate(sigma_deep_f_p(ims:ime,jms:jme)       )
 
        if(.not.allocated(rthblten_p)     ) allocate(rthblten_p(ims:ime,kms:kme,jms:jme) )
        if(.not.allocated(rthdynten_p)    ) allocate(rthdynten_p(ims:ime,kms:kme,jms:jme))
@@ -205,10 +205,10 @@
        do i = its,ite
        do j = jts,jte
           sigma_deep_p(i,j) = 0._RKIND
+          sigma_deep_f_p(i,j) = 0._RKIND
        enddo
        enddo
        call mpas_pool_get_config(configs,'config_gf_sub3d',config_gf_sub3d)
-!       if(config_gf_sub3d > 0) then
             if(.not.allocated(sub3d_rthcuten_p)) allocate(sub3d_rthcuten_p(ims:ime,kms:kme,jms:jme)  )
             if(.not.allocated(sub3d_rqvcuten_p)) allocate(sub3d_rqvcuten_p(ims:ime,kms:kme,jms:jme)  )
             if(.not.allocated(sub3d_rucuten_p))  allocate(sub3d_rucuten_p (ims:ime,kms:kme,jms:jme)  )
@@ -223,13 +223,6 @@
             enddo
             enddo
             enddo
-!       else
-!            if(.not.allocated(sub3d_rthcuten_p)) allocate(sub3d_rthcuten_p(0,0,0)  )
-!            if(.not.allocated(sub3d_rqvcuten_p)) allocate(sub3d_rqvcuten_p(0,0,0)  )
-!            if(.not.allocated(sub3d_rucuten_p))  allocate(sub3d_rucuten_p (0,0,0)  )
-!            if(.not.allocated(sub3d_rvcuten_p))  allocate(sub3d_rvcuten_p (0,0,0)  )
-!       endif
-
     case ("cu_kain_fritsch")
        if(.not.allocated(dx_p)       ) allocate(dx_p(ims:ime,jms:jme)              )
        if(.not.allocated(area_p)     ) allocate(area_p(ims:ime,jms:jme)            )
@@ -381,6 +374,7 @@
        if(allocated(cldfrac_cu_p)   ) deallocate(cldfrac_cu_p   )
        if(allocated(refl10cm_cu_p)  ) deallocate(refl10cm_cu_p  )
        if(allocated(sigma_deep_p)   ) deallocate(sigma_deep_p   )
+       if(allocated(sigma_deep_f_p) ) deallocate(sigma_deep_f_p   )
        if(allocated(sub3d_rthcuten_p)) deallocate(sub3d_rthcuten_p)
        if(allocated(sub3d_rqvcuten_p)) deallocate(sub3d_rqvcuten_p)
        if(allocated(sub3d_rucuten_p) ) deallocate(sub3d_rucuten_p )
@@ -531,7 +525,7 @@
  call mpas_pool_get_config(configs,'config_gfconv_closure_deep',gfconv_closure_deep)
  call mpas_pool_get_config(configs,'config_gf_sub3d',config_gf_sub3d)
  sub3d=0
- if(config_gf_sub3d > 0)sub3d=1
+ if(config_gf_sub3d > 0) sub3d=config_gf_sub3d  !sub3d=1
  call mpas_pool_get_config(configs,'config_gfconv_closure_shallow',gfconv_closure_shallow)
  call mpas_pool_get_config(configs,'config_len_disp'         ,len_disp         )
  call mpas_pool_get_config(configs,'config_do_restart'       ,config_do_restart)
@@ -592,6 +586,7 @@
              sub3d_rthcuten  = sub3d_rthcuten_p       , sub3d_rqvcuten= sub3d_rqvcuten_p, &
              sub3d_rucuten   = sub3d_rucuten_p        , sub3d_rvcuten = sub3d_rvcuten_p , &
              ichoice_deep    = gfconv_closure_deep    , sig_deep      = sigma_deep_p    , &
+             sig_deep_far    = sigma_deep_f_p                                           , &
              ichoice_shallow = gfconv_closure_shallow , bilbc         = bilbc_p         , &
              ishallow_g3     = ishallow               , sub3d         = sub3d           , &
              pbl_scheme      = pbl_scheme             , maxmf         = maxmfbl_p       , &
@@ -732,10 +727,9 @@
  integer,dimension(:),pointer:: kpbl,k22_shallow,kbcon_shallow,ktop_shallow,ktop_deep
  integer,dimension(:),pointer:: bdyMaskCell
  real(kind=RKIND),dimension(:),pointer  :: areaCell,meshDensity
- real(kind=RKIND),dimension(:),pointer  :: nca,cubot,cutop,cuprec,raincv
- real(kind=RKIND),dimension(:),pointer  :: rainncv,vcpool,sigma_deep
+ real(kind=RKIND),dimension(:),pointer  :: nca,cubot,cutop,cuprec,rainncv,raincv,vcpool
  real(kind=RKIND),dimension(:),pointer  :: gsw,hfx,qfx,xland
- real(kind=RKIND),dimension(:),pointer  :: xmb_total,xmb_shallow
+ real(kind=RKIND),dimension(:),pointer  :: xmb_total,xmb_shallow,sigma_deep,sigma_deep_far
  real(kind=RKIND),dimension(:,:),pointer:: zgrid
  real(kind=RKIND),dimension(:,:),pointer:: qc_cu,qi_cu
  real(kind=RKIND),dimension(:,:),pointer:: w0avg
@@ -808,6 +802,7 @@
        call mpas_pool_get_array(diag_physics,'cldfrac_cu'   ,cldfrac_cu   )
        call mpas_pool_get_array(diag_physics,'refl10cm_cu'  ,refl10cm_cu  )
        call mpas_pool_get_array(diag_physics,'sigma_deep'   ,sigma_deep   )
+       call mpas_pool_get_array(diag_physics,'sigma_deep_far'   ,sigma_deep_far )
 
        call mpas_pool_get_array(tend_physics,'rqvblten'  ,rqvblten  )
        call mpas_pool_get_array(tend_physics,'rqvdynten' ,rqvdynten )
@@ -840,6 +835,7 @@
           ktop_deep_p(i,j)     = ktop_deep(i)
           vcpool_p(i,j)        = vcpool(i)
           sigma_deep_p(i,j)    = sigma_deep(i)
+          sigma_deep_f_p(i,j)  = sigma_deep_far(i)
 
           do k = kts,kte
              qccu_p(i,k,j)      = qc_cu(k,i)
@@ -986,13 +982,13 @@
 
 !local variables:
  integer:: i,k,j
- integer:: iCell,ineighbor
+ integer:: iCell,ineighbor,ineighbor_far
 
 !local pointers:
  character(len=StrKIND),pointer:: convection_scheme
  integer,dimension(:),pointer:: k22_shallow,kbcon_shallow,ktop_shallow,ktop_deep
- real(kind=RKIND),dimension(:),pointer  :: nca,cubot,cutop,cuprec,raincv
- real(kind=RKIND),dimension(:),pointer  :: rainncv,vcpool,sigma_deep
+ real(kind=RKIND),dimension(:),pointer  :: nca,cubot,cutop,cuprec,rainncv,raincv,vcpool
+ real(kind=RKIND),dimension(:),pointer  :: sigma_deep,sigma_deep_far
  real(kind=RKIND),dimension(:),pointer  :: xmb_total,xmb_shallow
  real(kind=RKIND),dimension(:,:),pointer:: qc_cu,qi_cu
  real(kind=RKIND),dimension(:,:),pointer:: w0avg
@@ -1001,8 +997,8 @@
  real(kind=RKIND),dimension(:,:),pointer:: cldfrac_cu,refl10cm_cu
  real(kind=RKIND),dimension(:,:),pointer:: sub3d_rucuten,sub3d_rvcuten,sub3d_rthcuten,sub3d_rqvcuten
  integer,pointer:: config_gf_sub3d,nCellsSolve
- integer, dimension(:), pointer:: nEdgesOnCell,bdyMaskCell
- integer, dimension(:,:), pointer:: cellsOnCell
+ integer, dimension(:), pointer:: nEdgesOnCell,bdyMaskCell,ncellsOnCellsOnCell
+ integer, dimension(:,:), pointer:: cellsOnCell,cellsOnCellsOnCell
  logical result
 
 !-----------------------------------------------------------------------------------------------------------------
@@ -1049,6 +1045,7 @@
 
        call mpas_pool_get_array(diag_physics,'vcpool'       ,vcpool       )
        call mpas_pool_get_array(diag_physics,'sigma_deep'  ,sigma_deep    )
+       call mpas_pool_get_array(diag_physics,'sigma_deep_far',sigma_deep_far  )
        call mpas_pool_get_array(tend_physics,'rucuten',rucuten)
        call mpas_pool_get_array(tend_physics,'rvcuten',rvcuten)
        call mpas_pool_get_array(mesh,'bdyMaskCell',bdyMaskCell)
@@ -1065,6 +1062,7 @@
           ktop_deep(i)     = ktop_deep_p(i,j)
           vcpool(i)        = vcpool_p(i,j)
           sigma_deep(i)    = sigma_deep_p(i,j)
+          sigma_deep_far(i)= sigma_deep_f_p(i,j)
 
           do k = kts,kte
              qc_cu(k,i)    = qccu_p(i,k,j)
@@ -1098,7 +1096,9 @@
             !
             !
        call mpas_pool_get_array(mesh, 'cellsOnCell', cellsOnCell)
+       call mpas_pool_get_array(mesh, 'cellsOnCellsOnCell', cellsOnCellsonCell)
        call mpas_pool_get_array(mesh, 'nEdgesOnCell', nEdgesOnCell)
+       call mpas_pool_get_array(mesh, 'nCellsOnCellsOnCell',ncellsOnCellsonCell)
        call mpas_pool_get_dimension(mesh, 'nCellsSolve', nCellsSolve)
               if(config_gf_sub3d > 0) then
             !
@@ -1107,37 +1107,63 @@
 
             call exchange_halo_group(block % domain, 'physics:sub3d_cuten')
 
-            !-- part 3: spread the subsidence tendencies to the 1st neighbours
-!               print *,'sub3d1 = '
+            !-- part 3: spread the subsidence tendencies to the 1st neighbors
             do iCell = 1, nCellsSolve
             ! do not do this at the boundary of the regional domain!
-            if(bdyMaskCell(icell) == 7 )cycle
+            !if(bdyMaskCell(icell) == 7 )cycle
+            if(bdyMaskCell(iCell) > 4 )cycle
               do k = 1, nVertLevels
-                 rthcuten(k,iCell) = rthcuten(k,iCell) + sigma_deep(iCell) * sub3d_rthcuten(k,iCell)
-                 rqvcuten(k,iCell) = rqvcuten(k,iCell) + sigma_deep(iCell) * sub3d_rqvcuten(k,iCell)
-                 rucuten(k,iCell)  = rucuten(k,iCell)  + sigma_deep(iCell) * sub3d_rucuten(k,iCell)
-                 rvcuten(k,iCell)  = rvcuten(k,iCell)  + sigma_deep(iCell) * sub3d_rvcuten(k,iCell)
+                 rthcuten(k,iCell) = rthcuten(k,iCell) + (1._RKIND - sigma_deep(iCell)) * sub3d_rthcuten(k,iCell)
+                 rqvcuten(k,iCell) = rqvcuten(k,iCell) + (1._RKIND - sigma_deep(iCell)) * sub3d_rqvcuten(k,iCell)
+                 rucuten(k,iCell)  = rucuten(k,iCell)  + (1._RKIND - sigma_deep(iCell)) * sub3d_rucuten(k,iCell)
+                 rvcuten(k,iCell)  = rvcuten(k,iCell)  + (1._RKIND - sigma_deep(iCell)) * sub3d_rvcuten(k,iCell)
                  do i = 1, nEdgesOnCell(iCell)
                    ineighbor = cellsOnCell(i,iCell)
-                   ! do not do this if there is no convection in that neighbour cell!
+                   ! do not do this if there is no convection in that neighbor cell!
+                   ! ineighbor here is the i-th cell from the first row, which should have CellsOnCells elements
                    if(sigma_deep(ineighbor) == 0.)cycle
+! do this for first row cells
+! 1-sigma_deep-sigma_deep_far what comes in from the first row neighbor,
+! 1-sigma_deep_far            what xomes in from second row neighbor
+
                    rthcuten(k,iCell) = rthcuten(k,iCell) + &
-                                       (1._RKIND - sigma_deep(ineighbor))*sub3d_rthcuten(k,ineighbor)/ &
-                                       real(nEdgesOnCell(ineighbor),RKIND)
+                                       (sigma_deep(ineighbor)- sigma_deep_far(ineighbor)) &
+                                       *sub3d_rthcuten(k,ineighbor)/ &
+                                       real(nEdgesOnCell(icell),RKIND)
                    rqvcuten(k,iCell) = rqvcuten(k,iCell) + &
-                                       (1._RKIND - sigma_deep(ineighbor))*sub3d_rqvcuten(k,ineighbor)/ &
-                                       real(nEdgesOnCell(ineighbor),RKIND)
+                                       (sigma_deep(ineighbor)- sigma_deep_far(ineighbor)) &
+                                       *sub3d_rqvcuten(k,ineighbor)/ &
+                                       real(nEdgesOnCell(icell),RKIND)
                    rucuten(k,iCell) = rucuten(k,iCell) + &
-                                       (1._RKIND - sigma_deep(ineighbor))*sub3d_rucuten(k,ineighbor)/ &
-                                       real(nEdgesOnCell(ineighbor),RKIND)
+                                       (sigma_deep(ineighbor) - sigma_deep_far(ineighbor)) &
+                                      *sub3d_rucuten(k,ineighbor)/ &
+                                       real(nEdgesOnCell(icell),RKIND)
                    rvcuten(k,iCell) = rvcuten(k,iCell) + &
-                                       (1._RKIND - sigma_deep(ineighbor))*sub3d_rvcuten(k,ineighbor)/ &
-                                       real(nEdgesOnCell(ineighbor),RKIND)
-                 enddo
-              enddo
-            enddo
-       else  ! no subsidence spreading
-               !print *,'sub3d0 = '
+                                       (sigma_deep(ineighbor)- sigma_deep_far(ineighbor))  &
+                                       *sub3d_rvcuten(k,ineighbor)/ &
+                                       real(nEdgesOnCell(icell),RKIND)
+                   enddo ! i, first row
+! now for second row for this cell 
+!
+                   do j=1,nCellsOnCellsOnCell(icell)
+                   ! ineighbor_far here is the j-th cell from the second row, which should have nCellsOnCellsOnCell elements
+                   ineighbor_far = cellsOnCellsOnCell(j,iCell)
+                   rthcuten(k,iCell) = rthcuten(k,iCell) + &
+                                       sigma_deep_far(ineighbor_far)*sub3d_rthcuten(k,ineighbor_far)/ &
+                                       real(nCellsOnCellsOnCell(icell),RKIND)                               
+                   rqvcuten(k,iCell) = rqvcuten(k,iCell) + &
+                                       sigma_deep_far(ineighbor_far)*sub3d_rqvcuten(k,ineighbor_far)/ &
+                                       real(nCellsOnCellsOnCell(icell),RKIND)
+                   rucuten(k,iCell) = rucuten(k,iCell) + &
+                                       sigma_deep_far(ineighbor_far)*sub3d_rucuten(k,ineighbor_far)/ &
+                                       real(nCellsOnCellsOnCell(icell),RKIND)
+                   rvcuten(k,iCell) = rvcuten(k,iCell) + &
+                                       sigma_deep_far(ineighbor_far)*sub3d_rvcuten(k,ineighbor_far)/ &
+                                       real(nCellsOnCellsOnCell(icell),RKIND)
+                   enddo  ! j - second row
+              enddo ! k
+            enddo ! icell
+       else if (bdyMaskCell(icell) > 4  .or. config_gf_sub3d == 0 ) then
             do i = 1, nCellsSolve
             do k = 1, nVertLevels
                  rucuten(k,i)  = rucuten(k,i)  + sub3d_rucuten(k,i)
