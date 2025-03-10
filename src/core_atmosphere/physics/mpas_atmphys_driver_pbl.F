@@ -1460,7 +1460,7 @@
                   rthraten   = rthraten_p   , pblh       = hpbl_p      , kpbl        = kpbl_p           , &
                   cldfra_bl  = cldfrabl_p   , qc_bl      = qcbl_p      , qi_bl       = qibl_p           , &
                   maxwidth   = maxwidthbl_p , maxmf      = maxmfbl_p   , ztop_plume  = zbl_plume_p      , &
-                  excess_h   = excessh_p    , excess_q   = excessq_h   ,                                  &
+                  excess_h   = excessh_p    , excess_q   = excessq_p   ,                                  &
                   qke        = qke_p        , qke_adv    = qkeadv_p    ,                                  &
                   tsq        = tsq_p        , qsq        = qsq_p       , cov         = cov_p            , &
                   el_pbl     = elpbl_p      , rublten    = rublten_p   , rvblten     = rvblten_p        , &
