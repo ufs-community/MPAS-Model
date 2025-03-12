@@ -16,11 +16,16 @@
 
  use mpas_atmphys_utilities
  use module_mp_tempo_params, only: ntb_arc,ntb_arw,ntb_art,ntb_arr,ntb_ark,tnccn_act, &
-      naCCN1,naCCN0,naIN0,naIN1,nwfa_default,aero_max
-                              
+      naCCN1,naCCN0,naIN0,naIN1,nwfa_default,aero_max, &
+      nc_ml_input, nc_ml_nodes, nc_ml_output, &
+      nr_ml_input, nr_ml_nodes, nr_ml_output, &
+      nc_ml_trans_mean, nc_ml_trans_var, &
+      nc_ml_w00, nc_ml_w01, nc_ml_b00, nc_ml_b01
+ use module_mp_tempo_ml, only: MLdata, tempo_save_or_read_ml_data
+
  implicit none
  private
- public:: init_tempo_aerosols_forMPAS
+ public:: init_tempo_aerosols_forMPAS, tempo_ml_init
 
 !MPAS main initialization of the TEMPO parameterization of cloud microphysics with nucleation of cloud
 !droplets based on distributions of CCNs and INs (aerosol-aware parameterization).
@@ -28,6 +33,44 @@
  
  contains
 
+!=================================================================================================================
+ subroutine tempo_ml_init()
+! Called once to initial data for tempo_ml
+!=================================================================================================================
+
+!local variables and pointers:
+ type(MLdata), dimension(2) :: tempo_ml_data
+
+ ! Cloud water
+ tempo_ml_data(1)%input_size = nc_ml_input
+ tempo_ml_data(1)%node_size = nc_ml_nodes
+ tempo_ml_data(1)%output_size = nc_ml_output
+
+ ! Rain water
+ tempo_ml_data(2)%input_size = nr_ml_input
+ tempo_ml_data(2)%node_size = nr_ml_nodes
+ tempo_ml_data(2)%output_size = nr_ml_output
+
+ if (.not.allocated(tempo_ml_data(1)%transform_mean)) allocate(tempo_ml_data(1)%transform_mean(nc_ml_input))
+ if (.not.allocated(tempo_ml_data(1)%transform_var)) allocate(tempo_ml_data(1)%transform_var(nc_ml_input))
+
+ tempo_ml_data(1)%transform_mean = nc_ml_trans_mean
+ tempo_ml_data(1)%transform_var = nc_ml_trans_mean
+
+ if (.not.allocated(tempo_ml_data(1)%weights00)) allocate(tempo_ml_data(1)%weights00(nc_ml_input,nc_ml_nodes))
+ if (.not.allocated(tempo_ml_data(1)%weights01)) allocate(tempo_ml_data(1)%weights01(nc_ml_nodes,nc_ml_output))
+ if (.not.allocated(tempo_ml_data(1)%bias00)) allocate(tempo_ml_data(1)%bias00(nc_ml_nodes))
+ if (.not.allocated(tempo_ml_data(1)%bias01)) allocate(tempo_ml_data(1)%bias01(nc_ml_output))
+
+ tempo_ml_data(1)%weights00 = reshape(nc_ml_w00, (/nc_ml_input, nc_ml_nodes/), order=(/2,1/))
+ tempo_ml_data(1)%weights01 = reshape(nc_ml_w01, (/nc_ml_nodes, nc_ml_output/))
+ tempo_ml_data(1)%bias00 = nc_ml_b00
+ tempo_ml_data(1)%bias01 = nc_ml_b01
+
+ ! Save neural network
+ call tempo_save_or_read_ml_data(ml_data_in=tempo_ml_data)
+
+ end subroutine tempo_ml_init
 
 !=================================================================================================================
  subroutine init_tempo_aerosols_forMPAS(do_restart,dminfo,mesh,state,time_lev,diag_physics)
