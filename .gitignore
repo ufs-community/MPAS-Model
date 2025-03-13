@@ -19,6 +19,7 @@ src/operators/*.f90
 # Executables
 *_model
 build_tables
+build_tables_tempo
 
 # NetCDF Files
 *.nc
