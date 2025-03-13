@@ -71,7 +71,7 @@ type(mpas_pool_type),intent(in):: configs
  if (.not.allocated(tempo_ml_data(1)%transform_var)) allocate(tempo_ml_data(1)%transform_var(nc_ml_input))
 
  tempo_ml_data(1)%transform_mean = nc_ml_trans_mean
- tempo_ml_data(1)%transform_var = nc_ml_trans_mean
+ tempo_ml_data(1)%transform_var = nc_ml_trans_var
 
  if (.not.allocated(tempo_ml_data(1)%weights00)) allocate(tempo_ml_data(1)%weights00(nc_ml_input,nc_ml_nodes))
  if (.not.allocated(tempo_ml_data(1)%weights01)) allocate(tempo_ml_data(1)%weights01(nc_ml_nodes,nc_ml_output))
@@ -84,9 +84,25 @@ type(mpas_pool_type),intent(in):: configs
  tempo_ml_data(1)%bias01 = nc_ml_b01
 
  ! Rain water
- tempo_ml_data(2)%input_size = nr_ml_input
- tempo_ml_data(2)%node_size = nr_ml_nodes
- tempo_ml_data(2)%output_size = nr_ml_output
+ tempo_ml_data(2)%input_size = nc_ml_input
+ tempo_ml_data(2)%node_size = nc_ml_nodes
+ tempo_ml_data(2)%output_size = nc_ml_output
+
+ if (.not.allocated(tempo_ml_data(2)%transform_mean)) allocate(tempo_ml_data(2)%transform_mean(nc_ml_input))
+ if (.not.allocated(tempo_ml_data(2)%transform_var)) allocate(tempo_ml_data(2)%transform_var(nc_ml_input))
+
+ tempo_ml_data(2)%transform_mean = nc_ml_trans_mean
+ tempo_ml_data(2)%transform_var = nc_ml_trans_var
+
+ if (.not.allocated(tempo_ml_data(2)%weights00)) allocate(tempo_ml_data(2)%weights00(nc_ml_input,nc_ml_nodes))
+ if (.not.allocated(tempo_ml_data(2)%weights01)) allocate(tempo_ml_data(2)%weights01(nc_ml_nodes,nc_ml_output))
+ if (.not.allocated(tempo_ml_data(2)%bias00)) allocate(tempo_ml_data(2)%bias00(nc_ml_nodes))
+ if (.not.allocated(tempo_ml_data(2)%bias01)) allocate(tempo_ml_data(2)%bias01(nc_ml_output))
+
+ tempo_ml_data(2)%weights00 = reshape(nc_ml_w00, (/nc_ml_input, nc_ml_nodes/), order=(/2,1/))
+ tempo_ml_data(2)%weights01 = reshape(nc_ml_w01, (/nc_ml_nodes, nc_ml_output/))
+ tempo_ml_data(2)%bias00 = nc_ml_b00
+ tempo_ml_data(2)%bias01 = nc_ml_b01
 
  ! Save neural network
  call tempo_save_or_read_ml_data(ml_data_in=tempo_ml_data)
