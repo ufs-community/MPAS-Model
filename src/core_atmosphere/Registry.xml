@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 
-<registry model="mpas" core="atmosphere" core_abbrev="atm" version="8.2.2-2.7">
+<registry model="mpas" core="atmosphere" core_abbrev="atm" version="8.2.2-2.8">
 
 <!-- **************************************************************************************** -->
 <!-- ************************************** Dimensions ************************************** -->
