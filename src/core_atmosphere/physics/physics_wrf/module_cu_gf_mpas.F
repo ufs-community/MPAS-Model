@@ -273,7 +273,7 @@ CONTAINS
        dx_loc(i)   = dxCell(i,j)
        !if(sub3d == 1 )mc_thresh(i)=3.25/dx_loc(i)
        mc_thresh(i)=0.0
-       f_thresh(i)=1.1
+       f_thresh(i)=0.9
        !
        ! for cold start, blend this part in...
        !
