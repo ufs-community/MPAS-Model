@@ -304,6 +304,8 @@
     refl10cm_cu_p      !
  real(kind=RKIND),dimension(:,:),allocatable:: &
     refl10cm_1km_p
+ real(kind=RKIND),dimension(:,:,:),allocatable:: &
+    qh_size_p, qg_size_p
 !=================================================================================================================
 !... variables and arrays related to parameterization of convection:
 !=================================================================================================================
