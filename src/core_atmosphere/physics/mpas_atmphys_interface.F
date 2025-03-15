@@ -663,7 +663,7 @@
  real(kind=RKIND),dimension(:),pointer    :: nifa2d,nwfa2d,nt_c,mu_c
 !TEMPO/NSSL
  character(len=StrKIND),pointer:: nssl_moments
- logical,pointer:: config_tempo_hailaware, config_tempo_aerosolaware
+ logical,pointer:: config_tempo_hailaware, config_tempo_aerosolaware, config_tempo_qh
  integer,pointer:: index_qh
  integer,pointer:: index_zrw,index_zgw,index_zhw
  integer,pointer:: index_ns,index_ng,index_nh,index_nccn
@@ -867,19 +867,30 @@
 
              if (config_tempo_hailaware) then
                 call mpas_pool_get_dimension(state,'index_ng'  ,index_ng  )
-                call mpas_pool_get_dimension(state,'index_qh'  ,index_qh  )
                 call mpas_pool_get_dimension(state,'index_volg' ,index_volg  )
 
-                qh   => scalars(index_qh,:,:)
                 ng   => scalars(index_ng,:,:)
                 volg => scalars(index_volg,:,:)
 
                 do j = jts, jte
                 do k = kts, kte
                 do i = its, ite
-                   qh_p(i,k,j) = qh(k,i)
                    ng_p(i,k,j) = ng(k,i)
                    volg_p(i,k,j) = volg(k,i)
+                enddo
+                enddo
+                enddo
+             endif
+
+             if (config_tempo_qh) then
+                call mpas_pool_get_dimension(state,'index_qh'  ,index_qh  )
+
+                qh   => scalars(index_qh,:,:)
+
+                do j = jts, jte
+                do k = kts, kte
+                do i = its, ite
+                   qh_p(i,k,j) = qh(k,i)
                 enddo
                 enddo
                 enddo
@@ -1117,7 +1128,7 @@
 !local pointers:
  character(len=StrKIND),pointer:: mp_scheme
  character(len=StrKIND),pointer:: nssl_moments
- logical,pointer:: config_tempo_hailaware, config_tempo_aerosolaware
+ logical,pointer:: config_tempo_hailaware, config_tempo_aerosolaware, config_tempo_qh
  integer,pointer:: index_qv,index_qc,index_qr,index_qi,index_qs,index_qg
  integer,pointer:: index_nc,index_ni,index_nr,index_nifa,index_nwfa
 !TEMPO/NSSL
@@ -1355,20 +1366,31 @@
              endif
 
              if (config_tempo_hailaware) then
-                call mpas_pool_get_dimension(state,'index_qh'  ,index_qh  )
                 call mpas_pool_get_dimension(state,'index_ng'  ,index_ng  )
                 call mpas_pool_get_dimension(state,'index_volg' ,index_volg  )
 
-                qh   => scalars(index_qh,:,:)
                 ng   => scalars(index_ng,:,:)
                 volg => scalars(index_volg,:,:)
 
                 do j = jts, jte
                 do k = kts, kte
                 do i = its, ite
-                   qh(k,i) = qh_p(i,k,j)
                    ng(k,i) = ng_p(i,k,j)
                    volg(k,i) = volg_p(i,k,j)
+                enddo
+                enddo
+                enddo
+             endif
+
+             if (config_tempo_qh) then
+                call mpas_pool_get_dimension(state,'index_qh'  ,index_qh  )
+
+                qh   => scalars(index_qh,:,:)
+
+                do j = jts, jte
+                do k = kts, kte
+                do i = its, ite
+                   qh(k,i) = qh_p(i,k,j)
                 enddo
                 enddo
                 enddo

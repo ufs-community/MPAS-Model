@@ -109,13 +109,14 @@
 !local pointers:
  character(len=StrKIND),pointer:: microp_scheme
  character(len=StrKIND),pointer:: nssl_moments
- logical,pointer:: config_tempo_hailaware, config_tempo_aerosolaware
+ logical,pointer:: config_tempo_hailaware, config_tempo_aerosolaware, config_tempo_qh
 
 !-----------------------------------------------------------------------------------------------------------------
 
  call mpas_pool_get_config(configs,'config_microp_scheme',microp_scheme)
  call mpas_pool_get_config(configs,'config_nssl_moments',nssl_moments)
  call mpas_pool_get_config(configs,'config_tempo_hailaware',config_tempo_hailaware)
+ call mpas_pool_get_config(configs,'config_tempo_qh',config_tempo_qh)
  call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
 
 !sounding variables:
@@ -199,8 +200,10 @@
 
           ! Allocate TEMPO options based on config flags insead of adding more nested select cases
           ! These flags are associated with appropriate packages in mpas_atmphys_packages.F
-          if (config_tempo_hailaware) then
+          if (config_tempo_qh) then
              if(.not.allocated(qh_p) ) allocate(qh_p(ims:ime,kms:kme,jms:jme))
+          endif
+          if (config_tempo_hailaware) then
              if(.not.allocated(ng_p) ) allocate(ng_p(ims:ime,kms:kme,jms:jme))
              if(.not.allocated(volg_p)) allocate(volg_p(ims:ime,kms:kme,jms:jme))
           endif
@@ -261,13 +264,14 @@
 !local pointers:
  character(len=StrKIND),pointer:: microp_scheme
  character(len=StrKIND),pointer:: nssl_moments
- logical,pointer:: config_tempo_hailaware, config_tempo_aerosolaware
+ logical,pointer:: config_tempo_hailaware, config_tempo_aerosolaware, config_tempo_qh
 
 !-----------------------------------------------------------------------------------------------------------------
 
  call mpas_pool_get_config(configs,'config_microp_scheme',microp_scheme)
  call mpas_pool_get_config(configs,'config_nssl_moments',nssl_moments)
  call mpas_pool_get_config(configs,'config_tempo_hailaware',config_tempo_hailaware)
+ call mpas_pool_get_config(configs,'config_tempo_qh',config_tempo_qh)
  call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
 
 !sounding variables:
@@ -349,8 +353,10 @@
           if(allocated(refl10cm_1km_p)) deallocate(refl10cm_1km_p)
           if(allocated(frainnc_p) ) deallocate(frainnc_p)
 
-          if (config_tempo_hailaware) then
+          if (config_tempo_qh) then
              if(allocated(qh_p) ) deallocate(qh_p )
+          endif
+          if (config_tempo_hailaware) then
              if(allocated(ng_p) ) deallocate(ng_p )
              if(allocated(volg_p) ) deallocate(volg_p )
           endif
