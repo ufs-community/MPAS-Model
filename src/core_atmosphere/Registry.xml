@@ -661,6 +661,8 @@
 			<var name="tyear_mean"/>
 			<var name="tyear_accum"/>
 			<var name="refl10cm"/>
+			<var name="qg_size"/>
+			<var name="qh_size"/>
 			<var name="refl10cm_max"/>
 			<var name="i_rainnc"/>
 			<var name="rainncv"/>
@@ -1122,6 +1124,8 @@
 			<var name="rainnc"/>
 			<var name="vcpool"/>
 			<var name="refl10cm"/>
+			<var name="qg_size"/>
+			<var name="qh_size"/>
 			<var name="refl10cm_max"/>
 			<var name="refl10cm_1km"/>
 			<var name="refl10cm_1km_max"/>
@@ -2712,6 +2716,14 @@
 		<var name="refl10cm" type="real" dimensions="nVertLevels nCells Time" units="dBZ"
                      description="10 cm radar reflectivity"
                      packages="mp_thompson_in;mp_wsm6_in;mp_nssl2m_in;mp_tempo_in"/>
+
+		<var name="qg_size" type="real" dimensions="nVertLevels nCells Time" units="mm"
+                     description="Graupel size"
+                     packages="mp_tempo_in"/>
+
+		<var name="qh_size" type="real" dimensions="nVertLevels nCells Time" units="mm"
+                     description="Hail size"
+                     packages="mp_tempo_in"/>
 
                 <var name="refl10cm_max" type="real" dimensions="nCells Time" units="dBZ"
                      description="10 cm maximum radar reflectivity"

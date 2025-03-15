@@ -194,6 +194,8 @@
           if(.not.allocated(ni_p) ) allocate(ni_p(ims:ime,kms:kme,jms:jme))
           if(.not.allocated(nr_p) ) allocate(nr_p(ims:ime,kms:kme,jms:jme))
           if(.not.allocated(refl10cm_p)  ) allocate(refl10cm_p(ims:ime,kms:kme,jms:jme) )
+          if(.not.allocated(qh_size_p)  ) allocate(qh_size_p(ims:ime,kms:kme,jms:jme) )
+          if(.not.allocated(qg_size_p)  ) allocate(qg_size_p(ims:ime,kms:kme,jms:jme) )
           if(.not.allocated(refl10cm_1km_p)  ) allocate(refl10cm_1km_p(ims:ime,jms:jme) )
           if(.not.allocated(frainnc_p) ) allocate(frainnc_p(ims:ime,jms:jme) )
 
@@ -345,6 +347,8 @@
           if(allocated(ni_p) ) deallocate(ni_p )
           if(allocated(nr_p) ) deallocate(nr_p )
           if(allocated(refl10cm_p)  ) deallocate(refl10cm_p  )
+          if(allocated(qh_size_p)  ) deallocate(qh_size_p  )
+          if(allocated(qg_size_p)  ) deallocate(qg_size_p  )
           if(allocated(refl10cm_1km_p)) deallocate(refl10cm_1km_p)
           if(allocated(frainnc_p) ) deallocate(frainnc_p)
 
@@ -660,6 +664,7 @@
                      has_reqc  = has_reqc    , has_reqi   = has_reqi     , has_reqs   = has_reqs     , &
                      !! ntc       = ntc_p       , muc        = muc_p                                    , &
                      refl_10cm  = refl10cm_p , frainnc    = frainnc_p                                , &
+                     qh_diam    = qh_size_p  , qg_diam    = qg_size_p                                , &
                      ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde           , &
                      ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme           , &
                      its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte             &
