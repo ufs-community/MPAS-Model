@@ -196,6 +196,8 @@
           if(.not.allocated(refl10cm_p)  ) allocate(refl10cm_p(ims:ime,kms:kme,jms:jme) )
           if(.not.allocated(refl10cm_1km_p)  ) allocate(refl10cm_1km_p(ims:ime,jms:jme) )
           if(.not.allocated(frainnc_p) ) allocate(frainnc_p(ims:ime,jms:jme) )
+          if(.not.allocated(max_hail_diameter_sfc_p) ) allocate(max_hail_diameter_sfc_p(ims:ime,jms:jme) )
+          if(.not.allocated(max_hail_diameter_column_p) ) allocate(max_hail_diameter_column_p(ims:ime,jms:jme) )
 
           ! Allocate TEMPO options based on config flags insead of adding more nested select cases
           ! These flags are associated with appropriate packages in mpas_atmphys_packages.F
@@ -347,6 +349,8 @@
           if(allocated(refl10cm_p)  ) deallocate(refl10cm_p  )
           if(allocated(refl10cm_1km_p)) deallocate(refl10cm_1km_p)
           if(allocated(frainnc_p) ) deallocate(frainnc_p)
+          if(allocated(max_hail_diameter_sfc_p) ) deallocate(max_hail_diameter_sfc_p)
+          if(allocated(max_hail_diameter_column_p) ) deallocate(max_hail_diameter_column_p)
 
           if (config_tempo_hailaware) then
              if(allocated(ng_p) ) deallocate(ng_p )
@@ -660,6 +664,8 @@
                      has_reqc  = has_reqc    , has_reqi   = has_reqi     , has_reqs   = has_reqs     , &
                      !! ntc       = ntc_p       , muc        = muc_p                                    , &
                      refl_10cm  = refl10cm_p , frainnc    = frainnc_p                                , &
+                     max_hail_diameter_sfc = max_hail_diameter_sfc_p                                 , &
+                     max_hail_diameter_column = max_hail_diameter_column_p                           , &
                      ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde           , &
                      ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme           , &
                      its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte             &
@@ -835,7 +841,12 @@
        call mpas_log_write('            since WSM6 or Thompson microphysics scheme was not selected')
     end if
  endif
- 
+
+ if(trim(microp_scheme) == "mp_tempo") then
+    call mpas_log_write('Computing accumulated max hail diameter at the surface')
+    call compute_accumulated_max_hail(diag_physics,its,ite)
+ endif
+
 !... copy updated precipitation from the wrf-physics grid back to the geodesic-dynamics grid:
  call precip_to_MPAS(configs,diag_physics,its,ite)
 
@@ -1365,6 +1376,36 @@ subroutine compute_hourly_max_radar_reflectivity(configs,diag_physics,its,ite)
  end select microp_select
 
  end subroutine compute_hourly_max_radar_reflectivity
+
+!=================================================================================================================
+ subroutine compute_accumulated_max_hail(diag_physics,its,ite)
+!=================================================================================================================
+
+!input arguments:
+ integer,intent(in):: its,ite
+
+!inout arguments:
+ type(mpas_pool_type),intent(inout):: diag_physics
+
+!local pointers:
+ real(kind=RKIND),dimension(:),pointer:: max_hail_diameter_sfc, max_hail_diameter_sfc_acc
+
+!local variables and arrays:
+ integer:: i,j
+
+!-----------------------------------------------------------------------------------------------------------------
+
+ call mpas_pool_get_array(diag_physics,'max_hail_diameter_sfc',max_hail_diameter_sfc)
+ call mpas_pool_get_array(diag_physics,'max_hail_diameter_sfc_acc',max_hail_diameter_sfc_acc)
+
+ do j = jts,jte ! Assuming here that jts == jte (2D arrays)
+    do i = its,ite
+       max_hail_diameter_sfc_acc(i) = max(max_hail_diameter_sfc_acc(i), max_hail_diameter_sfc_p(i,j))
+    enddo
+ enddo
+
+end subroutine compute_accumulated_max_hail
+
 !=================================================================================================================
  subroutine compute_relhum(diag,its,ite)
 !=================================================================================================================

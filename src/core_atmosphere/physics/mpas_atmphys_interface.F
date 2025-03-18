@@ -676,6 +676,7 @@
  real(kind=RKIND),dimension(:,:),pointer  :: ni,nr,nc,ns,ng,nh,nccn,nwfa,nifa
  real(kind=RKIND),dimension(:,:),pointer  :: volg,volh,zrw,zgw,zhw
  real(kind=RKIND),dimension(:,:),pointer  :: rainprod,evapprod,refl10cm
+ real(kind=RKIND),dimension(:),pointer  :: max_hail_diameter_sfc, max_hail_diameter_column
  real(kind=RKIND),dimension(:,:),pointer  :: re_cloud,re_ice,re_snow
  real(kind=RKIND),dimension(:,:),pointer  :: rthmpten,rqvmpten,rqcmpten,rqrmpten,rqimpten,rqsmpten,rqgmpten
  real(kind=RKIND),dimension(:,:),pointer  :: rncmpten,rnimpten,rnrmpten,rnifampten,rnwfampten
@@ -821,8 +822,16 @@
           case("mp_tempo")
              call mpas_pool_get_dimension(state,'index_ni',index_ni)
              call mpas_pool_get_dimension(state,'index_nr',index_nr)
+             call mpas_pool_get_array(diag_physics,'max_hail_diameter_sfc' ,max_hail_diameter_sfc)
+             call mpas_pool_get_array(diag_physics,'max_hail_diameter_column' ,max_hail_diameter_column)
              ni   => scalars(index_ni,:,:)
              nr   => scalars(index_nr,:,:)
+             do j = jts,jte
+             do i = its,ite
+                max_hail_diameter_sfc_p(i,j) = max_hail_diameter_sfc(i)
+                max_hail_diameter_column_p(i,j) = max_hail_diameter_column(i)
+             enddo
+             enddo
 
 !             call mpas_pool_get_array(diag_physics,'nt_c',nt_c)
 !             call mpas_pool_get_array(diag_physics,'mu_c',mu_c)
@@ -1134,6 +1143,7 @@
  real(kind=RKIND),dimension(:,:),pointer  :: ni,nr,nc,ns,ng,nh,nccn,nwfa,nifa
  real(kind=RKIND),dimension(:,:),pointer  :: volg,volh,zrw,zgw,zhw
  real(kind=RKIND),dimension(:,:),pointer  :: rainprod,evapprod,refl10cm
+ real(kind=RKIND),dimension(:),pointer  :: max_hail_diameter_sfc, max_hail_diameter_column
  real(kind=RKIND),dimension(:,:),pointer  :: re_cloud,re_ice,re_snow
  real(kind=RKIND),dimension(:,:),pointer  :: rthmpten,rqvmpten,rqcmpten,rqrmpten,rqimpten,rqsmpten,rqgmpten
  real(kind=RKIND),dimension(:,:),pointer  :: rncmpten,rnimpten,rnrmpten,rnifampten,rnwfampten
@@ -1323,6 +1333,15 @@
                 ni(k,i) = ni_p(i,k,j)
                 nr(k,i) = nr_p(i,k,j)
              enddo
+             enddo
+             enddo
+
+             call mpas_pool_get_array(diag_physics,'max_hail_diameter_sfc' ,max_hail_diameter_sfc)
+             call mpas_pool_get_array(diag_physics,'max_hail_diameter_column' ,max_hail_diameter_column)
+             do j = jts,jte
+             do i = its,ite
+                max_hail_diameter_sfc(i) = max_hail_diameter_sfc_p(i,j)
+                max_hail_diameter_column(i) = max_hail_diameter_column_p(i,j)
              enddo
              enddo
 
