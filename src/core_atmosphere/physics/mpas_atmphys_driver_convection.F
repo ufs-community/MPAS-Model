@@ -1124,7 +1124,7 @@
                    if(sigma_deep(ineighbor) == 0.)cycle
 ! do this for first row cells
 ! 1-sigma_deep-sigma_deep_far what comes in from the first row neighbor,
-! 1-sigma_deep_far            what xomes in from second row neighbor
+! 1-sigma_deep_far            what comes in from second row neighbor
 
                    rthcuten(k,iCell) = rthcuten(k,iCell) + &
                                        (sigma_deep(ineighbor)- sigma_deep_far(ineighbor)) &
