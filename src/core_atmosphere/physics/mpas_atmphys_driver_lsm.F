@@ -35,8 +35,8 @@
  logical,parameter:: myj      = .false. !true if using Mellor-Yamada PBL scheme.
  logical,parameter:: frpcpn   = .false.
  logical          :: rdlai2d  = .false.
- logical,parameter:: frpcpn_ruc  = .true.
-
+ logical,parameter:: frpcpn_ruc  = .true. ! should be true with RUC LSM
+ 
 !urban physics: MPAS does not plan to run the urban physics option.
  integer,parameter:: sf_urban_physics = 0 !activate urban canopy model (=0: no urban canopy) 
 
