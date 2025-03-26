@@ -443,8 +443,10 @@
  real(kind=RKIND),dimension(:,:),allocatable:: &
     maxwidthbl_p,     &!max plume width                                                                        [m]
     maxmfbl_p,        &!maximum mass flux for PBL shallow convection.
-    zbl_plume_p        !height of highest penetrating plume                                                    [m]
-
+    zbl_plume_p,      &!height of highest penetrating plume                                                    [m]
+    excessh_p,        &!maximum heat excess applied to plumes                                                  [K]
+    excessq_p          !maximum moisture excess applied to plumes                                          [kg/kg]
+      
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
     dqke_p,           &!
     qbuoy_p,          &!

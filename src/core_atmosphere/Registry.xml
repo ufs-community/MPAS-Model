@@ -1,5 +1,4 @@
 <?xml version="1.0"?>
-
 <registry model="mpas" core="atmosphere" core_abbrev="atm" version="8.2.2-2.10">
 
 <!-- **************************************************************************************** -->
@@ -1137,6 +1136,8 @@
                         <var name="maxmf"/>
                         <var name="maxwidth"/>
                         <var name="ztop_plume"/>
+			<var name="excess_h"/>
+			<var name="excess_q"/>
                         <var name="hpbl"/>
                         <var name="cldfrac_cu"/>
                         <var name="refl10cm_cu"/>
@@ -3044,6 +3045,14 @@
 
                 <var name="ztop_plume" type="real" dimensions="nCells Time" units="m"
                      description="Height of highest penetrating plume"
+                     packages="bl_mynnedmf_in"/>
+
+		<var name="excess_h" type="real" dimensions="nCells Time" units="K"
+                     description="Maximum excess heat added to plumes"
+                     packages="bl_mynnedmf_in"/>
+
+		<var name="excess_q" type="real" dimensions="nCells Time" units="kg kg^{-1}"
+                     description="Maximum excess moisture added to plumes"
                      packages="bl_mynnedmf_in"/>
 
 		<!-- MYJ PBL SCHEME: -->
