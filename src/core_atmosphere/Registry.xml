@@ -543,6 +543,7 @@
 			<var name="soilcl2"/>
 			<var name="soilcl3"/>
 			<var name="soilcl4"/>
+			<var name="soil_color"/>
 #endif
 
                 </stream>
