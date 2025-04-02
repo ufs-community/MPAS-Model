@@ -283,6 +283,15 @@
     config_radt_cld_scheme = "cld_incidence"
 
  endif
+ if(.not. (config_pbl_scheme .eq. 'bl_mynn'     .or.   &
+           config_pbl_scheme .eq. 'bl_mynnedmf') .and. &
+           (config_radt_cld_scheme .eq. 'cld_fraction_mynn')) then
+
+          write(mpas_err_message,'(A,A20)') 'illegal cloud fraction option for pbl_scheme: ', &
+                trim(config_pbl_scheme)
+          call physics_error_fatal(mpas_err_message)
+
+ endif
 
 !surface-layer scheme:
  if(.not. (config_sfclayer_scheme .eq. 'off'     .or. &
