@@ -1754,7 +1754,7 @@
 
                         <var name="nr" array_group="number" units="nb kg^{-1}"
                              description="Rain number concentration"
-                             packages="mp_thompson_in;mp_nssl2m_in;mp_tempo_in"/>
+                             packages="mp_thompson_in;mp_thompson_aers_in;mp_nssl2m_in;mp_tempo_in"/>
                         
                         <var name="ns" array_group="number" units="nb kg^{-1}"
                              description="Snow number concentration"
@@ -2145,7 +2145,7 @@
 
                         <var name="tend_nr" name_in_code="nr" array_group="number" units="nb m^{-3} s^{-1}" 
                              description="Tendency of rain number concentration multiplied by dry air density divided by d(zeta)/dz"
-                             packages="mp_thompson_in;mp_nssl2m_in;mp_tempo_in"/>
+                             packages="mp_thompson_in;mp_thompson_aers_in;mp_nssl2m_in;mp_tempo_in"/>
 
                         <var name="tend_ns" name_in_code="ns" array_group="number" units="nb m^{-3} s^{-1}"
                              description="Tendency of snow number concentration multiplied by dry air density divided by d(zeta)/dz"
