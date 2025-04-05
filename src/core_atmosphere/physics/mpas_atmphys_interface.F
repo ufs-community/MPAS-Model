@@ -689,6 +689,7 @@
  call mpas_pool_get_config(configs,'config_microp_scheme',mp_scheme)
  call mpas_pool_get_config(configs,'config_nssl_moments',nssl_moments)
  call mpas_pool_get_config(configs,'config_tempo_hailaware',config_tempo_hailaware)
+ call mpas_pool_get_config(configs,'config_tempo_qh',config_tempo_qh)
  call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
 
  call mpas_pool_get_array(mesh,'zgrid',zgrid)
@@ -1167,6 +1168,7 @@
  call mpas_pool_get_config(configs,'config_microp_scheme',mp_scheme)
  call mpas_pool_get_config(configs,'config_nssl_moments',nssl_moments)
  call mpas_pool_get_config(configs,'config_tempo_hailaware',config_tempo_hailaware)
+ call mpas_pool_get_config(configs,'config_tempo_qh',config_tempo_qh)
  call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
 
  call mpas_pool_get_array(mesh,'zz'   ,zz   )
