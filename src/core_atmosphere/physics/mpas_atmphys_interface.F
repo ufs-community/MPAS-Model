@@ -780,8 +780,6 @@
        call mpas_pool_get_array(diag_physics,'re_ice'  ,re_ice  )
        call mpas_pool_get_array(diag_physics,'re_snow' ,re_snow )
        call mpas_pool_get_array(diag_physics,'refl10cm' ,refl10cm )
-       call mpas_pool_get_array(diag_physics,'qh_size' ,qh_size )
-       call mpas_pool_get_array(diag_physics,'qg_size' ,qg_size )
 
        do j = jts, jte
        do k = kts, kte
@@ -796,8 +794,6 @@
           reice_p(i,k,j)    = re_ice(k,i)
           resnow_p(i,k,j)   = re_snow(k,i)
           refl10cm_p(i,k,j) = refl10cm(k,i)
-          qh_size_p(i,k,j) = qh_size(k,i)
-          qg_size_p(i,k,j) = qg_size(k,i)
        enddo
        enddo
        enddo
@@ -1307,8 +1303,6 @@
        call mpas_pool_get_array(diag_physics,'re_ice'  ,re_ice  )
        call mpas_pool_get_array(diag_physics,'re_snow' ,re_snow )
        call mpas_pool_get_array(diag_physics,'refl10cm' ,refl10cm )
-       call mpas_pool_get_array(diag_physics,'qh_size' ,qh_size)
-       call mpas_pool_get_array(diag_physics,'qg_size' ,qg_size)
 
        do j = jts,jte
        do k = kts,kte
@@ -1323,8 +1317,6 @@
           re_ice(k,i)   = reice_p(i,k,j)
           re_snow(k,i)  = resnow_p(i,k,j)
           refl10cm(k,i) = refl10cm_p(i,k,j)
-          qh_size(k,i) = qh_size_p(i,k,j)
-          qg_size(k,i) = qg_size_p(i,k,j)
        enddo
        enddo
        enddo
