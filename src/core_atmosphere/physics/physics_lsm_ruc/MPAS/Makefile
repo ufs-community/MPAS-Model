@@ -21,7 +21,7 @@ module_ruc_ice.o: \
 #
 
 clean:
-	$(RM) *.f90 *.o *.mod
+	$(RM) *.F90 *.F *.o *.mod
 	@# Certain systems with intel compilers generate *.i files
 	@# This removes them during the clean process
 	$(RM) *.i
