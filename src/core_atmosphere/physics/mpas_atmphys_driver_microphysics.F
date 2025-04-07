@@ -154,10 +154,32 @@
        if(.not.allocated(recloud_p)) allocate(recloud_p(ims:ime,kms:kme,jms:jme))
        if(.not.allocated(reice_p)  ) allocate(reice_p(ims:ime,kms:kme,jms:jme)  )
        if(.not.allocated(resnow_p) ) allocate(resnow_p(ims:ime,kms:kme,jms:jme) )
+       if(.not.allocated(refl10cm_p)) allocate(refl10cm_p(ims:ime,kms:kme,jms:jme) )
 
        !precipitation flux:
        if(.not.allocated(rainprod_p)) allocate(rainprod_p(ims:ime,kms:kme,jms:jme))
        if(.not.allocated(evapprod_p)) allocate(evapprod_p(ims:ime,kms:kme,jms:jme))
+
+    microp2_select: select case(trim(microp_scheme))
+       case("mp_thompson","mp_thompson_aerosols")
+          if(.not.allocated(ntc_p)) allocate(ntc_p(ims:ime,jms:jme))
+          if(.not.allocated(muc_p)) allocate(muc_p(ims:ime,jms:jme))
+          if(.not.allocated(ni_p) ) allocate(ni_p(ims:ime,kms:kme,jms:jme))
+          if(.not.allocated(nr_p) ) allocate(nr_p(ims:ime,kms:kme,jms:jme))
+
+         microp3_select: select case(trim(microp_scheme))
+            case("mp_thompson_aerosols")
+               if(.not.allocated(nifa2d_p)) allocate(nifa2d_p(ims:ime,jms:jme))
+               if(.not.allocated(nwfa2d_p)) allocate(nwfa2d_p(ims:ime,jms:jme))
+               if(.not.allocated(nc_p)    ) allocate(nc_p(ims:ime,kms:kme,jms:jme)  )
+               if(.not.allocated(nifa_p)  ) allocate(nifa_p(ims:ime,kms:kme,jms:jme))
+               if(.not.allocated(nwfa_p)  ) allocate(nwfa_p(ims:ime,kms:kme,jms:jme))
+
+            case default
+         end select microp3_select
+
+       case default
+    end select microp2_select
 
     case ("mp_tempo","mp_nssl2m")
        !mass mixing ratios:
@@ -181,13 +203,7 @@
        if(.not.allocated(rainprod_p)) allocate(rainprod_p(ims:ime,kms:kme,jms:jme))
        if(.not.allocated(evapprod_p)) allocate(evapprod_p(ims:ime,kms:kme,jms:jme))
 
-    microp2_select: select case(trim(microp_scheme))
-       case("mp_thompson","mp_thompson_aerosols")
-          if(.not.allocated(ntc_p)) allocate(ntc_p(ims:ime,jms:jme))
-          if(.not.allocated(muc_p)) allocate(muc_p(ims:ime,jms:jme))
-          if(.not.allocated(ni_p) ) allocate(ni_p(ims:ime,kms:kme,jms:jme))
-          if(.not.allocated(nr_p) ) allocate(nr_p(ims:ime,kms:kme,jms:jme))
-
+    microp2a_select: select case(trim(microp_scheme))
        case("mp_tempo")
 !          if(.not.allocated(ntc_p)) allocate(ntc_p(ims:ime,jms:jme))
 !          if(.not.allocated(muc_p)) allocate(muc_p(ims:ime,jms:jme))
@@ -231,19 +247,8 @@
             if(.not.allocated(zhw_p) ) allocate(zhw_p(ims:ime,kms:kme,jms:jme))
           endif
 
-          microp3_select: select case(trim(microp_scheme))
-             case("mp_thompson_aerosols")
-                if(.not.allocated(nifa2d_p)) allocate(nifa2d_p(ims:ime,jms:jme))
-                if(.not.allocated(nwfa2d_p)) allocate(nwfa2d_p(ims:ime,jms:jme))
-                if(.not.allocated(nc_p)    ) allocate(nc_p(ims:ime,kms:kme,jms:jme)  )
-                if(.not.allocated(nifa_p)  ) allocate(nifa_p(ims:ime,kms:kme,jms:jme))
-                if(.not.allocated(nwfa_p)  ) allocate(nwfa_p(ims:ime,kms:kme,jms:jme))
-
           case default
-       end select microp3_select
-
-       case default
-    end select microp2_select
+    end select microp2a_select
 
     case default
  end select microp_select
@@ -310,6 +315,28 @@
        if(allocated(rainprod_p)) deallocate(rainprod_p)
        if(allocated(evapprod_p)) deallocate(evapprod_p)
 
+    microp2_select: select case(trim(microp_scheme))
+       case("mp_thompson","mp_thompson_aerosols")
+          if(allocated(ntc_p)) deallocate(ntc_p)
+          if(allocated(muc_p)) deallocate(muc_p)
+          if(allocated(ni_p) ) deallocate(ni_p )
+          if(allocated(nr_p) ) deallocate(nr_p )
+          if(allocated(refl10cm_p)  ) deallocate(refl10cm_p  )
+
+          microp3_select: select case(trim(microp_scheme))
+             case("mp_thompson_aerosols")
+                if(allocated(nifa2d_p)) deallocate(nifa2d_p)
+                if(allocated(nwfa2d_p)) deallocate(nwfa2d_p)
+                if(allocated(nc_p)    ) deallocate(nc_p    )
+                if(allocated(nifa_p)  ) deallocate(nifa_p  )
+                if(allocated(nwfa_p)  ) deallocate(nwfa_p  )
+
+             case default
+          end select microp3_select
+
+       case default
+    end select microp2_select
+
     case ("mp_tempo","mp_nssl2m")
        !mass mixing ratios:
        if(allocated(qi_p)) deallocate(qi_p)
@@ -332,13 +359,7 @@
        if(allocated(rainprod_p)) deallocate(rainprod_p)
        if(allocated(evapprod_p)) deallocate(evapprod_p)
 
-    microp2_select: select case(trim(microp_scheme))
-       case("mp_thompson","mp_thompson_aerosols")
-          if(allocated(ntc_p)) deallocate(ntc_p)
-          if(allocated(muc_p)) deallocate(muc_p)
-          if(allocated(ni_p) ) deallocate(ni_p )
-          if(allocated(nr_p) ) deallocate(nr_p )
-
+    microp2a_select: select case(trim(microp_scheme))
        case("mp_tempo")
 !          if(allocated(ntc_p)) deallocate(ntc_p)
 !          if(allocated(muc_p)) deallocate(muc_p)
@@ -383,19 +404,8 @@
             if(allocated(zhw_p) ) deallocate(zhw_p)
           endif
 
-          microp3_select: select case(trim(microp_scheme))
-             case("mp_thompson_aerosols")
-                if(allocated(nifa2d_p)) deallocate(nifa2d_p)
-                if(allocated(nwfa2d_p)) deallocate(nwfa2d_p)
-                if(allocated(nc_p)    ) deallocate(nc_p    )
-                if(allocated(nifa_p)  ) deallocate(nifa_p  )
-                if(allocated(nwfa_p)  ) deallocate(nwfa_p  )
-
-          case default
-       end select microp3_select
-
        case default
-    end select microp2_select
+    end select microp2a_select
 
     case default
  end select microp_select
@@ -475,9 +485,8 @@
           call nssl_2mom_init(ipctmp=5,mixphase=0,ihvol=1, myrank=dminfo % my_proc_id, mpiroot = IO_NODE)
        endif
 
-     case default
-
-  end select microp_select
+    case default
+ end select microp_select
 
 !call mpas_log_write('--- end subroutine init_microphysics:')
 
@@ -687,15 +696,15 @@
                   sr        = sr_p        , rainprod   = rainprod_p   , evapprod   = evapprod_p   , &
                   re_cloud  = recloud_p   , re_ice     = reice_p      , re_snow    = resnow_p     , &
                   has_reqc  = has_reqc    , has_reqi   = has_reqi     , has_reqs   = has_reqs     , &
-                  ntc        = ntc_p      , muc        = muc_p                                    , &
+                  ntc       = ntc_p       , muc        = muc_p                                    , &
                   ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde           , &
                   ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme           , &
                   its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte             &
                            )
-          istep = istep + 1
-          enddo
-          call mpas_timer_stop('mp_thompson')
-          
+       istep = istep + 1
+       enddo
+       call mpas_timer_stop('mp_thompson')
+
     case ("mp_thompson_aerosols")
        call mpas_timer_start('mp_thompson_aerosols')
        istep = 1
@@ -1254,7 +1263,7 @@
              dBZ1d(k) = refl10cm_p(i,k,j)
              zp(k) = z_p(i,k,j) - z_p(i,1,j)+0.5*dz_p(i,k,j) ! height AGL at mid-layer
           enddo
-          
+
           call calc_refl10cm(qv1d,qc1d,qr1d,nr1d,qs1d,qg1d,t1d,p1d,dBZ1d,kts,kte,i,j)
 
           kp = 1
