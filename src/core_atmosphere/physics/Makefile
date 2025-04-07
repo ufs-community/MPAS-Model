@@ -279,7 +279,7 @@ clean:
 	( cd physics_noahmp/utility; $(MAKE) clean )
 	( cd TEMPO; $(MAKE) clean )
 	( cd UGWP; $(MAKE) clean )
-	( cd physics_lsm_ruc; $(MAKE) clean )
+	( cd physics_lsm_ruc; $(MAKE) -f MPAS/Makefile clean )
 	( cd MYNN-EDMF; cp ./MPAS/Makefile .; $(MAKE) clean )
 	@# Certain systems with intel compilers generate *.i files
 	@# This removes them during the clean process
