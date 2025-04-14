@@ -628,6 +628,7 @@
                         has_reqc  = has_reqc    , has_reqi   = has_reqi     , has_reqs   = has_reqs     , &
                         !! ntc       = ntc_p       , muc        = muc_p                                    , &
                         refl_10cm  = refl10cm_p , frainnc    = frainnc_p                                , &
+                        qcbl      = qcbl_p      , cldfrac    = cldfrac_p                                , &
                         ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde           , &
                         ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme           , &
                         its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte             &
@@ -649,7 +650,7 @@
                         has_reqc  = has_reqc    , has_reqi   = has_reqi     , has_reqs   = has_reqs     , &
                         !! ntc       = ntc_p       , muc        = muc_p                                    , &
                         refl_10cm  = refl10cm_p , frainnc    = frainnc_p                                , &
-                        qcbl      = qcbl_p      , cldfrac    = cldfrac_p                                , &
+                        !! qcbl      = qcbl_p      , cldfrac    = cldfrac_p                                , &
                         ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde           , &
                         ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme           , &
                         its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte             &
