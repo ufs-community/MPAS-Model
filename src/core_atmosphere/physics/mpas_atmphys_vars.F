@@ -357,7 +357,8 @@
  real(kind=RKIND),dimension(:,:),allocatable:: &
     xmb_total_p,      &!
     xmb_shallow_p,    &!
-    sigma_deep_p       !
+    sigma_deep_p,     &!
+    sigma_deep_f_p     !
 
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
     rthdynten_p,      &!
