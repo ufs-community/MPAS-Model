@@ -2503,6 +2503,11 @@
                      description="logical for non-stationary gravity wave drag scheme"
                      possible_values=".true. or .false."/>
 
+                <nml_option name="config_knob_ugwp_tauamp" type="real" default_value="0.13e-3" in_defaults="false"
+                     units="-"
+                     description="non-stationary gravity wave drag absolute momentum flux at launch level"
+                     possible_values="Non-negative real values"/>
+
                 <nml_option name="config_ugwp_diags" type="logical" default_value="false" in_defaults="false"
                      units="-"
                      description="logical for outputting ugwp drag suite diagnostic variables"
