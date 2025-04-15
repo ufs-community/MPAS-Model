@@ -35,7 +35,8 @@ gnu:   # BUILDTARGET GNU Fortran, C, and C++ compilers
 	"USE_PAPI = $(USE_PAPI)" \
 	"OPENMP = $(OPENMP)" \
 	"OPENACC = $(OPENACC)" \
-	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI" )
+	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI" \
+	"NETCDFLIBS = -lhdf5_hl -lhdf5 -lm -lz -ldl -lbz2 -lzstd -lcurl -lstdc++" )
 
 xlf:   # BUILDTARGET IBM XL compilers
 	( $(MAKE) all \
@@ -117,32 +118,6 @@ ftn:   # BUILDTARGET Cray compilers
 	"USE_PAPI = $(USE_PAPI)" \
 	"OPENMP = $(OPENMP)" \
 	"OPENACC = $(OPENACC)" \
-	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI" )
-
-vecna_ifort:
-	( $(MAKE) all \
-	"FC_PARALLEL = mpif90" \
-	"CC_PARALLEL = mpicc -diag-disable=10441"  \
-	"CXX_PARALLEL = mpiicpc" \
-	"FC_SERIAL = ifort" \
-	"CC_SERIAL = icx" \
-	"CXX_SERIAL = icpc" \
-	"FFLAGS_PROMOTION = -real-size 64" \
-	"FFLAGS_OPT = -O3 -convert big_endian -free -align array64byte" \
-	"CFLAGS_OPT = -O3 " \
-	"CXXFLAGS_OPT = -O3" \
-	"LDFLAGS_OPT = -O3" \
-	"LIB_HDF5=-L$(HDF5_LIBRARIES) -lhdf5_hl -lhdf5 -L${ZLIB_LIBRARIES} -lz -ldl -lm" \
-	"FFLAGS_DEBUG = -g -convert big_endian -free -CU -CB -check all -check bounds -fpe0 -traceback" \
-	"CFLAGS_DEBUG = -g -traceback" \
-	"CXXFLAGS_DEBUG = -g -traceback" \
-	"LDFLAGS_DEBUG = -g -fpe0 -traceback" \
-	"FFLAGS_OMP = -qopenmp" \
-	"CFLAGS_OMP = -qopenmp" \
-	"CORE = $(CORE)" \
-	"DEBUG = $(DEBUG)" \
-	"USE_PAPI = $(USE_PAPI)" \
-	"OPENMP = $(OPENMP)" \
 	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI" )
 
 titan-cray:   # BUILDTARGET (deprecated) Cray compilers with options for ORNL Titan
@@ -789,30 +764,6 @@ else # Not using PIO, using SMIOL
 	FCINCLUDES += -I$(PWD)/src/external/SMIOL
 endif
 
-ifneq "$(NETCDF)" ""
-ifneq ($(wildcard $(NETCDF)/lib/libnetcdf.*), )
-	NETCDFLIBLOC = lib
-endif
-ifneq ($(wildcard $(NETCDF)/lib64/libnetcdf.*), )
-	NETCDFLIBLOC = lib64
-endif
-	CPPINCLUDES += -I$(NETCDF)/include
-	FCINCLUDES += -I$(NETCDF)/include
-	LIBS += -L$(NETCDF)/$(NETCDFLIBLOC)
-	NCLIB = -lnetcdf
-	NCLIBF = -lnetcdff
-	ifneq ($(wildcard $(NETCDF)/$(NETCDFLIBLOC)/libnetcdff.*), ) # CHECK FOR NETCDF4
-		LIBS += $(NCLIBF)
-	endif # CHECK FOR NETCDF4
-	ifneq "$(NETCDFF)" ""
-		FCINCLUDES += -I$(NETCDFF)/include
-		LIBS += -L$(NETCDFF)/$(NETCDFLIBLOC)
-		LIBS += $(NCLIBF)
-	endif
-	LIBS += $(NCLIB)
-endif
-
-
 ifneq "$(PNETCDF)" ""
 ifneq ($(wildcard $(PNETCDF)/lib/libpnetcdf.*), )
 	PNETCDFLIBLOC = lib
@@ -823,6 +774,29 @@ endif
 	CPPINCLUDES += -I$(PNETCDF)/include
 	FCINCLUDES += -I$(PNETCDF)/include
 	LIBS += -L$(PNETCDF)/$(PNETCDFLIBLOC) -lpnetcdf
+endif
+
+ifneq "$(NETCDF)" ""
+ifneq ($(wildcard $(NETCDF)/lib/libnetcdf.*), )
+	NETCDFLIBLOC = lib
+endif
+ifneq ($(wildcard $(NETCDF)/lib64/libnetcdf.*), )
+	NETCDFLIBLOC = lib64
+endif
+	CPPINCLUDES += -I$(NETCDF)/include
+	FCINCLUDES += -I$(NETCDF)/include
+	LIBS += -L$(NETCDF)/$(NETCDFLIBLOC)
+	NCLIB = -lnetcdf $(NETCDFLIBS)
+	NCLIBF = -lnetcdff
+	ifneq ($(wildcard $(NETCDF)/$(NETCDFLIBLOC)/libnetcdff.*), ) # CHECK FOR NETCDF4
+		LIBS += $(NCLIBF)
+	endif # CHECK FOR NETCDF4
+	ifneq "$(NETCDFF)" ""
+		FCINCLUDES += -I$(NETCDFF)/include
+		LIBS += -L$(NETCDFF)/$(NETCDFLIBLOC)
+		LIBS += $(NCLIBF)
+	endif
+	LIBS += $(NCLIB)
 endif
 
 ifneq "$(LAPACK)" ""

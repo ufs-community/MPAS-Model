@@ -135,7 +135,7 @@ contains
        SoilLiqWater(NumSoilLayer)    = min(SoilEffPorosity(NumSoilLayer), SoilLiqWater(NumSoilLayer))
     endif
 
-    SoilMoisture = SoilLiqWater + SoilIce
+    SoilMoisture(:) =  SoilLiqWater(:) + SoilIce(:)
 
     ! deallocate local arrays to avoid memory leaks
     deallocate(MatRightTmp)
