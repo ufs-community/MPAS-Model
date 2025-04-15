@@ -110,13 +110,14 @@
  character(len=StrKIND),pointer:: microp_scheme
  character(len=StrKIND),pointer:: nssl_moments
  logical,pointer:: config_tempo_hailaware, config_tempo_aerosolaware
-
+ logical,pointer:: config_tempo_ml_nc_pbl
 !-----------------------------------------------------------------------------------------------------------------
 
  call mpas_pool_get_config(configs,'config_microp_scheme',microp_scheme)
  call mpas_pool_get_config(configs,'config_nssl_moments',nssl_moments)
  call mpas_pool_get_config(configs,'config_tempo_hailaware',config_tempo_hailaware)
  call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
+ call mpas_pool_get_config(configs,'config_tempo_ml_nc_pbl',config_tempo_ml_nc_pbl)
 
 !sounding variables:
  if(.not.allocated(rho_p) ) allocate(rho_p(ims:ime,kms:kme,jms:jme) )
@@ -204,6 +205,11 @@
              if(.not.allocated(volg_p)) allocate(volg_p(ims:ime,kms:kme,jms:jme))
           endif
 
+          if (config_tempo_ml_nc_pbl) then
+             if(.not.allocated(cldfrac_p) ) allocate(cldfrac_p(ims:ime,kms:kme,jms:jme))
+             if(.not.allocated(qcbl_p) ) allocate(qcbl_p(ims:ime,kms:kme,jms:jme))
+          endif
+
           if (config_tempo_aerosolaware) then
              if(.not.allocated(nifa2d_p)) allocate(nifa2d_p(ims:ime,jms:jme))
              if(.not.allocated(nwfa2d_p)) allocate(nwfa2d_p(ims:ime,jms:jme))
@@ -261,6 +267,7 @@
  character(len=StrKIND),pointer:: microp_scheme
  character(len=StrKIND),pointer:: nssl_moments
  logical,pointer:: config_tempo_hailaware, config_tempo_aerosolaware
+ logical,pointer:: config_tempo_ml_nc_pbl
 
 !-----------------------------------------------------------------------------------------------------------------
 
@@ -268,6 +275,7 @@
  call mpas_pool_get_config(configs,'config_nssl_moments',nssl_moments)
  call mpas_pool_get_config(configs,'config_tempo_hailaware',config_tempo_hailaware)
  call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
+ call mpas_pool_get_config(configs,'config_tempo_ml_nc_pbl',config_tempo_ml_nc_pbl)
 
 !sounding variables:
  if(allocated(rho_p) ) deallocate(rho_p )
@@ -351,6 +359,11 @@
           if (config_tempo_hailaware) then
              if(allocated(ng_p) ) deallocate(ng_p )
              if(allocated(volg_p) ) deallocate(volg_p )
+          endif
+
+          if (config_tempo_ml_nc_pbl) then
+             if(allocated(cldfrac_p) ) deallocate(cldfrac_p)
+             if(allocated(qcbl_p) ) deallocate(qcbl_p)
           endif
 
           if (config_tempo_aerosolaware) then
@@ -615,6 +628,7 @@
                         has_reqc  = has_reqc    , has_reqi   = has_reqi     , has_reqs   = has_reqs     , &
                         !! ntc       = ntc_p       , muc        = muc_p                                    , &
                         refl_10cm  = refl10cm_p , frainnc    = frainnc_p                                , &
+                        qcbl      = qcbl_p      , cldfrac    = cldfrac_p                                , &
                         ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde           , &
                         ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme           , &
                         its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte             &
@@ -636,6 +650,7 @@
                         has_reqc  = has_reqc    , has_reqi   = has_reqi     , has_reqs   = has_reqs     , &
                         !! ntc       = ntc_p       , muc        = muc_p                                    , &
                         refl_10cm  = refl10cm_p , frainnc    = frainnc_p                                , &
+                        !! qcbl      = qcbl_p      , cldfrac    = cldfrac_p                                , &
                         ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde           , &
                         ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme           , &
                         its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte             &
@@ -660,6 +675,7 @@
                      has_reqc  = has_reqc    , has_reqi   = has_reqi     , has_reqs   = has_reqs     , &
                      !! ntc       = ntc_p       , muc        = muc_p                                    , &
                      refl_10cm  = refl10cm_p , frainnc    = frainnc_p                                , &
+                     qcbl      = qcbl_p      , cldfrac    = cldfrac_p                                , &
                      ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde           , &
                      ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme           , &
                      its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte             &
