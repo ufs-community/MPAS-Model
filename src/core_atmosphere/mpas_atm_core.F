@@ -376,6 +376,7 @@ module atm_core
 !     use mpas_atmphys_aquaplanet
       use mpas_atmphys_control
       use mpas_atmphys_init
+      use mpas_atmphys_init_tempo
       use mpas_atmphys_manager
 #endif
 
@@ -565,6 +566,7 @@ module atm_core
          !initialization of all physics:
          call physics_init(dminfo, stream_manager, clock, block % configs, mesh, diag, tend, state, 1,       &
                            diag_physics, diag_physics_noahmp, ngw_input, atm_input, sfc_input, output_noahmp)
+         call tempo_ml_init(block % configs)
       endif
 #endif
    
@@ -953,12 +955,16 @@ module atm_core
    
       type (mpas_pool_type), pointer :: diag_physics
    
-      real (kind=RKIND), dimension(:), pointer :: refl10cm_1km_max
+      real (kind=RKIND), dimension(:), pointer :: refl10cm_1km_max, max_hail_diameter_sfc_acc
 
 #ifdef DO_PHYSICS
       call mpas_pool_get_array(diag_physics, 'refl10cm_1km_max', refl10cm_1km_max)
+      call mpas_pool_get_array(diag_physics, 'max_hail_diameter_sfc_acc', max_hail_diameter_sfc_acc)
       if(associated(refl10cm_1km_max)) then
          refl10cm_1km_max(:) = 0.
+      endif
+      if(associated(max_hail_diameter_sfc_acc)) then
+         max_hail_diameter_sfc_acc(:) = 0.
       endif
 #endif
    
