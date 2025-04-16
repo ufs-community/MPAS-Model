@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<registry model="mpas" core="atmosphere" core_abbrev="atm" version="8.2.2-3.0">
+<registry model="mpas" core="atmosphere" core_abbrev="atm" version="8.2.2-3.1">
 
 
 <!-- **************************************************************************************** -->
@@ -662,6 +662,9 @@
 			<var name="tyear_mean"/>
 			<var name="tyear_accum"/>
 			<var name="refl10cm"/>
+			<var name="max_hail_diameter_sfc"/>
+			<var name="max_hail_diameter_sfc_acc"/>
+			<var name="max_hail_diameter_column"/>
 			<var name="refl10cm_max"/>
 			<var name="i_rainnc"/>
 			<var name="rainncv"/>
@@ -1124,6 +1127,9 @@
 			<var name="rainnc"/>
 			<var name="vcpool"/>
 			<var name="refl10cm"/>
+			<var name="max_hail_diameter_sfc"/>
+			<var name="max_hail_diameter_sfc_acc"/>
+			<var name="max_hail_diameter_column"/>
 			<var name="refl10cm_max"/>
 			<var name="refl10cm_1km"/>
 			<var name="refl10cm_1km_max"/>
@@ -2736,6 +2742,18 @@
 		<var name="refl10cm" type="real" dimensions="nVertLevels nCells Time" units="dBZ"
                      description="10 cm radar reflectivity"
                      packages="mp_thompson_in;mp_wsm6_in;mp_nssl2m_in;mp_tempo_in"/>
+
+		<var name="max_hail_diameter_sfc" type="real" dimensions="nCells Time" units="mm"
+                     description="Maximum hail diameter at the surface"
+                     packages="mp_tempo_in"/>
+
+		<var name="max_hail_diameter_column" type="real" dimensions="nCells Time" units="mm"
+                     description="Maximum hail diameter in the vertical column"
+                     packages="mp_tempo_in"/>
+
+		<var name="max_hail_diameter_sfc_acc" type="real" dimensions="nCells Time" units="mm"
+                     description="Maximum hail diameter at the surface accumulated over diagnostic output"
+                     packages="mp_tempo_in"/>
 
                 <var name="refl10cm_max" type="real" dimensions="nCells Time" units="dBZ"
                      description="10 cm maximum radar reflectivity"
