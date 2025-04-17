@@ -664,6 +664,7 @@
 !TEMPO/NSSL
  character(len=StrKIND),pointer:: nssl_moments
  logical,pointer:: config_tempo_hailaware, config_tempo_aerosolaware
+ logical,pointer:: config_tempo_ml_nc_pbl
  integer,pointer:: index_qh
  integer,pointer:: index_zrw,index_zgw,index_zhw
  integer,pointer:: index_ns,index_ng,index_nh,index_nccn
@@ -676,7 +677,9 @@
  real(kind=RKIND),dimension(:,:),pointer  :: ni,nr,nc,ns,ng,nh,nccn,nwfa,nifa
  real(kind=RKIND),dimension(:,:),pointer  :: volg,volh,zrw,zgw,zhw
  real(kind=RKIND),dimension(:,:),pointer  :: rainprod,evapprod,refl10cm
+ real(kind=RKIND),dimension(:),pointer  :: max_hail_diameter_sfc, max_hail_diameter_column
  real(kind=RKIND),dimension(:,:),pointer  :: re_cloud,re_ice,re_snow
+ real(kind=RKIND),dimension(:,:),pointer  :: qc_bl, cldfrac_bl
  real(kind=RKIND),dimension(:,:),pointer  :: rthmpten,rqvmpten,rqcmpten,rqrmpten,rqimpten,rqsmpten,rqgmpten
  real(kind=RKIND),dimension(:,:),pointer  :: rncmpten,rnimpten,rnrmpten,rnifampten,rnwfampten
  real(kind=RKIND),dimension(:,:,:),pointer:: scalars
@@ -690,6 +693,7 @@
  call mpas_pool_get_config(configs,'config_nssl_moments',nssl_moments)
  call mpas_pool_get_config(configs,'config_tempo_hailaware',config_tempo_hailaware)
  call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
+ call mpas_pool_get_config(configs,'config_tempo_ml_nc_pbl',config_tempo_ml_nc_pbl)
 
  call mpas_pool_get_array(mesh,'zgrid',zgrid)
  call mpas_pool_get_array(mesh,'zz'   ,zz   )
@@ -821,8 +825,16 @@
           case("mp_tempo")
              call mpas_pool_get_dimension(state,'index_ni',index_ni)
              call mpas_pool_get_dimension(state,'index_nr',index_nr)
+             call mpas_pool_get_array(diag_physics,'max_hail_diameter_sfc' ,max_hail_diameter_sfc)
+             call mpas_pool_get_array(diag_physics,'max_hail_diameter_column' ,max_hail_diameter_column)
              ni   => scalars(index_ni,:,:)
              nr   => scalars(index_nr,:,:)
+             do j = jts,jte
+             do i = its,ite
+                max_hail_diameter_sfc_p(i,j) = max_hail_diameter_sfc(i)
+                max_hail_diameter_column_p(i,j) = max_hail_diameter_column(i)
+             enddo
+             enddo
 
 !             call mpas_pool_get_array(diag_physics,'nt_c',nt_c)
 !             call mpas_pool_get_array(diag_physics,'mu_c',mu_c)
@@ -839,6 +851,19 @@
              enddo
              enddo
              enddo
+
+             if(config_tempo_ml_nc_pbl) then
+                call mpas_pool_get_array(diag_physics,'qc_bl',qc_bl)
+                call mpas_pool_get_array(diag_physics,'cldfrac_bl',cldfrac_bl)
+                do j = jts, jte
+                do k = kts, kte
+                do i = its, ite
+                   qcbl_p(i,k,j) = qc_bl(k,i)
+                   cldfrac_p(i,k,j) = cldfrac_bl(k,i)
+                enddo
+                enddo
+                enddo
+             endif
 
              if(config_tempo_aerosolaware) then
                 call mpas_pool_get_dimension(state,'index_nc'  ,index_nc  )
@@ -1134,6 +1159,7 @@
  real(kind=RKIND),dimension(:,:),pointer  :: ni,nr,nc,ns,ng,nh,nccn,nwfa,nifa
  real(kind=RKIND),dimension(:,:),pointer  :: volg,volh,zrw,zgw,zhw
  real(kind=RKIND),dimension(:,:),pointer  :: rainprod,evapprod,refl10cm
+ real(kind=RKIND),dimension(:),pointer  :: max_hail_diameter_sfc, max_hail_diameter_column
  real(kind=RKIND),dimension(:,:),pointer  :: re_cloud,re_ice,re_snow
  real(kind=RKIND),dimension(:,:),pointer  :: rthmpten,rqvmpten,rqcmpten,rqrmpten,rqimpten,rqsmpten,rqgmpten
  real(kind=RKIND),dimension(:,:),pointer  :: rncmpten,rnimpten,rnrmpten,rnifampten,rnwfampten
@@ -1323,6 +1349,15 @@
                 ni(k,i) = ni_p(i,k,j)
                 nr(k,i) = nr_p(i,k,j)
              enddo
+             enddo
+             enddo
+
+             call mpas_pool_get_array(diag_physics,'max_hail_diameter_sfc' ,max_hail_diameter_sfc)
+             call mpas_pool_get_array(diag_physics,'max_hail_diameter_column' ,max_hail_diameter_column)
+             do j = jts,jte
+             do i = its,ite
+                max_hail_diameter_sfc(i) = max_hail_diameter_sfc_p(i,j)
+                max_hail_diameter_column(i) = max_hail_diameter_column_p(i,j)
              enddo
              enddo
 
