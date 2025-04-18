@@ -4,7 +4,7 @@
 [submodule "src/core_atmosphere/physics/UGWP"]
 	path = src/core_atmosphere/physics/UGWP
 	url = https://github.com/NOAA-GSL/UGWP.git
-        branch = main_knob_ugwp_tauamp_namelist
+        branch = main_MPAS_2024_12_23
 [submodule "src/core_atmosphere/physics/MYNN-EDMF"]
 	path = src/core_atmosphere/physics/MYNN-EDMF
 	url = https://github.com/NCAR/MYNN-EDMF.git
