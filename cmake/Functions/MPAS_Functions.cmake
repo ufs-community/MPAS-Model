@@ -162,8 +162,11 @@ function(mpas_core_target)
     file(MAKE_DIRECTORY ${CORE_DATADIR})
 
     #Process registry and generate includes, namelists, and streams
-    if(${ARG_CORE} STREQUAL "atmosphere" AND ${DO_PHYSICS})
+    if((${ARG_CORE} STREQUAL "atmosphere") AND (${DO_PHYSICS}))
             set(CPP_EXTRA_FLAGS ${CPP_EXTRA_FLAGS} -DDO_PHYSICS)
+    endif()
+    if((${ARG_CORE} STREQUAL "atmosphere") AND (${MPAS_CAM_DYCORE}))
+      set(CPP_EXTRA_FLAGS ${CPP_EXTRA_FLAGS} -DMPAS_CAM_DYCORE)
     endif()
     add_custom_command(OUTPUT Registry_processed.xml
             COMMAND ${CPP_EXECUTABLE} -E -P ${CPP_EXTRA_FLAGS} ${CMAKE_CURRENT_SOURCE_DIR}/Registry.xml > Registry_processed.xml
