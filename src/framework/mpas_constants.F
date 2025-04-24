@@ -12,7 +12,7 @@
 !> \brief   MPAS Constant Module
 !> \author  Michael Duda
 !> \date    03/27/13
-!> \details 
+!> \details
 !> This module provides various constants that can be used in different parts of MPAS.
 !> They may or may not be a physical quantity.
 !
@@ -20,7 +20,12 @@
 
 module mpas_constants
 
-   use mpas_kind_types
+   use mpas_kind_types, only: RKIND
+
+   implicit none
+
+   public
+   private :: RKIND
 
 #ifdef MPAS_CAM_DYCORE
 #ifdef MPAS_UFS_DYCORE
@@ -62,6 +67,7 @@ module mpas_constants
    real (kind=RKIND), parameter :: p0 = 1.0e5_RKIND                   !< Constant: 100000 Pa
    real (kind=RKIND), parameter :: prandtl = 1.0_RKIND                !< Constant: Prandtl number
 
+
    contains
 
 
@@ -72,7 +78,7 @@ module mpas_constants
 !> \brief   Computes derived constants
 !> \author  Michael Duda
 !> \date    8 May 2020
-!> \details 
+!> \details
 !>  This routine provides a place where physical constants provided by
 !>  the mpas_constants module may be computed at runtime. For example,
 !>  if some constants depend on namelist options or other runtime
@@ -87,9 +93,25 @@ module mpas_constants
 !-----------------------------------------------------------------------
    subroutine mpas_constants_compute_derived()
 
-       implicit none
-
 #ifdef MPAS_CAM_DYCORE
+       use physconst, only: external_pii => pi
+       use physconst, only: external_a => rearth
+       use physconst, only: external_omega => omega
+       use physconst, only: external_gravity => gravit
+       use physconst, only: external_rgas => rair
+       use physconst, only: external_rv => rh2o
+       use physconst, only: external_cp => cpair
+
+       ! Convert external constants to the native precision of MPAS (i.e., `RKIND`).
+
+       pii = real(external_pii, RKIND)
+       a = real(external_a, RKIND)
+       omega = real(external_omega, RKIND)
+       gravity = real(external_gravity, RKIND)
+       rgas = real(external_rgas, RKIND)
+       rv = real(external_rv, RKIND)
+       cp = real(external_cp, RKIND)
+
        !
        ! In the case of CAM-MPAS, rgas may depend on a CAM namelist option,
        ! so physical constants that depend on rgas must be computed here after
