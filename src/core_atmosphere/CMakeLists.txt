@@ -387,7 +387,6 @@ if (${DO_PHYSICS})
                       ${CMAKE_BINARY_DIR}/${PROJECT_NAME}/core_atmosphere/${data_file})
   endforeach ()
   install(DIRECTORY ${PHYSICS_WRF_DATA_DIR}/ DESTINATION ${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME}/core_atmosphere)
-endif()
 
   add_executable(mpas_atmosphere_build_tables ${ATMOSPHERE_CORE_UTILS_SOURCES})
   target_link_libraries(mpas_atmosphere_build_tables PUBLIC core_atmosphere)
