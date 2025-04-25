@@ -223,6 +223,11 @@
             enddo
             enddo
             enddo
+
+       if (num_chem .gt. 0) then
+          if(.not.allocated(chem_p)) allocate(chem_p(ims:ime,kms:kme,jms:jme,1:num_chem))
+       endif
+
     case ("cu_kain_fritsch")
        if(.not.allocated(dx_p)       ) allocate(dx_p(ims:ime,jms:jme)              )
        if(.not.allocated(area_p)     ) allocate(area_p(ims:ime,jms:jme)            )
@@ -380,6 +385,10 @@
        if(allocated(sub3d_rucuten_p) ) deallocate(sub3d_rucuten_p )
        if(allocated(sub3d_rvcuten_p) ) deallocate(sub3d_rvcuten_p )
 
+       if (num_chem .gt. 0) then
+          if(allocated(chem_p)      ) deallocate(chem_p     )
+       endif
+
     case ("cu_kain_fritsch")
        if(allocated(dx_p)         ) deallocate(dx_p         )
        if(allocated(area_p)       ) deallocate(area_p       )
@@ -468,7 +477,7 @@
  end subroutine init_convection
 
 !=================================================================================================================
- subroutine driver_convection(itimestep,configs,mesh,sfc_input,diag_physics,tend_physics,diag,dminfo,its,ite &
+ subroutine driver_convection(itimestep,configs,state,mesh,sfc_input,diag_physics,tend_physics,diag,dminfo,its,ite &
                              ,exchange_halo_group,block)
 !=================================================================================================================
 
@@ -487,6 +496,7 @@
 !inout arguments:
  type(mpas_pool_type),intent(inout):: diag_physics
  type(mpas_pool_type),intent(inout):: tend_physics
+ type(mpas_pool_type),intent(inout):: state
 
 !local variables and arrays:
  logical:: log_convection
@@ -536,7 +546,7 @@
 
 !initialize instantaneous precipitation, and copy convective tendencies from the dynamics to
 !the physics grid:
- call convection_from_MPAS(dt_dyn,configs,mesh,sfc_input,diag_physics,tend_physics,diag,its,ite)
+ call convection_from_MPAS(dt_dyn,configs,state,mesh,sfc_input,diag_physics,tend_physics,diag,its,ite)
 
 !... convert the convection time-step to minutes:
  cudt = dt_cu/60.
@@ -590,6 +600,7 @@
              ichoice_shallow = gfconv_closure_shallow , bilbc         = bilbc_p         , &
              ishallow_g3     = ishallow               , sub3d         = sub3d           , &
              pbl_scheme      = pbl_scheme             , maxmf         = maxmfbl_p       , &
+             chem3d_in       = chem_p                 , num_chem      = num_chem        , &
              qc3d            = qc_p                   , qi3d          = qi_p            , &
              qc_cu           = qccu_p                 , qi_cu         = qicu_p          , &
              cldfrac_cu      = cldfrac_cu_p           , refl10cm_cu   = refl10cm_cu_p   , &
@@ -700,7 +711,7 @@
 
 !copy instantaneous and accumulated precipitation, convective tendencies, and "other" arrays
 !specific to convection parameterization back to the dynamics grid:
- call convection_to_MPAS(configs,mesh,diag_physics,tend_physics,its,ite,exchange_halo_group,block)
+ call convection_to_MPAS(configs,state,mesh,diag_physics,tend_physics,its,ite,exchange_halo_group,block)
 
 !call mpas_log_write('--- end subroutine driver_convection.')
 !call mpas_log_write('')
@@ -708,7 +719,7 @@
  end subroutine driver_convection
 
 !=================================================================================================================
- subroutine convection_from_MPAS(dt_dyn,configs,mesh,sfc_input,diag_physics,tend_physics,diag,its,ite)
+ subroutine convection_from_MPAS(dt_dyn,configs,state,mesh,sfc_input,diag_physics,tend_physics,diag,its,ite)
 !=================================================================================================================
 
 !input arguments:
@@ -718,6 +729,7 @@
  type(mpas_pool_type),intent(in):: diag_physics
  type(mpas_pool_type),intent(in):: tend_physics
  type(mpas_pool_type),intent(in):: diag
+ type(mpas_pool_type),intent(in):: state
 
  integer,intent(in):: its,ite
  real(kind=RKIND),intent(in):: dt_dyn
@@ -739,8 +751,12 @@
  real(kind=RKIND),dimension(:,:),pointer:: rqvblten,rqvdynten,rucuten,rvcuten
  real(kind=RKIND),dimension(:,:),pointer:: cldfrac_cu,refl10cm_cu
 
+ integer,pointer :: chemistry_start,chemistry_end
+ real(kind=RKIND),dimension(:,:,:),pointer :: scalars
+ real(kind=RKIND),dimension(:,:,:),pointer :: chem
+
 !local variables:
- integer:: i,j,k
+ integer:: i,j,k,n
  integer:: iEdge
  real(kind=RKIND),pointer:: len_disp
  integer,pointer:: config_gf_sub3d
@@ -814,6 +830,13 @@
        call mpas_pool_get_array(tend_physics,'rucuten'   ,rucuten   )
        call mpas_pool_get_array(tend_physics,'rvcuten'   ,rvcuten   )
 
+       if ( num_chem .gt. 0 ) then
+           call mpas_pool_get_array(state,'scalars',scalars,1)
+           call mpas_pool_get_dimension(state, 'chemistry_start', chemistry_start)
+           call mpas_pool_get_dimension(state, 'chemistry_end', chemistry_end)
+           chem => scalars(chemistry_start:chemistry_end,:,:)
+       endif
+
        do j = jts,jte
        do i = its,ite
           dx_p(i,j) = len_disp / meshDensity(i)**0.25
@@ -852,6 +875,12 @@
 
              cldfrac_cu_p(i,k,j)= cldfrac_cu(k,i)
              refl10cm_cu_p(i,k,j)= refl10cm_cu(k,i)
+
+             if ( num_chem .gt. 0 ) then
+                do n = 1,num_chem
+                   chem_p(i,k,j,n) = chem(n,k,i)
+                enddo
+             endif
           enddo
        enddo
        enddo
@@ -967,7 +996,7 @@
  end subroutine convection_from_MPAS
 
 !=================================================================================================================
- subroutine convection_to_MPAS(configs,mesh,diag_physics,tend_physics,its,ite,exchange_halo_group,block)
+ subroutine convection_to_MPAS(configs,state,mesh,diag_physics,tend_physics,its,ite,exchange_halo_group,block)
 !=================================================================================================================
 
 !input arguments:
@@ -980,9 +1009,10 @@
 !inout arguments:
  type(mpas_pool_type),intent(inout):: diag_physics
  type(mpas_pool_type),intent(inout):: tend_physics
+ type(mpas_pool_type),intent(inout):: state
 
 !local variables:
- integer:: i,k,j
+ integer:: i,k,j,n
  integer:: iCell,ineighbor,ineighbor_far
 
 !local pointers:
@@ -1000,6 +1030,8 @@
  integer,pointer:: config_gf_sub3d,nCellsSolve
  integer, dimension(:), pointer:: nEdgesOnCell,bdyMaskCell,ncellsOnCellsOnCell
  integer, dimension(:,:), pointer:: cellsOnCell,cellsOnCellsOnCell
+ real(kind=RKIND),dimension(:,:,:),pointer:: chem, scalars
+ integer,pointer :: chemistry_start,chemistry_end
  logical result
 
 !-----------------------------------------------------------------------------------------------------------------
@@ -1051,6 +1083,13 @@
        call mpas_pool_get_array(tend_physics,'rvcuten',rvcuten)
        call mpas_pool_get_array(mesh,'bdyMaskCell',bdyMaskCell)
 
+       if ( num_chem .gt. 0 ) then
+           call mpas_pool_get_array(state,'scalars',scalars,1)
+           call mpas_pool_get_dimension(state, 'chemistry_start', chemistry_start)
+           call mpas_pool_get_dimension(state, 'chemistry_end', chemistry_end)
+           chem => scalars(chemistry_start:chemistry_end,:,:)
+       endif
+
        do j = jts,jte
        do i = its,ite
           cubot(i)         = cubot_p(i,j)
@@ -1073,6 +1112,12 @@
 
              cldfrac_cu (k,i)  = cldfrac_cu_p(i,k,j)
              refl10cm_cu(k,i)  = refl10cm_cu_p(i,k,j)
+
+             if ( num_chem .gt. 0 ) then
+                do n = 1,num_chem
+                   chem(n,k,i) = chem_p(i,k,j,n)
+                enddo
+             endif
           enddo
        enddo
        enddo
@@ -1101,9 +1146,9 @@
        call mpas_pool_get_array(mesh, 'nEdgesOnCell', nEdgesOnCell)
        call mpas_pool_get_array(mesh, 'nCellsOnCellsOnCell',ncellsOnCellsonCell)
        call mpas_pool_get_dimension(mesh, 'nCellsSolve', nCellsSolve)
-              if(config_gf_sub3d > 0) then
+
+       if(config_gf_sub3d > 0) then
             !
-!
             !--- part 2: broadcast the subsidence tendencies
 
             call exchange_halo_group(block % domain, 'physics:sub3d_cuten')

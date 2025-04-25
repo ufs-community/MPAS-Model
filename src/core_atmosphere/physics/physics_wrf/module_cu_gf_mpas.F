@@ -62,6 +62,7 @@ CONTAINS
               ,rthcuten,rqvcuten,rqccuten,rqicuten              &
               ,rucuten,rvcuten,bilbc,sub3d                      &
               ,pbl_scheme, maxmf, qc3d, qi3d                    &
+              ,num_chem, chem3d_in                              &
               ,qc_cu, qi_cu, cldfrac_cu, vcpool ,sig_deep       &
               ,sig_deep_far,sub3d_rthcuten,sub3d_rqvcuten       &
               ,sub3d_rucuten,sub3d_rvcuten,rainncv,refl10cm_cu  &
@@ -126,6 +127,8 @@ CONTAINS
  real,dimension(ims:ime,kms:kme,jms:jme),intent(inout):: rucuten,rvcuten
  real,dimension(ims:ime,kms:kme,jms:jme),intent(inout),optional:: gdc,gdc2
  real,dimension(ims:ime,kms:kme,jms:jme),intent(inout):: qc_cu,qi_cu,cldfrac_cu,refl10cm_cu
+ integer,intent(in) :: num_chem
+ real,dimension(ims:ime,kms:kme,jms:jme,1:num_chem),intent(inout) :: chem3d_in
 
 !local variables:
  character(len=50),dimension(its:ite):: ierrc,ierrcm
@@ -161,14 +164,15 @@ CONTAINS
  ! local variables required for new GF/C3 scheme, also for chem variables, should be input at some point...
  !
  integer, parameter:: nchem = 1, nranflag = 0, do_capsuppress = 0, dicycle = 0
+ logical :: do_smoke_transport
  integer :: imid,ishallow,ktopmax,kbconmax
- real,dimension(its:ite,kts:kte,nchem)::chem3d
- real,dimension(nchem)::fscav
- real,dimension(its:ite,nchem)::wetdpc_deep,wetdpc_mid
+ real,dimension(its:ite,kts:kte,num_chem)::chem3d
+ real,dimension(num_chem)::fscav
+ real,dimension(its:ite,num_chem)::wetdpc_deep,wetdpc_mid
  real,dimension (its:ite)         :: cap_suppress_j,rand_mom,rand_vmas
  integer,  dimension (its:ite) :: csum,csum_m
  real,dimension (its:ite,4)       :: rand_clos
- logical                          :: do_smoke_transport,result
+ logical                          :: result
  !
  ! local variables on output for diagnostics for new GF/C3 scheme
  !
@@ -191,6 +195,11 @@ CONTAINS
  f_thresh(:)=0.
  fm_thresh(:)=0.
  if (trim(pbl_scheme)=="bl_mynn") ishallow = 0
+ if (num_chem .gt. 0) then
+     do_smoke_transport = .true.
+ else
+     do_smoke_transport = .false.
+ endif
  ishallow=0
  rain_thresh=0. ! (mm/hr)
  do j = jts, jte
@@ -356,6 +365,11 @@ CONTAINS
           subtenm_t(i,k)=0.
           subtenm_u(i,k)=0.
           subtenm_v(i,k)=0.
+          if ( num_chem .gt. 0 ) then
+            do n = 1,num_chem
+               chem3d(i,k,n) = chem3d_in(i,k,j,n)
+            enddo
+          endif
        enddo
     enddo
           subten_h(:,:)=0.
@@ -462,7 +476,7 @@ CONTAINS
          fscav(:)=0.
          wetdpc_deep(:,:)=0.
          wetdpc_mid(:,:)=0.
-         chem3d(:,:,:)=0.
+         !chem3d(:,:,:)=0.
 !
 ! if stochastics is included
 !
@@ -532,7 +546,7 @@ CONTAINS
               ,frhm_far      &
               ,ierrm         &
               ,ierrcm        &
-              ,nchem         &
+              ,num_chem      &
               ,fscav         &
               ,chem3d        &
               ,wetdpc_mid    &
@@ -621,7 +635,7 @@ CONTAINS
               ,frh_out_far   &  ! fractional coverage
               ,ierr          &  ! ierr flags are error flags, used for debugging
               ,ierrc         &  ! the following should be set to zero if not available
-              ,nchem         &
+              ,num_chem      &
               ,fscav         &
               ,chem3d        &
               ,wetdpc_deep   &
@@ -733,6 +747,12 @@ CONTAINS
              rqccuten(i,k,j) = factor(i)*(outqcs(i,k) + outqc(i,k) + outqcm(i,k))
              if(present(gdc)) gdc(i,k,j) = factor(i)*(frhs(i)*cupclws(i,k) + frh_out(i)*cupclw(i,k) + frhm(i)*cupclwm(i,k))
              qc_cu(i,k,j)=factor(i)*gdc(i,k,j)
+          endif
+
+          if (num_chem .gt. 0 ) then
+             do n = 1,num_chem
+                chem3d_in(i,k,j,n) = chem3d(i,k,n)
+             enddo
           endif
        enddo
     enddo

@@ -4392,5 +4392,6 @@
 
 #ifdef DO_PHYSICS
 #include "physics/Registry_noahmp.xml"
+#include "registry.chem.xml"
 #endif
 </registry>
