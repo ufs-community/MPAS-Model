@@ -420,9 +420,9 @@
     if(snow(i) .gt. 0._RKIND) snowc(i) = 1.
 
     do ns = 1,nsoil
-       mpas_noahmp%sh2o(i,ns)  = sh2o(ns,i)
-       mpas_noahmp%smois(i,ns) = smois(ns,i)
-       mpas_noahmp%tslb(i,ns)  = tslb(ns,i)
+       sh2o(ns,i)  = mpas_noahmp%sh2o(i,ns)
+       smois(ns,i) = mpas_noahmp%smois(i,ns)
+       tslb(ns,i)  = mpas_noahmp%tslb(i,ns)
    enddo
  enddo
 
