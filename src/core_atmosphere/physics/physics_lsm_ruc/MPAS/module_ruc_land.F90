@@ -105,7 +105,7 @@ contains
 #if (em_core==1)
                    pattern_spp_lsm,field_sf,                     &
 #endif
-                   dt,ktau,nsl,                                  &
+                   dt,ktau,nsl,restart,cycling,                  &
 #if (em_core==1)
                    lakemodel,lakemask,                           &
                    graupelncv,snowncv,rainncv,                   &
@@ -216,6 +216,7 @@ contains
 
    real,       intent(in   )    ::     dt
    logical,    intent(in   )    ::     myjpbl,frpcpn
+   logical,    intent(in   )    ::     restart,cycling
    integer,    intent(in   )    ::     spp_lsm
    integer,    intent(in   )    ::     nlcat, nscat, mosaic_lu, mosaic_soil
    integer,    intent(in   )    ::     ktau, nsl, isice, iswater, &
@@ -585,6 +586,7 @@ contains
 #else
    if(ktau.eq.1) then
 #endif
+     if(.not. restart .or. .not. cycling) then
       do j=jts,jte
          do i=its,ite
             do k=1,nsl
@@ -662,6 +664,7 @@ contains
          soilice(k)=0.
          soiliqw(k)=0.
       enddo
+     endif ! restart or cycling
    endif 
 
 !-----------------------------------------------------------------

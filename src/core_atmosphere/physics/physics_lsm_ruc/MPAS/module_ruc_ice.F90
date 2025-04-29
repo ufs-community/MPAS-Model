@@ -31,7 +31,7 @@ contains
 #if (em_core==1)
               pattern_spp_lsm,field_sf,                     &
 #endif
-              dt,ktau,nsl,                                  &
+              dt,ktau,nsl,restart,cycling,                  &
 #if (em_core==1)
               graupelncv,snowncv,rainncv,                   &
 #endif
@@ -135,6 +135,7 @@ contains
 
    real,       intent(in   )    ::     dt
    logical,    intent(in   )    ::     myjpbl,frpcpn
+   logical,    intent(in   )    ::     restart, cycling
    integer,    intent(in   )    ::     spp_lsm
    integer,    intent(in   )    ::     ktau, nsl, isice, iswater, &
                                        ims,ime, jms,jme, kms,kme, &
@@ -383,6 +384,7 @@ contains
 #else
    if(ktau.eq.1) then
 #endif
+    if(.not. restart .or. .not. cycling) then
 !--- initialize ice/snow variables at the first time step
       do j=jts,jte
          do i=its,ite
@@ -459,6 +461,7 @@ contains
          soilice(k)=1.
          soiliqw(k)=0.
       enddo
+     endif ! restart or cycling
    endif
    !---  end of initialization
 !-----------------------------------------------------------------
