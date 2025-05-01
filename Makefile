@@ -35,8 +35,7 @@ gnu:   # BUILDTARGET GNU Fortran, C, and C++ compilers
 	"USE_PAPI = $(USE_PAPI)" \
 	"OPENMP = $(OPENMP)" \
 	"OPENACC = $(OPENACC)" \
-	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI" \
-	"NETCDFLIBS = -lhdf5_hl -lhdf5 -lm -lz -ldl -lbz2 -lzstd -lcurl -lstdc++" )
+	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI" )
 
 xlf:   # BUILDTARGET IBM XL compilers
 	( $(MAKE) all \
@@ -764,18 +763,6 @@ else # Not using PIO, using SMIOL
 	FCINCLUDES += -I$(PWD)/src/external/SMIOL
 endif
 
-ifneq "$(PNETCDF)" ""
-ifneq ($(wildcard $(PNETCDF)/lib/libpnetcdf.*), )
-	PNETCDFLIBLOC = lib
-endif
-ifneq ($(wildcard $(PNETCDF)/lib64/libpnetcdf.*), )
-	PNETCDFLIBLOC = lib64
-endif
-	CPPINCLUDES += -I$(PNETCDF)/include
-	FCINCLUDES += -I$(PNETCDF)/include
-	LIBS += -L$(PNETCDF)/$(PNETCDFLIBLOC) -lpnetcdf
-endif
-
 ifneq "$(NETCDF)" ""
 ifneq ($(wildcard $(NETCDF)/lib/libnetcdf.*), )
 	NETCDFLIBLOC = lib
@@ -786,7 +773,7 @@ endif
 	CPPINCLUDES += -I$(NETCDF)/include
 	FCINCLUDES += -I$(NETCDF)/include
 	LIBS += -L$(NETCDF)/$(NETCDFLIBLOC)
-	NCLIB = -lnetcdf $(NETCDFLIBS)
+	NCLIB = -lnetcdf
 	NCLIBF = -lnetcdff
 	ifneq ($(wildcard $(NETCDF)/$(NETCDFLIBLOC)/libnetcdff.*), ) # CHECK FOR NETCDF4
 		LIBS += $(NCLIBF)
@@ -797,6 +784,19 @@ endif
 		LIBS += $(NCLIBF)
 	endif
 	LIBS += $(NCLIB)
+endif
+
+
+ifneq "$(PNETCDF)" ""
+ifneq ($(wildcard $(PNETCDF)/lib/libpnetcdf.*), )
+	PNETCDFLIBLOC = lib
+endif
+ifneq ($(wildcard $(PNETCDF)/lib64/libpnetcdf.*), )
+	PNETCDFLIBLOC = lib64
+endif
+	CPPINCLUDES += -I$(PNETCDF)/include
+	FCINCLUDES += -I$(PNETCDF)/include
+	LIBS += -L$(PNETCDF)/$(PNETCDFLIBLOC) -lpnetcdf
 endif
 
 ifneq "$(LAPACK)" ""

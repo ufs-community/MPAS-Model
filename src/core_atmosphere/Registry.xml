@@ -454,9 +454,9 @@
 <!-- **************************************************************************************** -->
 
 	<streams>
-		<stream name="invariant"
-                        type="input"
-                        filename_template="invariant.nc"
+		<stream name="invariant" 
+                        type="input" 
+                        filename_template="invariant.nc" 
                         input_interval="none"
                         immutable="true"
                         in_defaults="false">
@@ -563,9 +563,9 @@
 
                 </stream>
 
-		<stream name="input"
-                        type="input"
-                        filename_template="x1.40962.init.nc"
+		<stream name="input" 
+                        type="input" 
+                        filename_template="x1.40962.init.nc" 
                         input_interval="initial_only"
                         immutable="true">
 
@@ -613,11 +613,11 @@
 #endif
 		</stream>
 
-		<stream name="restart"
-                        type="input;output"
-                        filename_template="restart.$Y-$M-$D_$h.$m.$s.nc"
-                        input_interval="initial_only"
-                        output_interval="1_00:00:00"
+		<stream name="restart" 
+                        type="input;output" 
+                        filename_template="restart.$Y-$M-$D_$h.$m.$s.nc" 
+                        input_interval="initial_only" 
+                        output_interval="1_00:00:00" 
                         immutable="true">
 
 			<stream name="invariant" packages="no_invariant_stream"/>
@@ -916,9 +916,9 @@
 #endif
 		</stream>
 
-		<stream name="output"
-                        type="output"
-                        filename_template="history.$Y-$M-$D_$h.$m.$s.nc"
+		<stream name="output" 
+                        type="output" 
+                        filename_template="history.$Y-$M-$D_$h.$m.$s.nc" 
                         output_interval="6:00:00"
                         runtime_format="separate_file">
 
@@ -1052,9 +1052,9 @@
 #endif
 		</stream>
 
-		<stream name="diagnostics"
-                        type="output"
-                        filename_template="diag.$Y-$M-$D_$h.$m.$s.nc"
+		<stream name="diagnostics" 
+                        type="output" 
+                        filename_template="diag.$Y-$M-$D_$h.$m.$s.nc" 
                         output_interval="3:00:00"
                         runtime_format="separate_file">
 
@@ -1223,9 +1223,9 @@
 #endif
 		</stream>
 
-		<stream name="surface"
-                        type="input"
-                        filename_template="x1.40962.sfc_update.nc"
+		<stream name="surface" 
+                        type="input" 
+                        filename_template="x1.40962.sfc_update.nc" 
                         input_interval="none"
                         filename_interval="none"
                         runtime_format="separate_file">
@@ -1236,9 +1236,9 @@
 #endif
 		</stream>
 
-	        <stream name="iau"
-                        type="input"
-                        filename_template="x1.40962.AmB.$Y-$M-$D_$h.$m.$s.nc"
+	        <stream name="iau" 
+                        type="input" 
+                        filename_template="x1.40962.AmB.$Y-$M-$D_$h.$m.$s.nc" 
                         input_interval="initial_only"
                         filename_interval="none"
                         immutable="true"
@@ -1252,7 +1252,7 @@
                         type="input"
                         filename_template="lbc.$Y-$M-$D_$h.$m.$s.nc"
                         filename_interval="input_interval"
-                        input_interval="3:00:00"
+                        input_interval="3:00:00" 
                         runtime_format="single_file"
                         immutable="true"
                         packages="limited_area">
@@ -1740,7 +1740,7 @@
                      description="Moist potential temperature: theta*(1+q_v*R_v/R_d)"/>
 
                 <!-- When MPAS-A is used as a dycore in CAM, scalars are allocated at runtime via -->
-                <!-- a call to the atm_allocate_scalars routine from setup_block. The specific    -->
+                <!-- a call to the atm_allocate_scalars routine from setup_block. The specific    --> 
                 <!-- constituent at each position in the scalars array is later set by code in    -->
                 <!-- the CAM-MPAS interface layer.                                                -->
 #ifndef MPAS_CAM_DYCORE
@@ -1779,7 +1779,7 @@
                         <var name="nr" array_group="number" units="nb kg^{-1}"
                              description="Rain number concentration"
                              packages="mp_thompson_in;mp_nssl2m_in;mp_tempo_in"/>
-
+                        
                         <var name="ns" array_group="number" units="nb kg^{-1}"
                              description="Snow number concentration"
                              packages="mp_nssl2m_in"/>
@@ -2094,7 +2094,7 @@
 
         <var_struct name="tend" time_levs="1">
 
-
+                
                 <!-- tendencies for prognostic variables -->
                 <var name="tend_u" name_in_code="u" type="real" dimensions="nVertLevels nEdges Time" units="m s^{-2}"
                      description="Tendency of u from dynamics"/>
@@ -2130,7 +2130,7 @@
                      description="Tendency of surface pressure"/>
 
                 <!-- When MPAS-A is used as a dycore in CAM, scalars are allocated at runtime via -->
-                <!-- a call to the atm_allocate_scalars routine from setup_block. The specific    -->
+                <!-- a call to the atm_allocate_scalars routine from setup_block. The specific    --> 
                 <!-- constituent at each position in the scalars array is later set by code in    -->
                 <!-- the CAM-MPAS interface layer.                                                -->
 #ifndef MPAS_CAM_DYCORE
@@ -2167,7 +2167,7 @@
                              description="Tendency of cloud ice number concentration multiplied by dry air density divided by d(zeta)/dz"
                              packages="bl_mynn_in;bl_mynnedmf_in;mp_thompson_in;mp_thompson_aers_in;mp_nssl2m_in;mp_tempo_in"/>
 
-                        <var name="tend_nr" name_in_code="nr" array_group="number" units="nb m^{-3} s^{-1}"
+                        <var name="tend_nr" name_in_code="nr" array_group="number" units="nb m^{-3} s^{-1}" 
                              description="Tendency of rain number concentration multiplied by dry air density divided by d(zeta)/dz"
                              packages="mp_thompson_in;mp_nssl2m_in;mp_tempo_in"/>
 
@@ -2374,7 +2374,7 @@
                      possible_values="Positive integers"/>
 
                 <!-- NAMELIST VARIABLES ADDED FOR PHYSICS CONFIGURATION: -->
-
+                
                 <nml_option name="config_frac_seaice" type="logical" default_value="true" in_defaults="false"
                      units="-"
                      description="logical for configuration of fractional sea-ice"
@@ -2663,7 +2663,7 @@
                      units="-"
                      description="=1:activate mixing of number concentrations in the MYNN PBL scheme (=0 otherwise)"
                      possible_values="0,1"/>
-
+		
                 <nml_option name="config_mynn_mixclouds" type="integer" default_value="1" in_defaults="false"
                      units="-"
                      description="1:activate mixing of cloud condensates in the MYNN PBL scheme"
@@ -2711,7 +2711,7 @@
 
                 <nml_option name="config_oml_hml0" type="real" default_value="30.0" in_defaults="false"
                      units="m"
-                     description="If greater than zero, provides the constant, initial mixed-layer depth; if zero, initial mixed-layer depth will be taken from the `oml_initial` field."
+                     description="If greater than zero, provides the constant, initial mixed-layer depth; if zero, initial mixed-layer depth will be taken from the `oml_initial` field." 
                      possible_values="Non-negative real values"/>
 
                 <nml_option name="config_oml_gamma" type="real" default_value="0.14" in_defaults="false"
@@ -2989,7 +2989,7 @@
                 <var name="wstar" type="real" dimensions="nCells Time" units="m s^{-1}"
                      description="mixed velocity scale from PBL scheme"
                      packages="bl_ysu_in;bl_myj_in"/>
-
+		
                 <var name="exch_h" type="real" dimensions="nVertLevels nCells Time" units="m^{2} s^{-1}"
                      description="exchange coefficient"
                      packages="bl_ysu_in"/>
@@ -3124,7 +3124,7 @@
                 <var name="mixht" type="real" dimensions="nCells Time" units="m"
                      desciption="Mixing height"
                      packages="bl_myj_in"/>
-
+		
                 <!-- ================================================================================================== -->
                 <!-- ... PARAMETERIZATION OF SURFACE LAYER PROCESSES:                                                   -->
                 <!-- ================================================================================================== -->
@@ -3264,7 +3264,7 @@
                 <var name="sh3d" type="real" dimensions="nVertLevels nCells Time" units="unitless"
                      description="stability function for heat"
                      packages="bl_mynn_in;bl_mynnedmf_in"/>
-
+	
                 <var name="sm3d" type="real" dimensions="nVertLevels nCells Time" units="unitless"
                      description="stability function for moisture"
                      packages="bl_mynn_in;bl_mynnedmf_in"/>
@@ -3898,7 +3898,7 @@
                 <var name="tend_umerid" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1} s^{-1}"
                      description="Total cell-centered meridional wind tendency from physics"
                      persistence="scratch" />
-
+ 
 #ifdef DO_PHYSICS
                 <!-- ================================================================================================== -->
                 <!-- TENDENCIES FROM PARAMETERIZATION OF CLOUD MICROPHYSICS:                                            -->
@@ -4357,7 +4357,7 @@
 #endif
 
         <var_struct name="tend_iau" time_levs="1" packages="iau">
-
+			
                 <!-- analysis increments; read from iau input -->
                 <var name="u_amb"     name_in_code="u" type="real" dimensions="nVertLevels nEdges Time" units="m s^{-1}"
                      description="Horizontal normal velocity increment"/>

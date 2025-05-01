@@ -3515,7 +3515,6 @@ module atm_time_integration
                      end do
                   end do
                end do
-            
             end select
 
          ELSE IF(config_apply_lbcs .and. (bdyMaskEdge(iEdge) >= nRelaxZone-1) &
