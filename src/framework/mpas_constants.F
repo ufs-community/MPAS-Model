@@ -82,7 +82,18 @@ module mpas_constants
    subroutine mpas_constants_compute_derived()
 
 #ifdef MPAS_CAM_DYCORE
-#ifndef MPAS_UFS_DYCORE
+#ifdef MPAS_UFS_DYCORE
+      pii     = 3.141592653589793_RKIND
+      a       = 6371229.0_RKIND
+      omega   = 7.29212e-5_RKIND
+      gravity = 9.80616_RKIND
+      rgas    = 287.0_RKIND
+      rv      = 461.6_RKIND
+      cp      = 7.0_RKIND*rgas/2.0_RKIND
+      rvord   = rv / rgas
+      cv      = cp - rgas
+      cvpm    = -cv / cp
+#else
        use physconst, only: external_pii => pi
        use physconst, only: external_a => rearth
        use physconst, only: external_omega => omega
