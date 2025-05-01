@@ -3600,9 +3600,6 @@
 <!-- **************************************************************************************** -->
 
 #include "diagnostics/Registry_diagnostics.xml"
-#ifdef DO_PHYSICS
-#include "physics/Registry_noahmp.xml"
-#endif
 
 #ifdef DO_PHYSICS
 #include "physics/Registry_noahmp.xml"

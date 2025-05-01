@@ -82,6 +82,8 @@ module mpas_constants
    subroutine mpas_constants_compute_derived()
 
 #ifdef MPAS_CAM_DYCORE
+! DJS2025 For the UWM, we follow the control of MPAS_CAM_DYCORE everywhere except here.
+! For UWM use MPAS internal constants. Revisit and add UWM constants.
 #ifdef MPAS_UFS_DYCORE
       pii     = 3.141592653589793_RKIND
       a       = 6371229.0_RKIND
