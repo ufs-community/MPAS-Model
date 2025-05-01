@@ -128,7 +128,7 @@ CONTAINS
  real,dimension(ims:ime,kms:kme,jms:jme),intent(inout),optional:: gdc,gdc2
  real,dimension(ims:ime,kms:kme,jms:jme),intent(inout):: qc_cu,qi_cu,cldfrac_cu,refl10cm_cu
  integer,intent(in) :: num_chem
- real,dimension(ims:ime,kms:kme,jms:jme,1:num_chem),intent(inout) :: chem3d_in
+ real,dimension(ims:ime,kms:kme,jms:jme,1:num_chem),intent(inout),optional :: chem3d_in
 
 !local variables:
  character(len=50),dimension(its:ite):: ierrc,ierrcm
