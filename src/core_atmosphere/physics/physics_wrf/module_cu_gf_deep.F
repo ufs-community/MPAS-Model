@@ -330,11 +330,11 @@ contains
      real(kind=kind_phys), dimension (its:ite,kts:kte,nchem) ::           &
          chem
      real(kind=kind_phys), dimension (its:ite,kts:kte,nchem) ::           &
-         chem_cup,chem_up,chem_down,dellac,dellac2,chem_c,chem_pw,chem_pwd
+         chem_cup,chem_up,chem_down,dellac,chem_c,chem_pw,chem_pwd
      real(kind=kind_phys), dimension (its:ite,nchem)   ::                 &
          chem_pwav,chem_psum
      real(kind=kind_phys):: dtime_max,sum1,sum2
-     real(kind=kind_phys), dimension (kts:kte) :: trac,trcflx_in,sub_tend,trc,trco
+     real(kind=kind_phys), dimension (kts:kte) :: trac,trcflx_in,sub_tend,trc,trco,dellac2
      real(kind=kind_phys), dimension (its:ite,kts:kte) :: pwdper
      integer :: nv
 !$acc declare create(chem,chem_cup,chem_up,chem_down,dellac,dellac2,chem_c,chem_pw,chem_pwd,   &
@@ -1746,8 +1746,7 @@ contains
             ! these three are only used at or near mass detrainment and/or entrainment levels
 
 !---meltglac-------------------------------------------------
-           dellah(i,k) = dellah(i,k) + xlf*((1.-p_liq_ice(i,k))*0.5*(qrco(i,k+1)+qrco(i,k)) &
-                                     - melting(i,k))*g/dp
+           dellah(i,k) = dellah(i,k) - xlf*melting(i,k)*g/dp
            subten_h(i,k) = -(zuo(i,k+1)*(-heo_cup(i,k+1)) - zuo(i,k)*(-heo_cup(i,k)))*g/dp       &
                            +(zdo(i,k+1)*(-heo_cup(i,k+1)) - zdo(i,k)*(-heo_cup(i,k)))*g/dp*edto(i)
            dellah(i,k) = dellah(i,k) + subten_h(i,k)
@@ -2268,11 +2267,11 @@ contains
        enddo ! nchem loop
 
 ! fct for subsidence
-      dellac2(:,:,:)=0.
       massflx(:)=0.
       do nv=1,nchem
 !$acc loop private(trcflx_in)
       do i=its,itf
+        dellac2(:)=0.
         c_local(:)=0.
         if(ierr(i).eq.0)then
          trcflx_in(:)=0.
@@ -2290,10 +2289,10 @@ contains
          massflx(1)=0.
          p_local(kts:kte)=po_cup(i,kts:kte)
          call fct1d3(ktop(i),kte,dtime_max,p_local,c_local,massflx,   &
-                     trcflx_in,dellac2(i,:,nv),g)
+                     trcflx_in,dellac2,g)
          do k=kts,ktop(i)
              trash=chem (i,k,nv)
-             chem (i,k,nv)=chem (i,k,nv) + (dellac(i,k,nv)+dellac2(i,k,nv))*dtime
+             chem (i,k,nv)=chem (i,k,nv) + (dellac(i,k,nv)+dellac2(k))*dtime
              if(chem(i,k,nv).lt.qamin)then
                dp=100.*(po_cup(i,k)-po_cup(i,k+1))
                wetdpc_deep(i,nv)=wetdpc_deep(i,nv)+(qamin-chem(i,k,nv))*dp/g/dtime

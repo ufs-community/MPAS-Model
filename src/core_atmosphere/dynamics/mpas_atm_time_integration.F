@@ -502,6 +502,9 @@ module atm_time_integration
       integer, pointer :: index_nc, index_nr, index_ni, index_ns, index_ng, index_nh, index_nccn
       integer, pointer :: index_volg, index_volh, index_zrw, index_zgw, index_zhw
 
+      character (len=StrKIND), pointer :: config_smoke_scheme
+      integer, pointer :: index_smoke_fine
+
       character(len=StrKIND), pointer :: config_IAU_option
 
       type (mpas_pool_type), pointer :: state
@@ -541,6 +544,8 @@ module atm_time_integration
       !  config variables for dynamics-transport splitting, WCS 18 November 2014
       call mpas_pool_get_config(block % configs, 'config_split_dynamics_transport', config_split_dynamics_transport)
       call mpas_pool_get_config(block % configs, 'config_dynamics_split_steps', config_dynamics_split)
+      !  config variables for smoke
+      call mpas_pool_get_config(block % configs, 'config_smoke_scheme', config_smoke_scheme)
       !  config variables for cloud microphysics
 #ifdef DO_PHYSICS
       call mpas_pool_get_config(block % configs, 'config_microp_scheme', config_microp_scheme)
@@ -617,6 +622,7 @@ module atm_time_integration
          call mpas_pool_get_dimension(state, 'index_zrw', index_zrw)
          call mpas_pool_get_dimension(state, 'index_zgw', index_zgw)
          call mpas_pool_get_dimension(state, 'index_zhw', index_zhw)
+         call mpas_pool_get_dimension(state, 'index_smoke_fine', index_smoke_fine)
       endif
 
       !
@@ -1112,6 +1118,9 @@ module atm_time_integration
                   if (index_zhw > 0) then
                      scalars_driving(index_zhw,1:nVertLevels,1:nCells+1) = mpas_atm_get_bdy_state( clock, block, nVertLevels, nCells, 'zhw', rk_timestep(rk_step) )
                   end if
+                  if (index_smoke_fine > 0) then
+                     scalars_driving(index_smoke_fine,1:nVertLevels,1:nCells+1) = mpas_atm_get_bdy_state( clock, block, nVertLevels, nCells, 'smoke_fine', rk_timestep(rk_step) )
+                  end if
                   
                   !$OMP PARALLEL DO
                   do thread=1,nThreads
@@ -1318,6 +1327,9 @@ module atm_time_integration
                if (index_zhw > 0) then
                   scalars_driving(index_zhw,1:nVertLevels,1:nCells+1) = mpas_atm_get_bdy_state( clock, block, nVertLevels, nCells, 'zhw', rk_timestep(rk_step) )
                end if
+               if (index_smoke_fine > 0) then
+                  scalars_driving(index_smoke_fine,1:nVertLevels,1:nCells+1) = mpas_atm_get_bdy_state( clock, block, nVertLevels, nCells, 'smoke_fine', rk_timestep(rk_step) )
+               end if
                
 !$OMP PARALLEL DO
                do thread=1,nThreads
@@ -1516,6 +1528,9 @@ module atm_time_integration
          end if
          if (index_zhw > 0) then
             scalars_driving(index_zhw,1:nVertLevels,1:nCells+1) = mpas_atm_get_bdy_state( clock, block, nVertLevels, nCells, 'zhw', dt)
+         end if
+         if (index_smoke_fine > 0) then
+            scalars_driving(index_smoke_fine,1:nVertLevels,1:nCells+1) = mpas_atm_get_bdy_state( clock, block, nVertLevels, nCells, 'smoke_fine', dt)
          end if
       
 !$OMP PARALLEL DO
