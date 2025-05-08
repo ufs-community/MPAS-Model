@@ -109,7 +109,7 @@ set(ATMOSPHERE_CORE_PHYSICS_WRF_SOURCES
 
 list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_WRF_SOURCES PREPEND physics/physics_wrf/)
 
-# physics/UGWP/
+# physics/physics_noaa/UGWP/
 set(ATMOSPHERE_CORE_PHYSICS_UGWP_SOURCES
     bl_ugwp.F
     bl_ugwpv1_ngw.F
@@ -119,24 +119,25 @@ set(ATMOSPHERE_CORE_PHYSICS_UGWP_SOURCES
     cires_ugwpv1_solv2.F
     cires_ugwpv1_triggers.F
 )
-list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_UGWP_SOURCES PREPEND physics/UGWP/)
+list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_UGWP_SOURCES PREPEND physics/physics_noaa/UGWP/)
 
-# physics/TEMPO/
+# physics/physics_noaa/TEMPO/
 set(ATMOSPHERE_CORE_PHYSICS_TEMPO_SOURCES
     module_mp_tempo_main.F90
     module_mp_tempo_params.F90
     module_mp_tempo_utils.F90
+    module_mp_tempo_ml.F90
     drivers/mpas/module_mp_tempo.F90
 )
-list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_TEMPO_SOURCES PREPEND physics/TEMPO/)
+list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_TEMPO_SOURCES PREPEND physics/physics_noaa/TEMPO/)
 
-# physics/MYNN-EDMF/
+# physics/physics_noaa/MYNN-EDMF/
 set(ATMOSPHERE_CORE_PHYSICS_MYNN-EDMF_SOURCES
     module_bl_mynnedmf.F90
     MPAS/module_bl_mynnedmf_common.F90
     MPAS/module_bl_mynnedmf_driver.F90
 )
-list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_MYNN-EDMF_SOURCES PREPEND physics/MYNN-EDMF/)
+list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_MYNN-EDMF_SOURCES PREPEND physics/physics_noaa/MYNN-EDMF/)
 
 set(ATMOSPHERE_CORE_PHYSICS_MMM_DIR ${CMAKE_CURRENT_SOURCE_DIR}/physics/physics_mmm)
 
