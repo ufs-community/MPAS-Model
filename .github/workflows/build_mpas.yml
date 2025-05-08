@@ -3,7 +3,7 @@ name: CI test to build MPAS Standalone
 on: [pull_request,workflow_dispatch,push]
 
 jobs:
-  run_driver:
+  build_mpas:
 
     # The type of runner that the job will run on
     runs-on: ubuntu-22.04
@@ -28,3 +28,11 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install libnetcdff-dev
+
+    # PNetCDF library
+
+    # PIO library
+
+    # Download any dependencies?
+
+    # Build MPAS-A 
