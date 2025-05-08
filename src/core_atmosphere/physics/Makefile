@@ -64,13 +64,13 @@ core_physics_mmm: core_physics_init
 	(cd physics_mmm; $(MAKE) -f Makefile.mpas all)
 
 core_microphysics: core_physics_init core_physics_mmm
-	(cd TEMPO; cp ./drivers/mpas/module_mp_tempo.F90 .; $(MAKE) all COREDEF="$(COREDEF)")
+	(cd physics_noaa/TEMPO; cp ./drivers/mpas/module_mp_tempo.F90 .; $(MAKE) all COREDEF="$(COREDEF)")
 
 core_UGWP: core_physics_init
-	(cd UGWP; $(MAKE) all)
+	(cd physics_noaa/UGWP; $(MAKE) all)
 
 core_mynnedmf: core_physics_init core_physics_mmm
-	(cd MYNN-EDMF; cp ./MPAS/Makefile .; cp ./MPAS/module_bl_mynnedmf_driver.F90 .; cp ./MPAS/module_bl_mynnedmf_common.F90 .; $(MAKE) all)
+	(cd physics_noaa/MYNN-EDMF; cp ./MPAS/Makefile .; cp ./MPAS/module_bl_mynnedmf_driver.F90 .; cp ./MPAS/module_bl_mynnedmf_common.F90 .; $(MAKE) all)
 
 core_physics_wrf: core_physics_init core_physics_mmm core_UGWP
 	(cd physics_wrf; $(MAKE) all COREDEF="$(COREDEF)")
@@ -274,9 +274,9 @@ clean:
 	( cd physics_noahmp/drivers/mpas; $(MAKE) clean )
 	( cd physics_noahmp/src; $(MAKE) clean )
 	( cd physics_noahmp/utility; $(MAKE) clean )
-	( cd TEMPO; $(MAKE) clean )
-	( cd UGWP; $(MAKE) clean )
-	( cd MYNN-EDMF; cp ./MPAS/Makefile .; $(MAKE) clean )
+	( cd physics_noaa/TEMPO; $(MAKE) clean )
+	( cd physics_noaa/UGWP; $(MAKE) clean )
+	( cd physics_noaa/MYNN-EDMF; cp ./MPAS/Makefile .; $(MAKE) clean )
 	@# Certain systems with intel compilers generate *.i files
 	@# This removes them during the clean process
 	$(RM) *.i
@@ -285,16 +285,16 @@ clean:
 	$(RM) $@ $*.mod
 ifeq "$(GEN_F90)" "true"
 	$(CPP) $(CPPFLAGS) $(COREDEF) $(HYDROSTATIC) $(CPPINCLUDES) $< > $*.f90
-	$(FC) $(FFLAGS) -c $*.f90 $(FCINCLUDES) -I./physics_mmm -I./physics_wrf -I./physics_noahmp -I./physics_noahmp/utility -I./physics_noahmp/drivers/mpas -I./physics_noahmp/src -I./TEMPO -I./UGWP -I./MYNN-EDMF -I.. -I../../framework -I../../external/esmf_time_f90
+	$(FC) $(FFLAGS) -c $*.f90 $(FCINCLUDES) -I./physics_mmm -I./physics_wrf -I./physics_noahmp -I./physics_noahmp/utility -I./physics_noahmp/drivers/mpas -I./physics_noahmp/src -I./physics_noaa/TEMPO -I./physics_noaa/UGWP -I./physics_noaa/MYNN-EDMF -I.. -I../../framework -I../../external/esmf_time_f90
 else
-	$(FC) $(CPPFLAGS) $(COREDEF) $(HYDROSATIC) $(FFLAGS) -c $*.F $(CPPINCLUDES) $(FCINCLUDES) -I./physics_mmm -I./physics_wrf -I./physics_noahmp -I./physics_noahmp/utility -I./physics_noahmp/drivers/mpas -I./physics_noahmp/src -I./TEMPO -I./UGWP -I./MYNN-EDMF -I.. -I../../framework -I../../external/esmf_time_f90
+	$(FC) $(CPPFLAGS) $(COREDEF) $(HYDROSATIC) $(FFLAGS) -c $*.F $(CPPINCLUDES) $(FCINCLUDES) -I./physics_mmm -I./physics_wrf -I./physics_noahmp -I./physics_noahmp/utility -I./physics_noahmp/drivers/mpas -I./physics_noahmp/src -I./physics_noaa/TEMPO -I./physics_noaa/UGWP -I./physics_noaa/MYNN-EDMF -I.. -I../../framework -I../../external/esmf_time_f90
 endif
 
 .F90.o:
 	$(RM) $@ $*.mod
 ifeq "$(GEN_F90)" "true"
 	$(CPP) $(CPPFLAGS) $(COREDEF) $(HYDROSTATIC) $(CPPINCLUDES) $< > $*.f90
-	$(FC) $(FFLAGS) -c $*.f90 $(FCINCLUDES) -I./physics_mmm -I./physics_wrf -I./TEMPO -I./UGWP -I./MYNN-EDMF -I.. -I../../framework -I../../external/esmf_time_f90
+	$(FC) $(FFLAGS) -c $*.f90 $(FCINCLUDES) -I./physics_mmm -I./physics_wrf -I./physics_noaa/TEMPO -I./physics_noaa/UGWP -I./physics_noaa/MYNN-EDMF -I.. -I../../framework -I../../external/esmf_time_f90
 else
-	$(FC) $(CPPFLAGS) $(COREDEF) $(HYDROSATIC) $(FFLAGS) -c $*.F90 $(CPPINCLUDES) $(FCINCLUDES) -I./physics_mmm -I./physics_wrf -I./TEMPO -I./UGWP -I./MYNN-EDMF -I.. -I../../framework -I../../external/esmf_time_f90
+	$(FC) $(CPPFLAGS) $(COREDEF) $(HYDROSATIC) $(FFLAGS) -c $*.F90 $(CPPINCLUDES) $(FCINCLUDES) -I./physics_mmm -I./physics_wrf -I./physics_noaa/TEMPO -I./physics_noaa/UGWP -I./physics_noaa/MYNN-EDMF -I.. -I../../framework -I../../external/esmf_time_f90
 endif
