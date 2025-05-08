@@ -1,0 +1,30 @@
+name: CI test to build MPAS Standalone
+
+on: [pull_request,workflow_dispatch,push]
+
+jobs:
+  run_driver:
+
+    # The type of runner that the job will run on
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        fortran-compiler: [gfortran-10, gfortran-11, gfortran-12]
+
+    # Environmental variables
+    env:
+      NFHOME:      /usr
+      NFVERSION:   v4.5.3
+      driver_ROOT: /home/runner/work/template/template
+
+    # Workflow steps
+    steps:
+
+    - name: Checkout code (into ${driver_ROOT})
+      uses: actions/checkout@v3
+
+    # NetCDF C and FORTRAN libraries
+    - name: Install NetCDF library
+      run: |
+        sudo apt-get update
+        sudo apt-get install libnetcdff-dev
