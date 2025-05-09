@@ -140,7 +140,7 @@ jobs:
     # Build MPAS-A
     - name: Build MPAS
       run: |
-        cd ${driver_ROOT}/MPAS
+        cd ${driver_ROOT}/MPAS-Model
         pwd
         ls
         make gfortran
