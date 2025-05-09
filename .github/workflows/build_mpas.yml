@@ -136,7 +136,7 @@ jobs:
       run: |
         echo "FC=mpif90" >> $GITHUB_ENV
         echo "CC=mpicc"  >> $GITHUB_ENV
-	echo "PNETCDF=/home/runner/PnetCDF" >> $GITHUB_ENV
+        echo "PNETCDF=/home/runner/PnetCDF" >> $GITHUB_ENV
 
     # Build MPAS-A
     - name: Build MPAS
