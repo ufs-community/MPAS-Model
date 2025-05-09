@@ -37,6 +37,7 @@ jobs:
         key: cache-openmpi-${{matrix.fortran-compiler}}-key
 
     - name: Install openmpi
+      if: steps.cache-openmpi.outputs.cache-hit != 'true'
       run: |
         wget https://github.com/open-mpi/ompi/archive/refs/tags/v4.1.6.tar.gz
         tar -xvf v4.1.6.tar.gz
