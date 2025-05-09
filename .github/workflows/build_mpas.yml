@@ -63,7 +63,7 @@ jobs:
 
     # Buld GNU Autotools
     - name: Build GNU autotools
-      #if: steps.cache-AUTOTOOLS.outputs.cache-hit != 'true'
+      if: steps.cache-AUTOTOOLS.outputs.cache-hit != 'true'
       run: |
         wget -q https://ftp.gnu.org/gnu/m4/m4-${M4_VERSION}.tar.gz
         gzip -dc m4-${M4_VERSION}.tar.gz | tar -xf -
@@ -105,7 +105,7 @@ jobs:
 
     # PNetCDF library
     - name: Install PnetCDF
-      #if: steps.cache-PnetCDF.outputs.cache-hit != 'true'
+      if: steps.cache-PnetCDF.outputs.cache-hit != 'true'
       run: |
         set -x
         echo "LD_LIBRARY_PATH=/home/runner/AUTOTOOLS/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
@@ -123,7 +123,7 @@ jobs:
         make -j 8 install
         #make -s LIBTOOLFLAGS=--silent V=1 -j 8 install > qout 2>&1
         #make -s distclean >> qout 2>&1
-
+        echo "PATH=$HOME/PnetCDF/bin:$PATH" >> $GITHUB_ENV
     # PIO library
 
     # Download any dependencies?
@@ -134,6 +134,7 @@ jobs:
         echo "FC=mpif90" >> $GITHUB_ENV
         echo "CC=mpicc"  >> $GITHUB_ENV
         echo "PNETCDF=/home/runner/PnetCDF" >> $GITHUB_ENV
+        echo "PATH=$HOME/PnetCDF/bin:$PATH" >> $GITHUB_ENV
 
     # Build MPAS-A
     - name: Build MPAS
