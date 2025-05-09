@@ -29,6 +29,18 @@ jobs:
         sudo apt-get update
         sudo apt-get install libnetcdff-dev
 
+    - name: Install openmpi
+      run: |
+        wget https://github.com/open-mpi/ompi/archive/refs/tags/v4.1.6.tar.gz
+        tar -xvf v4.1.6.tar.gz
+        cd ompi-4.1.6
+        ./autogen.pl
+        ./configure --prefix=/home/runner/ompi-4.1.6
+        make -j4
+        make install
+        echo "LD_LIBRARY_PATH=/home/runner/ompi-4.1.6/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+        echo "PATH=/home/runner/ompi-4.1.6/bin:$PATH" >> $GITHUB_ENV
+
     # PNetCDF library
 
     # PIO library
