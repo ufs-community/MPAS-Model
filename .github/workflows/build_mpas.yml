@@ -135,11 +135,13 @@ jobs:
         echo "CC=mpicc"  >> $GITHUB_ENV
         echo "PNETCDF=/home/runner/PnetCDF" >> $GITHUB_ENV
         echo "PATH=/home/runner/PnetCDF/bin:$PATH" >> $GITHUB_ENV
-        which ncmpidump
+        echo "LD_LIBRARY_PATH=/home/runner/PnetCDF/bin:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+
 
     # Build MPAS-A
     - name: Build MPAS
       run: |
+        which ncmpidump
         ls ${PNETCDF}/lib
         ls ${PNETCDF}/include
         cd ${driver_ROOT}/MPAS-Model/MPAS-Model
