@@ -141,6 +141,6 @@ jobs:
     # Build MPAS-A
     - name: Build MPAS
       run: |
-        echo ${PNETCDF}
+        ls ${PNETCDF}
         cd ${driver_ROOT}/MPAS-Model/MPAS-Model
         make gfortran CORE=atmosphere
