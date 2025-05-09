@@ -79,7 +79,7 @@ jobs:
         gzip -dc libtool-${LIBTOOL_VERSION}.tar.gz | tar -xf -
         cd libtool-${LIBTOOL_VERSION}
         ./configure --prefix=${GITHUB_WORKSPACE}/AUTOTOOLS --silent
- 	make -s -j 8 install > qout 2>&1
+        make -s -j 8 install > qout 2>&1
         make -s -j 8 distclean >> qout 2>&1
 
     # PNetCDF library
