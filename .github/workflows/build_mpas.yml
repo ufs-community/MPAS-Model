@@ -141,6 +141,6 @@ jobs:
     - name: Build MPAS
       run: |
         cd ${driver_ROOT}
-	pwd
-	ls
+        pwd
+        ls
         make gfortran
