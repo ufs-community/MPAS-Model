@@ -119,11 +119,10 @@ jobs:
         git clone -q https://github.com/Parallel-NetCDF/PnetCDF.git
         cd PnetCDF
         autoreconf -i
-        ./configure --prefix=/home/runner/PnetCDF \
-                    --silent \
-                    --with-mpi=/home/runner/ompi-4.1.6
-        make -s LIBTOOLFLAGS=--silent V=1 -j 8 install > qout 2>&1
-        make -s distclean >> qout 2>&1
+        ./configure --prefix=/home/runner/PnetCDF --with-mpi=/home/runner/ompi-4.1.6
+        make -j 8 install
+        #make -s LIBTOOLFLAGS=--silent V=1 -j 8 install > qout 2>&1
+        #make -s distclean >> qout 2>&1
 
     # PIO library
 
@@ -143,4 +142,3 @@ jobs:
         ls ${PNETCDF}/include
         cd ${driver_ROOT}/MPAS-Model/MPAS-Model
         make gfortran CORE=atmosphere
-        head pnetcdf.log -n 500
