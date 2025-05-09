@@ -133,6 +133,6 @@ jobs:
 
     # Build MPAS-A
     - name: Build MPAS
-    run: |
-      cd ${driver_ROOT}
-      make gfortran
+      run: |
+        cd ${driver_ROOT}
+        make gfortran
