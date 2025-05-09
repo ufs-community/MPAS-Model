@@ -135,6 +135,8 @@ jobs:
         echo "CC=mpicc"  >> $GITHUB_ENV
         echo "PNETCDF=/home/runner/PnetCDF" >> $GITHUB_ENV
         echo "PATH=$HOME/PnetCDF/bin:$PATH" >> $GITHUB_ENV
+        which ncmpidump
+        which ncmpidiff
 
     # Build MPAS-A
     - name: Build MPAS
