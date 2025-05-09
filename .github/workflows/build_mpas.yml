@@ -141,6 +141,4 @@ jobs:
     - name: Build MPAS
       run: |
         cd ${driver_ROOT}/MPAS-Model/MPAS-Model
-        pwd
-        ls
-        make gfortran
+        make gfortran CORE=atmosphere
