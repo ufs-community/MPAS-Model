@@ -51,8 +51,8 @@ jobs:
 
     - name: Build GNU autotools
       run: |
-        export PATH="${GITHUB_WORKSPACE}/AUTOTOOLS/bin:${PATH}"
-        export LD_LIBRARY_PATH="${GITHUB_WORKSPACE}/AUTOTOOLS/lib:${LD_LIBRARY_PATH}"
+        echo "LD_LIBRARY_PATH=/home/runner/AUTOTOOLS/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+        echo "PATH=/home/runner/AUTOTOOLS/bin:$PATH" >> $GITHUB_ENV
         cd ${GITHUB_WORKSPACE}
         wget -q https://ftp.gnu.org/gnu/m4/m4-${M4_VERSION}.tar.gz
         gzip -dc m4-${M4_VERSION}.tar.gz | tar -xf -
@@ -87,8 +87,8 @@ jobs:
       run: |
         set -x
         cd ${GITHUB_WORKSPACE}
-        export PATH="${GITHUB_WORKSPACE}/AUTOTOOLS/bin:${PATH}"
-        export LD_LIBRARY_PATH="${GITHUB_WORKSPACE}/AUTOTOOLS/lib:${LD_LIBRARY_PATH}"
+        echo "LD_LIBRARY_PATH=/home/runner/AUTOTOOLS/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+        echo "PATH=/home/runner/AUTOTOOLS/bin:$PATH" >> $GITHUB_ENV
         m4 --version
         autoconf --version
         automake --version
