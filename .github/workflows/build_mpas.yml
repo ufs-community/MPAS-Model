@@ -63,7 +63,7 @@ jobs:
 
     # Buld GNU Autotools
     - name: Build GNU autotools
-      #if: steps.cache-AUTOTOOLS.outputs.cache-hit != 'true'
+      if: steps.cache-AUTOTOOLS.outputs.cache-hit != 'true'
       run: |
         wget -q https://ftp.gnu.org/gnu/m4/m4-${M4_VERSION}.tar.gz
         gzip -dc m4-${M4_VERSION}.tar.gz | tar -xf -
@@ -105,7 +105,7 @@ jobs:
 
     # PNetCDF library
     - name: Install PnetCDF
-      #if: steps.cache-PnetCDF.outputs.cache-hit != 'true'
+      if: steps.cache-PnetCDF.outputs.cache-hit != 'true'
       run: |
         set -x
         echo "LD_LIBRARY_PATH=/home/runner/AUTOTOOLS/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
@@ -124,9 +124,6 @@ jobs:
         #make -s LIBTOOLFLAGS=--silent V=1 -j 8 install > qout 2>&1
         #make -s distclean >> qout 2>&1
         echo "PATH=/home/runner/PnetCDF/bin:$PATH" >> $GITHUB_ENV
-    # PIO library
-
-    # Download any dependencies?
 
 
     - name: Environment for openmpi compiler
@@ -141,7 +138,6 @@ jobs:
     # Build MPAS-A
     - name: Build MPAS
       run: |
-        which ncmpidump
         ls ${PNETCDF}/lib
         ls ${PNETCDF}/include
         cd ${driver_ROOT}/MPAS-Model/MPAS-Model
