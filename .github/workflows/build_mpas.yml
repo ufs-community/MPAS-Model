@@ -29,6 +29,13 @@ jobs:
         sudo apt-get update
         sudo apt-get install libnetcdff-dev
 
+    - name: Cache openmpi
+      id: cache-openmpi
+      uses: actions/cache@v4
+      with:
+        path: /home/runner/ompi-4.1.6
+        key: cache-openmpi-${{matrix.fortran-compiler}}-key
+	
     - name: Install openmpi
       run: |
         wget https://github.com/open-mpi/ompi/archive/refs/tags/v4.1.6.tar.gz
