@@ -406,6 +406,7 @@
 		<package name="mp_tempo_in" description="parameterization of TEMPO cloud microphysics."/>
 		<package name="tempo_aerosolaware_in" description="variables for TEMPO aerosol-aware microphysics."/>
 		<package name="tempo_hailaware_in" description="variables for TEMPO hail-aware microphysics."/>
+		<package name="tempo_qh_in" description="variables for TEMPO microphysics with hail category."/>
         </packages>
 
 

@@ -39,9 +39,9 @@
  character(len=StrKIND),pointer:: config_convection_scheme
  character(len=StrKIND),pointer:: config_pbl_scheme
  character(len=StrKIND),pointer:: config_lsm_scheme
- logical,pointer:: config_tempo_hailaware, config_tempo_aerosolaware
+ logical,pointer:: config_tempo_hailaware, config_tempo_aerosolaware, config_tempo_qh
  logical,pointer:: mp_kessler_in,mp_thompson_in,mp_thompson_aers_in,mp_wsm6_in,mp_nssl2m_in,nssl3m_in
- logical,pointer:: mp_tempo_in, tempo_hailaware_in, tempo_aerosolaware_in
+ logical,pointer:: mp_tempo_in, tempo_hailaware_in, tempo_aerosolaware_in, tempo_qh_in
  logical,pointer:: cu_grell_freitas_in,cu_kain_fritsch_in,cu_ntiedtke_in
  logical,pointer:: bl_mynn_in,bl_mynnedmf_in,bl_ysu_in,bl_myj_in
  logical,pointer:: lsm_noah_in,lsm_ruc_in
@@ -64,6 +64,7 @@
 
  call mpas_pool_get_config(configs,'config_nssl_moments',config_nssl_moments)
  call mpas_pool_get_config(configs,'config_tempo_hailaware',config_tempo_hailaware)
+ call mpas_pool_get_config(configs,'config_tempo_qh',config_tempo_qh)
  call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
 
  nullify(mp_kessler_in)
@@ -83,6 +84,9 @@
  
  nullify(tempo_hailaware_in)
  call mpas_pool_get_package(packages,'tempo_hailaware_inActive',tempo_hailaware_in)
+
+ nullify(tempo_qh_in)
+ call mpas_pool_get_package(packages,'tempo_qh_inActive',tempo_qh_in)
  
  nullify(mp_wsm6_in)
  call mpas_pool_get_package(packages,'mp_wsm6_inActive',mp_wsm6_in)
@@ -112,6 +116,7 @@
  mp_tempo_in         = .false.
  tempo_aerosolaware_in  = .false.
  tempo_hailaware_in  = .false.
+ tempo_qh_in  = .false.
  mp_wsm6_in          = .false.
  mp_nssl2m_in            = .false.
  nssl3m_in               = .false.
@@ -132,6 +137,9 @@
     if (config_tempo_hailaware) then
        tempo_hailaware_in = .true.
     endif
+    if (config_tempo_qh) then
+       tempo_qh_in = .true.
+    endif
  elseif(config_microp_scheme == 'mp_nssl2m') then
     mp_nssl2m_in = .true.
     IF ( config_nssl_moments == 'nssl3m' ) THEN
@@ -145,6 +153,7 @@
  call mpas_log_write('    mp_tempo_in             = $l', logicArgs=(/mp_tempo_in/))
  call mpas_log_write('    tempo_aerosolaware_in   = $l', logicArgs=(/tempo_aerosolaware_in/))
  call mpas_log_write('    tempo_hailaware_in      = $l', logicArgs=(/tempo_hailaware_in/))
+ call mpas_log_write('    tempo_qh_in             = $l', logicArgs=(/tempo_qh_in/))
  call mpas_log_write('    mp_wsm6_in              = $l', logicArgs=(/mp_wsm6_in/))
  call mpas_log_write('    mp_nssl2m_in            = $l', logicArgs=(/mp_nssl2m_in/))
  call mpas_log_write('    nssl3m_in               = $l', logicArgs=(/nssl3m_in/))

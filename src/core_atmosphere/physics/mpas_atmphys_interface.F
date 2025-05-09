@@ -663,7 +663,7 @@
  real(kind=RKIND),dimension(:),pointer    :: nifa2d,nwfa2d,nt_c,mu_c
 !TEMPO/NSSL
  character(len=StrKIND),pointer:: nssl_moments
- logical,pointer:: config_tempo_hailaware, config_tempo_aerosolaware
+ logical,pointer:: config_tempo_hailaware, config_tempo_aerosolaware, config_tempo_qh
  logical,pointer:: config_tempo_ml_nc_pbl
  integer,pointer:: index_qh
  integer,pointer:: index_zrw,index_zgw,index_zhw
@@ -692,6 +692,7 @@
  call mpas_pool_get_config(configs,'config_microp_scheme',mp_scheme)
  call mpas_pool_get_config(configs,'config_nssl_moments',nssl_moments)
  call mpas_pool_get_config(configs,'config_tempo_hailaware',config_tempo_hailaware)
+ call mpas_pool_get_config(configs,'config_tempo_qh',config_tempo_qh)
  call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
  call mpas_pool_get_config(configs,'config_tempo_ml_nc_pbl',config_tempo_ml_nc_pbl)
 
@@ -902,6 +903,20 @@
                 do i = its, ite
                    ng_p(i,k,j) = ng(k,i)
                    volg_p(i,k,j) = volg(k,i)
+                enddo
+                enddo
+                enddo
+             endif
+
+             if (config_tempo_qh) then
+                call mpas_pool_get_dimension(state,'index_qh'  ,index_qh  )
+
+                qh   => scalars(index_qh,:,:)
+
+                do j = jts, jte
+                do k = kts, kte
+                do i = its, ite
+                   qh_p(i,k,j) = qh(k,i)
                 enddo
                 enddo
                 enddo
@@ -1139,7 +1154,7 @@
 !local pointers:
  character(len=StrKIND),pointer:: mp_scheme
  character(len=StrKIND),pointer:: nssl_moments
- logical,pointer:: config_tempo_hailaware, config_tempo_aerosolaware
+ logical,pointer:: config_tempo_hailaware, config_tempo_aerosolaware, config_tempo_qh
  integer,pointer:: index_qv,index_qc,index_qr,index_qi,index_qs,index_qg
  integer,pointer:: index_nc,index_ni,index_nr,index_nifa,index_nwfa
 !TEMPO/NSSL
@@ -1175,6 +1190,7 @@
  call mpas_pool_get_config(configs,'config_microp_scheme',mp_scheme)
  call mpas_pool_get_config(configs,'config_nssl_moments',nssl_moments)
  call mpas_pool_get_config(configs,'config_tempo_hailaware',config_tempo_hailaware)
+ call mpas_pool_get_config(configs,'config_tempo_qh',config_tempo_qh)
  call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
 
  call mpas_pool_get_array(mesh,'zz'   ,zz   )
@@ -1398,6 +1414,20 @@
                 do i = its, ite
                    ng(k,i) = ng_p(i,k,j)
                    volg(k,i) = volg_p(i,k,j)
+                enddo
+                enddo
+                enddo
+             endif
+
+             if (config_tempo_qh) then
+                call mpas_pool_get_dimension(state,'index_qh'  ,index_qh  )
+
+                qh   => scalars(index_qh,:,:)
+
+                do j = jts, jte
+                do k = kts, kte
+                do i = its, ite
+                   qh(k,i) = qh_p(i,k,j)
                 enddo
                 enddo
                 enddo

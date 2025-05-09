@@ -410,6 +410,7 @@
 		<package name="mp_tempo_in" description="parameterization of TEMPO cloud microphysics."/>
 		<package name="tempo_aerosolaware_in" description="variables for TEMPO with aerosol-aware microphysics."/>
 		<package name="tempo_hailaware_in" description="variables for TEMPO hail-aware microphysics."/>
+		<package name="tempo_qh_in" description="variables for TEMPO microphysics with hail category."/>
                 <package name="mp_wsm6_in" description="parameterization of WSM6 cloud microphysics."/>
                 <package name="mp_nssl2m_in" description="parameterization of NSSL 2-moment microphysics."/>
                 <package name="nssl3m_in" description="variables for NSSL 3-moment microphysics."/>
@@ -1755,7 +1756,7 @@
 
                         <var name="qh" array_group="moist" units="kg kg^{-1}"
                              description="Hail mixing ratio"
-                             packages="mp_nssl2m_in"/>
+                             packages="mp_nssl2m_in;tempo_qh_in"/>
 
                         <var name="ni" array_group="number" units="nb kg^{-1}"
                              description="Cloud ice number concentration"
@@ -2146,7 +2147,7 @@
 
                         <var name="tend_qh" name_in_code="qh" array_group="moist" units="kg m^{-3} s^{-1}"
                              description="Tendency of hail mass per unit volume divided by d(zeta)/dz"
-                             packages="mp_nssl2m_in"/>
+                             packages="mp_nssl2m_in;tempo_qh_in"/>
 
                         <var name="tend_ni" name_in_code="ni" array_group="number" units="nb m^{-3} s^{-1}"
                              description="Tendency of cloud ice number concentration multiplied by dry air density divided by d(zeta)/dz"
@@ -2262,7 +2263,7 @@
                              units="kg kg^{-1} s^{-1}"
                              description="Lateral boundary tendency of graupel mixing ratio"/>
 
-                        <var name="lbc_qh" name_in_code="qh" array_group="moist"  packages="mp_nssl2m_in" units="kg kg^{-1} s^{-1}"
+                        <var name="lbc_qh" name_in_code="qh" array_group="moist"  packages="mp_nssl2m_in;tempo_qh_in" units="kg kg^{-1} s^{-1}"
                              description="Lateral boundary tendency of hail mixing ratio"/>
 
                         <var name="lbc_nr" name_in_code="nr" array_group="number" packages="mp_thompson_in;mp_nssl2m_in;mp_thompson_aers_in;mp_tempo_in"
@@ -2468,6 +2469,11 @@
 		<nml_option name="config_tempo_hailaware" type="logical" default_value="false" in_defaults="false"
 		     units="-"
                      description="Logical flag to turn on/off prognostic graupel number concentration and rime density"
+                     possible_values=".true. or .false."/>
+
+		<nml_option name="config_tempo_qh" type="logical" default_value="false" in_defaults="false"
+		     units="-"
+                     description="Logical flag to turn on/off hail category"
                      possible_values=".true. or .false."/>
 
 		<nml_option name="config_tempo_ml_nc_pbl" type="logical" default_value="false" in_defaults="false"
