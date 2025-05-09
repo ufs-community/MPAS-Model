@@ -63,7 +63,7 @@ jobs:
 
     # Buld GNU Autotools
     - name: Build GNU autotools
-      if: steps.cache-AUTOTOOLS.outputs.cache-hit != 'true'
+      #if: steps.cache-AUTOTOOLS.outputs.cache-hit != 'true'
       run: |
         wget -q https://ftp.gnu.org/gnu/m4/m4-${M4_VERSION}.tar.gz
         gzip -dc m4-${M4_VERSION}.tar.gz | tar -xf -
@@ -104,7 +104,7 @@ jobs:
         key: cache-PnetCDF-${{matrix.fortran-compiler}}-key
 
     # PNetCDF library
-    - name: Install PnetCD
+    - name: Install PnetCDF
       #if: steps.cache-PnetCDF.outputs.cache-hit != 'true'
       run: |
         set -x
