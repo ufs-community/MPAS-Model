@@ -35,7 +35,7 @@ jobs:
       with:
         path: /home/runner/ompi-4.1.6
         key: cache-openmpi-${{matrix.fortran-compiler}}-key
-	
+
     - name: Install openmpi
       run: |
         wget https://github.com/open-mpi/ompi/archive/refs/tags/v4.1.6.tar.gz
