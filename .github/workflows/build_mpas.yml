@@ -131,8 +131,14 @@ jobs:
 
     # Download any dependencies?
 
+
+    - name: Environment for openmpi compiler
+      run: |
+        echo "FC=mpif90" >> $GITHUB_ENV
+        echo "CC=mpicc"  >> $GITHUB_ENV
+
     # Build MPAS-A
     - name: Build MPAS
       run: |
         cd ${driver_ROOT}
-        make gfortran
+        make -j8
