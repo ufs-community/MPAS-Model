@@ -13,9 +13,7 @@ jobs:
 
     # Environmental variables
     env:
-      NFHOME:      /usr
-      NFVERSION:   v4.5.3
-      driver_ROOT: /home/runner/work/template/template
+      driver_ROOT: /home/runner/work/MPAS-Model
       AUTOCONF_VERSION: 2.71
       AUTOMAKE_VERSION: 1.17
       M4_VERSION: 1.4.19
@@ -133,4 +131,8 @@ jobs:
 
     # Download any dependencies?
 
-    # Build MPAS-A 
+    # Build MPAS-A
+    - name: Build MPAS
+    run: |
+      cd ${driver_ROOT}
+      make gfortran
