@@ -18,6 +18,7 @@ jobs:
       AUTOMAKE_VERSION: 1.17
       M4_VERSION: 1.4.19
       LIBTOOL_VERSION: 2.5.4
+      PNETCDF: /home/runner/PnetCDF
 
     # Workflow steps
     steps:
