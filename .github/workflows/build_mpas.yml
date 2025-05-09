@@ -106,7 +106,7 @@ jobs:
 
     # PNetCDF library
     - name: Install PnetCD
-      if: steps.cache-PnetCDF.outputs.cache-hit != 'true'F
+      if: steps.cache-PnetCDF.outputs.cache-hit != 'true'
       run: |
         set -x
         echo "LD_LIBRARY_PATH=/home/runner/AUTOTOOLS/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
