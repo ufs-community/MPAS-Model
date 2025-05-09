@@ -376,6 +376,7 @@ module atm_core
 !     use mpas_atmphys_aquaplanet
       use mpas_atmphys_control
       use mpas_atmphys_init
+      use mpas_atmphys_init_tempo
       use mpas_atmphys_manager
 #endif
 
@@ -565,6 +566,7 @@ module atm_core
          !initialization of all physics:
          call physics_init(dminfo, stream_manager, clock, block % configs, mesh, diag, tend, state, 1,       &
                            diag_physics, diag_physics_noahmp, ngw_input, atm_input, sfc_input, output_noahmp)
+         call tempo_ml_init(block % configs)
       endif
 #endif
    

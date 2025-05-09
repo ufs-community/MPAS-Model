@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
+<registry model="mpas" core="atmosphere" core_abbrev="atm" version="8.2.2-3.7">
 
-<registry model="mpas" core="atmosphere" core_abbrev="atm" version="8.2.2-2.8">
 
 <!-- **************************************************************************************** -->
 <!-- ************************************** Dimensions ************************************** -->
@@ -480,6 +480,7 @@
 			<var name="localVerticalUnitVectors"/>
 			<var name="cellTangentPlane"/>
 			<var name="cellsOnCell"/>
+			<var name="cellsOnCellsOnCell"/>
 			<var name="verticesOnCell"/>
 			<var name="verticesOnEdge"/>
 			<var name="edgesOnVertex"/>
@@ -873,6 +874,7 @@
                         <var name="sub3d_rucuten" packages="cu_grell_freitas_in"/>
                         <var name="sub3d_rvcuten" packages="cu_grell_freitas_in"/>
                         <var name="sigma_deep" packages="cu_grell_freitas_in"/>
+			<var name="sigma_deep_far" packages="cu_grell_freitas_in"/>
 			<var name="sfc_albbck"/>
 			<var name="skintemp"/>
 			<var name="snow"/>
@@ -1031,6 +1033,7 @@
 			<var name="isltyp"/>
 			<var name="lai"/>
 			<var name="sfc_albedo"/>
+			<var name="dzs"/>
 
 #endif
 		</stream>
@@ -1144,6 +1147,8 @@
                         <var name="maxmf"/>
                         <var name="maxwidth"/>
                         <var name="ztop_plume"/>
+			<var name="excess_h"/>
+			<var name="excess_q"/>
                         <var name="hpbl"/>
                         <var name="cldfrac_cu"/>
                         <var name="refl10cm_cu"/>
@@ -2471,6 +2476,21 @@
                      description="Logical flag to turn on/off hail category"
                      possible_values=".true. or .false."/>
 
+		<nml_option name="config_tempo_ml_nc_pbl" type="logical" default_value="false" in_defaults="false"
+		     units="-"
+                     description="Logical flag to turn on/off ML prediction of boundary layer cloud number concentrations"
+                     possible_values=".true. or .false."/>
+
+		<nml_option name="config_tempo_ml_nc" type="logical" default_value="false" in_defaults="false"
+		     units="-"
+                     description="Logical flag to turn on/off ML prediction of microphysics cloud number concentrations"
+                     possible_values=".true. or .false."/>
+
+		<nml_option name="config_tempo_ml_nr" type="logical" default_value="false" in_defaults="false"
+		     units="-"
+                     description="Logical flag to turn on/off ML prediction of microphysics rain number concentrations"
+                     possible_values=".true. or .false."/>
+
                 <nml_option name="config_nssl_moments" type="character" default_value="nssl2m" in_defaults="false"
                      units="-"
                      description="Whether to activate the 3moment version of NSSL"
@@ -2510,6 +2530,11 @@
                      units="-"
                      description="logical for non-stationary gravity wave drag scheme"
                      possible_values=".true. or .false."/>
+
+                <nml_option name="config_knob_ugwp_tauamp" type="real" default_value="0.13e-3" in_defaults="false"
+                     units="-"
+                     description="non-stationary gravity wave drag absolute momentum flux at launch level"
+                     possible_values="Non-negative real values"/>
 
                 <nml_option name="config_ugwp_diags" type="logical" default_value="false" in_defaults="false"
                      units="-"
@@ -2907,6 +2932,10 @@
                      description="scale-aware parameter for deep convection"
                      packages="cu_grell_freitas_in"/>
 
+	       <var name="sigma_deep_far" type="real" dimensions="nCells Time" units="-"
+                     description="Second gridpoint fractional coverage for deep convection"
+                     packages="cu_grell_freitas_in"/>
+
 
                 <!-- ... KAIN_FRITSCH AND GRELL-FREITAS: -->
                 <var name="cubot" type="real" dimensions="nCells Time" units="unitless"
@@ -3068,6 +3097,14 @@
 
                 <var name="ztop_plume" type="real" dimensions="nCells Time" units="m"
                      description="Height of highest penetrating plume"
+                     packages="bl_mynnedmf_in"/>
+
+		<var name="excess_h" type="real" dimensions="nCells Time" units="K"
+                     description="Maximum excess heat added to plumes"
+                     packages="bl_mynnedmf_in"/>
+
+		<var name="excess_q" type="real" dimensions="nCells Time" units="kg kg^{-1}"
+                     description="Maximum excess moisture added to plumes"
                      packages="bl_mynnedmf_in"/>
 
 		<!-- MYJ PBL SCHEME: -->
