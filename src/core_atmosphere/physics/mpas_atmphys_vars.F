@@ -304,6 +304,8 @@
     refl10cm_cu_p      !
  real(kind=RKIND),dimension(:,:),allocatable:: &
     refl10cm_1km_p
+ real(kind=RKIND),dimension(:,:),allocatable:: &
+    max_hail_diameter_sfc_p, max_hail_diameter_column_p
 !=================================================================================================================
 !... variables and arrays related to parameterization of convection:
 !=================================================================================================================
@@ -357,7 +359,8 @@
  real(kind=RKIND),dimension(:,:),allocatable:: &
     xmb_total_p,      &!
     xmb_shallow_p,    &!
-    sigma_deep_p       !
+    sigma_deep_p,     &!
+    sigma_deep_f_p     !
 
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
     rthdynten_p,      &!

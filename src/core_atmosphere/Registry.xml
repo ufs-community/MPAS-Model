@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<registry model="mpas" core="atmosphere" core_abbrev="atm" version="8.2.2-2.11">
+<registry model="mpas" core="atmosphere" core_abbrev="atm" version="8.2.2-3.9">
 
 
 <!-- **************************************************************************************** -->
@@ -479,6 +479,7 @@
 			<var name="localVerticalUnitVectors"/>
 			<var name="cellTangentPlane"/>
 			<var name="cellsOnCell"/>
+			<var name="cellsOnCellsOnCell"/>
 			<var name="verticesOnCell"/>
 			<var name="verticesOnEdge"/>
 			<var name="edgesOnVertex"/>
@@ -661,6 +662,9 @@
 			<var name="tyear_mean"/>
 			<var name="tyear_accum"/>
 			<var name="refl10cm"/>
+			<var name="max_hail_diameter_sfc"/>
+			<var name="max_hail_diameter_sfc_acc"/>
+			<var name="max_hail_diameter_column"/>
 			<var name="refl10cm_max"/>
 			<var name="i_rainnc"/>
 			<var name="rainncv"/>
@@ -869,6 +873,7 @@
                         <var name="sub3d_rucuten" packages="cu_grell_freitas_in"/>
                         <var name="sub3d_rvcuten" packages="cu_grell_freitas_in"/>
                         <var name="sigma_deep" packages="cu_grell_freitas_in"/>
+			<var name="sigma_deep_far" packages="cu_grell_freitas_in"/>
 			<var name="sfc_albbck"/>
 			<var name="skintemp"/>
 			<var name="snow"/>
@@ -1027,6 +1032,7 @@
 			<var name="isltyp"/>
 			<var name="lai"/>
 			<var name="sfc_albedo"/>
+			<var name="dzs"/>
 
 #endif
 		</stream>
@@ -1122,6 +1128,9 @@
 			<var name="rainnc"/>
 			<var name="vcpool"/>
 			<var name="refl10cm"/>
+			<var name="max_hail_diameter_sfc"/>
+			<var name="max_hail_diameter_sfc_acc"/>
+			<var name="max_hail_diameter_column"/>
 			<var name="refl10cm_max"/>
 			<var name="refl10cm_1km"/>
 			<var name="refl10cm_1km_max"/>
@@ -2461,6 +2470,21 @@
                      description="Logical flag to turn on/off prognostic graupel number concentration and rime density"
                      possible_values=".true. or .false."/>
 
+		<nml_option name="config_tempo_ml_nc_pbl" type="logical" default_value="false" in_defaults="false"
+		     units="-"
+                     description="Logical flag to turn on/off ML prediction of boundary layer cloud number concentrations"
+                     possible_values=".true. or .false."/>
+
+		<nml_option name="config_tempo_ml_nc" type="logical" default_value="false" in_defaults="false"
+		     units="-"
+                     description="Logical flag to turn on/off ML prediction of microphysics cloud number concentrations"
+                     possible_values=".true. or .false."/>
+
+		<nml_option name="config_tempo_ml_nr" type="logical" default_value="false" in_defaults="false"
+		     units="-"
+                     description="Logical flag to turn on/off ML prediction of microphysics rain number concentrations"
+                     possible_values=".true. or .false."/>
+
                 <nml_option name="config_nssl_moments" type="character" default_value="nssl2m" in_defaults="false"
                      units="-"
                      description="Whether to activate the 3moment version of NSSL"
@@ -2500,6 +2524,11 @@
                      units="-"
                      description="logical for non-stationary gravity wave drag scheme"
                      possible_values=".true. or .false."/>
+
+                <nml_option name="config_knob_ugwp_tauamp" type="real" default_value="0.13e-3" in_defaults="false"
+                     units="-"
+                     description="non-stationary gravity wave drag absolute momentum flux at launch level"
+                     possible_values="Non-negative real values"/>
 
                 <nml_option name="config_ugwp_diags" type="logical" default_value="false" in_defaults="false"
                      units="-"
@@ -2715,6 +2744,18 @@
                      description="10 cm radar reflectivity"
                      packages="mp_thompson_in;mp_wsm6_in;mp_nssl2m_in;mp_tempo_in"/>
 
+		<var name="max_hail_diameter_sfc" type="real" dimensions="nCells Time" units="mm"
+                     description="Maximum hail diameter at the surface"
+                     packages="mp_tempo_in"/>
+
+		<var name="max_hail_diameter_column" type="real" dimensions="nCells Time" units="mm"
+                     description="Maximum hail diameter in the vertical column"
+                     packages="mp_tempo_in"/>
+
+		<var name="max_hail_diameter_sfc_acc" type="real" dimensions="nCells Time" units="mm"
+                     description="Maximum hail diameter at the surface accumulated over diagnostic output"
+                     packages="mp_tempo_in"/>
+
                 <var name="refl10cm_max" type="real" dimensions="nCells Time" units="dBZ"
                      description="10 cm maximum radar reflectivity"
                      packages="mp_thompson_in;mp_thompson_aers_in;mp_wsm6_in;mp_nssl2m_in;mp_tempo_in"/>
@@ -2883,6 +2924,10 @@
 
                <var name="sigma_deep" type="real" dimensions="nCells Time" units="-"
                      description="scale-aware parameter for deep convection"
+                     packages="cu_grell_freitas_in"/>
+
+	       <var name="sigma_deep_far" type="real" dimensions="nCells Time" units="-"
+                     description="Second gridpoint fractional coverage for deep convection"
                      packages="cu_grell_freitas_in"/>
 
 
