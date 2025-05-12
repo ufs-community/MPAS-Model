@@ -799,7 +799,7 @@ CONTAINS
 !
          do i=its,ite
            if(raincv (i,j) > 0.0 .and. htop(i,j) > 0) then
-             factor(i) = -2./max(1000., zo(i,htop(i,j)) - zfrz(i))
+             factor(i) = -2./max(1000., zo(i,int(htop(i,j))) - zfrz(i))
            endif
          enddo
 

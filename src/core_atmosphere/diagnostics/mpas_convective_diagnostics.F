@@ -363,7 +363,7 @@ module mpas_convective_diagnostics
         integer (kind=I8KIND) :: nsteps
         integer :: dt_tmp, diag_tmp
 
-        real (kind=RKIND), parameter :: uh_smooth = 0.25
+        real (kind=RKIND), parameter :: uh_smooth = 0.1
 
         ! - compute number of time steps between diag interval outputs
         call mpas_set_time(ref_time, dateTimeString='0000-01-01_00:00:00', ierr=ierr)
