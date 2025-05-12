@@ -362,7 +362,7 @@
     !  Calculate the convective velocity scale (WSTAR) and
     !  subgrid-scale velocity (VSGD) following Beljaars (1995, QJRMS)
     !  and Mahrt and Sun (1995, MWR) low-res correction, respectively
-    !  (vsgd; for 13 km ~ 0.37 m/s; for 3 km == 0 m/s)
+    !  (vsgd; for coeff 0.32, 13 km ~ 0.37 m/s; for 3 km == 0 m/s)
     !-------------------------------------------------------
     !Use Beljaars over land and water
     fluxc = max(hfx(i)/rho1d(i)/cp                    &
@@ -370,12 +370,12 @@
     !wstar(i) = vconvc*(g/tsk(i)*pblh(i)*fluxc)**.33
     if (xland(i).gt.1.5 .or. qsfc(i).le.0.0) then   !water
        wstar(i) = vconvc*(g/tsk(i)*pblh(i)*fluxc)**.33
-       vsgd = 0.25 * (max(dx(i)/5000.-1.,0.))**.33
+       vsgd = 0.20 * (max(dx(i)/5000.-1.,0.))**.33
     else                                            !land
        !increase height scale, assuming that the non-local transoport
        !from the mass-flux (plume) mixing exceedsd the pblh.
        wstar(i) = vconvc*(g/tsk(i)*min(1.5*pblh(i),4000.)*fluxc)**.33
-       vsgd = 0.32 * (max(dx(i)/5000.-1.,0.))**.33
+       vsgd = 0.20 * (max(dx(i)/5000.-1.,0.))**.33
     endif
     wspd(i)=sqrt(wspd(i)*wspd(i)+wstar(i)*wstar(i)+vsgd*vsgd)
     wspd(i)=max(wspd(i),wmin)
