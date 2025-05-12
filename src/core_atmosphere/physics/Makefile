@@ -6,7 +6,7 @@ endif
 
 all:
 	./../tools/manage_externals/checkout_externals --externals ./../Externals.cfg
-	$(MAKE) lookup_tables core_physics_init core_physics_mmm core_microphysics core_UGWP core_mynnedmf core_physics_wrf core_physics_noahmp core_physics
+	$(MAKE) lookup_tables core_physics_init core_physics_mmm core_microphysics core_UGWP core_mynnedmf core_physics_wrf core_physics_noahmp core_lsm_ruc core_physics
 
 dummy:
 	echo "****** compiling physics ******"
@@ -72,6 +72,9 @@ core_UGWP: core_physics_init
 core_mynnedmf: core_physics_init core_physics_mmm
 	(cd physics_noaa/MYNN-EDMF; cp ./MPAS/Makefile .; cp ./MPAS/module_bl_mynnedmf_driver.F90 .; cp ./MPAS/module_bl_mynnedmf_common.F90 .; $(MAKE) all)
 
+core_lsm_ruc: core_physics_init core_physics_mmm
+	(cd physics_lsm_ruc; cp ./MPAS/Makefile .; cp ./MPAS/module_ruc_land.F90 .; cp ./MPAS/module_ruc_ice.F90 .; cp ./MPAS/module_sf_sfcdiags_ruclsm.F .; $(MAKE) all COREDEF="$(COREDEF)")
+
 core_physics_wrf: core_physics_init core_physics_mmm core_UGWP
 	(cd physics_wrf; $(MAKE) all COREDEF="$(COREDEF)")
 
@@ -82,7 +85,7 @@ core_physics_noahmp:
 
 core_physics_init: $(OBJS_init)
 
-core_physics: core_microphysics core_mynnedmf core_physics_wrf core_physics_noahmp
+core_physics: core_microphysics core_mynnedmf core_lsm_ruc core_physics_wrf core_physics_noahmp 
 	($(MAKE) phys_interface COREDEF="$(COREDEF)")
 	ar -ru libphys.a $(OBJS_init) $(OBJS)
 	($(MAKE) -C ./physics_mmm -f Makefile.mpas physics_mmm_lib)
