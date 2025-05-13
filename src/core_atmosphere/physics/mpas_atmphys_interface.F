@@ -1303,6 +1303,53 @@
        enddo
        enddo
 
+       mp2_select: select case(trim(mp_scheme))
+          case("mp_thompson","mp_thompson_aerosols")
+             call mpas_pool_get_dimension(state,'index_ni',index_ni)
+             call mpas_pool_get_dimension(state,'index_nr',index_nr)
+             ni   => scalars(index_ni,:,:)
+             nr   => scalars(index_nr,:,:)
+
+             do j = jts,jte
+             do k = kts,kte
+             do i = its,ite
+                ni(k,i) = ni_p(i,k,j)
+                nr(k,i) = nr_p(i,k,j)
+             enddo
+             enddo
+             enddo
+
+             mp3_select: select case(trim(mp_scheme))
+                case("mp_thompson_aerosols")
+                   call mpas_pool_get_dimension(state,'index_nc'  ,index_nc  )
+                   call mpas_pool_get_dimension(state,'index_nifa',index_nifa)
+                   call mpas_pool_get_dimension(state,'index_nwfa',index_nwfa)
+                   nc   => scalars(index_nc,:,:)
+                   nifa => scalars(index_nifa,:,:)
+                   nwfa => scalars(index_nwfa,:,:)
+
+                   call mpas_pool_get_array(diag_physics,'nifa2d',nifa2d)
+                   call mpas_pool_get_array(diag_physics,'nwfa2d',nwfa2d)
+                   do j = jts,jte
+                   do i = its,ite
+                      nifa2d(i) = nifa2d_p(i,j)
+                      nwfa2d(i) = nwfa2d_p(i,j)
+                   enddo
+                   do k = kts, kte
+                   do i = its, ite
+                      nc(k,i)   = nc_p(i,k,j)
+                      nifa(k,i) = nifa_p(i,k,j)
+                      nwfa(k,i) = nwfa_p(i,k,j)
+                   enddo
+                   enddo
+                   enddo
+
+                case default
+             end select mp3_select
+
+          case default
+       end select mp2_select
+
     case("mp_tempo","mp_nssl2m")
        call mpas_pool_get_dimension(state,'index_qi',index_qi)
        call mpas_pool_get_dimension(state,'index_qs',index_qs)
@@ -1335,22 +1382,7 @@
        enddo
        enddo
 
-       mp2_select: select case(trim(mp_scheme))
-          case("mp_thompson","mp_thompson_aerosols")
-             call mpas_pool_get_dimension(state,'index_ni',index_ni)
-             call mpas_pool_get_dimension(state,'index_nr',index_nr)
-             ni   => scalars(index_ni,:,:)
-             nr   => scalars(index_nr,:,:)
-
-             do j = jts,jte
-             do k = kts,kte
-             do i = its,ite
-                ni(k,i) = ni_p(i,k,j)
-                nr(k,i) = nr_p(i,k,j)
-             enddo
-             enddo
-             enddo
-
+       mp2a_select: select case(trim(mp_scheme))
           case("mp_tempo")
              call mpas_pool_get_dimension(state,'index_ni',index_ni)
              call mpas_pool_get_dimension(state,'index_nr',index_nr)
@@ -1476,36 +1508,8 @@
                 enddo
              endif
 
-             mp3_select: select case(trim(mp_scheme))
-                case("mp_thompson_aerosols")
-                   call mpas_pool_get_dimension(state,'index_nc'  ,index_nc  )
-                   call mpas_pool_get_dimension(state,'index_nifa',index_nifa)
-                   call mpas_pool_get_dimension(state,'index_nwfa',index_nwfa)
-                   nc   => scalars(index_nc,:,:)
-                   nifa => scalars(index_nifa,:,:)
-                   nwfa => scalars(index_nwfa,:,:)
-
-                   call mpas_pool_get_array(diag_physics,'nifa2d',nifa2d)
-                   call mpas_pool_get_array(diag_physics,'nwfa2d',nwfa2d)
-                   do j = jts,jte
-                   do i = its,ite
-                      nifa2d(i) = nifa2d_p(i,j)
-                      nwfa2d(i) = nwfa2d_p(i,j)
-                   enddo
-                   do k = kts, kte
-                   do i = its, ite
-                      nc(k,i)   = nc_p(i,k,j)
-                      nifa(k,i) = nifa_p(i,k,j)
-                      nwfa(k,i) = nwfa_p(i,k,j)
-                   enddo
-                   enddo
-                   enddo
-
-                case default
-             end select mp3_select
-
           case default
-       end select mp2_select
+       end select mp2a_select
 
     case default
  end select mp_select
@@ -1513,27 +1517,6 @@
 !end calculation of cloud microphysics tendencies:
  mp_tend_select: select case(trim(mp_scheme))
     case("mp_thompson","mp_thompson_aerosols","mp_wsm6")
-       call mpas_pool_get_array(tend_physics,'rthmpten',rthmpten)
-       call mpas_pool_get_array(tend_physics,'rqvmpten',rqvmpten)
-       call mpas_pool_get_array(tend_physics,'rqcmpten',rqcmpten)
-       call mpas_pool_get_array(tend_physics,'rqrmpten',rqrmpten)
-       call mpas_pool_get_array(tend_physics,'rqimpten',rqimpten)
-       call mpas_pool_get_array(tend_physics,'rqsmpten',rqsmpten)
-       call mpas_pool_get_array(tend_physics,'rqgmpten',rqgmpten)
-
-       do k = kts,kte
-       do i = its,ite
-          rthmpten(k,i) = (theta_m(k,i)/(1._RKIND+R_v/R_d*max(0._RKIND,qv(k,i)))-rthmpten(k,i))/dt_dyn
-          rqvmpten(k,i) = (qv(k,i)-rqvmpten(k,i))/dt_dyn
-          rqcmpten(k,i) = (qc(k,i)-rqcmpten(k,i))/dt_dyn
-          rqrmpten(k,i) = (qr(k,i)-rqrmpten(k,i))/dt_dyn
-          rqimpten(k,i) = (qi(k,i)-rqimpten(k,i))/dt_dyn
-          rqsmpten(k,i) = (qs(k,i)-rqsmpten(k,i))/dt_dyn
-          rqgmpten(k,i) = (qg(k,i)-rqgmpten(k,i))/dt_dyn
-       enddo
-       enddo
-
-    case("mp_tempo","mp_nssl2m")
        call mpas_pool_get_array(tend_physics,'rthmpten',rthmpten)
        call mpas_pool_get_array(tend_physics,'rqvmpten',rqvmpten)
        call mpas_pool_get_array(tend_physics,'rqcmpten',rqcmpten)
@@ -1566,17 +1549,6 @@
              enddo
              enddo
 
-          case("mp_tempo")
-             call mpas_pool_get_array(tend_physics,'rnimpten',rnimpten)
-             call mpas_pool_get_array(tend_physics,'rnrmpten',rnrmpten)
-
-             do k = kts,kte
-             do i = its,ite
-                rnimpten(k,i) = (ni(k,i)-rnimpten(k,i))/dt_dyn
-                rnrmpten(k,i) = (nr(k,i)-rnrmpten(k,i))/dt_dyn
-             enddo
-             enddo
-
              mp3_tend_select: select case(trim(mp_scheme))
                 case("mp_thompson_aerosols")
                    call mpas_pool_get_array(tend_physics,'rncmpten',rncmpten)
@@ -1590,7 +1562,47 @@
                       rnwfampten(k,i) = (nwfa(k,i)-rnwfampten(k,i))/dt_dyn
                    enddo
                    enddo
-                
+
+                case default
+             end select mp3_tend_select
+
+          case default
+       end select mp2_tend_select
+
+    case("mp_tempo","mp_nssl2m")
+       call mpas_pool_get_array(tend_physics,'rthmpten',rthmpten)
+       call mpas_pool_get_array(tend_physics,'rqvmpten',rqvmpten)
+       call mpas_pool_get_array(tend_physics,'rqcmpten',rqcmpten)
+       call mpas_pool_get_array(tend_physics,'rqrmpten',rqrmpten)
+       call mpas_pool_get_array(tend_physics,'rqimpten',rqimpten)
+       call mpas_pool_get_array(tend_physics,'rqsmpten',rqsmpten)
+       call mpas_pool_get_array(tend_physics,'rqgmpten',rqgmpten)
+
+       do k = kts,kte
+       do i = its,ite
+          rthmpten(k,i) = (theta_m(k,i)/(1._RKIND+R_v/R_d*max(0._RKIND,qv(k,i)))-rthmpten(k,i))/dt_dyn
+          rqvmpten(k,i) = (qv(k,i)-rqvmpten(k,i))/dt_dyn
+          rqcmpten(k,i) = (qc(k,i)-rqcmpten(k,i))/dt_dyn
+          rqrmpten(k,i) = (qr(k,i)-rqrmpten(k,i))/dt_dyn
+          rqimpten(k,i) = (qi(k,i)-rqimpten(k,i))/dt_dyn
+          rqsmpten(k,i) = (qs(k,i)-rqsmpten(k,i))/dt_dyn
+          rqgmpten(k,i) = (qg(k,i)-rqgmpten(k,i))/dt_dyn
+       enddo
+       enddo
+
+       mp2a_tend_select: select case(trim(mp_scheme))
+          case("mp_tempo")
+             call mpas_pool_get_array(tend_physics,'rnimpten',rnimpten)
+             call mpas_pool_get_array(tend_physics,'rnrmpten',rnrmpten)
+
+             do k = kts,kte
+             do i = its,ite
+                rnimpten(k,i) = (ni(k,i)-rnimpten(k,i))/dt_dyn
+                rnrmpten(k,i) = (nr(k,i)-rnrmpten(k,i))/dt_dyn
+             enddo
+             enddo
+
+             mp3a_tend_select: select case(trim(mp_scheme))
                 case("mp_tempo")
                    if(config_tempo_aerosolaware) then
                       call mpas_pool_get_array(tend_physics,'rncmpten',rncmpten)
@@ -1607,10 +1619,10 @@
                    endif
 
                 case default
-             end select mp3_tend_select
+             end select mp3a_tend_select
 
           case default
-       end select mp2_tend_select
+       end select mp2a_tend_select
 
     case default
  end select mp_tend_select

@@ -204,8 +204,8 @@
        if(.not.allocated(rainprod_p)) allocate(rainprod_p(ims:ime,kms:kme,jms:jme))
        if(.not.allocated(evapprod_p)) allocate(evapprod_p(ims:ime,kms:kme,jms:jme))
 
-    microp2a_select: select case(trim(microp_scheme))
-       case("mp_tempo")
+       microp2a_select: select case(trim(microp_scheme))
+        case("mp_tempo")
 !          if(.not.allocated(ntc_p)) allocate(ntc_p(ims:ime,jms:jme))
 !          if(.not.allocated(muc_p)) allocate(muc_p(ims:ime,jms:jme))
           if(.not.allocated(ni_p) ) allocate(ni_p(ims:ime,kms:kme,jms:jme))
@@ -236,7 +236,7 @@
              if(.not.allocated(nwfa_p)  ) allocate(nwfa_p(ims:ime,kms:kme,jms:jme))
           endif
 
-       case("mp_nssl2m")
+        case("mp_nssl2m")
           if(.not.allocated(qh_p) ) allocate(qh_p(ims:ime,kms:kme,jms:jme))
           if(.not.allocated(nc_p) ) allocate(nc_p(ims:ime,kms:kme,jms:jme))
           if(.not.allocated(ni_p) ) allocate(ni_p(ims:ime,kms:kme,jms:jme))
@@ -369,8 +369,8 @@
        if(allocated(rainprod_p)) deallocate(rainprod_p)
        if(allocated(evapprod_p)) deallocate(evapprod_p)
 
-    microp2a_select: select case(trim(microp_scheme))
-       case("mp_tempo")
+       microp2a_select: select case(trim(microp_scheme))
+        case("mp_tempo")
 !          if(allocated(ntc_p)) deallocate(ntc_p)
 !          if(allocated(muc_p)) deallocate(muc_p)
           if(allocated(ni_p) ) deallocate(ni_p )
@@ -399,7 +399,7 @@
              if(allocated(nwfa_p)  ) deallocate(nwfa_p  )
           endif
 
-       case("mp_nssl2m")
+        case("mp_nssl2m")
           if(allocated(qh_p) ) deallocate(qh_p )
           if(allocated(nc_p) ) deallocate(nc_p )
           if(allocated(nr_p) ) deallocate(nr_p )
