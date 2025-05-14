@@ -1602,24 +1602,19 @@
              enddo
              enddo
 
-             mp3a_tend_select: select case(trim(mp_scheme))
-                case("mp_tempo")
-                   if(config_tempo_aerosolaware) then
-                      call mpas_pool_get_array(tend_physics,'rncmpten',rncmpten)
-                      call mpas_pool_get_array(tend_physics,'rnifampten',rnifampten)
-                      call mpas_pool_get_array(tend_physics,'rnwfampten',rnwfampten)
+             if(config_tempo_aerosolaware) then
+                call mpas_pool_get_array(tend_physics,'rncmpten',rncmpten)
+                call mpas_pool_get_array(tend_physics,'rnifampten',rnifampten)
+                call mpas_pool_get_array(tend_physics,'rnwfampten',rnwfampten)
 
-                      do k = kts,kte
-                      do i = its,ite
-                         rncmpten(k,i)   = (nc(k,i)-rncmpten(k,i))/dt_dyn
-                         rnifampten(k,i) = (nifa(k,i)-rnifampten(k,i))/dt_dyn
-                         rnwfampten(k,i) = (nwfa(k,i)-rnwfampten(k,i))/dt_dyn
-                      enddo
-                      enddo
-                   endif
-
-                case default
-             end select mp3a_tend_select
+                do k = kts,kte
+                do i = its,ite
+                   rncmpten(k,i)   = (nc(k,i)-rncmpten(k,i))/dt_dyn
+                   rnifampten(k,i) = (nifa(k,i)-rnifampten(k,i))/dt_dyn
+                   rnwfampten(k,i) = (nwfa(k,i)-rnwfampten(k,i))/dt_dyn
+                enddo
+                enddo
+             endif
 
           case default
        end select mp2a_tend_select
