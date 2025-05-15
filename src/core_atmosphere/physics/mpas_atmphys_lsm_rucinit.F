@@ -19,7 +19,7 @@
 
  use mpas_atmphys_constants
  use mpas_atmphys_utilities
-!wrf physics
+! NOAA physics
  use module_ruc_land
 
  implicit none

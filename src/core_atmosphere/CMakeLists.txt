@@ -85,15 +85,12 @@ set(ATMOSPHERE_CORE_PHYSICS_WRF_SOURCES
     module_sf_noahlsm_glacial_only.F
     module_sf_oml.F
     module_sf_sfcdiags.F
-    module_sf_sfcdiags_ruclsm.F
     module_sf_sfclay.F
     module_sf_sfclayrev.F
     module_sf_urban.F
     module_sf_myjsfc.F
     bl_mynn_post.F
     bl_mynn_pre.F
-    module_ruc_ice.F90
-    module_ruc_land.F90
     module_bl_mynn.F
     module_cu_kfeta.F
     module_cu_ntiedtke.F
@@ -138,6 +135,14 @@ set(ATMOSPHERE_CORE_PHYSICS_MYNN-EDMF_SOURCES
     MPAS/module_bl_mynnedmf_driver.F90
 )
 list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_MYNN-EDMF_SOURCES PREPEND physics/physics_noaa/MYNN-EDMF/)
+
+# physics/physics_noaa/RUCLSM/
+set(ATMOSPHERE_CORE_PHYSICS_RUCLSM_SOURCES
+    MPAS/module_ruc_land.F90
+    MPAS/module_ruc_ice.F90
+    MPAS/module_sf_sfcdiags_ruclsm.F
+)
+list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_RUCLSM_SOURCES PREPEND physics/physics_noaa/RUCLSM/)
 
 set(ATMOSPHERE_CORE_PHYSICS_MMM_DIR ${CMAKE_CURRENT_SOURCE_DIR}/physics/physics_mmm)
 
@@ -391,6 +396,7 @@ add_library(core_atmosphere ${ATMOSPHERE_CORE_SOURCES}
             ${ATMOSPHERE_CORE_PHYSICS_UGWP_SOURCES}
             ${ATMOSPHERE_CORE_PHYSICS_TEMPO_SOURCES}
             ${ATMOSPHERE_CORE_PHYSICS_MYNN-EDMF_SOURCES}
+            ${ATMOSPHERE_CORE_PHYSICS_RUCLSM_SOURCES}
             ${ATMOSPHERE_CORE_DIAGNOSTIC_SOURCES}
             ${ATMOSPHERE_CORE_DYNAMICS_SOURCES})
 
