@@ -191,9 +191,14 @@
                      description="Horizontal advection order for scalars"
                      possible_values="2, 3, or 4"/>
 
-                <nml_option name="config_weno" type="logical" default_value="false"
+                <nml_option name="config_vert_adv_5th" type="logical" default_value="false"
                      units="-"
-                     description="Whether to use WENO scheme for transport"
+                     description="Whether to use 5th order scheme for vertical transport of scalars"
+                     possible_values=".true. or .false."/>
+
+                <nml_option name="config_mono_filter4" type="logical" default_value="true"
+                     units="-"
+                     description="Use monotonic fluxes for 4th filter"
                      possible_values=".true. or .false."/>
 
                 <nml_option name="config_u_vadv_order" type="integer" default_value="3" in_defaults="false"

@@ -100,13 +100,10 @@ module atm_time_integration
    ! NB: We do not necessarily want this to vary with calendar, as it is used to set
    ! a timescale in seconds given a timescale in days, and it could be rather confusing
    ! if damping in the model changed with the simulation calendar
+   
    real (kind=RKIND), parameter, private :: seconds_per_day = 86400.0_RKIND
 
-
    ! some development items of use, these should be added to Registry if useful
-
-   logical, parameter :: mono_diffu4   = .true.
-   logical, parameter :: weno          = .false.
 
    contains
 
@@ -3069,11 +3066,12 @@ module atm_time_integration
       real (kind=RKIND), dimension(:), pointer :: fnm, fnp, rdnw
       real (kind=RKIND), pointer :: coef_3rd_order
 
-!LJW+
       real (kind=RKIND), pointer :: config_h_scalar_eddy_visc4, config_len_disp
       real (kind=RKIND), dimension(:), pointer :: invDcEdge, meshScalingDel4
       real (kind=RKIND) :: h_scalar_eddy_visc4
-!LJW-
+      
+      logical, pointer :: mono_filter4
+      logical, pointer :: vert_adv_5th
 
       integer, dimension(:), pointer :: bdyMaskCell, bdyMaskEdge    ! regional_MPAS addition
 
@@ -3086,7 +3084,6 @@ module atm_time_integration
          local_advance_density = .true.
       end if
 
-!LJW+
 
       call mpas_pool_get_config(configs, 'config_len_disp', config_len_disp)
       call mpas_pool_get_config(configs, 'config_h_scalar_eddy_visc4', config_h_scalar_eddy_visc4)
@@ -3100,8 +3097,6 @@ module atm_time_integration
       else
          h_scalar_eddy_visc4 = 0.0
       endif 
-
-!LJW-
 
       call mpas_pool_get_config(configs, 'config_coef_3rd_order', coef_3rd_order)
 
@@ -3140,13 +3135,18 @@ module atm_time_integration
       call mpas_pool_get_array(mesh, 'bdyMaskCell', bdyMaskCell)
       call mpas_pool_get_array(mesh, 'bdyMaskEdge', bdyMaskEdge)
 
-!LJW - added retrieval of K-eddy mixing array
+! Retrieval of K-eddy mixing array
       
       call mpas_pool_get_array(mesh, 'meshScalingDel2', meshScalingDel2)
       call mpas_pool_get_array(diag, 'kdiff', kdiff)
       call mpas_pool_get_array(diag, 'rho_edge', rho_edge)
+      
+! monotonic 4th order diffusion flag
+      call mpas_pool_get_config(configs, 'config_mono_filter4', mono_filter4)
+      
+! do vertical scalar advection 5th order?
+      call mpas_pool_get_config(configs, 'config_vert_adv_5th', vert_adv_5th)
 
-!LJW+
 
       call atm_advance_scalars_work(nCells, num_scalars, dt, &
              cellStart, cellEnd, &
@@ -3160,7 +3160,7 @@ module atm_time_integration
              bdyMaskCell, bdyMaskEdge, &
              nAdvCellsForEdge, advCellsForEdge, adv_coefs, adv_coefs_3rd, kdiff, rho_edge, &
              nEdges, horiz_flux_arr, rk_step, config_time_integration_order, &
-             local_advance_density, h_scalar_eddy_visc4)
+             local_advance_density, h_scalar_eddy_visc4, vert_adv_5th, mono_filter4)
 !LJW-
 
    end subroutine atm_advance_scalars
@@ -3204,11 +3204,9 @@ module atm_time_integration
              invDcEdge, meshScalingDel4, meshScalingDel2, &
              scalar_tend_save, fnm, fnp, rdnw, &
              bdyMaskCell, bdyMaskEdge, &
-!LJW+
              nAdvCellsForEdge, advCellsForEdge, adv_coefs, adv_coefs_3rd, kdiff, rho_edge, &
              nEdges, horiz_flux_arr, rk_step, config_time_integration_order, &
-             advance_density, h_scalar_eddy_visc4)
-!LJW-
+             advance_density, h_scalar_eddy_visc4, vert_adv_5th, mono_filter4)
 
       use mpas_atm_dimensions, only : nVertLevels
 
@@ -3219,9 +3217,9 @@ module atm_time_integration
       integer, intent(in) :: num_scalars
       real (kind=RKIND), intent(in) :: dt
       integer, intent(in) :: edgeStart, edgeEnd
-!LJW+
+
       integer, intent(in) :: cellStart, cellEnd
-!LJW-
+
       integer, intent(in) :: cellSolveStart, cellSolveEnd
       integer, intent(in) :: rk_step, config_time_integration_order
       logical, intent(in) :: advance_density
@@ -3230,9 +3228,9 @@ module atm_time_integration
       real (kind=RKIND), dimension(num_scalars,nVertLevels,nCells+1), intent(inout) :: scalar_tend_save
       real (kind=RKIND), dimension(:,:), intent(in) :: rho_zz_old
       real (kind=RKIND), dimension(:,:), intent(in) :: uhAvg, wwAvg, rho_zz_new, rho_edge
-!LJW+
+
       real (kind=RKIND), dimension(:), intent(in) :: dvEdge, invDcEdge, meshScalingDel4, meshScalingDel2
-!LJW-
+
       integer, dimension(:,:), intent(in) :: cellsOnEdge
       integer, dimension(:,:), intent(in) :: advCellsForEdge, edgesOnCell
       integer, dimension(:), intent(in) :: nAdvCellsForEdge, nEdgesOnCell
@@ -3242,9 +3240,12 @@ module atm_time_integration
       real (kind=RKIND), dimension(num_scalars,nVertLevels,nEdges+1), intent(inout) :: horiz_flux_arr
       real (kind=RKIND), dimension(:), intent(in) :: invAreaCell
       integer, dimension(:), intent(in) :: bdyMaskCell, bdyMaskEdge ! regional_MPAS addition
-!LJW+
+
       real (kind=RKIND), intent(in) ::  h_scalar_eddy_visc4
-!LJW-
+      logical, intent(in) :: mono_filter4
+      logical, intent(in) :: vert_adv_5th
+
+! Local storage
 
       integer :: i, j, iCell, iAdvCell, iEdge, k, iScalar, cell1, cell2
       real (kind=RKIND) :: rho_zz_new_inv
@@ -3265,9 +3266,8 @@ module atm_time_integration
       real (kind=RKIND), dimension(num_scalars,nVertLevels) :: scalar_tend_column  ! local storage to accumulate tendency
       real (kind=RKIND) :: u_direction, u_positive, u_negative
 
-!LJW+
       real (kind=RKIND) ::  r_areaCell, edge_sign, mono_diffusion_weight, downgradient_flux_check
-!LJW-
+
 
 
       flux4(q_im2, q_im1, q_i, q_ip1, ua) =                     &
@@ -3381,7 +3381,7 @@ module atm_time_integration
 !$OMP BARRIER
 
 
-         if (h_scalar_eddy_visc4 > 0.0) then  ! 4th order mixing is active
+         if (h_scalar_eddy_visc4 > 0.0) then  ! 4th order filtering is active
 
 
            do iCell=cellSolveStart,cellSolveEnd    ! Technically updating fewer cells than before...
@@ -3398,7 +3398,7 @@ module atm_time_integration
                cell1 = cellsOnEdge(1,iEdge)
                cell2 = cellsOnEdge(2,iEdge)
 
-               if( mono_diffu4 ) then
+               if( mono_filter4 ) then
  
                  do k=1,nVertLevels
                  
@@ -3432,7 +3432,7 @@ module atm_time_integration
                     end do  ! iScalar loop
                   end do  ! nVertsLevels
 
-               endif ! mono_diffu4 diffusion
+               endif ! end mono_filter4
 
              end do   ! nEdgesOnCell
 
@@ -3452,7 +3452,7 @@ module atm_time_integration
 
        end if ! scalar mixing calculated first rk_step
 
-! END LJW filter-4 and horizontal eddy diffusion
+! END filter-4 and horizontal eddy diffusion
       
       !$acc parallel async
       !$acc loop gang worker private(scalar_weight2, ica)
@@ -3614,7 +3614,7 @@ module atm_time_integration
                wdtn(iScalar,nVertLevels+1) = 0.0
             end do
 
-            IF ( WENO ) THEN
+            IF ( vert_adv_5th ) THEN
               
                do iScalar=1,num_scalars
 
@@ -3661,7 +3661,7 @@ module atm_time_integration
                end do
             end do
 
-            ENDIF ! WENO  IF BLOCK
+            ENDIF ! vert_adv_5th BLOCK
 
             !$acc loop vector collapse(2)
             do k=1,nVertLevels
