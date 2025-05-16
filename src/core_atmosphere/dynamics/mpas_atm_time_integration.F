@@ -3037,7 +3037,7 @@ module atm_time_integration
       type (mpas_pool_type), intent(in) :: configs
       integer, intent(in) :: rk_step    !  rk substep we are integrating
       integer, intent(in) :: config_time_integration_order  ! time integration order
-      real (kind=RKIND) :: dt
+      real (kind=RKIND)   :: dt
       integer, intent(in) :: cellStart, cellEnd
       integer, intent(in) :: edgeStart, edgeEnd
       integer, intent(in) :: cellSolveStart, cellSolveEnd
@@ -3045,17 +3045,17 @@ module atm_time_integration
 
 
       ! Local variables
-      real (kind=RKIND), dimension(:), pointer :: invAreaCell, meshScalingDel2
+      real (kind=RKIND), dimension(:), pointer :: invAreaCell
 
       real (kind=RKIND), dimension(:,:,:), pointer :: scalar_old, scalar_new, scalar_tend_save
-      real (kind=RKIND), dimension(:,:), pointer :: uhAvg, rho_zz_old, rho_zz_new, wwAvg, rho_edge
+      real (kind=RKIND), dimension(:,:), pointer :: uhAvg, rho_zz_old, rho_zz_new, wwAvg
       real (kind=RKIND), dimension(:), pointer :: dvEdge
       integer, dimension(:,:), pointer :: cellsOnEdge
       real (kind=RKIND), dimension(:,:,:), intent(inout) :: horiz_flux_arr
 
       integer, dimension(:,:), pointer :: advCellsForEdge, edgesOnCell
       integer, dimension(:), pointer :: nAdvCellsForEdge, nEdgesOnCell
-      real (kind=RKIND), dimension(:,:), pointer :: kdiff, adv_coefs, adv_coefs_3rd, edgesOnCell_sign
+      real (kind=RKIND), dimension(:,:), pointer :: adv_coefs, adv_coefs_3rd, edgesOnCell_sign
 
       integer, pointer :: nCells
       integer, pointer :: nEdges
@@ -3063,14 +3063,20 @@ module atm_time_integration
 
       real (kind=RKIND), dimension(:), pointer :: fnm, fnp, rdnw
       real (kind=RKIND), pointer :: coef_3rd_order
-
-      real (kind=RKIND), pointer :: config_h_scalar_eddy_visc4, config_len_disp
-      real (kind=RKIND), dimension(:), pointer :: invDcEdge, meshScalingDel4
-      real (kind=RKIND) :: h_scalar_eddy_visc4
       
-      logical, pointer :: mono_filter4
-      logical, pointer :: vert_adv_5th
-      logical, pointer :: scalar_eddy_mix
+!-
+      logical, pointer  :: scalar_eddy_mix
+      
+      real (kind=RKIND), dimension(:), pointer :: meshScalingDel2
+      
+      real (kind=RKIND), pointer :: config_h_scalar_filter4, config_len_disp
+
+      real (kind=RKIND) :: h_scalar_filter4
+      
+      real (kind=RKIND), dimension(:), pointer :: invDcEdge, meshScalingDel4
+      
+      real (kind=RKIND), dimension(:,:), pointer :: kdiff, rho_edge
+!-
 
       integer, dimension(:), pointer :: bdyMaskCell, bdyMaskEdge    ! regional_MPAS addition
 
@@ -3082,21 +3088,7 @@ module atm_time_integration
       else
          local_advance_density = .true.
       end if
-
-
-      call mpas_pool_get_config(configs, 'config_len_disp', config_len_disp)
-      call mpas_pool_get_config(configs, 'config_h_scalar_eddy_visc4', config_h_scalar_eddy_visc4)
-      call mpas_pool_get_array(mesh,     'invDcEdge', invDcEdge)
-
-! Use L**3 (not L**4) for 4th-order scaling to account for grid variation, same scaling as Smagorinsky
-! Make sure we dont violate stability: [K_4 * dt / area**2] < 1 / 36 (Klemp 2017)
-
-      if( config_h_scalar_eddy_visc4 > 0.0 ) then
-         h_scalar_eddy_visc4 = config_h_scalar_eddy_visc4  * config_len_disp**3
-      else
-         h_scalar_eddy_visc4 = 0.0
-      endif 
-
+    
       call mpas_pool_get_config(configs, 'config_coef_3rd_order', coef_3rd_order)
 
       call mpas_pool_get_array(state, trim(field_name), scalar_old, 1)
@@ -3113,9 +3105,6 @@ module atm_time_integration
       call mpas_pool_get_array(mesh, 'nEdgesOnCell', nEdgesOnCell)
       call mpas_pool_get_array(mesh, 'edgesOnCell_sign', edgesOnCell_sign)
       call mpas_pool_get_array(mesh, 'invAreaCell', invAreaCell)
-
-      call mpas_pool_get_array(mesh, 'meshScalingDel4', meshScalingDel4)
-
       call mpas_pool_get_array(tend, trim(field_name)//'_tend', scalar_tend_save)
       
       call mpas_pool_get_array(mesh, 'fzm', fnm)
@@ -3133,21 +3122,32 @@ module atm_time_integration
 
       call mpas_pool_get_array(mesh, 'bdyMaskCell', bdyMaskCell)
       call mpas_pool_get_array(mesh, 'bdyMaskEdge', bdyMaskEdge)
+      
+!- 
 
-! Retrieval of K-eddy mixing array
+! ON/OFF eddy mixing for scalars?
+      call mpas_pool_get_config(configs, 'config_scalar_eddy_mix', scalar_eddy_mix)
+      
+      call mpas_pool_get_config(configs, 'config_len_disp', config_len_disp)
+      call mpas_pool_get_config(configs, 'config_h_scalar_filter4', config_h_scalar_filter4)
+      call mpas_pool_get_array(mesh,     'invDcEdge', invDcEdge)
+      
+! Retrieval of K-eddy mixing array and things needed for second-order fluxes
       
       call mpas_pool_get_array(mesh, 'meshScalingDel2', meshScalingDel2)
       call mpas_pool_get_array(diag, 'kdiff', kdiff)
       call mpas_pool_get_array(diag, 'rho_edge', rho_edge)
-      
-! ON/OFF monotonic 4th order diffusion flag
-      call mpas_pool_get_config(configs, 'config_mono_filter4', mono_filter4)
-      
-! ON/OFF vertical scalar advection 5th order?
-      call mpas_pool_get_config(configs, 'config_vert_adv_5th', vert_adv_5th)
-      
-! ON/OFF eddy mixing and 4th order filter for scalars?
-      call mpas_pool_get_config(configs, 'scalar_eddy_mix', scalar_eddy_mix)
+
+! Use L**3 (not L**4) for 4th-order scaling to account for grid variation, same scaling as Smagorinsky
+! Make sure we dont violate stability: [K_4 * dt / area**2] < 1 / 36 (Klemp 2017)
+
+      if( config_h_scalar_filter4 > 0.0 ) then
+         h_scalar_filter4 = config_h_scalar_filter4  * config_len_disp**3
+      else
+         h_scalar_filter4 = 0.0
+      endif 
+!-
+
 
       call atm_advance_scalars_work(nCells, num_scalars, dt, &
              cellStart, cellEnd, &
@@ -3159,9 +3159,10 @@ module atm_time_integration
              invDcEdge, meshScalingDel4, meshScalingDel2, &
              scalar_tend_save, fnm, fnp, rdnw, &
              bdyMaskCell, bdyMaskEdge, &
-             nAdvCellsForEdge, advCellsForEdge, adv_coefs, adv_coefs_3rd, kdiff, rho_edge, &
+             nAdvCellsForEdge, advCellsForEdge, adv_coefs, adv_coefs_3rd, &
+             kdiff, rho_edge, &
              nEdges, horiz_flux_arr, rk_step, config_time_integration_order, &
-             local_advance_density, h_scalar_eddy_visc4, vert_adv_5th, mono_filter4, scalar_eddy_mix)
+             local_advance_density, h_scalar_filter4, scalar_eddy_mix)
 
    end subroutine atm_advance_scalars
 
@@ -3204,9 +3205,10 @@ module atm_time_integration
              invDcEdge, meshScalingDel4, meshScalingDel2, &
              scalar_tend_save, fnm, fnp, rdnw, &
              bdyMaskCell, bdyMaskEdge, &
-             nAdvCellsForEdge, advCellsForEdge, adv_coefs, adv_coefs_3rd, kdiff, rho_edge, &
+             nAdvCellsForEdge, advCellsForEdge, adv_coefs, adv_coefs_3rd, &
+             kdiff, rho_edge, &
              nEdges, horiz_flux_arr, rk_step, config_time_integration_order, &
-             advance_density, h_scalar_eddy_visc4, vert_adv_5th, mono_filter4, scalar_eddy_mix)
+             advance_density, h_scalar_filter4, scalar_eddy_mix)
 
       use mpas_atm_dimensions, only : nVertLevels
 
@@ -3217,9 +3219,6 @@ module atm_time_integration
       integer, intent(in) :: num_scalars
       real (kind=RKIND), intent(in) :: dt
       integer, intent(in) :: edgeStart, edgeEnd
-
-      integer, intent(in) :: cellStart, cellEnd
-
       integer, intent(in) :: cellSolveStart, cellSolveEnd
       integer, intent(in) :: rk_step, config_time_integration_order
       logical, intent(in) :: advance_density
@@ -3227,31 +3226,38 @@ module atm_time_integration
       real (kind=RKIND), dimension(:,:,:), intent(inout) :: scalar_new
       real (kind=RKIND), dimension(num_scalars,nVertLevels,nCells+1), intent(inout) :: scalar_tend_save
       real (kind=RKIND), dimension(:,:), intent(in) :: rho_zz_old
-      real (kind=RKIND), dimension(:,:), intent(in) :: uhAvg, wwAvg, rho_zz_new, rho_edge
-
-      real (kind=RKIND), dimension(:), intent(in) :: dvEdge, invDcEdge, meshScalingDel4, meshScalingDel2
-
+      real (kind=RKIND), dimension(:,:), intent(in) :: uhAvg, wwAvg, rho_zz_new
+      real (kind=RKIND), dimension(:), intent(in) :: dvEdge
       integer, dimension(:,:), intent(in) :: cellsOnEdge
       integer, dimension(:,:), intent(in) :: advCellsForEdge, edgesOnCell
       integer, dimension(:), intent(in) :: nAdvCellsForEdge, nEdgesOnCell
-      real (kind=RKIND), dimension(:,:), intent(in) :: kdiff, adv_coefs, adv_coefs_3rd, edgesOnCell_sign
+      real (kind=RKIND), dimension(:,:), intent(in) :: adv_coefs, adv_coefs_3rd, edgesOnCell_sign
       real (kind=RKIND), dimension(:), intent(in) :: fnm, fnp, rdnw
       real (kind=RKIND), intent(in) :: coef_3rd_order
       real (kind=RKIND), dimension(num_scalars,nVertLevels,nEdges+1), intent(inout) :: horiz_flux_arr
       real (kind=RKIND), dimension(:), intent(in) :: invAreaCell
       integer, dimension(:), intent(in) :: bdyMaskCell, bdyMaskEdge ! regional_MPAS addition
+      
+!-
+      integer, intent(in) :: cellStart, cellEnd
 
-      real (kind=RKIND), intent(in) ::  h_scalar_eddy_visc4
-      logical, intent(in) :: mono_filter4
-      logical, intent(in) :: vert_adv_5th
+      real (kind=RKIND), dimension(:), intent(in) :: invDcEdge, meshScalingDel4, meshScalingDel2
+      
+      real (kind=RKIND), intent(in) ::  h_scalar_filter4
+      
       logical, intent(in) :: scalar_eddy_mix
-
-! Local storage
+      
+      real (kind=RKIND), dimension(:,:), intent(in) :: kdiff, rho_edge
+      
+      real (kind=RKIND) ::  r_areaCell, edge_sign
+      
+      real (kind=RKIND) :: scalar_weight, scalar_turb_flux, kdiff_avg, pr_scale, prandtl_inv
+!-
 
       integer :: i, j, iCell, iAdvCell, iEdge, k, iScalar, cell1, cell2
+      
       real (kind=RKIND) :: rho_zz_new_inv
 
-      real (kind=RKIND) :: scalar_weight, scalar_turb_flux, kdiff_avg, pr_scale, prandtl_inv
 
       real (kind=RKIND), dimension( num_scalars, nVertLevels + 1 ) :: wdtn
 
@@ -3266,10 +3272,6 @@ module atm_time_integration
       real (kind=RKIND) :: weight_time_old, weight_time_new
       real (kind=RKIND), dimension(num_scalars,nVertLevels) :: scalar_tend_column  ! local storage to accumulate tendency
       real (kind=RKIND) :: u_direction, u_positive, u_negative
-
-      real (kind=RKIND) ::  r_areaCell, edge_sign, mono_diffusion_weight, downgradient_flux_check
-
-
 
       flux4(q_im2, q_im1, q_i, q_ip1, ua) =                     &
           ua*( 7.*(q_i + q_im1) - (q_ip1 + q_im2) )/12.0
@@ -3305,13 +3307,11 @@ module atm_time_integration
       !$acc enter data create(horiz_flux_arr)
       !$acc enter data copyin(uhAvg, scalar_new)
       MPAS_ACC_TIMER_STOP('atm_advance_scalars [ACC_data_xfer]')
-
-      !
-      !  horizontal mixing for scalars - coded for hyperdiffusion and eddy diffusion (NSSL)
-      !
+      
 
       IF ( rk_step == 1 .and. scalar_eddy_mix .eqv. .true. ) THEN
-
+      
+!  horizontal eddy mixing for scalars 
  
          prandtl_inv = 1.0_RKIND / prandtl
      
@@ -3355,9 +3355,6 @@ module atm_time_integration
 
                   do iScalar=1,num_scalars
 
-
-! Code to add eddy mixing to the scalar variables
-
                      scalar_turb_flux = edge_sign*(scalar_old(iScalar,k,cell2)  &
                                                   -scalar_old(iScalar,k,cell1)) 
                                                   
@@ -3379,15 +3376,13 @@ module atm_time_integration
 
 !$OMP BARRIER
 
+! 4th order filtering
 
-         if (h_scalar_eddy_visc4 > 0.0) then  ! 4th order filtering is active
+         IF (h_scalar_filter4 > 0.0) THEN
 
+           do iCell=cellSolveStart,cellSolveEnd  ! Technically updating fewer cells than before...
 
-           do iCell=cellSolveStart,cellSolveEnd    ! Technically updating fewer cells than before...
-
-             r_areaCell = h_scalar_eddy_visc4 * invAreaCell(iCell) 
-
-! create 4th order diffusive flux...
+             r_areaCell = h_scalar_filter4 * invAreaCell(iCell) 
 
              do i=1,nEdgesOnCell(iCell)
 
@@ -3396,42 +3391,20 @@ module atm_time_integration
 
                cell1 = cellsOnEdge(1,iEdge)
                cell2 = cellsOnEdge(2,iEdge)
+ 
+               do k=1,nVertLevels
+               
+                  r_areaCell = h_scalar_filter4 * invAreaCell(iCell) * rho_edge(k,iEdge)  
 
-               if( mono_filter4 ) then
- 
-                 do k=1,nVertLevels
-                 
- 
-                   do iScalar=1,num_scalars
- 
-                      mono_diffusion_weight = max(0.0, sign(1.0, -1.0*(scalar_new(iScalar,k,cell2)  &
-                                                                      -scalar_new(iScalar,k,cell1)) &
-                                                                    * (scalar_old(iScalar,k,cell2)  &
-                                                                      -scalar_old(iScalar,k,cell1))) )
+                  do iScalar=1,num_scalars
+
+                    scalar_tend_save(iScalar,k,iCell) = scalar_tend_save(iScalar,k,iCell)      & 
+                                                      - edge_sign * rho_edge(k,iEdge) &
+                                                      * (scalar_new(iScalar,k,cell2) - scalar_new(iScalar,k,cell1))
+
+                  end do  ! iScalar loop
                   
-                      scalar_tend_save(iScalar,k,iCell) = scalar_tend_save(iScalar,k,iCell) & 
-                                                        - mono_diffusion_weight * edge_sign * rho_edge(k,iEdge) &
-                                                        * (scalar_new(iScalar,k,cell2) - scalar_new(iScalar,k,cell1))
- 
-                   end do  ! iScalar loop
-                 end do  ! nVertsLevels
- 
-               else
- 
-                 do k=1,nVertLevels
-                 
-                    r_areaCell = h_scalar_eddy_visc4 * invAreaCell(iCell) * rho_edge(k,iEdge)  
-
-                    do iScalar=1,num_scalars
-
-                      scalar_tend_save(iScalar,k,iCell) = scalar_tend_save(iScalar,k,iCell)      & 
-                                                        - edge_sign * rho_edge(k,iEdge) &
-                                                        * (scalar_new(iScalar,k,cell2) - scalar_new(iScalar,k,cell1))
-
-                    end do  ! iScalar loop
-                  end do  ! nVertsLevels
-
-               endif ! end mono_filter4
+                end do  ! nVertsLevels
 
              end do   ! nEdgesOnCell
 
@@ -3451,13 +3424,12 @@ module atm_time_integration
 
        END IF ! scalar mixing & 4th order mixing block
 
-! END filter-4 and horizontal eddy diffusion
-      
       !$acc parallel async
       !$acc loop gang worker private(scalar_weight2, ica)
-      DO iEdge=edgeStart,edgeEnd
+      do iEdge=edgeStart,edgeEnd
 
-         IF ( bdyMaskEdge(iEdge) <= nRelaxZone-1) THEN  ! full flux calculation
+         if ((.not.config_apply_lbcs) &
+             .or. (bdyMaskEdge(iEdge) < nRelaxZone-1)) then  ! full flux calculation
 
             select case(nAdvCellsForEdge(iEdge))
 
@@ -3516,8 +3488,9 @@ module atm_time_integration
                end do
             end select
 
-         ELSE IF(config_apply_lbcs .and. (bdyMaskEdge(iEdge) >= nRelaxZone-1) &
-                                   .and. (bdyMaskEdge(iEdge) <= nRelaxZone)) THEN
+         else if(config_apply_lbcs &
+                 .and. (bdyMaskEdge(iEdge) >= nRelaxZone-1) &
+                 .and. (bdyMaskEdge(iEdge) <= nRelaxZone)) then
 
             !  upwind flux evaluation for outermost 2 edges in specified zone
             cell1 = cellsOnEdge(1,iEdge)
@@ -3533,9 +3506,8 @@ module atm_time_integration
                end do
             end do
 
-          ENDIF ! end of regional MPAS test
-      
-      END DO  !  iEdge=edgeStart,edgeEnd
+          end if ! end of regional MPAS test
+      end do
       !$acc end parallel
 
 !$OMP BARRIER
@@ -3557,9 +3529,9 @@ module atm_time_integration
 
       !$acc parallel wait
       !$acc loop gang worker private(scalar_tend_column, wdtn)
-      DO iCell=cellSolveStart,cellSolveEnd
+      do iCell=cellSolveStart,cellSolveEnd
 
-         IF (bdyMaskCell(iCell) <= nRelaxZone) THEN  ! specified zone for regional_MPAS is not updated in this routine
+         if(bdyMaskCell(iCell) <= nRelaxZone) then  ! specified zone for regional_MPAS is not updated in this routine
 
             !$acc loop vector collapse(2)
             do k=1,nVertLevels
@@ -3597,13 +3569,10 @@ module atm_time_integration
 
 
             !
-            !  Vertical flux divergence and update of the scalars
+            !  vertical flux divergence and update of the scalars
             !
 
             !$acc loop vector
-            
-            ! 2nd order fluxes near upper and lower boundaries
-            
             do iScalar=1,num_scalars
                wdtn(iScalar,1) = 0.0
                wdtn(iScalar,2) = wwAvg(2,iCell)*(fnm(2)*scalar_new(iScalar,2,iCell)+fnp(2)*scalar_new(iScalar,2-1,iCell))
@@ -3612,44 +3581,6 @@ module atm_time_integration
                                             +fnp(nVertLevels)*scalar_new(iScalar,nVertLevels-1,iCell) )
                wdtn(iScalar,nVertLevels+1) = 0.0
             end do
-
-            IF ( vert_adv_5th ) THEN
-              
-               do iScalar=1,num_scalars
-
-! Do 3rd order fluxes 2 pts from boundaries
-                  k = 3
-                  wdtn(iScalar,k) = flux34( scalar_new(iScalar,k-2,iCell),  &
-                                            scalar_new(iScalar,k-1,iCell),  &
-                                            scalar_new(iScalar,k  ,iCell),  &
-                                            scalar_new(iScalar,k+1,iCell),  &
-                                            wwAvg(k,iCell), 1.0 )
-
-                  k = nVertLevels-1
-                  wdtn(iScalar,k) = flux34( scalar_new(iScalar,k-2,iCell),  &
-                                            scalar_new(iScalar,k-1,iCell),  &
-                                            scalar_new(iScalar,k  ,iCell),  &
-                                            scalar_new(iScalar,k+1,iCell),  &
-                                            wwAvg(k,iCell), 1.0 )
-               enddo
-
-  ! Do 5th order fluxes on inner vertical grid
-
-               do k=4,nVertLevels-2
-                  do iScalar=1,num_scalars
-
-                      wdtn(iScalar,k) = flux56( scalar_new(iScalar,k-3,iCell),  &
-                                                scalar_new(iScalar,k-2,iCell),  &
-                                                scalar_new(iScalar,k-1,iCell),  &
-                                                scalar_new(iScalar,k  ,iCell),  &
-                                                scalar_new(iScalar,k+1,iCell),  &
-                                                scalar_new(iScalar,k+2,iCell),  &
-                                                wwAvg(k,iCell), 1.0 )
-
-                  end do
-               end do
-
-            ELSE  ! Do normal third/fourth order stuff.
 
             !$acc loop vector collapse(2)
             do k=3,nVertLevels-1
@@ -3660,8 +3591,6 @@ module atm_time_integration
                end do
             end do
 
-            ENDIF ! vert_adv_5th BLOCK
-
             !$acc loop vector collapse(2)
             do k=1,nVertLevels
                do iScalar=1,num_scalars
@@ -3671,9 +3600,9 @@ module atm_time_integration
                end do
             end do
 
-         END IF ! specified zone regional_MPAS test
+         end if ! specified zone regional_MPAS test
 
-      END DO  ! iCell=cellSolveStart,cellSolveEnd
+      end do
       !$acc end parallel
 
       MPAS_ACC_TIMER_START('atm_advance_scalars [ACC_data_xfer]')
@@ -3806,42 +3735,6 @@ module atm_time_integration
 
    end subroutine atm_advance_scalars_mono
 
-   !-----------------------------------------------------------------------
-   !  routine FLUX34
-   !
-   !> \brief function to inline to do 3rd/4th order interpolation
-   !> \date 20 August 2024
-   !> \details
-   !>  This routine is a ..
-   !
-   !-----------------------------------------------------------------------
-    REAL (kind=RKIND) FUNCTION FLUX34(q_im2, q_im1, q_i, q_ip1, ua, coef3)
-
-       real (kind=RKIND) :: q_im2, q_im1, q_i, q_ip1, ua, coef3
-
-       flux34 = ua*( 7.*(q_i + q_im1) - (q_ip1 + q_im2) )/12.0 &
-              + coef3*abs(ua)*((q_ip1 - q_im2)-3.*(q_i-q_im1))/12.0
-
-    END FUNCTION FLUX34
-
-   !-----------------------------------------------------------------------
-   !  routine FLUX56
-   !
-   !> \brief function to inline to do 5th/6th order interpolation
-   !> \date 20 August 2024
-   !> \details
-   !>  This routine is a ..
-   !
-   !-----------------------------------------------------------------------
-
-    REAL (kind=RKIND) FUNCTION FLUX56(q_im3, q_im2, q_im1, q_i, q_ip1, q_ip2, ua, coef5)
-
-     real (kind=RKIND) :: q_im3, q_im2, q_im1, q_i, q_ip1, q_ip2, ua, coef5
-
-     flux56 = ua*( 37.*(q_i+q_im1) - 8.*(q_ip1+q_im2) +  (q_ip2+q_im3)) / 60.0 &
-            + coef5*abs(ua)*( (q_ip2-q_im3) -5.*(q_ip1-q_im2) + 10.*(q_i-q_im1) ) / 60.0
-
-    END FUNCTION FLUX56
 
    !-----------------------------------------------------------------------
    !  routine atm_advance_scalars_mono_work
@@ -4683,9 +4576,6 @@ module atm_time_integration
 
       real (kind=RKIND), pointer :: coef_3rd_order, c_s
       logical, pointer :: config_mix_full
-      
-      logical, pointer :: mono_filter4
-      
       character (len=StrKIND), pointer :: config_horiz_mixing
       real (kind=RKIND), pointer :: config_del4u_div_factor
       real (kind=RKIND), pointer :: config_h_theta_eddy_visc4
@@ -4720,10 +4610,8 @@ module atm_time_integration
       call mpas_pool_get_config(configs, 'config_rayleigh_damp_u_timescale_days', config_rayleigh_damp_u_timescale_days)
       call mpas_pool_get_config(configs, 'config_number_rayleigh_damp_u_levels', config_number_rayleigh_damp_u_levels)
       call mpas_pool_get_config(configs, 'config_number_cam_damping_levels', config_number_cam_damping_levels)
-      call mpas_pool_get_config(configs, 'config_mono_filter4', mono_filter4)
-      
+
       call mpas_pool_get_array(state, 'rho_zz', rho_zz, 2)
-      
       call mpas_pool_get_array(state, 'u', u, 2)
       call mpas_pool_get_array(state, 'w', w, 2)
       call mpas_pool_get_array(state, 'theta_m', theta_m, 2)
@@ -4842,7 +4730,7 @@ module atm_time_integration
          tend_w_pgf, tend_w_buoy, coef_3rd_order, c_s, config_mix_full, config_horiz_mixing, config_del4u_div_factor, &
          config_h_mom_eddy_visc2, config_v_mom_eddy_visc2, config_h_theta_eddy_visc2, config_v_theta_eddy_visc2, &
          config_h_theta_eddy_visc4, config_h_mom_eddy_visc4, config_visc4_2dsmag, config_len_disp, rk_step, dt, &
-         config_mpas_cam_coef, mono_filter4, &
+         config_mpas_cam_coef, &
          config_rayleigh_damp_u, config_rayleigh_damp_u_timescale_days, & 
          config_number_rayleigh_damp_u_levels, config_number_cam_damping_levels, &
          rthdynten, &
@@ -4866,7 +4754,7 @@ module atm_time_integration
       tend_w_pgf, tend_w_buoy, coef_3rd_order, c_s, config_mix_full, config_horiz_mixing, config_del4u_div_factor, &
       config_h_mom_eddy_visc2, config_v_mom_eddy_visc2, config_h_theta_eddy_visc2, config_v_theta_eddy_visc2, &
       config_h_theta_eddy_visc4, config_h_mom_eddy_visc4, config_visc4_2dsmag, config_len_disp, rk_step, dt, &
-      config_mpas_cam_coef, mono_filter4, &
+      config_mpas_cam_coef, &
       config_rayleigh_damp_u, config_rayleigh_damp_u_timescale_days, &
       config_number_rayleigh_damp_u_levels, config_number_cam_damping_levels, &
       rthdynten, &
@@ -4987,8 +4875,6 @@ module atm_time_integration
 
       integer, intent(in) :: rk_step
       real (kind=RKIND), intent(in) :: dt
-      
-      logical, intent(in) :: mono_filter4
 
       real (kind=RKIND) :: config_mpas_cam_coef
 
@@ -5025,8 +4911,6 @@ module atm_time_integration
       real (kind=RKIND) :: kdiffu, z1, z2, z3, z4, zm, z0, zp, rayleigh_coef_inverse, visc2cam
 
       real (kind=RKIND), dimension( nVertLevels ) :: rayleigh_damp_coef
-      
-      real (kind=RKIND) :: mono_diffusion_weight
 
       real (kind=RKIND) :: flux3, flux4
       real (kind=RKIND) :: q_im2, q_im1, q_i, q_ip1, ua, coef3
@@ -5073,24 +4957,7 @@ module atm_time_integration
             end do
 
             h_mom_eddy_visc4   = config_visc4_2dsmag * config_len_disp**3
-            
-            !-----------------------------------------------------------------------------------------------------------
-            ! Added the ability to horizontally filter theta independently of config_visc4_2dsmag coeff for 
-            ! real data runs.  The code below maintains the original MPASv8 logic if config_h_theta_eddy_visc4 = 0 then 
-            ! h_theta_eddy_visc4 = h_mom_eddy_visc4.  If config_h_theta_eddy_visc4 > 0, then h_theta_eddy_visc4
-            ! is set to have a value ~config_h_theta_eddy_visc4 * L**3
-            !-----------------------------------------------------------------------------------------------------------
-
-            if(config_h_theta_eddy_visc4 .lt. 1.0e-4) then
-
-                h_theta_eddy_visc4 = config_visc4_2dsmag * config_len_disp**3
-
-            else
-
-                h_theta_eddy_visc4 = config_h_theta_eddy_visc4 * config_len_disp**3
-
-            endif
-
+            h_theta_eddy_visc4 = h_mom_eddy_visc4
 
          else if(config_horiz_mixing == "2d_fixed") then
 
@@ -5539,26 +5406,9 @@ module atm_time_integration
 
                   edge_sign = meshScalingDel4(iEdge)*r_areaCell*dvEdge(iEdge)*edgesOnCell_sign(i,iCell) * invDcEdge(iEdge)
 
-                  if( mono_filter4 ) then
-
-                    do k=2,nVertLevels
-
-                      mono_diffusion_weight = max(0.0, sign(1.0, (delsq_w(k,cell2) - delsq_w(k,cell1))  &
-                                                                *(w      (k,cell2) - w      (k,cell1)) ) )
-
-                      tend_w_euler(k,iCell) = tend_w_euler(k,iCell) - mono_diffusion_weight*edge_sign*(delsq_w(k,cell2) - delsq_w(k,cell1))
-
-                    enddo
-
-                  else
-
-                    do k=2,nVertLevels
-
-                      tend_w_euler(k,iCell) = tend_w_euler(k,iCell) - edge_sign * (delsq_w(k,cell2) - delsq_w(k,cell1))
-
-                    end do
-
-                  end if
+                  do k=2,nVertLevels
+                     tend_w_euler(k,iCell) = tend_w_euler(k,iCell) - edge_sign * (delsq_w(k,cell2) - delsq_w(k,cell1))
+                  end do
 
                end do
             end do
@@ -5719,10 +5569,7 @@ module atm_time_integration
          if (h_theta_eddy_visc4 > 0.0) then  ! 4th order mixing is active
 
             do iCell=cellSolveStart,cellSolveEnd    ! Technically updating fewer cells than before...
-            
-! Removing prandtl scaling from 4th order filter
-               r_areaCell = h_theta_eddy_visc4 * invAreaCell(iCell)
-               
+               r_areaCell = h_theta_eddy_visc4 * prandtl_inv * invAreaCell(iCell)
                do i=1,nEdgesOnCell(iCell)
 
                   iEdge = edgesOnCell(i,iCell)
@@ -5731,28 +5578,9 @@ module atm_time_integration
                   cell1 = cellsOnEdge(1,iEdge)
                   cell2 = cellsOnEdge(2,iEdge)
 
-                  if( mono_filter4 ) then
-
-                    do k=1,nVertLevels
-
-                      mono_diffusion_weight = max(0.0, sign(1.0, (delsq_theta(k,cell2) - delsq_theta(k,cell1)) &
-                                                                *(theta_m    (k,cell2) - theta_m    (k,cell1)) ) )
-
-                      tend_theta_euler(k,iCell) = tend_theta_euler(k,iCell) &
-                                                - mono_diffusion_weight*edge_sign*(delsq_theta(k,cell2) - delsq_theta(k,cell1))
-
-                    enddo
-
-                  else
-
-                    do k=1,nVertLevels
-
-                      tend_theta_euler(k,iCell) = tend_theta_euler(k,iCell) - edge_sign*(delsq_theta(k,cell2) - delsq_theta(k,cell1))
-
-                    end do
-
-                  end if
-                  
+                  do k=1,nVertLevels
+                     tend_theta_euler(k,iCell) = tend_theta_euler(k,iCell) - edge_sign*(delsq_theta(k,cell2) - delsq_theta(k,cell1))
+                  end do
                end do
             end do
 
