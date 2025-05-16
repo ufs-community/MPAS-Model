@@ -196,7 +196,12 @@
                      description="Whether to use 5th order scheme for vertical transport of scalars"
                      possible_values=".true. or .false."/>
 
-                <nml_option name="config_mono_filter4" type="logical" default_value="true"
+                <nml_option name="config_scalar_eddy_mix" type="logical" default_value="false"
+                     units="-"
+                     description="Whether to turn eddy mixing and the 4th order horizontal filter for scalars"
+                     possible_values=".true. or .false."/>
+
+                <nml_option name="config_mono_filter4" type="logical" default_value="false"
                      units="-"
                      description="Use monotonic fluxes for 4th filter"
                      possible_values=".true. or .false."/>
