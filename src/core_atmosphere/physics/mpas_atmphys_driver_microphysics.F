@@ -1413,7 +1413,8 @@ subroutine compute_hourly_max_radar_reflectivity(configs,diag_physics,its,ite)
  type(mpas_pool_type),intent(inout):: diag_physics
 
 !local pointers:
- real(kind=RKIND),dimension(:),pointer:: max_hail_diameter_sfc, max_hail_diameter_sfc_acc
+ real(kind=RKIND),dimension(:),pointer:: max_hail_diameter_sfc, max_hail_diameter_sfc_acc, &
+      max_hail_diameter_column, max_hail_diameter_column_acc
 
 !local variables and arrays:
  integer:: i,j
@@ -1422,10 +1423,13 @@ subroutine compute_hourly_max_radar_reflectivity(configs,diag_physics,its,ite)
 
  call mpas_pool_get_array(diag_physics,'max_hail_diameter_sfc',max_hail_diameter_sfc)
  call mpas_pool_get_array(diag_physics,'max_hail_diameter_sfc_acc',max_hail_diameter_sfc_acc)
+ call mpas_pool_get_array(diag_physics,'max_hail_diameter_column',max_hail_diameter_column)
+ call mpas_pool_get_array(diag_physics,'max_hail_diameter_column_acc',max_hail_diameter_column_acc)
 
  do j = jts,jte ! Assuming here that jts == jte (2D arrays)
     do i = its,ite
        max_hail_diameter_sfc_acc(i) = max(max_hail_diameter_sfc_acc(i), max_hail_diameter_sfc_p(i,j))
+       max_hail_diameter_column_acc(i) = max(max_hail_diameter_column_acc(i), max_hail_diameter_column_p(i,j))
     enddo
  enddo
 
