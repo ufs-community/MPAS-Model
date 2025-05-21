@@ -42,7 +42,7 @@
  logical,pointer:: config_tempo_hailaware, config_tempo_aerosolaware
  logical,pointer:: mp_kessler_in,mp_thompson_in,mp_thompson_aers_in,mp_wsm6_in,mp_nssl2m_in,nssl3m_in
  logical,pointer:: mp_tempo_in, tempo_hailaware_in, tempo_aerosolaware_in
- logical,pointer:: cu_grell_freitas_in,cu_kain_fritsch_in,cu_ntiedtke_in
+ logical,pointer:: cu_grell_freitas_in,cu_grell_freitas_li_in,cu_kain_fritsch_in,cu_ntiedtke_in
  logical,pointer:: bl_mynn_in,bl_mynnedmf_in,bl_ysu_in,bl_myj_in
  logical,pointer:: lsm_noah_in,lsm_ruc_in
  logical,pointer:: sf_noahmp_in
@@ -156,6 +156,9 @@
  nullify(cu_grell_freitas_in)
  call mpas_pool_get_package(packages,'cu_grell_freitas_inActive',cu_grell_freitas_in)
 
+ nullify(cu_grell_freitas_li_in)
+ call mpas_pool_get_package(packages,'cu_grell_freitas_li_inActive',cu_grell_freitas_li_in)
+
  nullify(cu_kain_fritsch_in)
  call mpas_pool_get_package(packages,'cu_kain_fritsch_inActive',cu_kain_fritsch_in)
 
@@ -163,6 +166,7 @@
  call mpas_pool_get_package(packages,'cu_ntiedtke_inActive',cu_ntiedtke_in)
 
  if(.not.associated(cu_grell_freitas_in) .or. &
+    .not.associated(cu_grell_freitas_li_in)  .or. &
     .not.associated(cu_kain_fritsch_in)  .or. &
     .not.associated(cu_ntiedtke_in)    ) then
     call mpas_log_write('====================================================================================',messageType=MPAS_LOG_ERR)
@@ -172,12 +176,15 @@
     return
  endif
 
- cu_grell_freitas_in = .false.
- cu_kain_fritsch_in  = .false.
- cu_ntiedtke_in      = .false.
+ cu_grell_freitas_in    = .false.
+ cu_grell_freitas_li_in = .false.
+ cu_kain_fritsch_in     = .false.
+ cu_ntiedtke_in         = .false.
 
  if(config_convection_scheme=='cu_grell_freitas') then
     cu_grell_freitas_in = .true.
+ elseif(config_convection_scheme == 'cu_grell_freitas_li') then
+    cu_grell_freitas_li_in = .true.
  elseif(config_convection_scheme == 'cu_kain_fritsch') then
     cu_kain_fritsch_in = .true.
  elseif(config_convection_scheme == 'cu_tiedtke' .or. &
@@ -186,6 +193,7 @@
  endif
 
  call mpas_log_write('    cu_grell_freitas_in     = $l', logicArgs=(/cu_grell_freitas_in/))
+ call mpas_log_write('    cu_grell_freitas_li_in  = $l', logicArgs=(/cu_grell_freitas_li_in/))
  call mpas_log_write('    cu_kain_fritsch_in      = $l', logicArgs=(/cu_kain_fritsch_in/))
  call mpas_log_write('    cu_ntiedtke_in          = $l', logicArgs=(/cu_ntiedtke_in/))
 
