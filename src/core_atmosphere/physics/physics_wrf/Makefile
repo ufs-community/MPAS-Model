@@ -45,9 +45,6 @@ OBJS = \
 	module_sf_mynn.o               \
 	module_sf_noahdrv.o            \
 	module_sf_noahlsm.o            \
-	module_ruc_land.o              \
-	module_ruc_ice.o               \
-	module_sf_sfcdiags_ruclsm.o    \
         module_sf_noahlsm_glacial_only.o \
         module_sf_noah_seaice.o        \
         module_sf_noah_seaice_drv.o    \
@@ -146,14 +143,14 @@ clean:
 .F.o:
 ifeq "$(GEN_F90)" "true"
 	$(CPP) $(CPPFLAGS) $(COREDEF) $(CPPINCLUDES) $< > $*.f90
-	$(FC) $(FFLAGS) -c $*.f90 $(FCINCLUDES) -I.. -I../physics_mmm -I../UGWP -I../../../framework -I../../../external/esmf_time_f90
+	$(FC) $(FFLAGS) -c $*.f90 $(FCINCLUDES) -I.. -I../physics_mmm -I../physics_noaa/UGWP -I../../../framework -I../../../external/esmf_time_f90
 else
-	$(FC) $(CPPFLAGS) $(COREDEF) $(FFLAGS) -c $*.F $(CPPINCLUDES) $(FCINCLUDES) -I.. -I../physics_mmm -I../UGWP -I../../../framework -I../../../external/esmf_time_f90
+	$(FC) $(CPPFLAGS) $(COREDEF) $(FFLAGS) -c $*.F $(CPPINCLUDES) $(FCINCLUDES) -I.. -I../physics_mmm -I../physics_noaa/UGWP -I../../../framework -I../../../external/esmf_time_f90
 endif
 
 .F90.o:
 ifeq "$(GEN_F90)" "true"
-	$(FC) $(FFLAGS) -c $*.f90 $(FCINCLUDES) -I.. -I../physics_mmm -I../UGWP -I../../../framework -I../../../external/esmf_time_f90
+	$(FC) $(FFLAGS) -c $*.f90 $(FCINCLUDES) -I.. -I../physics_mmm -I../physics_noaa/UGWP -I../../../framework -I../../../external/esmf_time_f90
 else
-	$(FC) $(CPPFLAGS) $(COREDEF) $(FFLAGS) -c $*.F90 $(CPPINCLUDES) $(FCINCLUDES) -I.. -I../physics_mmm -I../UGWP -I../../../framework -I../../../external/esmf_time_f90
+	$(FC) $(CPPFLAGS) $(COREDEF) $(FFLAGS) -c $*.F90 $(CPPINCLUDES) $(FCINCLUDES) -I.. -I../physics_mmm -I../physics_noaa/UGWP -I../../../framework -I../../../external/esmf_time_f90
 endif
