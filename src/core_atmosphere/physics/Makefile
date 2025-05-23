@@ -282,7 +282,7 @@ clean:
 	( cd physics_noahmp/utility; $(MAKE) clean )
 	( cd physics_noaa/TEMPO; $(MAKE) clean )
 	( cd physics_noaa/UGWP; $(MAKE) clean )
-	( cd physics_noaa/GFL; $(MAKE) clean )
+	( cd physics_noaa/GFL; cp ./MPAS/Makefile .; $(MAKE) clean )
 	( cd physics_noaa/RUCLSM; $(MAKE) -f MPAS/Makefile clean )
 	( cd physics_noaa/MYNN-EDMF; cp ./MPAS/Makefile .; $(MAKE) clean )
 	@# Certain systems with intel compilers generate *.i files
