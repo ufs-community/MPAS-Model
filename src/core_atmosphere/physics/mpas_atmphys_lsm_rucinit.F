@@ -141,9 +141,9 @@
  call mpas_pool_get_array(diag_physics,'mosaic_lu', mosaic_lu)
  call mpas_pool_get_array(diag_physics,'mosaic_soil', mosaic_soil)
 
- call mpas_pool_get_array(diag_physics,'mavail', mavail )
- call mpas_pool_get_array(diag_physics,'smfr3d', smfr3d )
- call mpas_pool_get_array(diag_physics,'znt'   , znt    )
+ call mpas_pool_get_array(sfc_input,'mavail', mavail )
+ call mpas_pool_get_array(sfc_input,'smfr3d', smfr3d )
+ call mpas_pool_get_array(sfc_input,'znt'   , znt    )
 
  allocate(soiliqw(nSoilLevels))
 

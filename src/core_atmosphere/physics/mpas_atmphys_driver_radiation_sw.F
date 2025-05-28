@@ -426,8 +426,8 @@
  call mpas_pool_get_array(atm_input,'pin'     ,pin     )
  call mpas_pool_get_array(atm_input,'ozmixm'  ,ozmixm  )
 
- call mpas_pool_get_array(diag_physics,'sfc_albedo',sfc_albedo)
- call mpas_pool_get_array(diag_physics,'sfc_emiss' ,sfc_emiss )
+ call mpas_pool_get_array(sfc_input,'sfc_albedo',sfc_albedo)
+ call mpas_pool_get_array(sfc_input,'sfc_emiss' ,sfc_emiss )
  call mpas_pool_get_array(diag_physics,'cldfrac'   ,cldfrac   )
  call mpas_pool_get_array(diag_physics,'o3clim'    ,o3clim    )
  call mpas_pool_get_array(diag_physics,'m_hybi'    ,m_hybi    )

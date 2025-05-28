@@ -74,7 +74,7 @@
  call mpas_pool_get_array(diag_physics,'cqs2',cqs2)
  call mpas_pool_get_array(diag_physics,'hfx' ,hfx )
  call mpas_pool_get_array(diag_physics,'qfx' ,qfx )
- call mpas_pool_get_array(diag_physics,'qsfc',qsfc)
+ call mpas_pool_get_array(sfc_input,'qsfc',qsfc)
  call mpas_pool_get_array(diag_physics,'q2'  ,q2  )
  call mpas_pool_get_array(diag_physics,'t2m' ,t2m )
  call mpas_pool_get_array(diag_physics,'th2m',th2m)

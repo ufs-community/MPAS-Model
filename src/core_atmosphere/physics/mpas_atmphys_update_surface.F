@@ -93,7 +93,7 @@
  call mpas_pool_get_array(sfc_input,'shdmin'    , shdmin    )
  call mpas_pool_get_array(sfc_input,'shdmax'    , shdmax    )
  call mpas_pool_get_array(sfc_input,'lai12m'    , lai12m    )
- call mpas_pool_get_array(diag_physics,'lai   '    , lai    )
+ call mpas_pool_get_array(sfc_input,'lai   '    , lai    )
 
 !updates the surface background albedo for the current date as a function of the monthly-mean
 !surface background albedo valid on the 15th day of the month, if config_sfc_albedo is true:
@@ -189,9 +189,9 @@
  call mpas_pool_get_array(sfc_input,'xice'      ,xice      )
  call mpas_pool_get_array(sfc_input,'xland'     ,xland     )
 
- call mpas_pool_get_array(diag_physics,'sfc_albedo',sfc_albedo)
- call mpas_pool_get_array(diag_physics,'sfc_emiss' ,sfc_emiss )
- call mpas_pool_get_array(diag_physics,'sfc_emibck',sfc_emibck)
+ call mpas_pool_get_array(sfc_input,'sfc_albedo',sfc_albedo)
+ call mpas_pool_get_array(sfc_input,'sfc_emiss' ,sfc_emiss )
+ call mpas_pool_get_array(sfc_input,'sfc_emibck',sfc_emibck)
  call mpas_pool_get_array(diag_physics,'xicem'     ,xicem     )
 
 !call mpas_log_write('')
@@ -396,7 +396,7 @@
  call mpas_pool_get_array(diag_physics,'gsw'      ,gsw  )
  call mpas_pool_get_array(diag_physics,'hfx'      ,hfx  )
  call mpas_pool_get_array(diag_physics,'qfx'      ,qfx  )
- call mpas_pool_get_array(diag_physics,'ust'      ,ust  )
+ call mpas_pool_get_array(sfc_input,'ust'      ,ust  )
 
  skinmax = -9999.
  skinmin =  9999.

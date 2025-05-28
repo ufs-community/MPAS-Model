@@ -96,6 +96,7 @@
 
 !local pointers:
  logical,pointer:: config_do_restart,  &
+                   config_do_DAcycling,&
                    config_frac_seaice, &
                    config_sfc_albedo
 
@@ -135,6 +136,7 @@
 !call mpas_log_write('--- enter subroutine landuse_init_forMPAS:')
 
  call mpas_pool_get_config(configs,'config_do_restart' ,config_do_restart )
+ call mpas_pool_get_config(configs,'config_do_DAcycling' ,config_do_DAcycling )
  call mpas_pool_get_config(configs,'config_frac_seaice',config_frac_seaice)
  call mpas_pool_get_config(configs,'config_sfc_albedo' ,config_sfc_albedo )
  call mpas_pool_get_config(configs,'config_lsm_scheme' ,config_lsm_scheme )
@@ -155,16 +157,16 @@
 
  nullify(mavail)
  nullify(ust)
- call mpas_pool_get_array(diag_physics,'sfc_emibck'       ,embck            )
- call mpas_pool_get_array(diag_physics,'mavail'           ,mavail           )
- call mpas_pool_get_array(diag_physics,'sfc_albedo'       ,sfc_albedo       )
- call mpas_pool_get_array(diag_physics,'sfc_emiss'        ,sfc_emiss        )
- call mpas_pool_get_array(diag_physics,'thc'              ,thc              )
- call mpas_pool_get_array(diag_physics,'ust'              ,ust              )
- call mpas_pool_get_array(diag_physics,'xicem'            ,xicem            )
- call mpas_pool_get_array(diag_physics,'z0'               ,z0               )
- call mpas_pool_get_array(diag_physics,'znt'              ,znt              )
- if (config_lsm_scheme .eq. 'ruc') then
+ call mpas_pool_get_array(sfc_input,'sfc_emibck'       ,embck            )
+ call mpas_pool_get_array(sfc_input,'mavail'           ,mavail           )
+ call mpas_pool_get_array(sfc_input,'sfc_albedo'       ,sfc_albedo       )
+ call mpas_pool_get_array(sfc_input,'sfc_emiss'        ,sfc_emiss        )
+ call mpas_pool_get_array(sfc_input,'thc'              ,thc              )
+ call mpas_pool_get_array(sfc_input,'ust'              ,ust              )
+ call mpas_pool_get_array(sfc_input,'xicem'            ,xicem            )
+ call mpas_pool_get_array(sfc_input,'z0'               ,z0               )
+ call mpas_pool_get_array(sfc_input,'znt'              ,znt              )
+ if (config_lsm_scheme .eq. 'sf_ruc') then
     call mpas_pooL_get_array(diag_physics,'spp_lsm_loc'   , spp_lsm_loc)
     spp_lsm_loc = 0   !hardcode as 0 for now
     call mpas_pool_get_array(diag_physics,'mosaic_lu'     , mosaic_lu  )
@@ -179,6 +181,7 @@
 !call mpas_log_write('--- config_frac_seaice = $1',logicArgs=(/config_frac_seaice/))
 !call mpas_log_write('--- xice_threshold     = $r',realArgs=(/xice_threshold/))
 
+ if((config_lsm_scheme .ne. 'sf_ruc')) then
 !reads in the landuse properties from landuse.tbl:
  if(dminfo % my_proc_id == IO_NODE) then
     !get a unit to open init file:
@@ -264,7 +267,9 @@
 !call mpas_log_write('--- isice   =$i',intArgs=(/isice/))
 !call mpas_log_write('--- iswater =$i',intArgs=(/iswater/))
 !call mpas_log_write('--- isurban =$i',intArgs=(/isurban/))
- if(config_do_restart) then
+ endif ! not sf_ruc
+
+ if(config_do_restart .or. config_do_DAcycling) then
     call mpas_log_write('--- config_do_restart =$l', logicArgs=(/config_do_restart/))
     call mpas_log_write('--- skip the end of landuse_init_forMPAS')
     return
