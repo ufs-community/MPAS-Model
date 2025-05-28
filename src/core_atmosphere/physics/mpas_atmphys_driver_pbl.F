@@ -486,9 +486,9 @@
  call mpas_pool_get_array(diag_physics,'hfx' ,hfx )
  call mpas_pool_get_array(diag_physics,'hpbl',hpbl)
  call mpas_pool_get_array(diag_physics,'qfx' ,qfx )
- call mpas_pool_get_array(sfc_input,'ust' ,ust )
+ call mpas_pool_get_array(diag_physics,'ust' ,ust )
  call mpas_pool_get_array(diag_physics,'wspd',wspd)
- call mpas_pool_get_array(sfc_input,'znt' ,znt )
+ call mpas_pool_get_array(diag_physics,'znt' ,znt )
 
  call mpas_pool_get_array(tend_physics,'rthratenlw',rthratenlw)
  call mpas_pool_get_array(tend_physics,'rthratensw',rthratensw)
@@ -563,7 +563,7 @@
 
        call mpas_pool_get_array(sfc_input,'skintemp',skintemp)
        call mpas_pool_get_array(diag_physics,'ch'        ,ch        )
-       call mpas_pool_get_array(sfc_input,'qsfc'      ,qsfc      )
+       call mpas_pool_get_array(diag_physics,'qsfc'      ,qsfc      )
        call mpas_pool_get_array(diag_physics,'rmol'      ,rmol      )
        call mpas_pool_get_array(diag_physics,'el_pbl'    ,el_pbl    )
        call mpas_pool_get_array(diag_physics,'cov'       ,cov       )
@@ -652,7 +652,7 @@
 
        call mpas_pool_get_array(sfc_input,'skintemp',skintemp)
        call mpas_pool_get_array(diag_physics,'ch'        ,ch        )
-       call mpas_pool_get_array(sfc_input,'qsfc'      ,qsfc      )
+       call mpas_pool_get_array(diag_physics,'qsfc'      ,qsfc      )
        call mpas_pool_get_array(diag_physics,'el_pbl'    ,el_pbl    )
        call mpas_pool_get_array(diag_physics,'cov'       ,cov       )
        call mpas_pool_get_array(diag_physics,'qke'       ,qke       )
@@ -747,7 +747,7 @@
        call mpas_pool_get_array(diag_physics, 'akhs', akhs)
        call mpas_pool_get_array(diag_physics, 'akms', akms)
        call mpas_pool_get_array(diag_physics,'tke_pbl',tke_pbl  )
-       call mpas_pool_get_array(sfc_input,'qsfc',qsfc)
+       call mpas_pool_get_array(diag_physics,'qsfc',qsfc)
        !out
        call mpas_pool_get_array(diag_physics, 'ct', ct)
        call mpas_pool_get_array(diag_physics, 'mixht', mixht)
@@ -802,7 +802,7 @@
  end subroutine pbl_from_MPAS
 
 !=================================================================================================================
- subroutine pbl_to_MPAS(configs,sfc_input,diag_physics,tend_physics,its,ite)
+ subroutine pbl_to_MPAS(configs,diag_physics,tend_physics,its,ite)
 !=================================================================================================================
 
 !input arguments:
@@ -810,7 +810,6 @@
 
 !inout arguments:
  type(mpas_pool_type),intent(inout):: diag_physics
- type(mpas_pool_type),intent(in   ):: sfc_input
  type(mpas_pool_type),intent(inout):: tend_physics
 
  integer,intent(in):: its,ite
@@ -1109,9 +1108,9 @@
        call mpas_pool_get_array(diag_physics, 'akhs', akhs)
        call mpas_pool_get_array(diag_physics, 'akms', akms)
        call mpas_pool_get_array(diag_physics, 'tke_pbl', tke_pbl)
-       call mpas_pool_get_array(sfc_input, 'qsfc', qsfc)
-       call mpas_pool_get_array(sfc_input, 'ust', ust)
-       call mpas_pool_get_array(sfc_input, 'znt', znt)
+       call mpas_pool_get_array(diag_physics, 'qsfc', qsfc)
+       call mpas_pool_get_array(diag_physics, 'ust', ust)
+       call mpas_pool_get_array(diag_physics, 'znt', znt)
        !out
        call mpas_pool_get_array(diag_physics, 'ct', ct)
        call mpas_pool_get_array(diag_physics, 'mixht', mixht)
@@ -1600,7 +1599,7 @@
  end select pbl_select
 
 !copy local arrays to MPAS grid:
- call pbl_to_MPAS(configs,sfc_input,diag_physics,tend_physics,its,ite)
+ call pbl_to_MPAS(configs,diag_physics,tend_physics,its,ite)
 
 !call mpas_log_write('--- end subroutine driver_pbl.')
 

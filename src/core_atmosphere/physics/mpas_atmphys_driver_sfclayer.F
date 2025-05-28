@@ -480,7 +480,7 @@
  call mpas_pool_get_array(mesh,'meshDensity',meshDensity)
 
  call mpas_pool_get_array(diag_physics,'hpbl'    ,hpbl    )
- call mpas_pool_get_array(sfc_input,'mavail'  ,mavail  )
+ call mpas_pool_get_array(diag_physics,'mavail'  ,mavail  )
  call mpas_pool_get_array(sfc_input   ,'skintemp',skintemp)
  call mpas_pool_get_array(sfc_input   ,'xland'   ,xland   )
 
@@ -496,17 +496,17 @@
  call mpas_pool_get_array(diag_physics,'hfx'     ,hfx     )
  call mpas_pool_get_array(diag_physics,'qfx'     ,qfx     )
  call mpas_pool_get_array(diag_physics,'qgh'     ,qgh     )
- call mpas_pool_get_array(sfc_input,'qsfc'    ,qsfc    )
+ call mpas_pool_get_array(diag_physics,'qsfc'    ,qsfc    )
  call mpas_pool_get_array(diag_physics,'lh'      ,lh      )
  call mpas_pool_get_array(diag_physics,'mol'     ,mol     )
  call mpas_pool_get_array(diag_physics,'psih'    ,psih    )
  call mpas_pool_get_array(diag_physics,'psim'    ,psim    )
  call mpas_pool_get_array(diag_physics,'regime'  ,regime  )
  call mpas_pool_get_array(diag_physics,'rmol'    ,rmol    )
- call mpas_pool_get_array(sfc_input,'ust'     ,ust     )
- call mpas_pool_get_array(sfc_input,'ustm'    ,ustm    )
+ call mpas_pool_get_array(diag_physics,'ust'     ,ust     )
+ call mpas_pool_get_array(diag_physics,'ustm'    ,ustm    )
  call mpas_pool_get_array(diag_physics,'wspd'    ,wspd    )
- call mpas_pool_get_array(sfc_input,'znt'     ,znt     )
+ call mpas_pool_get_array(diag_physics,'znt'     ,znt     )
  call mpas_pool_get_array(diag_physics,'zol'     ,zol     )
 
  do j = jts,jte
@@ -658,7 +658,7 @@
 
     case("sf_mynn")
        !input variables:
-       call mpas_pool_get_array(sfc_input,'qcg'  ,qcg  )
+       call mpas_pool_get_array(diag_physics,'qcg'  ,qcg  )
        call mpas_pool_get_array(sfc_input   ,'snowh',snowh)
        !inout variables:
        call mpas_pool_get_array(diag_physics,'ch',ch)
@@ -678,7 +678,7 @@
 
     case("sf_mynnsfclay")
        !input variables:
-       call mpas_pool_get_array(sfc_input,'qcg'  ,qcg  )
+       call mpas_pool_get_array(diag_physics,'qcg'  ,qcg  )
        call mpas_pool_get_array(sfc_input   ,'snowh',snowh)
        !inout variables:
        call mpas_pool_get_array(diag_physics,'ch' ,ch )
@@ -826,16 +826,16 @@
  call mpas_pool_get_array(diag_physics,'hfx'   ,hfx   )
  call mpas_pool_get_array(diag_physics,'qfx'   ,qfx   )
  call mpas_pool_get_array(diag_physics,'qgh'   ,qgh   )
- call mpas_pool_get_array(sfc_input,'qsfc'  ,qsfc  )
+ call mpas_pool_get_array(diag_physics,'qsfc'  ,qsfc  )
  call mpas_pool_get_array(diag_physics,'lh'    ,lh    )
  call mpas_pool_get_array(diag_physics,'mol'   ,mol   )
  call mpas_pool_get_array(diag_physics,'psih'  ,psih  )
  call mpas_pool_get_array(diag_physics,'psim'  ,psim  )
  call mpas_pool_get_array(diag_physics,'regime',regime)
  call mpas_pool_get_array(diag_physics,'rmol'  ,rmol  )
- call mpas_pool_get_array(sfc_input,'ust'   ,ust   )
+ call mpas_pool_get_array(diag_physics,'ust'   ,ust   )
  call mpas_pool_get_array(diag_physics,'wspd'  ,wspd  )
- call mpas_pool_get_array(sfc_input,'znt'   ,znt   )
+ call mpas_pool_get_array(diag_physics,'znt'   ,znt   )
  call mpas_pool_get_array(diag_physics,'zol'   ,zol   )
 
 !output variables:
@@ -850,7 +850,7 @@
  call mpas_pool_get_array(diag_physics,'cda'   ,cda   )
  call mpas_pool_get_array(diag_physics,'ck'    ,ck    )
  call mpas_pool_get_array(diag_physics,'cka'   ,cka   )
- call mpas_pool_get_array(sfc_input,'ustm'  ,ustm  )
+ call mpas_pool_get_array(diag_physics,'ustm'  ,ustm  )
 
 !output variables (optional):
  call mpas_pool_get_array(diag_physics,'cd'    ,cd    )
