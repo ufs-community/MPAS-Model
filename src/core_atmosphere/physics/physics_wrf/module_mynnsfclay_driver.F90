@@ -30,7 +30,7 @@
                    ids,ide,jds,jde,kds,kde,                      &
                    ims,ime,jms,jme,kms,kme,                      &
                    its,ite,jts,jte,kts,kte,                      &
-                   restart,DAcycling,initflag,errmsg,errflg      &
+                   restart,cycling,initflag,errmsg,errflg        &
                        )
 !-------------------------------------------------------------------
 !-- u3d         3d u-velocity interpolated to theta points (m/s)
@@ -194,7 +194,7 @@
  integer,intent(in):: ids,ide,jds,jde,kds,kde, &
                       ims,ime,jms,jme,kms,kme, &
                       its,ite,jts,jte,kts,kte
- logical,intent(in):: restart,DAcycling
+ logical,intent(in):: restart,cycling
  integer,intent(in):: itimestep, initflag
  integer,intent(in):: isfflx
  integer,intent(in),optional:: isftcflx, iz0tlnd
@@ -302,7 +302,7 @@
  f_spp = .false.
  if(spp_pbl==1 .and. present(pattern_spp_pbl)) f_spp = .true.
  restart_or_cycle = .false.
- if(restart .or. DAcycling)restart_or_cycle=.true.
+ if(restart .or. cycling)restart_or_cycle=.true.
  
  errmsg = ' '
  errflg = 0
