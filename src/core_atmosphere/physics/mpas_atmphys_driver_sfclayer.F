@@ -1418,7 +1418,7 @@
                    iz0tlnd  = iz0tlnd                                                    , &
                    itimestep= itimestep  , initflag  = initflag                          , &
                    restart  = config_do_restart                                          , &
-                   DAcycling= config_do_DAcycling                                        , &
+                   cycling  = config_do_DAcycling                                        , &
                    errmsg   = errmsg     , errflg    = errflg                            , &
                    ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde , &
                    ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme , &
@@ -1453,7 +1453,7 @@
                       iz0tlnd  = iz0tlnd                                                    , &
                       itimestep= itimestep  , initflag  = initflag                          , &
                       restart  = config_do_restart                                          , &
-                      DAcycling= config_do_DAcycling                                        , &
+                      cycling  = config_do_DAcycling                                        , &
                       errmsg   = errmsg     , errflg    = errflg                            , &
                       ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde , &
                       ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme , &
