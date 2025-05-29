@@ -173,8 +173,7 @@
  call physics_message('--- end initialize RUC LSM tables' )
  call mpas_log_write('')
 
-
-if(.not.restart .or. .not. cycling) then
+if(.not.restart .and. .not. cycling) then
 
    errflag = 0
    do iCell = 1, nCells
