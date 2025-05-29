@@ -310,7 +310,7 @@ use mpas_stream_manager
  endif
 
 !initialization of xicem:
- if(.not.config_do_restart .or. .not.config_do_DAcycling) then
+ if(.not.config_do_restart .and. .not. config_do_DAcycling) then
 !   call mpas_log_write('--- initialization of xicem:')
     do iCell = 1, nCellsSolve
        xicem(iCell) = xice(iCell)
@@ -320,7 +320,7 @@ use mpas_stream_manager
 !initialization of the local sea-surface temperature when a diurnal cycle of the
 !sea-surface temperature is applied. This avoids having the array sstsk equal to
 !zero over land:
- if(.not. config_do_restart .or. .not.config_do_DAcycling) then
+ if(.not. config_do_restart .and. .not. config_do_DAcycling) then
 !   call mpas_log_write('--- initialization of sstsk:')
     do iCell = 1, nCellsSolve
        sstsk(iCell) = sst(iCell)

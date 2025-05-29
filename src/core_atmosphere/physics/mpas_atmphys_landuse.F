@@ -166,6 +166,7 @@
  call mpas_pool_get_array(diag_physics,'xicem'            ,xicem            )
  call mpas_pool_get_array(diag_physics,'z0'               ,z0               )
  call mpas_pool_get_array(diag_physics,'znt'              ,znt              )
+
  if (config_lsm_scheme .eq. 'sf_ruc') then
     call mpas_pooL_get_array(diag_physics,'spp_lsm_loc'   , spp_lsm_loc)
     spp_lsm_loc = 0   !hardcode as 0 for now
@@ -269,11 +270,17 @@
 !call mpas_log_write('--- isurban =$i',intArgs=(/isurban/))
  endif ! not sf_ruc
 
- if(config_do_restart .or. config_do_DAcycling) then
+ if(config_do_restart ) then
     call mpas_log_write('--- config_do_restart =$l', logicArgs=(/config_do_restart/))
     call mpas_log_write('--- skip the end of landuse_init_forMPAS')
     return
  endif
+  if(config_do_DAcycling) then
+    call mpas_log_write('--- config_do_DAcycling =$l', logicArgs=(/config_do_restart/))
+    call mpas_log_write('--- skip the end of landuse_init_forMPAS')
+    return
+ endif
+
 
 !defines the surface properties over the entire domain:
  do iCell = 1, nCells
