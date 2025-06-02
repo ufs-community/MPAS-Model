@@ -162,6 +162,7 @@ module atm_core
 
       call MPAS_stream_mgr_reset_alarms(domain % streamManager, streamID='input', direction=MPAS_STREAM_INPUT, ierr=ierr)
       call MPAS_stream_mgr_reset_alarms(domain % streamManager, streamID='restart', direction=MPAS_STREAM_INPUT, ierr=ierr)
+      call MPAS_stream_mgr_reset_alarms(domain % streamManager, streamID='da_state', direction=MPAS_STREAM_INPUT, ierr=ierr)
       call mpas_log_write(' ----- done reading initial state -----')
 
 
