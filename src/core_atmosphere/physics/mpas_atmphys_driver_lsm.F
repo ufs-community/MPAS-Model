@@ -903,6 +903,7 @@
 
 !local pointers:
  logical,pointer:: config_sfc_albedo
+ logical,pointer:: restart, cycling
  character(len=StrKIND),pointer:: lsm_scheme
  character(len=StrKIND),pointer:: mminlu
  integer,pointer:: isice
@@ -918,6 +919,8 @@
  call mpas_pool_get_config(configs,'config_sfc_albedo' ,config_sfc_albedo )
  call mpas_pool_get_config(configs,'config_lsm_scheme',lsm_scheme)
  call mpas_pool_get_config(configs,'config_lakemodel',lakemodel)
+ call mpas_pool_get_config(configs,'config_do_restart',restart)
+ call mpas_pool_get_config(configs,'config_do_DAcycling',cycling)
  call mpas_pool_get_array(sfc_input,'mminlu',mminlu)
  call mpas_pool_get_array(sfc_input,'isice' ,isice )
  call mpas_pool_get_array(sfc_input,'iswater',iswater)
@@ -989,6 +992,7 @@
 
        call mpas_log_write('--- call subroutine ruc_land:')
        call ruc_land( spp_lsm      = spp_lsm_loc   , lakemodel    = lakemodel   , lakemask  = lakemask_p,  &
+                    restart        = restart       , cycling      = cycling     ,                          &
                     rhosnf         = rhosnf_p      , precipfr     = precipfr_p  , mosaic_lu = mosaic_lu,   &
                     qsg            = qsg_p         , qvg          = qvg_p       , dew       = dew_p,       &
                     soilt1         = soilt1_p      , tsnav        = tsnav_p     , acrunoff  = acrunoff_p,  &
