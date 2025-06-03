@@ -139,7 +139,7 @@
                      svp3,svpt0,ep1,ep2,karman,ch,qcg,   &
                      itimestep,wstar,qstar,ustm,ck,cka,  &
                      cd,cda,spp_pbl,rstoch1d,isftcflx,   &
-                     iz0tlnd,its,ite,restart,            &
+                     iz0tlnd,its,ite,restart_or_cycle,   &
                      errmsg,errflg                       &
                         )
  implicit none
@@ -163,7 +163,7 @@
 !-----------------------------
 ! namelist options
 !-----------------------------
- logical,intent(in):: spp_pbl,restart
+ logical,intent(in):: spp_pbl,restart_or_cycle
 
  integer,intent(in):: isfflx
  integer,intent(in),optional:: isftcflx,iz0tlnd
@@ -386,7 +386,7 @@
     ! according to Akb(1976), Eq(12).
     !--------------------------------------------------------
     br(i)=govrth(i)*za(i)*dthvdz/(wspd(i)*wspd(i))
-    if (.not. restart .and. itimestep == 1) then
+    if (.not. restart_or_cycle .and. itimestep == 1) then
        !set limits according to Li et al. (2010) boundary-layer meteorol (p.158)
        br(i)=max(br(i),-2.0)
        br(i)=min(br(i),2.0)
@@ -600,7 +600,7 @@
           regime(i)=2.
        endif
 
-       if (.not. restart .or. (restart .and. itimestep > 1) ) then
+       if (.not. restart_or_cycle .or. (restart_or_cycle .and. itimestep > 1) ) then
           !compute z/l first guess:
           call li_etal_2010(zol(i),br(i),za(i)/zntstoch(i),zratio(i))
        else
@@ -685,7 +685,7 @@
        !==========================================================
        regime(i)=4.
 
-       if (.not. restart .or. (restart .and. itimestep > 1) ) then
+       if (.not. restart_or_cycle .or. (restart_or_cycle .and. itimestep > 1) ) then
           !compute z/l first guess:
           call li_etal_2010(zol(i),br(i),za(i)/zntstoch(i),zratio(i))
        else

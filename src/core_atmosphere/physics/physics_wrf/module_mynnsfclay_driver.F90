@@ -403,7 +403,7 @@
                  wstar    = wstar_hv  , qstar    = qstar_hv  , ustm    = ustm_hv  , ck        = ck_hv     , &
                  cka      = cka_hv    , cd       = cd_hv     , cda     = cda_hv   , spp_pbl   = f_spp     , &
                  rstoch1d = rstoch1d  , isftcflx = isftcflx  , iz0tlnd = iz0tlnd                          , &
-                 its      = its       , ite      = ite       , restart = restart_or_cycle                 , &
+                 its      = its       , ite      = ite       , restart_or_cycle = restart_or_cycle        , &
                  errmsg   = errmsg    , errflg   = errflg                                                   &
                     )
 
