@@ -719,13 +719,12 @@
  end subroutine init_hinterp_gocart
  
 !=================================================================================================================
- subroutine init_atm_thompson_aerosols_lbc(timestamp,timestart,block,mesh,diag,state,lbc_state)
+ subroutine init_atm_thompson_aerosols_lbc(timestamp,timestart,block,mesh,diag,lbc_state)
 !=================================================================================================================
 
 !input arguments:
  character(len=StrKIND),intent(in):: timestart,timestamp
  type(mpas_pool_type),intent(in):: diag
- type(mpas_pool_type),intent(in):: state
 
 !inout arguments:
  type(block_type),intent(inout),target:: block

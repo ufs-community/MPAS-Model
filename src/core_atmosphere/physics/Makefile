@@ -248,11 +248,6 @@ mpas_atmphys_rrtmg_swinit.o: \
 	mpas_atmphys_constants.o \
 	mpas_atmphys_utilities.o
 
-mpas_atmphys_driver_seaice.o: \
-	mpas_atmphys_constants.o \
-	mpas_atmphys_lsm_shared.o \
-	mpas_atmphys_vars.o
-
 mpas_atmphys_sfc_diagnostics.o: \
 	mpas_atmphys_constants.o \
 	mpas_atmphys_vars.o
