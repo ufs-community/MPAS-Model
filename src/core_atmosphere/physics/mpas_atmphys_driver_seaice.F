@@ -694,12 +694,16 @@ endif
  integer,pointer:: isice,iswater
  integer,pointer:: spp_lsm_loc 
  integer,pointer:: globalCells(:)
+ logical,pointer:: restart, cycling
 
 !-----------------------------------------------------------------------------------------------------------------
 !call mpas_log_write(' ')
 !call mpas_log_write('--- enter subroutine driver_seaice: xice_threshold = $r',realArgs=(/xice_threshold/))
 
  call mpas_pool_get_config(configs,'config_lsm_scheme',lsm_scheme)
+ call mpas_pool_get_config(configs,'config_do_restart',restart)
+ call mpas_pool_get_config(configs,'config_do_DAcycling',cycling)
+
 
 !copy MPAS arrays to local arrays:
  call seaice_from_MPAS(configs,mesh,diag_physics,sfc_input,its,ite)
@@ -777,6 +781,7 @@ endif
 
        call mpas_log_write('--- call subroutine ruc_ice:')
        call ruc_ice( spp_lsm       = spp_lsm_loc   , iswater      = iswater     , chklowq   = chklowq_p,   &
+                    restart        = restart       , cycling      = cycling     ,                          &
                     rhosnf         = rhosnf_p      , precipfr     = precipfr_p  , chs       = chs_p,       &
                     qsg            = qsg_p         , qvg          = qvg_p       , dew       = dew_p,       &
                     soilt1         = soilt1_p      , tsnav        = tsnav_p     , acrunoff  = acrunoff_p,  &
