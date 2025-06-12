@@ -631,26 +631,6 @@ module mpas_halo
                 maxNSendList = group % fields(i) % maxNSendList
 
                 select case (group % fields(i) % nDims)
-                !
-                ! Packing code for 1-d real-valued fields
-                !
-                case (1)
-                    call mpas_pool_get_array(domain % blocklist % allFields, trim(group % fields(i) % fieldName), &
-                                             group % fields(i) % r1arr, timeLevel=group % fields(i) % timeLevel)
-
-                    !
-                    ! Pack send buffer for all neighbors for current field
-                    !
-                    do iEndp = 1, nSendEndpts
-                        do iHalo = 1, nHalos
-                            do j = 1, maxNSendList
-                                if (j <= nSendLists(iHalo,iEndp)) then
-                                    group % sendBuf(packOffsets(iEndp) + sendListDst(j,iHalo,iEndp)) = &
-                                        group % fields(i) % r1arr(sendListSrc(j,iHalo,iEndp))
-                                end if
-                            end do
-                        end do
-                    end do
 
                 !
                 ! Packing code for 1-d real-valued fields
@@ -783,21 +763,6 @@ module mpas_halo
                     dim2 = compactHaloInfo(3)
 
                     select case (group % fields(i) % nDims)
-                    !
-                    ! Unpacking code for 1-d real-valued fields
-                    !
-                    case (1)
-                        !
-                        ! Unpack recv buffer from all neighbors for current field
-                        !
-                        do iHalo = 1, nHalos
-                            do j = 1, maxNRecvList
-                                if (j <= nRecvLists(iHalo,iEndp)) then
-                                    group % fields(i) % r1arr(recvListDst(j,iHalo,iEndp)) = &
-                                        group % recvBuf(unpackOffsets(iEndp) + recvListSrc(j,iHalo,iEndp))
-                                end if
-                            end do
-                        end do
 
                     !
                     ! Unpacking code for 1-d real-valued fields

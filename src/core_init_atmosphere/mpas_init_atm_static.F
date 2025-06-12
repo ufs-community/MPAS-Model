@@ -370,8 +370,6 @@
        write(mminlu,'(a)') 'USGS'
     case('MODIFIED_IGBP_MODIS_NOAH', 'MODIFIED_IGBP_MODIS_NOAH_15s')
        write(mminlu,'(a)') 'MODIFIED_IGBP_MODIS_NOAH'
-    case('MODIFIED_IGBP_MODIS_NOAH_15s')
-       write(mminlu,'(a)') 'MODIFIED_IGBP_MODIS_NOAH'
     case default
          call mpas_log_write('*****************************************************************', messageType=MPAS_LOG_ERR)
          call mpas_log_write('Invalid land use dataset '''//trim(config_landuse_data) &

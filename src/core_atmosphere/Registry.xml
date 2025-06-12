@@ -2793,10 +2793,6 @@
                 <!-- ... PARAMETERIZATION OF CLOUD MICROPHYSICS:                                                        -->
                 <!-- ================================================================================================== -->
 
-		<var name="refl10cm" type="real" dimensions="nVertLevels nCells Time" units="dBZ"
-                     description="10 cm radar reflectivity"
-                     packages="mp_thompson_in;mp_wsm6_in;mp_nssl2m_in;mp_tempo_in"/>
-
 		<var name="max_hail_diameter_sfc" type="real" dimensions="nCells Time" units="mm"
                      description="Maximum hail diameter at the surface"
                      packages="mp_tempo_in"/>
@@ -2808,6 +2804,9 @@
 		<var name="max_hail_diameter_sfc_acc" type="real" dimensions="nCells Time" units="mm"
                      description="Maximum hail diameter at the surface accumulated over diagnostic output"
                      packages="mp_tempo_in"/>
+
+		<var name="do_diag_dbz" type="integer" dimensions="" units = ""
+		    description="flag for whether to compute refelctivity at every time step for use in computing output-time-max 1km reflectivity"/>
 
                 <var name="refl10cm_max" type="real" dimensions="nCells Time" units="dBZ"
                      description="10 cm maximum radar reflectivity"
@@ -2821,12 +2820,9 @@
                      description="maximum diagnosed 10 cm radar reflectivity at 1 km AGL since last output time"
                      packages="mp_thompson_in;mp_thompson_aers_in;mp_wsm6_in;mp_nssl2m_in;mp_tempo_in"/>
 
-		<var name="do_diag_dbz" type="integer" dimensions="" units = ""
-		    description="flag for whether to compute refelctivity at every time step for use in computing output-time-max 1km reflectivity"/>
-
                 <var name="refl10cm" type="real" dimensions="nVertLevels nCells Time" units="dBZ"
                      description="10 cm radar reflectivity"
-                     packages="mp_thompson_in;mp_thompson_aers_in;mp_wsm6_in"/>
+                     packages="mp_thompson_in;mp_thompson_aers_in;mp_wsm6_in;mp_nssl2m_in;mp_tempo_in"/>
 
                 <var name="i_rainnc" type="integer" dimensions="nCells Time" units="unitless"
                      description="incidence of accumulated grid-scale precipitation greater than config_bucket_rainnc"

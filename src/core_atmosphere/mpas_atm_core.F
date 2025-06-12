@@ -621,7 +621,7 @@ module atm_core
       type (domain_type), intent(inout) :: domain
       integer :: ierr
    
-      real (kind=RKIND) :: dt
+      real (kind=RKIND), pointer :: dt
       logical, pointer :: config_do_restart
       logical, pointer :: config_apply_lbcs
       type (block_type), pointer :: block_ptr
