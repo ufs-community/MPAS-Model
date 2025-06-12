@@ -152,8 +152,7 @@ module mpas_halo
 
         use mpas_derived_types, only : domain_type, mpas_pool_type, mpas_pool_iterator_type, MPAS_POOL_CONFIG, &
                                        MPAS_POOL_REAL, MPAS_HALO_REAL, mpas_halo_group, MPAS_LOG_CRIT, &
-                                       field2DReal, field3DReal, &
-                                       field1DReal
+                                       field1DReal, field2DReal, field3DReal
         use mpas_pool_routines, only : mpas_pool_get_subpool, mpas_pool_remove_subpool, mpas_pool_destroy_pool, &
                                        mpas_pool_begin_iteration, mpas_pool_get_next_member, mpas_pool_get_dimension, &
                                        mpas_pool_remove_field, mpas_pool_get_field
@@ -396,8 +395,7 @@ module mpas_halo
     subroutine mpas_halo_exch_group_add_field(domain, groupName, fieldName, timeLevel, haloLayers, iErr)
 
         use mpas_derived_types, only : domain_type, mpas_pool_type, mpas_pool_field_info_type, MPAS_POOL_REAL, &
-                                       field2DReal, field3DReal, MPAS_LOG_CRIT, &
-                                       field1DReal
+                                       field1DReal, field2DReal, field3DReal, MPAS_LOG_CRIT
         use mpas_pool_routines, only : mpas_pool_get_subpool, mpas_pool_add_config, mpas_pool_get_field_info, &
                                        mpas_pool_add_dimension, mpas_pool_get_field, mpas_pool_add_field
         use mpas_log, only : mpas_log_write
@@ -655,6 +653,27 @@ module mpas_halo
                     end do
 
                 !
+                ! Packing code for 1-d real-valued fields
+                !
+                case (1)
+                    call mpas_pool_get_array(domain % blocklist % allFields, trim(group % fields(i) % fieldName), &
+                                             group % fields(i) % r1arr, timeLevel=group % fields(i) % timeLevel)
+
+                    !
+                    ! Pack send buffer for all neighbors for current field
+                    !
+                    do iEndp = 1, nSendEndpts
+                        do iHalo = 1, nHalos
+                            do j = 1, maxNSendList
+                                if (j <= nSendLists(iHalo,iEndp)) then
+                                    group % sendBuf(packOffsets(iEndp) + sendListDst(j,iHalo,iEndp)) = &
+                                        group % fields(i) % r1arr(sendListSrc(j,iHalo,iEndp))
+                                end if
+                            end do
+                        end do
+                    end do
+
+                !
                 ! Packing code for 2-d real-valued fields
                 !
                 case (2)
@@ -764,6 +783,22 @@ module mpas_halo
                     dim2 = compactHaloInfo(3)
 
                     select case (group % fields(i) % nDims)
+                    !
+                    ! Unpacking code for 1-d real-valued fields
+                    !
+                    case (1)
+                        !
+                        ! Unpack recv buffer from all neighbors for current field
+                        !
+                        do iHalo = 1, nHalos
+                            do j = 1, maxNRecvList
+                                if (j <= nRecvLists(iHalo,iEndp)) then
+                                    group % fields(i) % r1arr(recvListDst(j,iHalo,iEndp)) = &
+                                        group % recvBuf(unpackOffsets(iEndp) + recvListSrc(j,iHalo,iEndp))
+                                end if
+                            end do
+                        end do
+
                     !
                     ! Unpacking code for 1-d real-valued fields
                     !
