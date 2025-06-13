@@ -1295,6 +1295,7 @@
                         input_interval="initial_only"
                         output_interval="0_06:00:00"
                         immutable="false"
+                        runtime_format="separate_file"
                         packages="jedi_da">
 
 			<var_array name="scalars"/>
