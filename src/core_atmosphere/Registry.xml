@@ -1294,7 +1294,7 @@
                         filename_template="mpasout.$Y-$M-$D_$h.$m.$s.nc"
                         input_interval="initial_only"
                         output_interval="0_06:00:00"
-                        immutable="true"
+                        immutable="false"
                         packages="jedi_da">
 
 			<var_array name="scalars"/>
