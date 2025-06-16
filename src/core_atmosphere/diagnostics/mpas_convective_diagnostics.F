@@ -305,7 +305,7 @@ module mpas_convective_diagnostics
         implicit none
 
         type (MPAS_streamManager_type), target, intent(in) :: stream_mgr
-        real (kind=RKIND), pointer, intent(in) :: dt
+        real (kind=RKIND), intent(in) :: dt
         type (MPAS_pool_type), intent(in) :: configs
 
 !  - subroutine to compute max values of convective diagnostics over some time period

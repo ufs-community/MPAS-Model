@@ -1,4 +1,5 @@
-MPAS-v8.2.3-3.12
+MPAS-v8.3.0-1.0
+====
 
 The Model for Prediction Across Scales (MPAS) is a collaborative project for
 developing atmosphere, ocean, and other earth-system simulation components for
