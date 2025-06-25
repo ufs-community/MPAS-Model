@@ -20,6 +20,7 @@ set(ATMOSPHERE_CORE_PHYSICS_SOURCES
     mpas_atmphys_o3climatology.F
     mpas_atmphys_rrtmg_lwinit.F
     mpas_atmphys_rrtmg_swinit.F
+    mpas_atmphys_sfc_diagnostics.F
     mpas_atmphys_update.F
     mpas_atmphys_update_surface.F
     mpas_atmphys_utilities.F
@@ -106,43 +107,6 @@ set(ATMOSPHERE_CORE_PHYSICS_WRF_SOURCES
 
 list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_WRF_SOURCES PREPEND physics/physics_wrf/)
 
-# physics/physics_noaa/UGWP/
-set(ATMOSPHERE_CORE_PHYSICS_UGWP_SOURCES
-    bl_ugwp.F
-    bl_ugwpv1_ngw.F
-    cires_tauamf_data.F
-    cires_ugwpv1_initialize.F
-    cires_ugwpv1_module.F
-    cires_ugwpv1_solv2.F
-    cires_ugwpv1_triggers.F
-)
-list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_UGWP_SOURCES PREPEND physics/physics_noaa/UGWP/)
-
-# physics/physics_noaa/TEMPO/
-set(ATMOSPHERE_CORE_PHYSICS_TEMPO_SOURCES
-    module_mp_tempo_main.F90
-    module_mp_tempo_params.F90
-    module_mp_tempo_utils.F90
-    module_mp_tempo_ml.F90
-    drivers/mpas/module_mp_tempo.F90
-)
-list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_TEMPO_SOURCES PREPEND physics/physics_noaa/TEMPO/)
-
-# physics/physics_noaa/MYNN-EDMF/
-set(ATMOSPHERE_CORE_PHYSICS_MYNN-EDMF_SOURCES
-    module_bl_mynnedmf.F90
-    MPAS/module_bl_mynnedmf_common.F90
-    MPAS/module_bl_mynnedmf_driver.F90
-)
-list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_MYNN-EDMF_SOURCES PREPEND physics/physics_noaa/MYNN-EDMF/)
-
-# physics/physics_noaa/RUCLSM/
-set(ATMOSPHERE_CORE_PHYSICS_RUCLSM_SOURCES
-    MPAS/module_ruc_land.F90
-    MPAS/module_ruc_ice.F90
-    MPAS/module_sf_sfcdiags_ruclsm.F
-)
-list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_RUCLSM_SOURCES PREPEND physics/physics_noaa/RUCLSM/)
 
 set(ATMOSPHERE_CORE_PHYSICS_MMM_DIR ${CMAKE_CURRENT_SOURCE_DIR}/physics/physics_mmm)
 
@@ -177,9 +141,107 @@ set(ATMOSPHERE_CORE_PHYSICS_MMM_SOURCES
 
 list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_MMM_SOURCES PREPEND physics/physics_mmm/)
 
+set(ATMOSPHERE_CORE_PHYSICS_UGWP_DIR ${CMAKE_CURRENT_SOURCE_DIR}/physics/physics_noaa/UGWP)
+
+if(NOT EXISTS ${ATMOSPHERE_CORE_PHYSICS_UGWP_DIR})
+    set(PHYSICS_UGWP_REPO_URL "https://github.com/NOAA-GSL/UGWP.git")
+    execute_process(COMMAND git clone ${PHYSICS_UGWP_REPO_URL} ${ATMOSPHERE_CORE_PHYSICS_UGWP_DIR}
+                    RESULT_VARIABLE GIT_CLONE_RESULT
+                    OUTPUT_VARIABLE GIT_CLONE_OUTPUT
+                    ERROR_VARIABLE GIT_CLONE_ERROR)
+    if(NOT GIT_CLONE_RESULT EQUAL 0)
+        message(FATAL_ERROR "Git clone failed with error: ${GIT_CLONE_ERROR}")
+    endif()
+
+else()
+    message(STATUS "Directory ${DIR_TO_CHECK} already exists, skipping clone")
+endif()
+
+set(ATMOSPHERE_CORE_PHYSICS_UGWP_SOURCES
+    bl_ugwp.F
+    bl_ugwpv1_ngw.F
+    cires_tauamf_data.F
+    cires_ugwpv1_initialize.F
+    cires_ugwpv1_module.F
+    cires_ugwpv1_solv2.F
+    cires_ugwpv1_triggers.F
+)
+
+list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_UGWP_SOURCES PREPEND physics/physics_noaa/UGWP/)
+
+set(ATMOSPHERE_CORE_PHYSICS_TEMPO_DIR ${CMAKE_CURRENT_SOURCE_DIR}/physics/physics_noaa/TEMPO)
+
+if(NOT EXISTS ${ATMOSPHERE_CORE_PHYSICS_TEMPO_DIR})
+    set(PHYSICS_TEMPO_REPO_URL "https://github.com/NCAR/TEMPO.git")
+    execute_process(COMMAND git clone ${PHYSICS_TEMPO_REPO_URL} ${ATMOSPHERE_CORE_PHYSICS_TEMPO_DIR}
+                    RESULT_VARIABLE GIT_CLONE_RESULT
+                    OUTPUT_VARIABLE GIT_CLONE_OUTPUT
+                    ERROR_VARIABLE GIT_CLONE_ERROR)
+    if(NOT GIT_CLONE_RESULT EQUAL 0)
+        message(FATAL_ERROR "Git clone failed with error: ${GIT_CLONE_ERROR}")
+    endif()
+
+else()
+    message(STATUS "Directory ${DIR_TO_CHECK} already exists, skipping clone")
+endif()
+
+set(ATMOSPHERE_CORE_PHYSICS_TEMPO_SOURCES
+    module_mp_tempo_main.F90
+    module_mp_tempo_params.F90
+    module_mp_tempo_utils.F90
+    module_mp_tempo_ml.F90
+    drivers/mpas/module_mp_tempo.F90
+)
+list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_TEMPO_SOURCES PREPEND physics/physics_noaa/TEMPO/)
+
+set(ATMOSPHERE_CORE_PHYSICS_MYNN-EDMF_DIR ${CMAKE_CURRENT_SOURCE_DIR}/physics/physics_noaa/MYNN-EDMF)
+
+if(NOT EXISTS ${ATMOSPHERE_CORE_PHYSICS_MYNN-EDMF_DIR})
+    set(PHYSICS_MYNN-EDMF_REPO_URL "https://github.com/NCAR/MYNN-EDMF.git")
+    execute_process(COMMAND git clone ${PHYSICS_MYNN-EDMF_REPO_URL} ${ATMOSPHERE_CORE_PHYSICS_MYNN-EDMF_DIR}
+                    RESULT_VARIABLE GIT_CLONE_RESULT
+                    OUTPUT_VARIABLE GIT_CLONE_OUTPUT
+                    ERROR_VARIABLE GIT_CLONE_ERROR)
+    if(NOT GIT_CLONE_RESULT EQUAL 0)
+        message(FATAL_ERROR "Git clone failed with error: ${GIT_CLONE_ERROR}")
+    endif()
+
+else()
+    message(STATUS "Directory ${DIR_TO_CHECK} already exists, skipping clone")
+endif()
+
+set(ATMOSPHERE_CORE_PHYSICS_MYNN-EDMF_SOURCES
+    module_bl_mynnedmf.F90
+    MPAS/module_bl_mynnedmf_common.F90
+    MPAS/module_bl_mynnedmf_driver.F90
+)
+list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_MYNN-EDMF_SOURCES PREPEND physics/physics_noaa/MYNN-EDMF/)
+
+set(ATMOSPHERE_CORE_PHYSICS_RUCLSM_DIR ${CMAKE_CURRENT_SOURCE_DIR}/physics/physics_noaa/RUCLSM)
+
+if(NOT EXISTS ${ATMOSPHERE_CORE_PHYSICS_RUCLSM_DIR})
+    set(PHYSICS_RUCLSM_REPO_URL "https://github.com/NCAR/RUCLSM.git")
+    execute_process(COMMAND git clone ${PHYSICS_RUCLSM_REPO_URL} ${ATMOSPHERE_CORE_PHYSICS_RUCLSM_DIR}
+                    RESULT_VARIABLE GIT_CLONE_RESULT
+                    OUTPUT_VARIABLE GIT_CLONE_OUTPUT
+                    ERROR_VARIABLE GIT_CLONE_ERROR)
+    if(NOT GIT_CLONE_RESULT EQUAL 0)
+        message(FATAL_ERROR "Git clone failed with error: ${GIT_CLONE_ERROR}")
+    endif()
+
+else()
+    message(STATUS "Directory ${DIR_TO_CHECK} already exists, skipping clone")
+endif()
+
+set(ATMOSPHERE_CORE_PHYSICS_RUCLSM_SOURCES
+    MPAS/module_ruc_land.F90
+    MPAS/module_ruc_ice.F90
+    MPAS/module_sf_sfcdiags_ruclsm.F
+)
+list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_RUCLSM_SOURCES PREPEND physics/physics_noaa/RUCLSM/)
+
 set(ATMOSPHERE_CORE_PHYSICS_NOAMP_UTILITY_SOURCES
     CheckNanMod.F90
-    ErrorHandleMod.F90
     Machine.F90
 )
 list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_NOAMP_UTILITY_SOURCES PREPEND physics/physics_noahmp/utility/)
