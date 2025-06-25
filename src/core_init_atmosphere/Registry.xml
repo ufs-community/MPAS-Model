@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<registry model="mpas" core="init_atmosphere" core_abbrev="init_atm" version="8.2.3-3.12">
+<registry model="mpas" core="init_atmosphere" core_abbrev="init_atm" version="8.3.0-1.0">
 
 <!-- **************************************************************************************** -->
 <!-- ************************************** Dimensions ************************************** -->
@@ -70,12 +70,12 @@
                                         5 = super-cell, \newline
                                         6 = mountain wave, \newline
                                         7 = real-data initial conditions from, e.g., GFS, \newline
-                                        8 = surface field (SST, sea-ice) update file for use with real-data simulations, \newline
-                                        9 = lateral boundary conditions update file for use with real-data simulations, \newline
-                                        13 = CAM-MPAS 3-d grid with specified topography and zeta levels, \newline
+                                        8 = surface field (SST, sea-ice) update file for use with real-data simulations \newline
+                                        9 = lateral boundary conditions update file for use with real-data simulations \newline
+                                        13 = CAM-MPAS 3-d grid with specified topography and zeta levels"
 					55 = microphysics test: 3D stratocumulus, \newline
 					66 = microphysics test: 2D flow over terrain"					
-                     possible_values="1 -- 9"/>
+                     possible_values="1 -- 9, or 13"/>
 
                 <nml_option name="config_calendar_type" type="character" default_value="gregorian" in_defaults="false"
                      units="-"
@@ -183,12 +183,12 @@
                 <nml_option name="config_landuse_data"          type="character"     default_value="MODIFIED_IGBP_MODIS_NOAH"
                      units="-"
                      description="The land use classification to use (case 7 only)"
-                     possible_values="`USGS' or `MODIFIED_IGBP_MODIS_NOAH'"/>
+                     possible_values="`USGS', `MODIFIED_IGBP_MODIS_NOAH', or `MODIFIED_IGBP_MODIS_NOAH_15s'"/>
 
-                <nml_option name="config_soilcat_data"          type="character"     default_value="STASGO"
+                <nml_option name="config_soilcat_data"          type="character"     default_value="STATSGO"
                      units="-"
-                     description="The soil type classification to use (case 7 only)"
-                     possible_values="`STASGO' or `BNU'"/>
+                     description="The soil category classification to use"
+                     possible_values="`STATSGO' or `BNU'"/>
 
                 <nml_option name="config_topo_data"             type="character"     default_value="GMTED2010"
                      units="-"
@@ -215,10 +215,20 @@
                      description="The supersampling factor to be used for MODIS maximum snow albedo and monthly albedo datasets (case 7 only)"
                      possible_values="Positive integer values"/>
 
+	        <nml_option name="config_lu_supersample_factor" type="integer"       default_value="1"
+                     units="-"
+                     description="The supersampling factor to be used for 30s or 15s MODIS land use, or for 30s USGS land use, as selected by `config_landuse_data' (case 7 only)"
+                     possible_values="Positive integer values"/>
+
                 <nml_option name="config_30s_supersample_factor"    type="integer"       default_value="1"
                      units="-"
-                     description="The supersampling factor to be used for 30s terrain, MODIS land use, soil category, and MODIS FPAR monthly vegetation fraction (case 7 only)"
+                     description="The supersampling factor to be used for 30s terrain, soil category, and MODIS FPAR monthly vegetation fraction (case 7 only)"
                      possible_values="Positive integer values"/>
+
+                <nml_option name="config_noahmp_static" type="logical" default_value="true" in_defaults="false"
+                     units="-"
+                     description="Whether to process, read, and write static fields only required by Noah-MP"
+                     possible_values="true or false"/>
 
                 <nml_option name="config_use_spechumd"          type="logical"       default_value="false"
                      units="-"
@@ -406,6 +416,7 @@
 		<package name="mp_tempo_in" description="parameterization of TEMPO cloud microphysics."/>
 		<package name="tempo_aerosolaware_in" description="variables for TEMPO aerosol-aware microphysics."/>
 		<package name="tempo_hailaware_in" description="variables for TEMPO hail-aware microphysics."/>
+                <package name="noahmp" description="Whether to process, read, and write static fields only required by Noah-MP"/>
         </packages>
 
 
@@ -922,19 +933,24 @@
 
                 <!-- SOIL COMPOSITION fields needed for the NOAH-MP land surface scheme -->
                 <var name="soilcomp" type="real" dimensions="nSoilComps nCells" units="percent"
-                     description="soil composition needed as input in the NOAH-MP land surface model"/>
+                     description="soil composition needed as input in the NOAH-MP land surface model"
+                     packages="noahmp"/>
 
                 <var name="soilcl1" type="real" dimensions="nCells" units="unitless"
-                     description="soil texture class level 1 needed as input for the NOAH-MP land surface model"/>
+                     description="soil texture class level 1 needed as input for the NOAH-MP land surface model"
+                     packages="noahmp"/>
 
                 <var name="soilcl2" type="real" dimensions="nCells" units="unitless"
-                     description="soil texture class level 2 needed as input for the NOAH-MP land surface model"/>
+                     description="soil texture class level 2 needed as input for the NOAH-MP land surface model"
+                     packages="noahmp"/>
 
                 <var name="soilcl3" type="real" dimensions="nCells" units="unitless"
-                     description="soil texture class level 3 needed as input for the NOAH-MP land surface model"/>
+                     description="soil texture class level 3 needed as input for the NOAH-MP land surface model"
+                     packages="noahmp"/>
 
                 <var name="soilcl4" type="real" dimensions="nCells" units="unitless"
-                     description="soil texture class level 4 needed as input for the NOAH-MP land surface model"/>
+                     description="soil texture class level 4 needed as input for the NOAH-MP land surface model"
+                     packages="noahmp"/>
 
                 <!-- GWDO fields -->
                 <var name="var2d" type="real" dimensions="nCells" units="m"
