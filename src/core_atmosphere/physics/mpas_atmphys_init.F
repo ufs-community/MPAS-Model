@@ -139,7 +139,7 @@ use mpas_stream_manager
  real(kind=RKIND),dimension(:),pointer:: t_oml,t_oml_initial,t_oml_200m_initial
  real(kind=RKIND),dimension(:),pointer:: h_oml,h_oml_initial,hu_oml,hv_oml
  real(kind=RKIND),dimension(:),pointer:: rdzw,dzu
- real(kind=RKIND), pointer:: config_dt
+ real(kind=RKIND),pointer:: config_dt
  integer,pointer:: nCells,nVertLevels
  character(len=StrKIND),pointer:: gwdo_scheme
  logical,pointer:: ngw_scheme
@@ -401,7 +401,7 @@ use mpas_stream_manager
     if(config_lsm_scheme .eq. 'sf_noah' .or. config_lsm_scheme .eq. 'sf_ruc') then
        call init_lsm(dminfo,mesh,configs,diag_physics,sfc_input)
     elseif(config_lsm_scheme .eq. 'sf_noahmp') then
-       call init_lsm_noahmp(configs,mesh,diag_physics,diag_physics_noahmp,output_noahmp,sfc_input)
+       call init_lsm_noahmp(configs,mesh,clock,diag_physics,diag_physics_noahmp,output_noahmp,sfc_input)
     endif
  endif
 
