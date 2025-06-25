@@ -631,7 +631,6 @@ endif
        lh(i)   = lh_p(i,j)
        sfc_albedo(i) = sfc_albedo_p(i,j)
        sfc_emiss(i)  = sfc_emiss_p(i,j)
-
     enddo
  enddo
 
