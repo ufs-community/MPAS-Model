@@ -182,7 +182,6 @@
 !call mpas_log_write('--- config_frac_seaice = $1',logicArgs=(/config_frac_seaice/))
 !call mpas_log_write('--- xice_threshold     = $r',realArgs=(/xice_threshold/))
 
- if((config_lsm_scheme .ne. 'sf_ruc')) then
 !reads in the landuse properties from landuse.tbl:
  if(dminfo % my_proc_id == IO_NODE) then
     !get a unit to open init file:
@@ -268,7 +267,6 @@
 !call mpas_log_write('--- isice   =$i',intArgs=(/isice/))
 !call mpas_log_write('--- iswater =$i',intArgs=(/iswater/))
 !call mpas_log_write('--- isurban =$i',intArgs=(/isurban/))
- endif ! not sf_ruc
 
  if(config_do_restart ) then
     call mpas_log_write('--- config_do_restart =$l', logicArgs=(/config_do_restart/))
