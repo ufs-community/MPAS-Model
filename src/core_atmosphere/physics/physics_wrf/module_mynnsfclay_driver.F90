@@ -195,7 +195,8 @@
                       ims,ime,jms,jme,kms,kme, &
                       its,ite,jts,jte,kts,kte
  logical,intent(in):: restart,cycling
- integer,intent(in):: itimestep, initflag
+ integer,intent(in):: itimestep
+ integer,intent(in):: initflag
  integer,intent(in):: isfflx
  integer,intent(in),optional:: isftcflx, iz0tlnd
  integer,intent(in),optional:: spp_pbl
