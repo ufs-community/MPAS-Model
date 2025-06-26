@@ -1182,9 +1182,9 @@
  errmsg = ' '
  errflg = 0
 
- call mpas_pool_get_config(configs,'config_do_restart'     ,config_do_restart  )
- call mpas_pool_get_config(configs,'config_frac_seaice'    ,config_frac_seaice )
- call mpas_pool_get_config(configs,'config_sfclayer_scheme',sfclayer_scheme    )
+ call mpas_pool_get_config(configs,'config_do_restart'     ,config_do_restart )
+ call mpas_pool_get_config(configs,'config_frac_seaice'    ,config_frac_seaice)
+ call mpas_pool_get_config(configs,'config_sfclayer_scheme',sfclayer_scheme   )
  call mpas_pool_get_config(configs,'config_do_DAcycling'   ,config_do_DAcycling) 
       
  call mpas_pool_get_array(mesh,'areaCell',areaCell)
