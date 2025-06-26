@@ -1477,7 +1477,7 @@ module atm_time_integration
 
 !$OMP PARALLEL DO
               do thread=1,nThreads
-                 call atm_zero_gradient_w_bdy( state, mesh, &
+                 call atm_zero_gradient_w_bdy( state, mesh, block % configs, &
                                                cellSolveThreadStart(thread), cellSolveThreadEnd(thread) )
               end do
 !$OMP END PARALLEL DO
@@ -7194,7 +7194,7 @@ module atm_time_integration
 !
 ! these next 2 routines set an approximate zero gradient boundary condition for w for regional_MPAS
 !
-   subroutine atm_zero_gradient_w_bdy( state, mesh, cellSolveStart, cellSolveEnd )
+   subroutine atm_zero_gradient_w_bdy( state, mesh, configs, cellSolveStart, cellSolveEnd )
 
       ! reconstitute state variables from acoustic-step perturbation variables
       ! after the acoustic steps.  The perturbation variables were originally set in
@@ -7205,25 +7205,28 @@ module atm_time_integration
 
       type (mpas_pool_type), intent(inout) :: state
       type (mpas_pool_type), intent(inout) :: mesh
+      type (mpas_pool_type), intent(in)    :: configs
       integer, intent(in) :: cellSolveStart, cellSolveEnd
 
       real (kind=RKIND), dimension(:,:), pointer :: w
 
       integer, dimension(:), pointer :: bdyMaskCell, nearestRelaxationCell
       integer, pointer :: nCells
+      character (len=StrKIND), pointer :: config_lbc_w
 
       call mpas_pool_get_array(state, 'w', w, 2)
       call mpas_pool_get_array(mesh, 'bdyMaskCell', bdyMaskCell)
       call mpas_pool_get_array(mesh, 'nearestRelaxationCell', nearestRelaxationCell)
       call mpas_pool_get_dimension(mesh, 'nCells', nCells)
+      call mpas_pool_get_config(configs, 'config_lbc_w', config_lbc_w)
 
-      call atm_zero_gradient_w_bdy_work( w, bdyMaskCell, nearestRelaxationCell, nCells, cellSolveStart, cellSolveEnd )
+      call atm_zero_gradient_w_bdy_work( w, bdyMaskCell, nearestRelaxationCell, nCells, cellSolveStart, cellSolveEnd, config_lbc_w )
 
    end subroutine atm_zero_gradient_w_bdy
 
 !-------------------------------------------------------------------------
 
-   subroutine atm_zero_gradient_w_bdy_work( w, bdyMaskCell, nearestRelaxationCell, nCells, cellSolveStart, cellSolveEnd )
+   subroutine atm_zero_gradient_w_bdy_work( w, bdyMaskCell, nearestRelaxationCell, nCells, cellSolveStart, cellSolveEnd, config_lbc_w )
 
       use mpas_atm_dimensions
 
@@ -7235,6 +7238,7 @@ module atm_time_integration
       integer, intent(in) :: cellSolveStart, cellSolveEnd, nCells
       integer, dimension(nCells+1), intent(in) :: bdyMaskCell, nearestRelaxationCell
       real (kind=RKIND), dimension(nVertLevels+1,nCells+1), intent(inout) :: w
+      character (len=StrKIND) :: config_lbc_w
 
       ! local variables
 
@@ -7251,8 +7255,13 @@ module atm_time_integration
 !DIR$ IVDEP
             !$acc loop vector
             do k = 2, nVertLevels
-               ! w(k,iCell) = w(k,nearestRelaxationCell(iCell))
-               w(k,iCell) = 0.0  ! WCS fix for instabilities caused by zero-gradient condition on inflow, 20240806
+              lbc_w_select: select case(trim(config_lbc_w))
+                case ("nearest")
+                  w(k,iCell) = w(k,nearestRelaxationCell(iCell))
+                case ("zero")
+                  w(k,iCell) = 0.0  ! WCS fix for instabilities caused by zero-gradient condition on inflow, 20240806
+                case default    
+              end select lbc_w_select
             end do
          end if
       end do
