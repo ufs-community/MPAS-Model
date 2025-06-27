@@ -7260,7 +7260,8 @@ module atm_time_integration
                   w(k,iCell) = w(k,nearestRelaxationCell(iCell))
                 case ("zero")
                   w(k,iCell) = 0.0  ! WCS fix for instabilities caused by zero-gradient condition on inflow, 20240806
-                case default    
+                case default
+                  call mpas_log_write('unknown lbc_w option: '//trim(config_lbc_w), messageType=MPAS_LOG_CRIT)
               end select lbc_w_select
             end do
          end if
