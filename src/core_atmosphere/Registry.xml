@@ -303,6 +303,11 @@
                      units="-"
                      description="Whether to apply lateral boundary conditions"
                      possible_values="true or false; this option must be set to true for limited-area simulations and false for global simulations"/>
+
+                <nml_option name="config_lbc_w" type="character" default_value="nearest"
+                     units="-"
+                     description="Options for w on lateral boundaries"
+                     possible_values="`nearest',`zero'"/>
 	</nml_record>
 
         <nml_record name="io" in_defaults="true">
