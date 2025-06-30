@@ -66,9 +66,6 @@ core_physics_mmm: core_physics_init
 core_microphysics: core_physics_init core_physics_mmm
 	(cd physics_noaa/TEMPO; cp ./drivers/mpas/module_mp_tempo.F90 .; $(MAKE) all COREDEF="$(COREDEF)")
 
-core_UGWP: core_physics_init
-	(cd physics_noaa/UGWP; $(MAKE) all)
-
 core_mynnedmf: core_physics_init core_physics_mmm
 	(cd physics_noaa/MYNN-EDMF; cp ./MPAS/Makefile .; cp ./MPAS/module_bl_mynnedmf_driver.F90 .; cp ./MPAS/module_bl_mynnedmf_common.F90 .; $(MAKE) all)
 
@@ -77,6 +74,9 @@ core_RUCLSM: core_physics_init core_physics_mmm
 
 core_GFL: core_physics_init core_physics_mmm
 	(cd physics_noaa/GFL; cp ./MPAS/Makefile .; cp ./MPAS/module_cu_gfl_mpas.F .; $(MAKE) all)
+
+core_UGWP: core_physics_init
+	(cd physics_noaa/UGWP; $(MAKE) all)
 
 core_physics_wrf: core_physics_init core_physics_mmm core_UGWP
 	(cd physics_wrf; $(MAKE) all COREDEF="$(COREDEF)")
@@ -251,11 +251,6 @@ mpas_atmphys_rrtmg_swinit.o: \
 	mpas_atmphys_constants.o \
 	mpas_atmphys_utilities.o
 
-mpas_atmphys_driver_seaice.o: \
-	mpas_atmphys_constants.o \
-	mpas_atmphys_lsm_shared.o \
-	mpas_atmphys_vars.o
-
 mpas_atmphys_sfc_diagnostics.o: \
 	mpas_atmphys_constants.o \
 	mpas_atmphys_vars.o
@@ -280,11 +275,11 @@ clean:
 	( cd physics_noahmp/drivers/mpas; $(MAKE) clean )
 	( cd physics_noahmp/src; $(MAKE) clean )
 	( cd physics_noahmp/utility; $(MAKE) clean )
-	( cd physics_noaa/TEMPO; $(MAKE) clean )
-	( cd physics_noaa/UGWP; $(MAKE) clean )
-	( cd physics_noaa/GFL; cp ./MPAS/Makefile .; $(MAKE) clean )
-	( cd physics_noaa/RUCLSM; $(MAKE) -f MPAS/Makefile clean )
-	( cd physics_noaa/MYNN-EDMF; cp ./MPAS/Makefile .; $(MAKE) clean )
+	( if [ -d physics_noaa/TEMPO ]; then cd physics_noaa/TEMPO; $(MAKE) clean; fi )
+	( if [ -d physics_noaa/UGWP ]; then cd physics_noaa/UGWP; $(MAKE) clean; fi )
+	( if [ -d physics_noaa/RUCLSM ]; then cd physics_noaa/RUCLSM; $(MAKE) -f MPAS/Makefile clean; fi )
+	( if [ -d physics_noaa/MYNN-EDMF ]; then cd physics_noaa/MYNN-EDMF; cp ./MPAS/Makefile .; $(MAKE) clean; fi )
+  ( if [ -d physics_noaa/GFL ]; then cd physics_noaa/GFL; cp ./MPAS/Makefile .; $(MAKE) clean; fi )
 	@# Certain systems with intel compilers generate *.i files
 	@# This removes them during the clean process
 	$(RM) *.i

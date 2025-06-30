@@ -19,6 +19,7 @@
                              its,ite,ite,jts,jte,kts,kte
  use module_sf_sfcdiags_ruclsm
 
+
  implicit none
  private
  public:: atmphys_sfc_diagnostics
