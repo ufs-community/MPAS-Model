@@ -279,7 +279,7 @@ clean:
 	( if [ -d physics_noaa/UGWP ]; then cd physics_noaa/UGWP; $(MAKE) clean; fi )
 	( if [ -d physics_noaa/RUCLSM ]; then cd physics_noaa/RUCLSM; $(MAKE) -f MPAS/Makefile clean; fi )
 	( if [ -d physics_noaa/MYNN-EDMF ]; then cd physics_noaa/MYNN-EDMF; cp ./MPAS/Makefile .; $(MAKE) clean; fi )
-  ( if [ -d physics_noaa/GFL ]; then cd physics_noaa/GFL; cp ./MPAS/Makefile .; $(MAKE) clean; fi )
+	( if [ -d physics_noaa/GFL ]; then cd physics_noaa/GFL; cp ./MPAS/Makefile .; $(MAKE) clean; fi )
 	@# Certain systems with intel compilers generate *.i files
 	@# This removes them during the clean process
 	$(RM) *.i

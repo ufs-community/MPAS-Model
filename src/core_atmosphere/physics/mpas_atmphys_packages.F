@@ -176,10 +176,10 @@
     return
  endif
 
- cu_grell_freitas_in    = .false.
+ cu_grell_freitas_in = .false.
+ cu_kain_fritsch_in  = .false.
+ cu_ntiedtke_in      = .false.
  cu_grell_freitas_li_in = .false.
- cu_kain_fritsch_in     = .false.
- cu_ntiedtke_in         = .false.
 
  if(config_convection_scheme=='cu_grell_freitas') then
     cu_grell_freitas_in = .true.
