@@ -11,16 +11,14 @@ OBJS = \
 	libmassv.o                     \
 	module_bep_bem_helper.o        \
 	module_bl_gwdo.o               \
-        module_bl_ugwp_gwdo.o          \
-        module_bl_mynn.o               \
+	module_bl_ugwp_gwdo.o          \
+	module_bl_mynn.o               \
 	module_bl_ysu.o                \
 	module_bl_myjpbl.o             \
 	module_cam_error_function.o    \
 	module_cam_shr_kind_mod.o      \
 	module_cam_support.o           \
-        module_cu_gf_mpas.o            \
-        module_cu_gf_deep.o            \
-        module_cu_gf_sh.o              \
+	module_cu_gf.mpas.o            \
 	module_cu_tiedtke.o            \
 	module_cu_ntiedtke.o           \
 	module_cu_kfeta.o              \
@@ -45,9 +43,6 @@ OBJS = \
 	module_sf_mynn.o               \
 	module_sf_noahdrv.o            \
 	module_sf_noahlsm.o            \
-	module_ruc_land.o              \
-	module_ruc_ice.o               \
-	module_sf_sfcdiags_ruclsm.o    \
         module_sf_noahlsm_glacial_only.o \
         module_sf_noah_seaice.o        \
         module_sf_noah_seaice_drv.o    \
@@ -129,13 +124,6 @@ module_sf_noah_seaice_drv.o: \
 
 module_sf_noah_seaice.o: \
 	module_sf_noahlsm.o
-
-module_cu_gf_mpas.o: \
-        module_cu_gf_deep.o \
-        module_cu_gf_sh.o
-
-module_cu_gf_sh.o: \
-        module_cu_gf_deep.o
 
 clean:
 	$(RM) *.f90 *.o *.mod

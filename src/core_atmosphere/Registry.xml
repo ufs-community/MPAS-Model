@@ -1,6 +1,5 @@
 <?xml version="1.0"?>
-<registry model="mpas" core="atmosphere" core_abbrev="atm" version="8.2.2-3.10">
-
+<registry model="mpas" core="atmosphere" core_abbrev="atm" version="8.3.0-1.3">
 
 <!-- **************************************************************************************** -->
 <!-- ************************************** Dimensions ************************************** -->
@@ -304,6 +303,11 @@
                      units="-"
                      description="Whether to apply lateral boundary conditions"
                      possible_values="true or false; this option must be set to true for limited-area simulations and false for global simulations"/>
+
+                <nml_option name="config_lbc_w" type="character" default_value="nearest"
+                     units="-"
+                     description="Options for w on lateral boundaries"
+                     possible_values="`nearest',`zero'"/>
 	</nml_record>
 
         <nml_record name="io" in_defaults="true">
@@ -414,6 +418,7 @@
                 <package name="mp_nssl2m_in" description="parameterization of NSSL 2-moment microphysics."/>
                 <package name="nssl3m_in" description="variables for NSSL 3-moment microphysics."/>
                 <package name="cu_grell_freitas_in" description="parameterization of Grell-Freitas convection."/>
+                <package name="cu_grell_freitas_li_in" description="parameterization of Grell-Freitas-Li convection."/>
                 <package name="cu_kain_fritsch_in" description="parameterization of Kain-Fritsch convection."/>
                 <package name="cu_ntiedtke_in" description="parameterization of Tiedtke convection."/>
                 <package name="bl_ysu_in" description="parameterization of YSU Planetary Boundary Layer."/>
@@ -430,7 +435,7 @@
                 <package name="ugwp_orog_stream" description="Input stream (and variables) for UGWP orography"/>
                 <package name="ugwp_ngw_stream"  description="Input stream (and variables) for UGWP NGW lookup table"/>
                 <package name="ugwp_diags_stream" description="Output stream (and variables) for UGWP output diagnostics"/>
-		<package name="gf_sub3d" description="GF 3d lateral spreading of the env subsidence"/>
+		<package name="gfl_sub3d" description="GFL 3d lateral spreading of the env subsidence"/>
         </packages>
 
 
@@ -868,13 +873,13 @@
 			<var name="rnwfablten"/>
 			<var name="rthratensw"/>
 			<var name="rthratenlw"/>
-			<var name="vcpool" packages="cu_grell_freitas_in"/>
-                        <var name="sub3d_rthcuten" packages="cu_grell_freitas_in"/>
-                        <var name="sub3d_rqvcuten" packages="cu_grell_freitas_in"/>
-                        <var name="sub3d_rucuten" packages="cu_grell_freitas_in"/>
-                        <var name="sub3d_rvcuten" packages="cu_grell_freitas_in"/>
-                        <var name="sigma_deep" packages="cu_grell_freitas_in"/>
-			<var name="sigma_deep_far" packages="cu_grell_freitas_in"/>
+			<var name="vcpool" packages="cu_grell_freitas_li_in"/>
+                        <var name="sub3d_rthcuten" packages="cu_grell_freitas_li_in"/>
+                        <var name="sub3d_rqvcuten" packages="cu_grell_freitas_li_in"/>
+                        <var name="sub3d_rucuten" packages="cu_grell_freitas_li_in"/>
+                        <var name="sub3d_rvcuten" packages="cu_grell_freitas_li_in"/>
+                        <var name="sigma_deep" packages="cu_grell_freitas_li_in"/>
+			<var name="sigma_deep_far" packages="cu_grell_freitas_li_in"/>
 			<var name="sfc_albbck"/>
 			<var name="skintemp"/>
 			<var name="snow"/>
@@ -1292,6 +1297,49 @@
                         <var name="ABSMF"/>
                 </stream>
 
+#ifdef DO_PHYSICS
+                <stream name="ugwp_oro_data_in"
+                        type="input"
+                        filename_template="x1.40962.ugwp_oro_data.nc"
+                        input_interval="initial_only"
+                        immutable="true"
+                        packages="ugwp_orog_stream">
+
+                        <var name="var2dls"/>
+                        <var name="conls"/>
+                        <var name="oa1ls"/>
+                        <var name="oa2ls"/>
+                        <var name="oa3ls"/>
+                        <var name="oa4ls"/>
+                        <var name="ol1ls"/>
+                        <var name="ol2ls"/>
+                        <var name="ol3ls"/>
+                        <var name="ol4ls"/>
+                        <var name="var2dss"/>
+                        <var name="conss"/>
+                        <var name="oa1ss"/>
+                        <var name="oa2ss"/>
+                        <var name="oa3ss"/>
+                        <var name="oa4ss"/>
+                        <var name="ol1ss"/>
+                        <var name="ol2ss"/>
+                        <var name="ol3ss"/>
+                        <var name="ol4ss"/>
+                </stream>
+
+                <stream name="ugwp_ngw_in"
+                        type="input"
+                        filename_template="ugwp_limb_tau.nc"
+                        input_interval="initial_only"
+                        immutable="true"
+                        packages="ugwp_ngw_stream">
+
+                        <var name="LATS"/>
+                        <var name="DAYS"/>
+                        <var name="ABSMF"/>
+                </stream>
+#endif
+
 		<stream name="da_state"
                         type="input;output"
                         filename_template="mpasout.$Y-$M-$D_$h.$m.$s.nc"
@@ -1320,6 +1368,7 @@
 			<var name="re_cloud" packages="mp_thompson_in;mp_wsm6_in;mp_tempo_in"/>
 			<var name="re_ice" packages="mp_thompson_in;mp_wsm6_in;mp_tempo_in"/>
 			<var name="re_snow" packages="mp_thompson_in;mp_wsm6_in;mp_tempo_in"/>
+			<var name="refl10cm"/>
 			<var name="refl10cm_max"/>
 			<var name="rainc"/>
 			<var name="rainnc"/>
@@ -1361,6 +1410,7 @@
 #endif
                 </stream>
 
+#ifdef DO_PHYSICS
                 <stream name="diag_ugwp"
                         type="output"
                         filename_template="diag_ugwp.$Y-$M-$D_$h.$m.$s.nc"
@@ -1392,6 +1442,7 @@
                         <var name="dvdt_ngw"/>
                         <var name="dtdt_ngw"/>
                 </stream>
+#endif
 
 	</streams>
 
@@ -2495,11 +2546,11 @@
                 <nml_option name="config_convection_scheme" type="character" default_value="suite" in_defaults="false"
                      units="-"
                      description="configuration for convection schemes"
-                     possible_values="`suite',`cu_kain_fritsch',`cu_tiedtke',`cu_ntiedtke',`cu_grell_freitas',`off'"/>
+                     possible_values="`suite',`cu_kain_fritsch',`cu_tiedtke',`cu_ntiedtke',`cu_grell_freitas',`cu_grell_freitas_li',`off'"/>
 
-	        <nml_option name="config_gf_sub3d" type="integer" default_value="0" in_defaults="false"
+	        <nml_option name="config_gfl_sub3d" type="integer" default_value="0" in_defaults="false"
                      units="-"
-                     description="Option for the lateral subsidence spread for the Grell-Freitas scheme"
+                     description="Option for the lateral subsidence spread for the Grell-Freitas-Li scheme"
                      possible_values="0,1,2"/>
 
                 <nml_option name="config_lsm_scheme" type="character" default_value="suite" in_defaults="false"
@@ -2556,6 +2607,14 @@
                      units="-"
                      description="configuration for surface layer-scheme"
                      possible_values="`suite',`sf_monin_obukhov','sf_monin_obukhov_rev',`sf_mynn',`sf_mynnsfclay',`sf_myj', `off'"/>
+
+                <nml_option name="config_radt_cld_overlap" type="character" default_value="maximum_random" in_defaults="false"
+                     description="cloud overlapping option in the RRTMG lw and sw radiation schemes"
+                     possible_values="`none',`random',`maximum_random',`maximum',`exponential',`'exponential_random'"/>
+
+                <nml_option name="config_radt_cld_dcorrlen" type="character" default_value="constant" in_defaults="false"
+                     description="decorrelation length for cloud overlapping option in the RRTMG lw and sw radiation schemes"
+                     possible_values="`constant',`latitude_varying'"/>
 
                 <nml_option name="config_gfconv_closure_deep" type="integer" default_value="0" in_defaults="false"
                      units="-"
@@ -2742,10 +2801,6 @@
                 <!-- ... PARAMETERIZATION OF CLOUD MICROPHYSICS:                                                        -->
                 <!-- ================================================================================================== -->
 
-		<var name="refl10cm" type="real" dimensions="nVertLevels nCells Time" units="dBZ"
-                     description="10 cm radar reflectivity"
-                     packages="mp_thompson_in;mp_wsm6_in;mp_nssl2m_in;mp_tempo_in"/>
-
 		<var name="max_hail_diameter_sfc" type="real" dimensions="nCells Time" units="mm"
                      description="Maximum hail diameter at the surface"
                      packages="mp_tempo_in"/>
@@ -2762,6 +2817,9 @@
                      description="Maximum hail diameter at the surface accumulated over diagnostic output"
                      packages="mp_tempo_in"/>
 
+		<var name="do_diag_dbz" type="integer" dimensions="" units = ""
+		    description="flag for whether to compute refelctivity at every time step for use in computing output-time-max 1km reflectivity"/>
+
                 <var name="refl10cm_max" type="real" dimensions="nCells Time" units="dBZ"
                      description="10 cm maximum radar reflectivity"
                      packages="mp_thompson_in;mp_thompson_aers_in;mp_wsm6_in;mp_nssl2m_in;mp_tempo_in"/>
@@ -2774,8 +2832,9 @@
                      description="maximum diagnosed 10 cm radar reflectivity at 1 km AGL since last output time"
                      packages="mp_thompson_in;mp_thompson_aers_in;mp_wsm6_in;mp_nssl2m_in;mp_tempo_in"/>
 
-		<var name="do_diag_dbz" type="integer" dimensions="" units = ""
-		    description="flag for whether to compute refelctivity at every time step for use in computing output-time-max 1km reflectivity"/>
+                <var name="refl10cm" type="real" dimensions="nVertLevels nCells Time" units="dBZ"
+                     description="10 cm radar reflectivity"
+                     packages="mp_thompson_in;mp_thompson_aers_in;mp_wsm6_in;mp_nssl2m_in;mp_tempo_in"/>
 
                 <var name="i_rainnc" type="integer" dimensions="nCells Time" units="unitless"
                      description="incidence of accumulated grid-scale precipitation greater than config_bucket_rainnc"
@@ -2858,19 +2917,19 @@
 
                 <var name="i_rainc" type="integer" dimensions="nCells Time" units="unitless"
                      description="incidence of accumulated convective precipitation greater than config_bucket_rainc"
-                     packages="cu_grell_freitas_in;cu_kain_fritsch_in;cu_ntiedtke_in"/>
+                     packages="cu_grell_freitas_in;cu_grell_freitas_li_in;cu_kain_fritsch_in;cu_ntiedtke_in"/>
 
                 <var name="cuprec" type="real" dimensions="nCells Time" units="mm s^{-1}"
                      description="convective precipitation rate"
-                     packages="cu_grell_freitas_in;cu_kain_fritsch_in;cu_ntiedtke_in"/>
+                     packages="cu_grell_freitas_in;cu_grell_freitas_li_in;cu_kain_fritsch_in;cu_ntiedtke_in"/>
 
                 <var name="rainc" type="real" dimensions="nCells Time" units="mm"
                      description="accumulated convective precipitation"
-                     packages="cu_grell_freitas_in;cu_kain_fritsch_in;cu_ntiedtke_in"/>
+                     packages="cu_grell_freitas_in;cu_grell_freitas_li_in;cu_kain_fritsch_in;cu_ntiedtke_in"/>
 
                 <var name="raincv" type="real" dimensions="nCells Time" units="mm"
                      description="time-step convective precipitation"
-                     packages="cu_grell_freitas_in;cu_kain_fritsch_in;cu_ntiedtke_in"/>
+                     packages="cu_grell_freitas_in;cu_grell_freitas_li_in;cu_kain_fritsch_in;cu_ntiedtke_in"/>
 
 
                 <!-- ... KAIN_FRITSCH ONLY: -->
@@ -2883,68 +2942,69 @@
                      packages="cu_kain_fritsch_in"/>
 
 
-                <!-- ... GRELL-FREITAS ONLY: -->
+                <!-- ... GRELL-FREITAS and GRELL-FREITAS-LI ONLY: -->
                 <var name="k22_shallow" type="integer" dimensions="nCells Time" units="unitless"
                      description="index of convection at k22 level in Grell-Freitas convection scheme"
-                     packages="cu_grell_freitas_in"/>
+                     packages="cu_grell_freitas_in;cu_grell_freitas_li_in"/>
 
                 <var name="kbcon_shallow" type="integer" dimensions="nCells Time" units="unitless"
                      description="index of lowest level of shallow convection in Grell-Freitas convection scheme"
-                     packages="cu_grell_freitas_in"/>
+                     packages="cu_grell_freitas_in;cu_grell_freitas_li_in"/>
 
                 <var name="ktop_shallow" type="integer" dimensions="nCells Time" units="unitless"
                      description="index of highest level of shallow convection in Grell-Freitas convection scheme"
-                     packages="cu_grell_freitas_in"/>
+                     packages="cu_grell_freitas_in;cu_grell_freitas_li_in"/>
 
                 <var name="ktop_deep" type="integer" dimensions="nCells Time" units="unitless"
                      description="index of highest level of deep convection in Grell-Freitas convection scheme"
-                     packages="cu_grell_freitas_in"/>
+                     packages="cu_grell_freitas_in;cu_grell_freitas_li_in"/>
 
                 <var name="xmb_total" type="real" dimensions="nCells Time" units="kg m^{-2} s^{-1}"
                      description="cloud-base mass flux"
-                     packages="cu_grell_freitas_in"/>
+                     packages="cu_grell_freitas_in;cu_grell_freitas_li_in"/>
 
                 <var name="xmb_shallow" type="real" dimensions="nCells Time" units="kg m^{-2} s^{-1}"
                      description="cloud base mass flux for shallow convection"
-                     packages="cu_grell_freitas_in"/>
+                     packages="cu_grell_freitas_in;cu_grell_freitas_li_in"/>
 
                 <var name="qc_cu" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1}"
                      description="in-cloud cloud water mixing ratio in Grell-Freitas cloud model"
-                     packages="cu_grell_freitas_in"/>
+                     packages="cu_grell_freitas_in;cu_grell_freitas_li_in"/>
 
                 <var name="qi_cu" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1}"
                      description="in-cloud cloud ice mixing ratio in Grell-Freitas cloud model"
-                     packages="cu_grell_freitas_in"/>
+                     packages="cu_grell_freitas_in;cu_grell_freitas_li_in"/>
 
-	       <var name="cldfrac_cu" type="real" dimensions="nVertLevels nCells Time" units="unitless"
+
+                <!-- ... GRELL-FREITAS-LI: -->
+	        <var name="cldfrac_cu" type="real" dimensions="nVertLevels nCells Time" units="unitless"
                      description="cloud fraction in the Grell-Freitas cloud model"
-                     packages="cu_grell_freitas_in"/>
+                     packages="cu_grell_freitas_li_in"/>
 
-	       <var name="refl10cm_cu" type="real" dimensions="nVertLevels nCells Time" units="dBZ"
+	        <var name="refl10cm_cu" type="real" dimensions="nVertLevels nCells Time" units="dBZ"
                      description="10 cm radar reflectivity in the Grell-Freitas cloud model"
-                     packages="cu_grell_freitas_in"/>
+                     packages="cu_grell_freitas_li_in"/>
 
-	       <var name="vcpool" type="real" dimensions="nCells Time" units="m s^{-1}"
+	        <var name="vcpool" type="real" dimensions="nCells Time" units="m s^{-1}"
                      description="Cold pool gust front horizontal speed "
-                     packages="cu_grell_freitas_in"/>
+                     packages="cu_grell_freitas_li_in"/>
 
-               <var name="sigma_deep" type="real" dimensions="nCells Time" units="-"
+                <var name="sigma_deep" type="real" dimensions="nCells Time" units="-"
                      description="scale-aware parameter for deep convection"
-                     packages="cu_grell_freitas_in"/>
+                     packages="cu_grell_freitas_li_in"/>
 
-	       <var name="sigma_deep_far" type="real" dimensions="nCells Time" units="-"
+	        <var name="sigma_deep_far" type="real" dimensions="nCells Time" units="-"
                      description="Second gridpoint fractional coverage for deep convection"
-                     packages="cu_grell_freitas_in"/>
+                     packages="cu_grell_freitas_li_in"/>
 
-
-                <!-- ... KAIN_FRITSCH AND GRELL-FREITAS: -->
+                <!-- ... KAIN_FRITSCH AND GRELL-FREITAS(-LI): -->
                 <var name="cubot" type="real" dimensions="nCells Time" units="unitless"
                      description="index of highest level of convection"
-                     packages="cu_grell_freitas_in;cu_kain_fritsch_in"/>
+                     packages="cu_grell_freitas_in;cu_grell_freitas_li_in;cu_kain_fritsch_in"/>
 
                 <var name="cutop" type="real" dimensions="nCells Time" units="unitless"
                      description="index of lowest level of convection"
-                     packages="cu_grell_freitas_in;cu_kain_fritsch_in"/>
+                     packages="cu_grell_freitas_in;cu_grell_freitas_li_in;cu_kain_fritsch_in"/>
 
 
                 <!-- ================================================================================================== -->
@@ -3949,19 +4009,19 @@
 
                 <var name="rthcuten" type="real" dimensions="nVertLevels nCells Time" units="K s^{-1}"
                      description="tendency of potential temperature due to cumulus convection"
-                     packages="cu_grell_freitas_in;cu_kain_fritsch_in;cu_ntiedtke_in"/>
+		     packages="cu_grell_freitas_in;cu_grell_freitas_li_in;cu_kain_fritsch_in;cu_ntiedtke_in"/>
 
                 <var name="rqvcuten" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1} s^{-1}"
                      description="tendency of water vapor mixing ratio due to cumulus convection"
-                     packages="cu_grell_freitas_in;cu_kain_fritsch_in;cu_ntiedtke_in"/>
+                     packages="cu_grell_freitas_in;cu_grell_freitas_li_in;cu_kain_fritsch_in;cu_ntiedtke_in"/>
 
                 <var name="rqccuten" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1} s^{-1}"
                      description="tendency of cloud water mixing ratio due to cumulus convection"
-                     packages="cu_grell_freitas_in;cu_kain_fritsch_in;cu_ntiedtke_in"/>
+                     packages="cu_grell_freitas_in;cu_grell_freitas_li_in;cu_kain_fritsch_in;cu_ntiedtke_in"/>
 
                 <var name="rqicuten" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1} s^{-1}"
                      description="tendency of cloud ice mixing ratio due to cumulus convection"
-                     packages="cu_grell_freitas_in;cu_kain_fritsch_in;cu_ntiedtke_in"/>
+                     packages="cu_grell_freitas_in;cu_grell_freitas_li_in;cu_kain_fritsch_in;cu_ntiedtke_in"/>
 
 
                 <!-- KAIN_FRITSCH: -->
@@ -3976,35 +4036,35 @@
                 <!-- TIEDTKE AND GRELL -->
                 <var name="rqvdynten" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1} s^{-1}"
                      description="tendency of water vapor due to horizontal and vertical advections"
-                     packages="cu_grell_freitas_in;cu_ntiedtke_in"/>
+                     packages="cu_grell_freitas_in;cu_grell_freitas_li_in;cu_ntiedtke_in"/>
 
                 <var name="rucuten" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1} s^{-1}"
                      description="tendency of zonal wind due to cumulus convection"
-                     packages="cu_grell_freitas_in;cu_ntiedtke_in"/>
+                     packages="cu_grell_freitas_in;cu_grell_freitas_li_in;cu_ntiedtke_in"/>
 
                 <var name="rvcuten" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1} s^{-1}"
                      description="tendency of meridional wind due to cumulus convection"
-                     packages="cu_grell_freitas_in;cu_ntiedtke_in"/>
+                     packages="cu_grell_freitas_in;cu_grell_freitas_li_in;cu_ntiedtke_in"/>
 
 	        <!-- MGD should we add packages to the field below? -->
 	        <var name="rucuten_Edge" type="real"     dimensions="nVertLevels nEdges Time"/>
 
-		<!-- GRELL FREITAS LI -->
+		<!-- GRELL-FREITAS-LI -->
                 <var name="sub3d_rthcuten" type="real" dimensions="nVertLevels nCells Time" units="K s^{-1}"
                      description="tendency of potential temperature due to the subsidence created by cumulus convection"
-                     packages="cu_grell_freitas_in;gf_sub3d"/>
+                     packages="cu_grell_freitas_li_in;gfl_sub3d"/>
 
                 <var name="sub3d_rqvcuten" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1} s^{-1}"
                      description="tendency of water vapor mixing ratio due to the subsidence created by cumulus convection"
-                     packages="cu_grell_freitas_in;gf_sub3d"/>
+                     packages="cu_grell_freitas_li_in;gfl_sub3d"/>
 
                 <var name="sub3d_rucuten" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1} s^{-1}"
                      description="tendency of zonal wind due to the subsidence created by cumulus convection"
-                     packages="cu_grell_freitas_in;gf_sub3d"/>
+                     packages="cu_grell_freitas_li_in;gfl_sub3d"/>
 
                 <var name="sub3d_rvcuten" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1} s^{-1}"
                      description="tendency of meridional wind due to the subsidence created by cumulus convection"
-                     packages="cu_grell_freitas_in;gf_sub3d"/>
+                     packages="cu_grell_freitas_li_in;gfl_sub3d"/>
 
 
                 <!-- ================================================================================================== -->
@@ -4154,10 +4214,10 @@
                 <var name="landmask" type="integer"  dimensions="nCells" units="unitless"
                      description="land-ocean mask (1=land ; 0=ocean)"/>
 
-                <var name="shdmin" type="real" dimensions="nCells" units="unitless"
+                <var name="shdmin" type="real" dimensions="nCells" units="percent"
                      description="minimum fractional coverage of annual green vegetation fraction"/>
 
-                <var name="shdmax" type="real" dimensions="nCells" units="unitless"
+                <var name="shdmax" type="real" dimensions="nCells" units="percent"
                      description="maximum fractional coverage of annual green vegetation fraction"/>
 
                 <var name="snoalb" type="real"  dimensions="nCells" units="unitless"
@@ -4166,15 +4226,15 @@
                 <var name="ter" type="real" dimensions="nCells" units="m"
                      description="terrain height"/>
 
-                <var name="albedo12m" type="real" dimensions="nMonths nCells" units="unitless"
+                <var name="albedo12m" type="real" dimensions="nMonths nCells" units="percent"
                      description="monthly-mean climatological surface albedo"/>
 
 		<var name="lai12m" type="real" dimensions="nMonths nCells" units="unitless"
                      packages="lsm_ruc_in"
                      description="monthly-mean climatological leaf area index"/>
 
-                <var name="greenfrac" type="real" dimensions="nMonths nCells" units="unitless"
-                     description="monthly-mean climatological greeness fraction"/>
+                <var name="greenfrac" type="real" dimensions="nMonths nCells" units="percent"
+                     description="monthly-mean climatological greenness fraction"/>
 
                 <var name="dzs" type="real" dimensions="nSoilLevels nCells Time" units="m"
                      description="soil layer thickness"/>
@@ -4203,7 +4263,7 @@
                 <var name="tmn" type="real" dimensions="nCells Time" units="K"
                      description="deep soil temperature"/>
 
-                <var name="vegfra" type="real" dimensions="nCells Time" units="unitless"
+                <var name="vegfra" type="real" dimensions="nCells Time" units="percent"
                      description="vegetation fraction"/>
 
                 <var name="seaice" type="real" dimensions="nCells Time" units="unitless"

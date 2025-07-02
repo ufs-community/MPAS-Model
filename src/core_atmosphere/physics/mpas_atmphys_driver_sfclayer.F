@@ -1162,6 +1162,7 @@
 
 !local pointers:
  logical,pointer:: config_do_restart,config_frac_seaice
+ logical,pointer:: config_do_DAcycling     
  character(len=StrKIND),pointer:: sfclayer_scheme
  real(kind=RKIND),dimension(:),pointer:: areaCell
 
@@ -1184,7 +1185,8 @@
  call mpas_pool_get_config(configs,'config_do_restart'     ,config_do_restart )
  call mpas_pool_get_config(configs,'config_frac_seaice'    ,config_frac_seaice)
  call mpas_pool_get_config(configs,'config_sfclayer_scheme',sfclayer_scheme   )
-
+ call mpas_pool_get_config(configs,'config_do_DAcycling'   ,config_do_DAcycling) 
+      
  call mpas_pool_get_array(mesh,'areaCell',areaCell)
 
 !copy all MPAS arrays to rectanguler grid:
@@ -1193,7 +1195,7 @@
  dx = sqrt(maxval(areaCell))
 
  initflag = 1
- if(config_do_restart .or. itimestep > 1) initflag = 0
+ if(config_do_restart .or. config_do_DAcycling .or. itimestep > 1) initflag = 0
 
  sfclayer_select: select case (trim(sfclayer_scheme))
 
@@ -1413,7 +1415,10 @@
                    ustm     = ustm_p     , ck        = ck_p     , cka      = cka_p       , &
                    cd       = cd_p       , cda       = cda_p    , ch       = ch_p        , &
                    qcg      = qcg_p      , spp_pbl   = spp_pbl  , isftcflx = isftcflx    , &
-                   iz0tlnd  = iz0tlnd    , itimestep = initflag                          , &
+                   iz0tlnd  = iz0tlnd                                                    , &
+                   itimestep= itimestep  , initflag  = initflag                          , &
+                   restart  = config_do_restart                                          , &
+                   cycling  = config_do_DAcycling                                        , &
                    errmsg   = errmsg     , errflg    = errflg                            , &
                    ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde , &
                    ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme , &
@@ -1445,7 +1450,10 @@
                       ustm     = ustm_sea   , ck        = ck_sea   , cka      = cka_sea     , &
                       cd       = cd_sea     , cda       = cda_sea  , ch       = ch_sea      , &
                       qcg      = qcg_p      , spp_pbl   = spp_pbl  , isftcflx = isftcflx    , &
-                      iz0tlnd  = iz0tlnd    , itimestep = initflag                          , &
+                      iz0tlnd  = iz0tlnd                                                    , &
+                      itimestep= itimestep  , initflag  = initflag                          , &
+                      restart  = config_do_restart                                          , &
+                      cycling  = config_do_DAcycling                                        , &
                       errmsg   = errmsg     , errflg    = errflg                            , &
                       ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde , &
                       ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme , &

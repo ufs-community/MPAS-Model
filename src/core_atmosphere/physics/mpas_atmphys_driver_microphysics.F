@@ -1130,7 +1130,8 @@
 !local pointers:
  character(len=StrKIND),pointer:: microp_scheme
  character(len=StrKIND),pointer:: nssl_moments
- real(kind=RKIND),dimension(:),pointer:: refl10cm,refl10cm_max,refl10cm_1km,refl10cm_1km_max
+ real(kind=RKIND),dimension(:,:),pointer:: refl10cm
+ real(kind=RKIND),dimension(:),pointer:: refl10cm_max,refl10cm_1km,refl10cm_1km_max
 
 !local variables and arrays:
  integer:: i,j,k,kp
@@ -1141,7 +1142,7 @@
 
  call mpas_pool_get_config(configs,'config_microp_scheme',microp_scheme)
  call mpas_pool_get_config(configs,'config_nssl_moments',nssl_moments) ! not needed?
- 
+
  call mpas_pool_get_array(diag_physics,'refl10cm',refl10cm)
  call mpas_pool_get_array(diag_physics,'refl10cm_max',refl10cm_max)
  call mpas_pool_get_array(diag_physics,'refl10cm_1km',refl10cm_1km)
@@ -1245,6 +1246,7 @@
           kp = 1
           do k = kts,kte
              dBZ1d(k) = max(-35._RKIND,dBZ1d(k))
+             refl10cm(k,i) = dBZ1d(k)
              if(zp(k) .lt. 1000.) kp = k
           enddo
           refl10cm_max(i) = maxval(dBZ1d(:))
@@ -1296,7 +1298,7 @@
           kp = 1
           do k = kts,kte
              dBZ1d(k) = max(-35._RKIND,dBZ1d(k))
-             refl10cm_p(i,k,j) = dBZ1d(k)
+             refl10cm(k,i) = dBZ1d(k)
              if(zp(k) .lt. 1000.) kp = k
           enddo
           refl10cm_max(i) = maxval(dBZ1d(:))

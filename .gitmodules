@@ -7,3 +7,9 @@
 [submodule "src/core_atmosphere/physics/physics_noaa/MYNN-EDMF"]
 	path = src/core_atmosphere/physics/physics_noaa/MYNN-EDMF
 	url = https://github.com/NCAR/MYNN-EDMF
+[submodule "src/core_atmosphere/physics/physics_noaa/RUCLSM"]
+	path = src/core_atmosphere/physics/physics_noaa/RUCLSM
+	url = https://github.com/NOAA-GSL/RUCLSM.git
+[submodule "src/core_atmosphere/physics/physics_noaa/GFL"]
+	path = src/core_atmosphere/physics/physics_noaa/GFL
+	url = https://github.com/NOAA-GSL/GFL.git
