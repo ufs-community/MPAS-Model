@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<registry model="mpas" core="atmosphere" core_abbrev="atm" version="8.3.0-1.3">
+<registry model="mpas" core="atmosphere" core_abbrev="atm" version="8.3.0-1.4">
 
 <!-- **************************************************************************************** -->
 <!-- ************************************** Dimensions ************************************** -->
@@ -670,6 +670,7 @@
 			<var name="max_hail_diameter_sfc"/>
 			<var name="max_hail_diameter_sfc_acc"/>
 			<var name="max_hail_diameter_column"/>
+			<var name="max_hail_diameter_column_acc"/>
 			<var name="refl10cm_max"/>
 			<var name="i_rainnc"/>
 			<var name="rainncv"/>
@@ -1136,6 +1137,7 @@
 			<var name="max_hail_diameter_sfc"/>
 			<var name="max_hail_diameter_sfc_acc"/>
 			<var name="max_hail_diameter_column"/>
+			<var name="max_hail_diameter_column_acc"/>
 			<var name="refl10cm_max"/>
 			<var name="refl10cm_1km"/>
 			<var name="refl10cm_1km_max"/>
@@ -2805,6 +2807,10 @@
 
 		<var name="max_hail_diameter_column" type="real" dimensions="nCells Time" units="mm"
                      description="Maximum hail diameter in the vertical column"
+                     packages="mp_tempo_in"/>
+
+		<var name="max_hail_diameter_column_acc" type="real" dimensions="nCells Time" units="mm"
+                     description="Maximum hail diameter in the vertical column accumulated over diagnostic output"
                      packages="mp_tempo_in"/>
 
 		<var name="max_hail_diameter_sfc_acc" type="real" dimensions="nCells Time" units="mm"
