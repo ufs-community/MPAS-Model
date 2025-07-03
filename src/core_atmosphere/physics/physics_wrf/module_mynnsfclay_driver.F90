@@ -30,7 +30,7 @@
                    ids,ide,jds,jde,kds,kde,                      &
                    ims,ime,jms,jme,kms,kme,                      &
                    its,ite,jts,jte,kts,kte,                      &
-                   errmsg,errflg                                 &
+                   restart,cycling,initflag,errmsg,errflg        &
                        )
 !-------------------------------------------------------------------
 !-- u3d         3d u-velocity interpolated to theta points (m/s)
@@ -194,7 +194,9 @@
  integer,intent(in):: ids,ide,jds,jde,kds,kde, &
                       ims,ime,jms,jme,kms,kme, &
                       its,ite,jts,jte,kts,kte
+ logical,intent(in):: restart,cycling
  integer,intent(in):: itimestep
+ integer,intent(in):: initflag
  integer,intent(in):: isfflx
  integer,intent(in),optional:: isftcflx, iz0tlnd
  integer,intent(in),optional:: spp_pbl
@@ -275,6 +277,7 @@
 
 !--- local variables and arrays:
  integer:: i,j,k
+ logical:: restart_or_cycle
 
  real(kind=RKIND),dimension(its:ite)::  &
     u1d,v1d,u1d2,v1d2,qv1d,p1d,t1d,qc1d,rho1d,dz8w1d,dz2w1d
@@ -299,7 +302,9 @@
 
  f_spp = .false.
  if(spp_pbl==1 .and. present(pattern_spp_pbl)) f_spp = .true.
-
+ restart_or_cycle = .false.
+ if(restart .or. cycling)restart_or_cycle=.true.
+ 
  errmsg = ' '
  errflg = 0
 
@@ -313,7 +318,7 @@
        qstar_hv(i) = qstar(i,j)
     enddo
 
-    call mynnsfclay_pre(its,ite,kte,itimestep,dz8w,u3d,v3d,p3d,t3d,rho3d,qv3d,qc3d,f_spp, &
+    call mynnsfclay_pre(its,ite,kte,initflag,dz8w,u3d,v3d,p3d,t3d,rho3d,qv3d,qc3d,f_spp,  &
               pattern_spp_pbl,ust_hv,mol_hv,qsfc_hv,qstar_hv,dz8w1d,u1d,v1d,p1d,t1d,rho1d,&
               qv1d,qc1d,rstoch1d,dz2w1d,u1d2,v1d2,errmsg,errflg)
 
@@ -399,7 +404,8 @@
                  wstar    = wstar_hv  , qstar    = qstar_hv  , ustm    = ustm_hv  , ck        = ck_hv     , &
                  cka      = cka_hv    , cd       = cd_hv     , cda     = cda_hv   , spp_pbl   = f_spp     , &
                  rstoch1d = rstoch1d  , isftcflx = isftcflx  , iz0tlnd = iz0tlnd                          , &
-                 its      = its       , ite      = ite       , errmsg  = errmsg   , errflg    = errflg      &
+                 its      = its       , ite      = ite       , restart_or_cycle = restart_or_cycle        , &
+                 errmsg   = errmsg    , errflg   = errflg                                                   &
                     )
 
     !inout arguments:

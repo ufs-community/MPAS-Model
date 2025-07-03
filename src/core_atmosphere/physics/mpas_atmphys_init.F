@@ -107,6 +107,7 @@ use mpas_stream_manager
 
 !local pointers:
  logical,pointer:: config_do_restart,    &
+                   config_do_DAcycling,  &
                    config_o3climatology, &
                    config_oml1d
 
@@ -162,6 +163,7 @@ use mpas_stream_manager
 !call mpas_log_write('--- enter subroutine physics_init:')
 
  call mpas_pool_get_config(configs,'config_do_restart'       ,config_do_restart       )
+ call mpas_pool_get_config(configs,'config_do_DAcycling'     ,config_do_DAcycling     )
  call mpas_pool_get_config(configs,'config_o3climatology'    ,config_o3climatology    )
  call mpas_pool_get_config(configs,'config_convection_scheme',config_convection_scheme)
  call mpas_pool_get_config(configs,'config_lsm_scheme'       ,config_lsm_scheme       )
@@ -308,7 +310,7 @@ use mpas_stream_manager
  endif
 
 !initialization of xicem:
- if(.not.config_do_restart) then
+ if(.not.config_do_restart .and. .not. config_do_DAcycling) then
 !   call mpas_log_write('--- initialization of xicem:')
     do iCell = 1, nCellsSolve
        xicem(iCell) = xice(iCell)
@@ -318,7 +320,7 @@ use mpas_stream_manager
 !initialization of the local sea-surface temperature when a diurnal cycle of the
 !sea-surface temperature is applied. This avoids having the array sstsk equal to
 !zero over land:
- if(.not. config_do_restart) then
+ if(.not. config_do_restart .and. .not. config_do_DAcycling) then
 !   call mpas_log_write('--- initialization of sstsk:')
     do iCell = 1, nCellsSolve
        sstsk(iCell) = sst(iCell)
