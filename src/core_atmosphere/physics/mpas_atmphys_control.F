@@ -202,6 +202,7 @@
 !convection scheme:
  if(.not. (config_convection_scheme .eq. 'off'              .or. &
            config_convection_scheme .eq. 'cu_grell_freitas' .or. &
+           config_convection_scheme .eq. 'cu_grell_freitas_li' .or. &
            config_convection_scheme .eq. 'cu_kain_fritsch'  .or. &
            config_convection_scheme .eq. 'cu_tiedtke'       .or. &
            config_convection_scheme .eq. 'cu_ntiedtke')) then
