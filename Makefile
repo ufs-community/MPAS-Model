@@ -119,7 +119,7 @@ ftn:   # BUILDTARGET Cray compilers
 	"OPENACC = $(OPENACC)" \
 	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI" )
 
-ftn:   # BUILDTARGET Cray compilers
+ftn-wocss2:   # wcoss2
 	( $(MAKE) all \
 	"FC_PARALLEL = ftn" \
 	"CC_PARALLEL = cc" \
@@ -127,11 +127,11 @@ ftn:   # BUILDTARGET Cray compilers
 	"FC_SERIAL = ftn" \
 	"CC_SERIAL = cc" \
 	"CXX_SERIAL = CC" \
-	"FFLAGS_PROMOTION = -r8" \
-	"FFLAGS_OPT = -i4 -gopt -O2 -Mvect=nosse -Kieee -convert big_endian" \
-	"CFLAGS_OPT = -fast" \
-	"CXXFLAGS_OPT = -fast" \
-	"LDFLAGS_OPT = " \
+	"FFLAGS_PROMOTION = -real-size 64" \
+	"FFLAGS_OPT = -O3 -convert big_endian -free -align array64byte" \
+	"CFLAGS_OPT = -O3" \
+	"CXXFLAGS_OPT = -O3" \
+	"LDFLAGS_OPT =  -O3" \
 	"FFLAGS_OMP = -mp" \
 	"CFLAGS_OMP = -mp" \
 	"FFLAGS_ACC =" \
@@ -456,14 +456,14 @@ intel-mpi:   # BUILDTARGET Intel compiler suite with Intel MPI library
 	"OPENMP = $(OPENMP)" \
 	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI" )
 
-intel-mpi:   # BUILDTARGET Intel compiler suite with Intel MPI library
+intel-mpi-ursa:   # usra
 	( $(MAKE) all \
 	"FC_PARALLEL = mpiifort" \
 	"CC_PARALLEL = mpiicc" \
 	"CXX_PARALLEL = mpiicpc" \
 	"FC_SERIAL = ifort" \
-	"CC_SERIAL = icc" \
-	"CXX_SERIAL = icpc" \
+	"CC_SERIAL = icx" \
+	"CXX_SERIAL = icpx" \
 	"FFLAGS_PROMOTION = -real-size 64" \
 	"FFLAGS_OPT = -O3 -convert big_endian -free -align array64byte" \
 	"CFLAGS_OPT = -O3" \
