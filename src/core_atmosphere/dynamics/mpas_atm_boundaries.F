@@ -99,9 +99,12 @@ module mpas_atm_boundaries
         type (mpas_pool_type), pointer :: lbc
         real (kind=RKIND) :: dt
 
-        integer, pointer :: nCells
-        integer, pointer :: nEdges
-        integer, pointer :: index_qv
+        integer, pointer :: nCells_ptr
+        integer, pointer :: nEdges_ptr
+        integer, pointer :: nVertLevels_ptr
+        integer, pointer :: index_qv_ptr
+        integer, pointer :: nScalars_ptr
+        integer :: nCells, nEdges, nVertLevels, index_qv, nScalars
 
         real (kind=RKIND), dimension(:,:), pointer :: u
         real (kind=RKIND), dimension(:,:), pointer :: ru
@@ -129,7 +132,7 @@ module mpas_atm_boundaries
         type (MPAS_Time_Type) :: currTime
         type (MPAS_TimeInterval_Type) :: lbc_interval
         character(len=StrKIND) :: read_time
-        integer :: iEdge
+        integer :: iEdge, iCell, k, j
         integer :: cell1, cell2
 
 
@@ -169,6 +172,7 @@ module mpas_atm_boundaries
         call mpas_pool_get_array(lbc, 'lbc_u', u, 2)
         call mpas_pool_get_array(lbc, 'lbc_ru', ru, 2)
         call mpas_pool_get_array(lbc, 'lbc_rho_edge', rho_edge, 2)
+        call mpas_pool_get_array(lbc, 'lbc_w', w, 2)
         call mpas_pool_get_array(lbc, 'lbc_theta', theta, 2)
         call mpas_pool_get_array(lbc, 'lbc_rtheta_m', rtheta_m, 2)
         call mpas_pool_get_array(lbc, 'lbc_rho_zz', rho_zz, 2)
@@ -176,43 +180,15 @@ module mpas_atm_boundaries
         call mpas_pool_get_array(lbc, 'lbc_scalars', scalars, 2)
 
         call mpas_pool_get_array(mesh, 'cellsOnEdge', cellsOnEdge)
-        call mpas_pool_get_dimension(mesh, 'nCells', nCells)
-        call mpas_pool_get_dimension(mesh, 'nEdges', nEdges)
-        call mpas_pool_get_dimension(lbc, 'index_qv', index_qv)
+        call mpas_pool_get_dimension(mesh, 'nCells', nCells_ptr)
+        call mpas_pool_get_dimension(mesh, 'nEdges', nEdges_ptr)
+        call mpas_pool_get_dimension(mesh, 'nVertLevels', nVertLevels_ptr)
+        call mpas_pool_get_dimension(state, 'num_scalars', nScalars_ptr)
+        call mpas_pool_get_dimension(lbc, 'index_qv', index_qv_ptr)
         call mpas_pool_get_array(mesh, 'zz', zz)
 
-        ! Compute lbc_rho_zz
-        zz(:,nCells+1) = 1.0_RKIND          ! Avoid potential division by zero in the following line
-        rho_zz(:,:) = rho(:,:) / zz(:,:)
-
-        ! Average lbc_rho_zz to edges
-        do iEdge=1,nEdges
-            cell1 = cellsOnEdge(1,iEdge)
-            cell2 = cellsOnEdge(2,iEdge)
-            if (cell1 > 0 .and. cell2 > 0) then
-                rho_edge(:,iEdge) = 0.5_RKIND * (rho_zz(:,cell1) + rho_zz(:,cell2))
-            end if
-        end do
-
-        ru(:,:) = u(:,:) * rho_edge(:,:)
-        rtheta_m(:,:) = theta(:,:) * rho_zz(:,:) * (1.0_RKIND + rvord * scalars(index_qv,:,:))
-
+        MPAS_ACC_TIMER_START('mpas_atm_update_bdy_tend [ACC_data_xfer]')
         if (.not. firstCall) then
-            lbc_interval = currTime - LBC_intv_end
-            call mpas_get_timeInterval(interval=lbc_interval, DD=dd_intv, S=s_intv, S_n=sn_intv, S_d=sd_intv, ierr=ierr)
-            dt = 86400.0_RKIND * real(dd_intv, kind=RKIND) + real(s_intv, kind=RKIND) &
-                 + (real(sn_intv, kind=RKIND) / real(sd_intv, kind=RKIND))
-
-            call mpas_pool_get_array(lbc, 'lbc_u', u, 2)
-            call mpas_pool_get_array(lbc, 'lbc_ru', ru, 2)
-            call mpas_pool_get_array(lbc, 'lbc_rho_edge', rho_edge, 2)
-            call mpas_pool_get_array(lbc, 'lbc_w', w, 2)
-            call mpas_pool_get_array(lbc, 'lbc_theta', theta, 2)
-            call mpas_pool_get_array(lbc, 'lbc_rtheta_m', rtheta_m, 2)
-            call mpas_pool_get_array(lbc, 'lbc_rho_zz', rho_zz, 2)
-            call mpas_pool_get_array(lbc, 'lbc_rho', rho, 2)
-            call mpas_pool_get_array(lbc, 'lbc_scalars', scalars, 2)
-
             call mpas_pool_get_array(lbc, 'lbc_u', lbc_tend_u, 1)
             call mpas_pool_get_array(lbc, 'lbc_ru', lbc_tend_ru, 1)
             call mpas_pool_get_array(lbc, 'lbc_rho_edge', lbc_tend_rho_edge, 1)
@@ -223,17 +199,115 @@ module mpas_atm_boundaries
             call mpas_pool_get_array(lbc, 'lbc_rho', lbc_tend_rho, 1)
             call mpas_pool_get_array(lbc, 'lbc_scalars', lbc_tend_scalars, 1)
 
+            !$acc enter data copyin(lbc_tend_u, lbc_tend_ru, lbc_tend_rho_edge, lbc_tend_w, &
+            !$acc                   lbc_tend_theta, lbc_tend_rtheta_m, lbc_tend_rho_zz, &
+            !$acc                   lbc_tend_rho, lbc_tend_scalars)
+        end if
+        !$acc enter data copyin(u, w, theta, rho, scalars)
+        !$acc enter data create(ru, rho_edge, rtheta_m, rho_zz)
+        MPAS_ACC_TIMER_STOP('mpas_atm_update_bdy_tend [ACC_data_xfer]')
+
+        ! Dereference the pointers to avoid non-array pointer for OpenACC
+        nCells = nCells_ptr
+        nEdges = nEdges_ptr
+        nVertLevels = nVertLevels_ptr
+        nScalars = nScalars_ptr
+        index_qv = index_qv_ptr
+
+        ! Compute lbc_rho_zz
+        !$acc parallel default(present)
+        !$acc loop vector
+        do k=1,nVertLevels
+            zz(k,nCells+1) = 1.0_RKIND          ! Avoid potential division by zero in the following line
+        end do
+        !$acc end parallel
+
+        !$acc parallel default(present)
+        !$acc loop gang vector collapse(2)
+        do iCell=1,nCells+1
+            do k=1,nVertLevels
+                rho_zz(k,iCell) = rho(k,iCell) / zz(k,iCell)
+            end do
+        end do
+        !$acc end parallel
+
+        ! Average lbc_rho_zz to edges
+        !$acc parallel default(present)
+        !$acc loop gang worker
+        do iEdge=1,nEdges
+            cell1 = cellsOnEdge(1,iEdge)
+            cell2 = cellsOnEdge(2,iEdge)
+            if (cell1 > 0 .and. cell2 > 0) then
+                !$acc loop vector
+                do k = 1, nVertLevels
+                    rho_edge(k,iEdge) = 0.5_RKIND * (rho_zz(k,cell1) + rho_zz(k,cell2))
+                end do
+            end if
+        end do
+        !$acc end parallel
+
+        !$acc parallel default(present)
+        !$acc loop gang vector collapse(2)
+        do iEdge=1,nEdges+1
+            do k=1,nVertLevels
+                ru(k,iEdge) = u(k,iEdge) * rho_edge(k,iEdge)
+            end do
+        end do
+
+        !$acc loop gang vector collapse(2)
+        do iCell=1,nCells+1
+            do k=1,nVertLevels
+                rtheta_m(k,iCell) = theta(k,iCell) * rho_zz(k,iCell) * (1.0_RKIND + rvord * scalars(index_qv,k,iCell))
+            end do
+        end do
+        !$acc end parallel
+
+        if (.not. firstCall) then
+            lbc_interval = currTime - LBC_intv_end
+            call mpas_get_timeInterval(interval=lbc_interval, DD=dd_intv, S=s_intv, S_n=sn_intv, S_d=sd_intv, ierr=ierr)
+            dt = 86400.0_RKIND * real(dd_intv, kind=RKIND) + real(s_intv, kind=RKIND) &
+                 + (real(sn_intv, kind=RKIND) / real(sd_intv, kind=RKIND))
+
 
             dt = 1.0_RKIND / dt
-            lbc_tend_u(:,:) = (u(:,:) - lbc_tend_u(:,:)) * dt
-            lbc_tend_ru(:,:) = (ru(:,:) - lbc_tend_ru(:,:)) * dt
-            lbc_tend_rho_edge(:,:) = (rho_edge(:,:) - lbc_tend_rho_edge(:,:)) * dt
-            lbc_tend_w(:,:) = (w(:,:) - lbc_tend_w(:,:)) * dt
-            lbc_tend_theta(:,:) = (theta(:,:) - lbc_tend_theta(:,:)) * dt
-            lbc_tend_rtheta_m(:,:) = (rtheta_m(:,:) - lbc_tend_rtheta_m(:,:)) * dt
-            lbc_tend_rho_zz(:,:) = (rho_zz(:,:) - lbc_tend_rho_zz(:,:)) * dt
-            lbc_tend_rho(:,:) = (rho(:,:) - lbc_tend_rho(:,:)) * dt
-            lbc_tend_scalars(:,:,:) = (scalars(:,:,:) - lbc_tend_scalars(:,:,:)) * dt
+
+            !$acc parallel default(present)
+            !$acc loop gang vector collapse(2)
+            do iEdge=1,nEdges+1
+                do k=1,nVertLevels
+                    lbc_tend_u(k,iEdge) = (u(k,iEdge) - lbc_tend_u(k,iEdge)) * dt
+                    lbc_tend_ru(k,iEdge) = (ru(k,iEdge) - lbc_tend_ru(k,iEdge)) * dt
+                    lbc_tend_rho_edge(k,iEdge) = (rho_edge(k,iEdge) - lbc_tend_rho_edge(k,iEdge)) * dt
+                 end do
+             end do
+
+            !$acc loop gang vector collapse(2)
+            do iCell=1,nCells+1
+                do k=1,nVertLevels+1
+                    lbc_tend_w(k,iCell) = (w(k,iCell) - lbc_tend_w(k,iCell)) * dt
+                end do
+            end do
+
+            !$acc loop gang vector collapse(2)
+            do iCell=1,nCells+1
+                do k=1,nVertLevels
+                    lbc_tend_theta(k,iCell) = (theta(k,iCell) - lbc_tend_theta(k,iCell)) * dt
+                    lbc_tend_rtheta_m(k,iCell) = (rtheta_m(k,iCell) - lbc_tend_rtheta_m(k,iCell)) * dt
+                    lbc_tend_rho_zz(k,iCell) = (rho_zz(k,iCell) - lbc_tend_rho_zz(k,iCell)) * dt
+                    lbc_tend_rho(k,iCell) = (rho(k,iCell) - lbc_tend_rho(k,iCell)) * dt
+                end do
+            end do
+ 
+            !$acc loop gang
+            do iCell=1,nCells+1
+                !$acc loop vector collapse(2)
+                do k=1,nVertLevels
+                    do j = 1,nScalars
+                        lbc_tend_scalars(j,k,iCell) = (scalars(j,k,iCell) - lbc_tend_scalars(j,k,iCell)) * dt
+                    end do
+                end do
+            end do
+            !$acc end parallel
 
             !
             ! Logging the lbc start and end times appears to be backwards, but
@@ -249,6 +323,17 @@ module mpas_atm_boundaries
 
         end if
 
+        MPAS_ACC_TIMER_START('mpas_atm_update_bdy_tend [ACC_data_xfer]')
+        if (.not. firstCall) then
+            !$acc exit data copyout(lbc_tend_u, lbc_tend_ru, lbc_tend_rho_edge, lbc_tend_w, &
+            !$acc                   lbc_tend_theta, lbc_tend_rtheta_m, lbc_tend_rho_zz, &
+            !$acc                   lbc_tend_rho, lbc_tend_scalars)
+        end if
+
+        !$acc exit data copyout(ru, rho_edge, rtheta_m, rho_zz)
+        !$acc exit data delete(u, w, theta, rho, scalars)
+        MPAS_ACC_TIMER_STOP('mpas_atm_update_bdy_tend [ACC_data_xfer]')
+
         LBC_intv_end = currTime
 
     end subroutine mpas_atm_update_bdy_tend
@@ -258,11 +343,11 @@ module mpas_atm_boundaries
     !
     !  routine mpas_atm_get_bdy_tend
     !
-    !> \brief   Returns LBC tendencies a specified delta-t in the future
+    !> \brief   Provide LBC tendencies a specified delta-t in the future
     !> \author  Michael Duda
     !> \date    28 September 2016
     !> \details 
-    !>  This function returns an array providing the tendency for the requested
+    !>  This subroutine returns an array with the tendency for the requested
     !>  progostic variable delta_t in the future from the current time known
     !>  by the simulation clock (which is typically the time at the start of
     !>  the current timestep).
@@ -270,7 +355,7 @@ module mpas_atm_boundaries
     !>  The vertDim and horizDim should match the nominal block dimensions of
     !>  the field to be returned by the call; for example, a call to retrieve
     !>  the tendency for the 'u' field would set vertDim=nVertLevels and 
-    !>  horizDim=nEdges. This function internally adds 1 to the horizontal
+    !>  horizDim=nEdges. This routine internally adds 1 to the horizontal
     !>  dimension to account for the "garbage" element.
     !>
     !>  The field is identified by the 'field' argument, and this argument is
@@ -278,16 +363,16 @@ module mpas_atm_boundaries
     !>  the 'lbc' pool. For scalars, the field argument should give the name 
     !>  of the constituent, e.g., 'qv'.
     !>
-    !>  Example calls to this function:
+    !>  Example calls to this subroutine:
     !>  
-    !>   tend_u(:,:) = mpas_atm_get_bdy_tend(clock, domain % blocklist, nVertLevels, nEdges, 'u', 0.0_RKIND)
-    !>   tend_w(:,:) = mpas_atm_get_bdy_tend(clock, domain % blocklist, nVertLevels+1, nCells, 'w', 0.0_RKIND)
-    !>   tend_rho_zz(:,:) = mpas_atm_get_bdy_tend(clock, domain % blocklist, nVertLevels, nCells, 'rho_zz', 0.0_RKIND)
-    !>   tend_theta(:,:) = mpas_atm_get_bdy_tend(clock, domain % blocklist, nVertLevels, nCells, 'theta', 0.0_RKIND)
-    !>   tend_scalars(1,:,:) = mpas_atm_get_bdy_tend(clock, domain % blocklist, nVertLevels, nCells, 'qv', 0.0_RKIND)
+    !>   call mpas_atm_get_bdy_tend(clock, domain % blocklist, nVertLevels, nEdges, 'u', 0.0_RKIND, tend_u)
+    !>   call mpas_atm_get_bdy_tend(clock, domain % blocklist, nVertLevels+1, nCells, 'w', 0.0_RKIND, tend_w)
+    !>   call mpas_atm_get_bdy_tend(clock, domain % blocklist, nVertLevels, nCells, 'rho_zz', 0.0_RKIND, tend_rho_zz)
+    !>   call mpas_atm_get_bdy_tend(clock, domain % blocklist, nVertLevels, nCells, 'theta', 0.0_RKIND, tend_theta)
+    !>   call mpas_atm_get_bdy_tend(clock, domain % blocklist, nVertLevels, nCells, 'qv', 0.0_RKIND, tend_qv)
     !
     !-----------------------------------------------------------------------
-    function mpas_atm_get_bdy_tend(clock, block, vertDim, horizDim, field, delta_t) result(return_tend)
+    subroutine mpas_atm_get_bdy_tend(clock, block, vertDim, horizDim, field, delta_t, return_tend)
 
         implicit none
 
@@ -296,14 +381,13 @@ module mpas_atm_boundaries
         integer, intent(in) :: vertDim, horizDim
         character(len=*), intent(in) :: field
         real (kind=RKIND), intent(in) :: delta_t
-
-        real (kind=RKIND), dimension(vertDim,horizDim+1) :: return_tend
+        real (kind=RKIND), dimension(vertDim,horizDim+1), intent(out) :: return_tend
 
         type (mpas_pool_type), pointer :: lbc
-        integer, pointer :: idx
+        integer, pointer :: idx_ptr
         real (kind=RKIND), dimension(:,:), pointer :: tend
         real (kind=RKIND), dimension(:,:,:), pointer :: tend_scalars
-        integer :: ierr
+        integer :: idx, i, j
 
 
         call mpas_pool_get_subpool(block % structs, 'lbc', lbc)
@@ -311,27 +395,57 @@ module mpas_atm_boundaries
         nullify(tend)
         call mpas_pool_get_array(lbc, 'lbc_'//trim(field), tend, 1)
 
+        MPAS_ACC_TIMER_START('mpas_atm_get_bdy_tend [ACC_data_xfer]')
         if (associated(tend)) then
-            return_tend(:,:) = tend(:,:)
+            !$acc enter data copyin(tend)
         else
             call mpas_pool_get_array(lbc, 'lbc_scalars', tend_scalars, 1)
-            call mpas_pool_get_dimension(lbc, 'index_'//trim(field), idx)
+            !$acc enter data copyin(tend_scalars)
 
-            return_tend(:,:) = tend_scalars(idx,:,:)
+            ! Ensure the integer pointed to by idx_ptr is copied to the gpu device
+            call mpas_pool_get_dimension(lbc, 'index_'//trim(field), idx_ptr)
+            idx = idx_ptr
         end if
+        MPAS_ACC_TIMER_STOP('mpas_atm_get_bdy_tend [ACC_data_xfer]')
 
-    end function mpas_atm_get_bdy_tend
+        !$acc parallel default(present)
+        if (associated(tend)) then
+            !$acc loop gang vector collapse(2)
+            do j=1,horizDim+1
+                do i=1,vertDim
+                    return_tend(i,j) = tend(i,j)
+                end do
+            end do
+        else
+            !$acc loop gang vector collapse(2)
+            do j=1,horizDim+1
+                do i=1,vertDim
+                    return_tend(i,j) = tend_scalars(idx,i,j)
+                end do
+            end do
+        end if
+        !$acc end parallel
+
+        MPAS_ACC_TIMER_START('mpas_atm_get_bdy_tend [ACC_data_xfer]')
+        if (associated(tend)) then
+            !$acc exit data delete(tend)
+        else
+            !$acc exit data delete(tend_scalars)
+        end if
+        MPAS_ACC_TIMER_STOP('mpas_atm_get_bdy_tend [ACC_data_xfer]')
+
+    end subroutine mpas_atm_get_bdy_tend
 
 
     !***********************************************************************
     !
     !  routine mpas_atm_get_bdy_state_2d
     !
-    !> \brief   Returns LBC state at a specified delta-t in the future
+    !> \brief   Provides LBC state at a specified delta-t in the future
     !> \author  Michael Duda
     !> \date    28 September 2016
     !> \details 
-    !>  This function returns an array providing the state for the requested
+    !>  This subroutine returns an array providing the state for the requested
     !>  progostic variable delta_t in the future from the current time known
     !>  by the simulation clock (which is typically the time at the start of
     !>  the current timestep).
@@ -339,24 +453,24 @@ module mpas_atm_boundaries
     !>  The vertDim and horizDim should match the nominal block dimensions of
     !>  the field to be returned by the call; for example, a call to retrieve
     !>  the state of the 'u' field would set vertDim=nVertLevels and 
-    !>  horizDim=nEdges. This function internally adds 1 to the horizontal
+    !>  horizDim=nEdges. This routine internally adds 1 to the horizontal
     !>  dimension to account for the "garbage" element.
     !>
     !>  The field is identified by the 'field' argument, and this argument is
     !>  prefixed with 'lbc_' before attempting to retrieve the field from
-    !>  the 'lbc' pool. For scalars, the field argument should give the name 
+    !>  the 'lbc' pool. For scalars, the field argument should give the name
     !>  of the constituent, e.g., 'qv'.
     !>
-    !>  Example calls to this function:
-    !>  
-    !>   u(:,:) = mpas_atm_get_bdy_state(clock, domain % blocklist, nVertLevels, nEdges, 'u', 0.0_RKIND)
-    !>   w(:,:) = mpas_atm_get_bdy_state(clock, domain % blocklist, nVertLevels+1, nCells, 'w', 0.0_RKIND)
-    !>   rho_zz(:,:) = mpas_atm_get_bdy_state(clock, domain % blocklist, nVertLevels, nCells, 'rho_zz', 0.0_RKIND)
-    !>   theta(:,:) = mpas_atm_get_bdy_state(clock, domain % blocklist, nVertLevels, nCells, 'theta', 0.0_RKIND)
-    !>   scalars(1,:,:) = mpas_atm_get_bdy_state(clock, domain % blocklist, nVertLevels, nCells, 'qv', 0.0_RKIND)
+    !>  Example calls to this subroutine:
+    !> 
+    !>   call mpas_atm_get_bdy_state(clock, domain % blocklist, nVertLevels, nEdges, 'u', 0.0_RKIND, u)
+    !>   call mpas_atm_get_bdy_state(clock, domain % blocklist, nVertLevels+1, nCells, 'w', 0.0_RKIND, w)
+    !>   call mpas_atm_get_bdy_state(clock, domain % blocklist, nVertLevels, nCells, 'rho_zz', 0.0_RKIND, rho_zz)
+    !>   call mpas_atm_get_bdy_state(clock, domain % blocklist, nVertLevels, nCells, 'theta', 0.0_RKIND, theta)
+    !>   call mpas_atm_get_bdy_state(clock, domain % blocklist, nVertLevels, nCells, 'qv', 0.0_RKIND, scalars(1,:,:))
     !
     !-----------------------------------------------------------------------
-    function mpas_atm_get_bdy_state_2d(clock, block, vertDim, horizDim, field, delta_t) result(return_state)
+    subroutine mpas_atm_get_bdy_state_2d(clock, block, vertDim, horizDim, field, delta_t, return_state)
 
         use mpas_pool_routines, only : mpas_pool_get_error_level, mpas_pool_set_error_level
         use mpas_derived_types, only : MPAS_POOL_SILENT
@@ -368,8 +482,7 @@ module mpas_atm_boundaries
         integer, intent(in) :: vertDim, horizDim
         character(len=*), intent(in) :: field
         real (kind=RKIND), intent(in) :: delta_t
-
-        real (kind=RKIND), dimension(vertDim,horizDim+1) :: return_state
+        real (kind=RKIND), dimension(vertDim,horizDim+1), intent(out) :: return_state
 
         type (mpas_pool_type), pointer :: lbc
         integer, pointer :: idx_ptr
@@ -421,8 +534,7 @@ module mpas_atm_boundaries
         !
         if (associated(tend) .and. associated(state)) then
             MPAS_ACC_TIMER_START('mpas_atm_get_bdy_state_2d [ACC_data_xfer]')
-            !$acc enter data create(return_state) &
-            !$acc            copyin(tend, state)
+            !$acc enter data copyin(tend, state)
             MPAS_ACC_TIMER_STOP('mpas_atm_get_bdy_state_2d [ACC_data_xfer]')
 
             !$acc parallel default(present)
@@ -435,8 +547,7 @@ module mpas_atm_boundaries
             !$acc end parallel
 
             MPAS_ACC_TIMER_START('mpas_atm_get_bdy_state_2d [ACC_data_xfer]')
-            !$acc exit data copyout(return_state) &
-            !$acc           delete(tend, state)
+            !$acc exit data delete(tend, state)
             MPAS_ACC_TIMER_STOP('mpas_atm_get_bdy_state_2d [ACC_data_xfer]')
         else
             call mpas_pool_get_array(lbc, 'lbc_scalars', tend_scalars, 1)
@@ -446,8 +557,7 @@ module mpas_atm_boundaries
             idx=idx_ptr ! Avoid non-array pointer for OpenACC
 
             MPAS_ACC_TIMER_START('mpas_atm_get_bdy_state_2d [ACC_data_xfer]')
-            !$acc enter data create(return_state) &
-            !$acc            copyin(tend_scalars, state_scalars)
+            !$acc enter data copyin(tend_scalars, state_scalars)
             MPAS_ACC_TIMER_STOP('mpas_atm_get_bdy_state_2d [ACC_data_xfer]')
 
             !$acc parallel default(present)
@@ -460,23 +570,22 @@ module mpas_atm_boundaries
             !$acc end parallel
 
             MPAS_ACC_TIMER_START('mpas_atm_get_bdy_state_2d [ACC_data_xfer]')
-            !$acc exit data copyout(return_state) &
-            !$acc           delete(tend_scalars, state_scalars)
+            !$acc exit data delete(tend_scalars, state_scalars)
             MPAS_ACC_TIMER_STOP('mpas_atm_get_bdy_state_2d [ACC_data_xfer]')
         end if
 
-    end function mpas_atm_get_bdy_state_2d
+    end subroutine mpas_atm_get_bdy_state_2d
 
 
     !***********************************************************************
     !
     !  routine mpas_atm_get_bdy_state_3d
     !
-    !> \brief   Returns LBC state at a specified delta-t in the future
+    !> \brief   Provides LBC state at a specified delta-t in the future
     !> \author  Michael Duda
     !> \date    4 September 2024
     !> \details
-    !>  This function returns an array providing the state for the requested
+    !>  This subroutine returns an array providing the state for the requested
     !>  progostic variable delta_t in the future from the current time known
     !>  by the simulation clock (which is typically the time at the start of
     !>  the current timestep).
@@ -485,20 +594,21 @@ module mpas_atm_boundaries
     !>  dimensions of the field to be returned by the call; for example, a
     !>  call to retrieve the state of the 'scalars' field would set
     !>  innerDim=num_scalars, vertDim=nVertLevels, and horizDim=nCells. This
-    !>  function internally adds 1 to the horizontal dimension to account for
+    !>  routine internally adds 1 to the horizontal dimension to account for
     !>  the "garbage" element.
     !>
     !>  The field is identified by the 'field' argument, and this argument is
     !>  prefixed with 'lbc_' before attempting to retrieve the field from
     !>  the 'lbc' pool.
     !>
-    !>  Example calls to this function:
+    !>  Example call to this subroutine:
     !>
-    !>   scalar(:,:,:) = mpas_atm_get_bdy_state(clock, domain % blocklist, &
-    !>                       num_scalars, nVertLevels, nCells, 'scalars', 0.0_RKIND)
+    !>   call mpas_atm_get_bdy_state(clock, domain % blocklist, &
+    !>                               num_scalars, nVertLevels, nCells, 'scalars', &
+    !>                               0.0_RKIND, scalars)
     !
     !-----------------------------------------------------------------------
-    function mpas_atm_get_bdy_state_3d(clock, block, innerDim, vertDim, horizDim, field, delta_t) result(return_state)
+    subroutine mpas_atm_get_bdy_state_3d(clock, block, innerDim, vertDim, horizDim, field, delta_t, return_state)
 
         use mpas_pool_routines, only : mpas_pool_get_error_level, mpas_pool_set_error_level
         use mpas_derived_types, only : MPAS_POOL_SILENT
@@ -510,8 +620,7 @@ module mpas_atm_boundaries
         integer, intent(in) :: innerDim, vertDim, horizDim
         character(len=*), intent(in) :: field
         real (kind=RKIND), intent(in) :: delta_t
-
-        real (kind=RKIND), dimension(innerDim,vertDim,horizDim+1) :: return_state
+        real (kind=RKIND), dimension(innerDim,vertDim,horizDim+1), intent(out) :: return_state
 
         type (mpas_pool_type), pointer :: lbc
         real (kind=RKIND), dimension(:,:,:), pointer :: tend
@@ -544,8 +653,7 @@ module mpas_atm_boundaries
         call mpas_pool_get_array(lbc, 'lbc_'//trim(field), state, 2)
 
         MPAS_ACC_TIMER_START('mpas_atm_get_bdy_state_3d [ACC_data_xfer]')
-        !$acc enter data create(return_state) &
-        !$acc            copyin(tend, state)
+        !$acc enter data copyin(tend, state)
         MPAS_ACC_TIMER_STOP('mpas_atm_get_bdy_state_3d [ACC_data_xfer]')
 
         !$acc parallel default(present)
@@ -560,11 +668,10 @@ module mpas_atm_boundaries
         !$acc end parallel
 
         MPAS_ACC_TIMER_START('mpas_atm_get_bdy_state_3d [ACC_data_xfer]')
-        !$acc exit data copyout(return_state) &
-        !$acc           delete(tend, state)
+        !$acc exit data delete(tend, state)
         MPAS_ACC_TIMER_STOP('mpas_atm_get_bdy_state_3d [ACC_data_xfer]')
 
-    end function mpas_atm_get_bdy_state_3d
+    end subroutine mpas_atm_get_bdy_state_3d
 
 
     !***********************************************************************
