@@ -414,6 +414,7 @@
 		<package name="mp_tempo_in" description="parameterization of TEMPO cloud microphysics."/>
 		<package name="tempo_aerosolaware_in" description="variables for TEMPO with aerosol-aware microphysics."/>
 		<package name="tempo_hailaware_in" description="variables for TEMPO hail-aware microphysics."/>
+		<package name="tempo_cldfra_in" description="variables for TEMPO prognostic cloud fraction  microphysics."/>
                 <package name="mp_wsm6_in" description="parameterization of WSM6 cloud microphysics."/>
                 <package name="mp_nssl2m_in" description="parameterization of NSSL 2-moment microphysics."/>
                 <package name="nssl3m_in" description="variables for NSSL 3-moment microphysics."/>
@@ -1865,6 +1866,14 @@
                         <var name="nwfa" array_group="number" units="nb kg^{-1}"
                              description="Water-friendly aerosol number concentration"
                              packages="mp_thompson_aers_in;tempo_aerosolaware_in"/>
+
+                        <var name="qa_sgs" array_group="passive" units=""
+                             description="SGS prognostic cloud fraction"
+                             packages="tempo_cldfra_in"/>
+
+                        <var name="qc_sgs" array_group="passive" units="kg kg^{-1}"
+                             description="SGS prognostic cloud water mixing ratio"
+                             packages="tempo_cldfra_in"/>
                 </var_array>
 #endif
 
@@ -2256,6 +2265,14 @@
                         <var name="tend_nwfa" name_in_code="nwfa" array_group="number" units="nb m^{-3} s^{-1}"
                              description="Tendency of water-friendly aerosol number concentration multiplied by dry air density divided by d(zeta)/dz"
                              packages="mp_thompson_aers_in;tempo_aerosolaware_in"/>
+
+                        <var name="tend_qasgs" name_in_code="qa_sgs" array_group="passive" units=""
+                             description="Tendency of sgs prognostic cloud fraction multiplied by dry air density divided by d(zeta)/dz"
+                             packages="tempo_cldfra_in"/>
+
+                        <var name="tend_qcsgs" name_in_code="qc_sgs" array_group="passive" units="kg m^{-3} s^{-1}"
+                             description="Tendency of sgs prognostic cloud water mass per unit volume  multiplied by dry air density divided by d(zeta)/dz"
+                             packages="tempo_cldfra_in"/>
                 </var_array>
 #endif
         </var_struct>
@@ -2355,6 +2372,14 @@
                         <var name="lbc_nwfa" name_in_code="nwfa" array_group="number" packages="mp_thompson_aers_in;tempo_aerosolaware_in"
                              units="m^{-3} s^{-1}"
                              description="Lateral boundary tendency of water-friendly aerosol number concentration"/>
+
+                        <var name="lbc_qasgs" name_in_code="qa_sgs" array_group="passive" packages="tempo_cldfra_in"
+                             units=""
+                             description="Lateral boundary tendency of sgs prognostic cloud fraction"/>
+
+                        <var name="lbc_qcsgs" name_in_code="qc_sgs" array_group="passive" packages="tempo_cldfra_in"
+                             units="kg kg^{-1} s^{-1}"
+                             description="Lateral boundary tendency of sgs prognostic cloud water mixing ratio"/>
                 </var_array>
         </var_struct>
 
@@ -2521,6 +2546,11 @@
 		<nml_option name="config_tempo_hailaware" type="logical" default_value="false" in_defaults="false"
 		     units="-"
                      description="Logical flag to turn on/off prognostic graupel number concentration and rime density"
+                     possible_values=".true. or .false."/>
+
+		<nml_option name="config_tempo_cldfra" type="logical" default_value="false" in_defaults="false"
+		     units="-"
+                     description="Logical flag to turn on/off prognostic cloud fraction"
                      possible_values=".true. or .false."/>
 
 		<nml_option name="config_tempo_ml_nc_pbl" type="logical" default_value="false" in_defaults="false"

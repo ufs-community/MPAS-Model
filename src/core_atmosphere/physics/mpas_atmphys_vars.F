@@ -219,7 +219,10 @@
     muc_p,            &!
     ntc_p,            &!
     nifa2d_p
-      
+
+ real(kind=RKIND),dimension(:,:,:),allocatable:: &
+      qasgs_p, qcsgs_p
+
 !... arrays located at w (vertical velocity) points, or at interface between layers:
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
     w_p,              &!vertical velocity                                                     [m/s]
