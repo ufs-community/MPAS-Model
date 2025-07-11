@@ -670,7 +670,7 @@
  integer,pointer:: index_zrw,index_zgw,index_zhw
  integer,pointer:: index_ns,index_ng,index_nh,index_nccn
  integer,pointer:: index_volg,index_volh
- integer,pointer:: index_qasgs, index_qcsgs
+ integer,pointer:: index_qa_sgs, index_qc_sgs
 
  real(kind=RKIND),dimension(:,:),pointer  :: zgrid,w
  real(kind=RKIND),dimension(:,:),pointer  :: zz,exner,pressure_b
@@ -948,11 +948,11 @@
              endif
 
              if (config_tempo_cldfra) then
-                call mpas_pool_get_dimension(state,'index_qasgs' ,index_qasgs  )
-                call mpas_pool_get_dimension(state,'index_qcsgs' ,index_qcsgs  )
+                call mpas_pool_get_dimension(state,'index_qa_sgs' ,index_qa_sgs  )
+                call mpas_pool_get_dimension(state,'index_qc_sgs' ,index_qc_sgs  )
 
-                qa_sgs => scalars(index_qasgs,:,:)
-                qc_sgs => scalars(index_qcsgs,:,:)
+                qa_sgs => scalars(index_qa_sgs,:,:)
+                qc_sgs => scalars(index_qc_sgs,:,:)
 
                 do j = jts, jte
                 do k = kts, kte
@@ -1175,7 +1175,7 @@
  logical,pointer:: config_tempo_cldfra
  integer,pointer:: index_qv,index_qc,index_qr,index_qi,index_qs,index_qg
  integer,pointer:: index_nc,index_ni,index_nr,index_nifa,index_nwfa
- integer,pointer:: index_qasgs, index_qcsgs
+ integer,pointer:: index_qa_sgs, index_qc_sgs
 !TEMPO/NSSL
  integer,pointer:: index_qh
  integer,pointer:: index_zrw,index_zgw,index_zhw
@@ -1475,11 +1475,11 @@
              endif
 
              if (config_tempo_cldfra) then
-                call mpas_pool_get_dimension(state,'index_qasgs' ,index_qasgs  )
-                call mpas_pool_get_dimension(state,'index_qcsgs' ,index_qcsgs  )
+                call mpas_pool_get_dimension(state,'index_qa_sgs' ,index_qa_sgs  )
+                call mpas_pool_get_dimension(state,'index_qc_sgs' ,index_qc_sgs  )
 
-                qa_sgs => scalars(index_qasgs,:,:)
-                qc_sgs => scalars(index_qcsgs,:,:)
+                qa_sgs => scalars(index_qa_sgs,:,:)
+                qc_sgs => scalars(index_qc_sgs,:,:)
 
                 do j = jts, jte
                 do k = kts, kte
