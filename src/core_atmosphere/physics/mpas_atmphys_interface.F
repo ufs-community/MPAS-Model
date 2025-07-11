@@ -665,17 +665,20 @@
  character(len=StrKIND),pointer:: nssl_moments
  logical,pointer:: config_tempo_hailaware, config_tempo_aerosolaware
  logical,pointer:: config_tempo_ml_nc_pbl
+ logical,pointer:: config_tempo_cldfra
  integer,pointer:: index_qh
  integer,pointer:: index_zrw,index_zgw,index_zhw
  integer,pointer:: index_ns,index_ng,index_nh,index_nccn
  integer,pointer:: index_volg,index_volh
- 
+ integer,pointer:: index_qasgs, index_qcsgs
+
  real(kind=RKIND),dimension(:,:),pointer  :: zgrid,w
  real(kind=RKIND),dimension(:,:),pointer  :: zz,exner,pressure_b
  real(kind=RKIND),dimension(:,:),pointer  :: rho_zz,theta_m,pressure_p
  real(kind=RKIND),dimension(:,:),pointer  :: qv,qc,qr,qi,qs,qg
  real(kind=RKIND),dimension(:,:),pointer  :: qh
  real(kind=RKIND),dimension(:,:),pointer  :: nc,ni,nr,nifa,nwfa
+ real(kind=RKIND),dimension(:,:),pointer  :: qa_sgs, qc_sgs
  real(kind=RKIND),dimension(:,:),pointer  :: ns,ng,nh,nccn
  real(kind=RKIND),dimension(:,:),pointer  :: volg,volh,zrw,zgw,zhw
  real(kind=RKIND),dimension(:,:),pointer  :: rainprod,evapprod
@@ -697,6 +700,7 @@
  call mpas_pool_get_config(configs,'config_tempo_hailaware',config_tempo_hailaware)
  call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
  call mpas_pool_get_config(configs,'config_tempo_ml_nc_pbl',config_tempo_ml_nc_pbl)
+ call mpas_pool_get_config(configs,'config_tempo_cldfra',config_tempo_cldfra)
 
  call mpas_pool_get_array(mesh,'zgrid',zgrid)
  call mpas_pool_get_array(mesh,'zz'   ,zz   )
@@ -943,6 +947,23 @@
                 enddo
              endif
 
+             if (config_tempo_cldfra) then
+                call mpas_pool_get_dimension(state,'index_qasgs' ,index_qasgs  )
+                call mpas_pool_get_dimension(state,'index_qcsgs' ,index_qcsgs  )
+
+                qa_sgs => scalars(index_qasgs,:,:)
+                qc_sgs => scalars(index_qcsgs,:,:)
+
+                do j = jts, jte
+                do k = kts, kte
+                do i = its, ite
+                   qasgs_p(i,k,j) = qa_sgs(k,i)
+                   qcsgs_p(i,k,j) = qc_sgs(k,i)
+                enddo
+                enddo
+                enddo
+             endif
+
           case("mp_nssl2m")
              call mpas_pool_get_dimension(state,'index_ni',index_ni)
              call mpas_pool_get_dimension(state,'index_nr',index_nr)
@@ -1151,8 +1172,10 @@
  character(len=StrKIND),pointer:: mp_scheme
  character(len=StrKIND),pointer:: nssl_moments
  logical,pointer:: config_tempo_hailaware, config_tempo_aerosolaware
+ logical,pointer:: config_tempo_cldfra
  integer,pointer:: index_qv,index_qc,index_qr,index_qi,index_qs,index_qg
  integer,pointer:: index_nc,index_ni,index_nr,index_nifa,index_nwfa
+ integer,pointer:: index_qasgs, index_qcsgs
 !TEMPO/NSSL
  integer,pointer:: index_qh
  integer,pointer:: index_zrw,index_zgw,index_zhw
@@ -1169,6 +1192,7 @@
  real(kind=RKIND),dimension(:,:),pointer  :: qv,qc,qr,qi,qs,qg
  real(kind=RKIND),dimension(:,:),pointer  :: qh
  real(kind=RKIND),dimension(:,:),pointer  :: nc,ni,nr,nifa,nwfa
+ real(kind=RKIND),dimension(:,:),pointer  :: qa_sgs, qc_sgs
  real(kind=RKIND),dimension(:,:),pointer  :: ns,ng,nh,nccn
  real(kind=RKIND),dimension(:,:),pointer  :: volg,volh,zrw,zgw,zhw
  real(kind=RKIND),dimension(:)  ,pointer  :: max_hail_diameter_sfc, max_hail_diameter_column
@@ -1189,6 +1213,7 @@
  call mpas_pool_get_config(configs,'config_nssl_moments',nssl_moments)
  call mpas_pool_get_config(configs,'config_tempo_hailaware',config_tempo_hailaware)
  call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
+ call mpas_pool_get_config(configs,'config_tempo_cldfra',config_tempo_cldfra)
 
  call mpas_pool_get_array(mesh,'zz'   ,zz   )
  call mpas_pool_get_array(mesh,'zgrid',zgrid)
@@ -1444,6 +1469,23 @@
                 do i = its, ite
                    ng(k,i) = ng_p(i,k,j)
                    volg(k,i) = volg_p(i,k,j)
+                enddo
+                enddo
+                enddo
+             endif
+
+             if (config_tempo_cldfra) then
+                call mpas_pool_get_dimension(state,'index_qasgs' ,index_qasgs  )
+                call mpas_pool_get_dimension(state,'index_qcsgs' ,index_qcsgs  )
+
+                qa_sgs => scalars(index_qasgs,:,:)
+                qc_sgs => scalars(index_qcsgs,:,:)
+
+                do j = jts, jte
+                do k = kts, kte
+                do i = its, ite
+                   qa_sgs(k,i) = qasgs_p(i,k,j)
+                   qc_sgs(k,i) = qcsgs_p(i,k,j)
                 enddo
                 enddo
                 enddo
