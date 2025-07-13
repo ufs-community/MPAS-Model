@@ -630,6 +630,7 @@ module atm_core
    
       real (kind=RKIND) :: dt
       logical, pointer :: config_do_restart
+      logical, pointer :: config_do_DAcycling
       logical, pointer :: config_apply_lbcs
       type (block_type), pointer :: block_ptr
 
@@ -657,12 +658,15 @@ module atm_core
       
       call mpas_get_timeInterval(mpas_get_clock_timestep(clock, ierr), dt=dt)
       call mpas_pool_get_config(domain % blocklist % configs, 'config_do_restart', config_do_restart)
+      call mpas_pool_get_config(domain % blocklist % configs, 'config_do_DAcycling', config_do_DAcycling)
       call mpas_pool_get_config(domain % blocklist % configs, 'config_restart_timestamp_name', config_restart_timestamp_name)
 
       ! Avoid writing a restart file at the initial time
       call MPAS_stream_mgr_reset_alarms(domain % streamManager, streamID='restart', direction=MPAS_STREAM_OUTPUT, ierr=ierr)
       ! Avoid writing a mpasout file at the initial time
-      call MPAS_stream_mgr_reset_alarms(domain % streamManager, streamID='da_state', direction=MPAS_STREAM_OUTPUT, ierr=ierr)
+      if ( config_do_DAcycling .and. .not. config_do_restart) then
+         call MPAS_stream_mgr_reset_alarms(domain % streamManager, streamID='da_state', direction=MPAS_STREAM_OUTPUT, ierr=ierr)
+      end if
 
       ! Also, for restart runs, avoid writing the initial history or diagnostics fields to avoid overwriting those from the preceding run
       if (config_do_restart) then
