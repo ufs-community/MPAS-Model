@@ -680,7 +680,7 @@
  real(kind=RKIND),dimension(:,:),pointer  :: volg,volh,zrw,zgw,zhw
  real(kind=RKIND),dimension(:,:),pointer  :: rainprod,evapprod
  real(kind=RKIND),dimension(:,:),pointer  :: refl10cm
- real(kind=RKIND),dimension(:)  ,pointer  :: max_hail_diameter_sfc, max_hail_diameter_column
+ real(kind=RKIND),dimension(:)  ,pointer  :: max_hail_diameter_sfc, max_hail_diameter_column,refl10cm_compref_max
  real(kind=RKIND),dimension(:,:),pointer  :: re_cloud,re_ice,re_snow
  real(kind=RKIND),dimension(:,:),pointer  :: qc_bl, cldfrac_bl
  real(kind=RKIND),dimension(:,:),pointer  :: rthmpten,rqvmpten,rqcmpten,rqrmpten,rqimpten,rqsmpten,rqgmpten
@@ -863,10 +863,12 @@
              call mpas_pool_get_dimension(state,'index_nr',index_nr)
              call mpas_pool_get_array(diag_physics,'max_hail_diameter_sfc' ,max_hail_diameter_sfc)
              call mpas_pool_get_array(diag_physics,'max_hail_diameter_column' ,max_hail_diameter_column)
+             call mpas_pool_get_array(diag_physics,'refl10cm_compref_max',refl10cm_compref_max)
              ni   => scalars(index_ni,:,:)
              nr   => scalars(index_nr,:,:)
              do j = jts,jte
              do i = its,ite
+                refl10cm_max_p(i,j) = refl10cm_compref_max(i)
                 max_hail_diameter_sfc_p(i,j) = max_hail_diameter_sfc(i)
                 max_hail_diameter_column_p(i,j) = max_hail_diameter_column(i)
              enddo
@@ -1173,7 +1175,7 @@
  real(kind=RKIND),dimension(:,:),pointer  :: volg,volh,zrw,zgw,zhw
  real(kind=RKIND),dimension(:,:),pointer  :: rainprod,evapprod
  real(kind=RKIND),dimension(:,:),pointer  :: refl10cm
- real(kind=RKIND),dimension(:)  ,pointer  :: max_hail_diameter_sfc, max_hail_diameter_column
+ real(kind=RKIND),dimension(:)  ,pointer  :: max_hail_diameter_sfc, max_hail_diameter_column, refl10cm_compref_max, compref
  real(kind=RKIND),dimension(:,:),pointer  :: re_cloud,re_ice,re_snow
  real(kind=RKIND),dimension(:,:),pointer  :: rthmpten,rqvmpten,rqcmpten,rqrmpten,rqimpten,rqsmpten,rqgmpten
  real(kind=RKIND),dimension(:,:),pointer  :: rncmpten,rnimpten,rnrmpten,rnifampten,rnwfampten
@@ -1400,8 +1402,11 @@
 
              call mpas_pool_get_array(diag_physics,'max_hail_diameter_sfc' ,max_hail_diameter_sfc)
              call mpas_pool_get_array(diag_physics,'max_hail_diameter_column' ,max_hail_diameter_column)
+             call mpas_pool_get_array(diag_physics,'refl10cm_compref_max',refl10cm_compref_max )
+             call mpas_pool_get_array(diag_physics,'refl10cm_max',compref )
              do j = jts,jte
              do i = its,ite
+                refl10cm_compref_max(i) = max(refl10cm_compref_max(i),compref(i))
                 max_hail_diameter_sfc(i) = max_hail_diameter_sfc_p(i,j)
                 max_hail_diameter_column(i) = max_hail_diameter_column_p(i,j)
              enddo
