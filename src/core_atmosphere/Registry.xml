@@ -2633,7 +2633,7 @@
                 <nml_option name="config_radt_cld_scheme" type="character" default_value="suite" in_defaults="false"
                      units="-"
                      description="configuration for calculation of horizontal cloud fraction"
-                     possible_values="`suite',`cld_fraction',`cld_incidence',`cld_fraction_thompson',`cld_fraction_mynn'"/>
+                     possible_values="`suite',`cld_fraction',`cld_incidence',`cld_fraction_thompson',`cld_fraction_mynn',`cld_tempo'"/>
 
                 <nml_option name="config_radt_lw_scheme" type="character" default_value="suite" in_defaults="false"
                      units="-"
