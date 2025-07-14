@@ -402,6 +402,7 @@ module atm_core
       type (mpas_pool_type), pointer :: ngw_input
       type (mpas_pool_type), pointer :: atm_input
       type (mpas_pool_type), pointer :: output_noahmp
+      type (mpas_pool_type), pointer :: emis_input
 
       integer :: iCell,iEdge,iVertex,k
       
@@ -577,9 +578,10 @@ module atm_core
          call mpas_pool_get_subpool(block % structs, 'ngw_input', ngw_input)
          call mpas_pool_get_subpool(block % structs, 'atm_input', atm_input)
          call mpas_pool_get_subpool(block % structs, 'output_noahmp', output_noahmp)
+         call mpas_pool_get_subpool(block % structs, 'emis_input', emis_input)
          call physics_tables_init(dminfo, block % configs)
          call physics_registry_init(mesh, block % configs, sfc_input)
-         call physics_run_init(block % configs, mesh, state, clock, stream_manager)
+         call physics_run_init(block % configs, mesh, state, emis_input, diag_physics, clock, stream_manager)
 
          !initialization of all physics:
          call physics_init(dminfo, stream_manager, clock, block % configs, mesh, diag, tend, state, 1,       &
