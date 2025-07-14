@@ -228,6 +228,7 @@
           if (config_tempo_cldfra) then
              if(.not.allocated(qasgs_p)) allocate(qasgs_p(ims:ime,kms:kme,jms:jme))
              if(.not.allocated(qcsgs_p)) allocate(qcsgs_p(ims:ime,kms:kme,jms:jme))
+             if(.not.allocated(qisgs_p)) allocate(qisgs_p(ims:ime,kms:kme,jms:jme))
           endif
 
           if (config_tempo_ml_nc_pbl) then
@@ -398,6 +399,7 @@
           if (config_tempo_cldfra) then
              if(allocated(qasgs_p)) deallocate(qasgs_p)
              if(allocated(qcsgs_p)) deallocate(qcsgs_p)
+             if(allocated(qisgs_p)) deallocate(qisgs_p)
           endif
 
           if (config_tempo_ml_nc_pbl) then
@@ -621,7 +623,7 @@
                      th        = th_p        , qv         = qv_p         , qc         = qc_p         , &
                      qr        = qr_p        , qi         = qi_p         , qs         = qs_p         , &
                      qg        = qg_p        , ni         = ni_p         , nr         = nr_p         , &
-                     qasgs     = qasgs_p     , qcsgs      = qcsgs_p                                  , &
+                     qasgs     = qasgs_p     , qcsgs      = qcsgs_p      , qisgs      = qisgs_p      , &
                      !! ng        = ng_p        , qb         = volg_p                                   , &
                      !! nc        = nc_p        , nwfa       = nwfa_p       , nifa       = nifa_p       , &
                      !! nwfa2d    = nwfa2d_p    , nifa2d     = nifa2d_p                                 , &
@@ -644,7 +646,7 @@
                         th        = th_p        , qv         = qv_p         , qc         = qc_p         , &
                         qr        = qr_p        , qi         = qi_p         , qs         = qs_p         , &
                         qg        = qg_p        , ni         = ni_p         , nr         = nr_p         , &
-                        qasgs     = qasgs_p     , qcsgs      = qcsgs_p                                  , &
+                        qasgs     = qasgs_p     , qcsgs      = qcsgs_p      , qisgs      = qisgs_p      , &
                         !! ng        = ng_p        , qb         = volg_p                                   , &
                         nc        = nc_p        , nwfa       = nwfa_p       , nifa       = nifa_p       , &
                         nwfa2d    = nwfa2d_p    , nifa2d     = nifa2d_p                                 , &
@@ -668,7 +670,7 @@
                         qr        = qr_p        , qi         = qi_p         , qs         = qs_p         , &
                         qg        = qg_p        , ni         = ni_p         , nr         = nr_p         , &
                         ng        = ng_p        , qb         = volg_p                                   , &
-                        qasgs     = qasgs_p     , qcsgs      = qcsgs_p                                  , &
+                        qasgs     = qasgs_p     , qcsgs      = qcsgs_p      , qisgs      = qisgs_p      , &
                         !! nc        = nc_p        , nwfa       = nwfa_p       , nifa       = nifa_p       , &
                         !! nwfa2d    = nwfa2d_p    , nifa2d     = nifa2d_p                                 , &
                         pii       = pi_p        , p          = pres_p       , dz         = dz_p         , &
@@ -696,7 +698,7 @@
                      ng        = ng_p        , qb         = volg_p                                   , &
                      nc        = nc_p        , nwfa       = nwfa_p       , nifa       = nifa_p       , &
                      nwfa2d    = nwfa2d_p    , nifa2d     = nifa2d_p                                 , &
-                     qasgs     = qasgs_p     , qcsgs      = qcsgs_p                                  , &
+                     qasgs     = qasgs_p     , qcsgs      = qcsgs_p      , qisgs      = qisgs_p      , &
                      pii       = pi_p        , p          = pres_p       , dz         = dz_p         , &
                      w         = w_p         , dt_in      = dt_microp    , itimestep  = itimestep    , &
                      rainnc    = rainnc_p    , rainncv    = rainncv_p    , snownc     = snownc_p     , &

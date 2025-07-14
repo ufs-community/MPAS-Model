@@ -1874,6 +1874,10 @@
                         <var name="qc_sgs" array_group="passive" units="kg kg^{-1}"
                              description="SGS prognostic cloud water mixing ratio"
                              packages="tempo_cldfra_in"/>
+
+                        <var name="qi_sgs" array_group="passive" units="kg kg^{-1}"
+                             description="SGS prognostic cloud ice mixing ratio"
+                             packages="tempo_cldfra_in"/>
                 </var_array>
 #endif
 
@@ -2271,7 +2275,11 @@
                              packages="tempo_cldfra_in"/>
 
                         <var name="tend_qcsgs" name_in_code="qc_sgs" array_group="passive" units="kg m^{-3} s^{-1}"
-                             description="Tendency of sgs prognostic cloud water mass per unit volume  multiplied by dry air density divided by d(zeta)/dz"
+                             description="Tendency of sgs prognostic cloud water mass per unit volume multiplied by dry air density divided by d(zeta)/dz"
+                             packages="tempo_cldfra_in"/>
+
+                        <var name="tend_qisgs" name_in_code="qi_sgs" array_group="passive" units="kg m^{-3} s^{-1}"
+                             description="Tendency of sgs prognostic cloud ice mass per unit volume multiplied by dry air density divided by d(zeta)/dz"
                              packages="tempo_cldfra_in"/>
                 </var_array>
 #endif
@@ -2380,6 +2388,10 @@
                         <var name="lbc_qcsgs" name_in_code="qc_sgs" array_group="passive" packages="tempo_cldfra_in"
                              units="kg kg^{-1} s^{-1}"
                              description="Lateral boundary tendency of sgs prognostic cloud water mixing ratio"/>
+
+                        <var name="lbc_qisgs" name_in_code="qi_sgs" array_group="passive" packages="tempo_cldfra_in"
+                             units="kg kg^{-1} s^{-1}"
+                             description="Lateral boundary tendency of sgs prognostic cloud ice mixing ratio"/>
                 </var_array>
         </var_struct>
 
