@@ -376,13 +376,15 @@
  end subroutine physics_timetracker
 
 !=================================================================================================================
- subroutine physics_run_init(configs,mesh,state,clock,stream_manager)
+ subroutine physics_run_init(configs,mesh,state,emis_input,diag_physics,clock,stream_manager)
 !=================================================================================================================
 
 !input arguments:
  type(mpas_pool_type),intent(in):: mesh
  type(mpas_pool_type),intent(in):: configs
  type(mpas_pool_type),intent(in):: state
+ type(mpas_pool_type),intent(in):: diag_physics
+ type(mpas_pool_type),intent(in):: emis_input
  type(MPAS_Clock_type):: clock
  type (MPAS_streamManager_type), intent(inout) :: stream_manager
 
@@ -410,6 +412,9 @@
  integer,pointer:: nMonths
  integer,pointer:: nAerosols,nAerLevels,nOznLevels
  integer,pointer:: nCellsSolve,nSoilLevels,nVertLevels,nlcat,nscat
+ integer,pointer:: nChem,nkemit,nkfire,nkbio,nkvol
+ integer,pointer:: n_e_bb_in
+ integer,pointer:: n_e_bb_out
 
  real(kind=RKIND):: dt
 
@@ -453,6 +458,16 @@
  call mpas_pool_get_dimension(mesh,'nlcat'      ,nlcat      )
  call mpas_pool_get_dimension(mesh,'nscat'      , nscat     )
  call mpas_pool_get_dimension(state,'num_aerosols',nAerosols)
+
+ call mpas_pool_get_dimension(mesh,'nChem'     ,nChem       )
+ call mpas_pool_get_dimension(mesh,'nkemit'    ,nkemit      )
+ call mpas_pool_get_dimension(mesh,'nkfire'    ,nkfire      )
+ call mpas_pool_get_dimension(mesh,'nkbio'     ,nkbio       )
+ call mpas_pool_get_dimension(mesh,'nkvol'     ,nkvol       )
+
+ call mpas_pool_get_dimension(diag_physics, 'num_e_bb_out',n_e_bb_out    )
+
+ call mpas_pool_get_dimension(emis_input,'num_e_bb_in',n_e_bb_in         )
 
 !initialization of gmt, julian day, and alarms:
 
@@ -680,6 +695,16 @@
  num_soils  = nSoilLevels
  num_landcat = nlcat
  num_soilcat = nscat
+
+ num_chem    = nChem
+ kemit       = nkemit
+ kfire       = nkfire
+ kbio        = nkbio
+ kvol        = nkvol
+
+ num_e_bb_in = n_e_bb_in
+
+ num_e_bb_out  = n_e_bb_out
 
  if(trim(config_lsm_scheme) .eq. "sf_noah") sf_surface_physics = 2
 
