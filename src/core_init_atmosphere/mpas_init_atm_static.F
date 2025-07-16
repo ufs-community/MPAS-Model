@@ -1385,6 +1385,8 @@
         if (nhs(iCell) == 0) then
             lai12m(:,iCell) = fillval
         else
+        ! Leaf area index values in the raw static data are scaled by *10,
+        ! so we need to undo that scaling upon assigning them here.
             lai12m(:,iCell) = real(real(lai12m_int(:,iCell), kind=R8KIND) / (10.0 * real(nhs(iCell), kind=R8KIND)), kind=RKIND)
         end if
     end do
