@@ -1057,7 +1057,7 @@
  do z = 1,n_sub_windows
     n_dt_sub(z) = sub_window_len(z)/dt_microp
     ! Account for time steps that do not divide evenly into 1, 5, or 10 minutes
-    if (abs(fraction(n_dt_sub(z))) .le. 1e-6) then
+    if (abs(fraction(n_dt_sub(z))) .gt. 1e-6) then
        sub_limit(z) = nint(n_dt_sub(z)) + 1
        sub_window_time(z) = dt_microp*(sub_limit(z)-1)
     else
@@ -1111,27 +1111,27 @@
     ! update rolling precipitation totals for sub-history-interval average-precipitation-rate calculation
     ! 1-minute prate
     IF (allocated(rolling_precip_1min)) THEN
-       DO k = 1,sub_limit(1)-1
+       DO k = sub_limit(1)-1,1,-1
           rolling_precip_1min(k+1,:) = rolling_precip_1min(k,:)
        END DO
-       rolling_precip_1min(1,i) = rainnc_p(i,j)
-       ave_prate_1min(i) = max(ave_prate_1min(i),(rolling_precip_1min(sub_limit(1),i) - rolling_precip_1min(1,i))/sub_window_time(1))
+       rolling_precip_1min(1,i) = rainnc(i)
+       ave_prate_1min(i) = max((rolling_precip_1min(1,i) - rolling_precip_1min(sub_limit(1),i))/sub_window_time(1),ave_prate_1min(i))
     END IF
     ! 5-minute prate
     IF (allocated(rolling_precip_5min)) THEN
-       DO k = 1,sub_limit(2)-1
+       DO k = sub_limit(2)-1,1,-1
           rolling_precip_5min(k+1,:) = rolling_precip_5min(k,:)
        END DO
-       rolling_precip_5min(1,i) = rainnc_p(i,j)
-       ave_prate_5min(i) = max(ave_prate_5min(i),(rolling_precip_5min(sub_limit(2),i) - rolling_precip_5min(1,i))/sub_window_time(2))
+       rolling_precip_5min(1,i) = rainnc(i)
+       ave_prate_5min(i) = max((rolling_precip_5min(1,i) - rolling_precip_5min(sub_limit(2),i))/sub_window_time(2),ave_prate_5min(i))
     END IF
     ! 10-minute prate
     IF (allocated(rolling_precip_10min)) THEN
-       DO k = 1,sub_limit(3)-1
+       DO k = sub_limit(3)-1,1,-1
           rolling_precip_10min(k+1,:) = rolling_precip_10min(k,:)
        END DO
-       rolling_precip_10min(1,i) = rainnc_p(i,j)
-       ave_prate_10min(i) = max(ave_prate_10min(i),(rolling_precip_10min(sub_limit(3),i) - rolling_precip_10min(1,i))/sub_window_time(3))
+       rolling_precip_10min(1,i) = rainnc(i)
+       ave_prate_10min(i) = max((rolling_precip_10min(1,i) - rolling_precip_10min(sub_limit(3),i))/sub_window_time(3),ave_prate_10min(i))
     END IF
 
     if(l_acrain .and. config_bucket_rainnc.gt.0._RKIND .and. &
@@ -1270,7 +1270,7 @@
        ! Reflectivity is already computed in 3D in the refl10cm_p array, so just read out the values
        if(.not.allocated(dBz1d)) allocate(dBZ1d(kts:kte))
        if(.not.allocated(zp)   ) allocate(zp(kts:kte)   )
-       call mpas_log_write("Computing refl10cm_1km_max")
+       !call mpas_log_write("Computing refl10cm_1km_max")
        !call mpas_log_write("max before = $r dbz", realArgs=(/maxval(refl10cm_1km_max)/))
        do j = jts,jte ! Assuming here that jts == jte (2D arrays)
        do i = its,ite
@@ -1420,7 +1420,7 @@ subroutine compute_hourly_max_radar_reflectivity(configs,diag_physics,its,ite)
 !local pointers:
  character(len=StrKIND),pointer:: microp_scheme
  character(len=StrKIND),pointer:: nssl_moments
- real(kind=RKIND),dimension(:),pointer:: refl10cm_1km_max, refl10cm_1km
+ real(kind=RKIND),dimension(:),pointer:: refl10cm_1km_max, refl10cm_1km, refl10cm_max
 
 !local variables and arrays:
  integer:: i,j,k,kp
