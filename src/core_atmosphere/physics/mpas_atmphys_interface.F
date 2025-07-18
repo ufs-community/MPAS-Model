@@ -1173,9 +1173,8 @@
  real(kind=RKIND),dimension(:,:),pointer  :: nc,ni,nr,nifa,nwfa
  real(kind=RKIND),dimension(:,:),pointer  :: ns,ng,nh,nccn
  real(kind=RKIND),dimension(:,:),pointer  :: volg,volh,zrw,zgw,zhw
- real(kind=RKIND),dimension(:,:),pointer  :: rainprod,evapprod
- real(kind=RKIND),dimension(:,:),pointer  :: refl10cm
  real(kind=RKIND),dimension(:)  ,pointer  :: max_hail_diameter_sfc, max_hail_diameter_column, refl10cm_compref_max, compref
+ real(kind=RKIND),dimension(:,:),pointer  :: rainprod,evapprod,refl10cm
  real(kind=RKIND),dimension(:,:),pointer  :: re_cloud,re_ice,re_snow
  real(kind=RKIND),dimension(:,:),pointer  :: rthmpten,rqvmpten,rqcmpten,rqrmpten,rqimpten,rqsmpten,rqgmpten
  real(kind=RKIND),dimension(:,:),pointer  :: rncmpten,rnimpten,rnrmpten,rnifampten,rnwfampten
@@ -1288,6 +1287,7 @@
        call mpas_pool_get_array(diag_physics,'re_cloud',re_cloud)
        call mpas_pool_get_array(diag_physics,'re_ice'  ,re_ice  )
        call mpas_pool_get_array(diag_physics,'re_snow' ,re_snow )
+       call mpas_pool_get_array(diag_physics,'refl10cm',refl10cm)
 
        do j = jts,jte
        do k = kts,kte

@@ -1211,7 +1211,8 @@
 !local pointers:
  character(len=StrKIND),pointer:: microp_scheme
  character(len=StrKIND),pointer:: nssl_moments
- real(kind=RKIND),dimension(:),pointer:: refl10cm,refl10cm_max,refl10cm_1km,refl10cm_1km_max
+ real(kind=RKIND),dimension(:,:),pointer:: refl10cm
+ real(kind=RKIND),dimension(:),pointer:: refl10cm_max,refl10cm_1km,refl10cm_1km_max
 
 !local variables and arrays:
  integer:: i,j,k,kp
@@ -1222,7 +1223,7 @@
 
  call mpas_pool_get_config(configs,'config_microp_scheme',microp_scheme)
  call mpas_pool_get_config(configs,'config_nssl_moments',nssl_moments) ! not needed?
- 
+
  call mpas_pool_get_array(diag_physics,'refl10cm',refl10cm)
  call mpas_pool_get_array(diag_physics,'refl10cm_max',refl10cm_max)
  call mpas_pool_get_array(diag_physics,'refl10cm_1km',refl10cm_1km)
@@ -1328,6 +1329,7 @@
           kp = 1
           do k = kts,kte
              dBZ1d(k) = max(-35._RKIND,dBZ1d(k))
+             refl10cm(k,i) = dBZ1d(k)
              if(zp(k) .lt. 1000.) kp = k
           enddo
           refl10cm_max(i) = maxval(dBZ1d(:))
@@ -1379,7 +1381,7 @@
           kp = 1
           do k = kts,kte
              dBZ1d(k) = max(-35._RKIND,dBZ1d(k))
-             refl10cm_p(i,k,j) = dBZ1d(k)
+             refl10cm(k,i) = dBZ1d(k)
              if(zp(k) .lt. 1000.) kp = k
           enddo
           refl10cm_max(i) = maxval(dBZ1d(:))
@@ -1495,7 +1497,8 @@ subroutine compute_hourly_max_radar_reflectivity(configs,diag_physics,its,ite)
  type(mpas_pool_type),intent(inout):: diag_physics
 
 !local pointers:
- real(kind=RKIND),dimension(:),pointer:: max_hail_diameter_sfc, max_hail_diameter_sfc_acc
+ real(kind=RKIND),dimension(:),pointer:: max_hail_diameter_sfc, max_hail_diameter_sfc_acc, &
+      max_hail_diameter_column, max_hail_diameter_column_acc
 
 !local variables and arrays:
  integer:: i,j
@@ -1504,10 +1507,13 @@ subroutine compute_hourly_max_radar_reflectivity(configs,diag_physics,its,ite)
 
  call mpas_pool_get_array(diag_physics,'max_hail_diameter_sfc',max_hail_diameter_sfc)
  call mpas_pool_get_array(diag_physics,'max_hail_diameter_sfc_acc',max_hail_diameter_sfc_acc)
+ call mpas_pool_get_array(diag_physics,'max_hail_diameter_column',max_hail_diameter_column)
+ call mpas_pool_get_array(diag_physics,'max_hail_diameter_column_acc',max_hail_diameter_column_acc)
 
  do j = jts,jte ! Assuming here that jts == jte (2D arrays)
     do i = its,ite
        max_hail_diameter_sfc_acc(i) = max(max_hail_diameter_sfc_acc(i), max_hail_diameter_sfc_p(i,j))
+       max_hail_diameter_column_acc(i) = max(max_hail_diameter_column_acc(i), max_hail_diameter_column_p(i,j))
     enddo
  enddo
 
