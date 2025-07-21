@@ -2958,6 +2958,11 @@
                      description="=0:activatevmixing of moisture species separately;= 1:activate mixing of total water in the mynn PBL scheme"
                      possible_values="0,1"/>
 
+		<nml_option name="config_mynn_ess" type="integer" default_value="1" in_defaults="false"
+                     units="-"
+                     description="=0:use buoyancy-flux functions;= 1:use O-Gorman (2011)"
+                     possible_values="0,1"/>
+
                 <nml_option name="config_icloud_bl" type="integer" default_value="1" in_defaults="false"
                      units="-"
                      description="configuration for MYNN subgrid cloud coupling to radiation"
