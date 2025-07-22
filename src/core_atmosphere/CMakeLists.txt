@@ -61,9 +61,7 @@ set(ATMOSPHERE_CORE_PHYSICS_WRF_SOURCES
     module_cam_error_function.F
     module_cam_shr_kind_mod.F
     module_cam_support.F
-    module_cu_gf_deep.F
-    module_cu_gf_sh.F
-    module_cu_gf_mpas.F
+    module_cu_gf.mpas.F
     module_mp_kessler.F
     module_mp_radar.F
     module_mp_thompson.F
@@ -110,7 +108,7 @@ list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_WRF_SOURCES PREPEND physics/physics_wrf/)
 
 # physics/physics_noaa/GFL/
 set(ATMOSPHERE_CORE_PHYSICS_GFL_SOURCES
-    module_cu_gfl_mpas.F
+    MPAS/module_cu_gfl_mpas.F
     module_cu_gfl_deep.F
     module_cu_gfl_sh.F
 )
