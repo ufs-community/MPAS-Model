@@ -232,7 +232,7 @@
        call allocate_cloudiness(block%configs)
 !$OMP PARALLEL DO
        do thread=1,nThreads
-          call driver_cloudiness(itimestep,block%configs,mesh,diag_physics,sfc_input, &
+          call driver_cloudiness(itimestep,block%configs,mesh,state,diag_physics,sfc_input, &
                                  cellSolveThreadStart(thread),cellSolveThreadEnd(thread))
        end do
 !$OMP END PARALLEL DO
