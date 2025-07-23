@@ -145,16 +145,6 @@
                      description="$\nabla^2$ eddy viscosity for vertical diffusion of theta"
                      possible_values="Positive real values"/>
 
-                <nml_option name="config_h_scalar_eddy_visc4" type="real" default_value="0.0" in_defaults="false"
-                     units="m^4 s^{-1}"
-                     description="$\nabla^4$ eddy hyper-viscosity for horizontal diffusion of scalars"
-                     possible_values="Positive real values between 0 and 10."/>
-
-                <nml_option name="config_mono_visc4" type="logical" default_value="true"
-                     units="-"
-                     description="Whether to use monotonic fluxes for 4th filter"
-                     possible_values=".true. or .false."/>
-
                 <nml_option name="config_horiz_mixing" type="character" default_value="2d_smagorinsky"
                      units="-"
                      description="Formulation of horizontal mixing"
