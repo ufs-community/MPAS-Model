@@ -58,8 +58,9 @@ module atm_core
       real (kind=RKIND), pointer :: dt
       type (block_type), pointer :: block
 
-      logical, pointer :: config_do_restart
 
+      logical, pointer :: config_do_restart
+      logical, pointer :: config_do_DAcycling
       type (mpas_pool_type), pointer :: state
       type (mpas_pool_type), pointer :: mesh
       type (mpas_pool_type), pointer :: diag
@@ -116,6 +117,7 @@ module atm_core
       end if
 
       call mpas_pool_get_config(domain % blocklist % configs, 'config_do_restart', config_do_restart)
+      call mpas_pool_get_config(domain % blocklist % configs, 'config_do_DAcycling', config_do_DAcycling)
       call mpas_pool_get_config(domain % blocklist % configs, 'config_dt', dt)
 
       !
@@ -137,6 +139,8 @@ module atm_core
       call mpas_timer_start('read_ICs')
       if (config_do_restart) then
          init_stream_name = 'restart'
+      elseif (config_do_DAcycling) then
+         init_stream_name = 'da_state'
       else
          init_stream_name = 'input'
       end if
@@ -158,6 +162,9 @@ module atm_core
 
       call MPAS_stream_mgr_reset_alarms(domain % streamManager, streamID='input', direction=MPAS_STREAM_INPUT, ierr=ierr)
       call MPAS_stream_mgr_reset_alarms(domain % streamManager, streamID='restart', direction=MPAS_STREAM_INPUT, ierr=ierr)
+      if ( config_do_DAcycling .and. .not. config_do_restart) then
+         call MPAS_stream_mgr_reset_alarms(domain % streamManager, streamID='da_state', direction=MPAS_STREAM_INPUT, ierr=ierr)
+      end if
       call mpas_log_write(' ----- done reading initial state -----')
 
 
@@ -398,7 +405,7 @@ module atm_core
       type (mpas_pool_type), pointer :: atm_input
       type (mpas_pool_type), pointer :: output_noahmp
 
-      integer :: iCell,iEdge,iVertex
+      integer :: iCell,iEdge,iVertex,k
       
       real (kind=RKIND), dimension(:,:), pointer :: u, uReconstructX, uReconstructY, uReconstructZ, uReconstructZonal, uReconstructMeridional
       real (kind=RKIND), dimension(:), pointer :: meshScalingDel2, meshScalingDel4
@@ -406,7 +413,8 @@ module atm_core
       real (kind=RKIND), dimension(:), pointer :: dvEdge, invDvEdge
       real (kind=RKIND), dimension(:), pointer :: dcEdge, invDcEdge
       real (kind=RKIND), dimension(:), pointer :: areaTriangle, invAreaTriangle
-      integer, pointer :: nCells, nEdges, nVertices, nVertLevels, nEdgesSolve
+      integer, pointer :: nCells_ptr, nEdges_ptr, nVertices_ptr, nVertLevels_ptr, nEdgesSolve
+      integer :: nCells, nEdges, nVertices, nVertLevels
       integer :: thread
       character(len=StrKIND), pointer :: mminlu
 
@@ -445,9 +453,13 @@ module atm_core
       call mpas_pool_get_array(mesh, 'areaTriangle', areaTriangle)
       call mpas_pool_get_array(mesh, 'invAreaTriangle', invAreaTriangle)
       
-      call mpas_pool_get_dimension(mesh, 'nCells', nCells)      
-      call mpas_pool_get_dimension(mesh, 'nEdges', nEdges)
-      call mpas_pool_get_dimension(mesh, 'nVertices', nVertices)
+      call mpas_pool_get_dimension(mesh, 'nCells', nCells_ptr)      
+      call mpas_pool_get_dimension(mesh, 'nEdges', nEdges_ptr)
+      call mpas_pool_get_dimension(mesh, 'nVertices', nVertices_ptr)
+
+      nCells = nCells_ptr
+      nEdges = nEdges_ptr
+      nVertices = nVertices_ptr
  
       do iCell=1,nCells 
          invAreaCell(iCell) = 1.0_RKIND / areaCell(iCell)
@@ -472,13 +484,21 @@ module atm_core
 
       call atm_couple_coef_3rd_order(mesh, block % configs)
       
-      call mpas_pool_get_dimension(state, 'nVertices', nVertices)
-      call mpas_pool_get_dimension(state, 'nVertLevels', nVertLevels)
+      call mpas_pool_get_dimension(state, 'nVertices', nVertices_ptr)
+      call mpas_pool_get_dimension(state, 'nVertLevels', nVertLevels_ptr)
+
+      nVertices = nVertices_ptr
+      nVertLevels = nVertLevels_ptr
 
       allocate(ke_vertex(nVertLevels,nVertices+1))  ! ke_vertex is a module variable defined in mpas_atm_time_integration.F
-      ke_vertex(:,nVertices+1) = 0.0_RKIND
       allocate(ke_edge(nVertLevels,nEdges+1))       ! ke_edge is a module variable defined in mpas_atm_time_integration.F
-      ke_edge(:,nEdges+1) = 0.0_RKIND
+      !$acc parallel default(present)
+      !$acc loop vector
+      do k = 1, nVertLevels
+         ke_vertex(k,nVertices+1) = 0.0_RKIND
+         ke_edge(k,nEdges+1) = 0.0_RKIND
+      end do
+      !$acc end parallel
 
       call mpas_pool_get_dimension(block % dimensions, 'nThreads', nThreads)
 
@@ -608,8 +628,9 @@ module atm_core
       type (domain_type), intent(inout) :: domain
       integer :: ierr
    
-      real (kind=RKIND), pointer :: dt
+      real (kind=RKIND) :: dt
       logical, pointer :: config_do_restart
+      logical, pointer :: config_do_DAcycling
       logical, pointer :: config_apply_lbcs
       type (block_type), pointer :: block_ptr
 
@@ -635,13 +656,17 @@ module atm_core
       clock => domain % clock
       mpas_log_info => domain % logInfo
       
-      ! Eventually, dt should be domain specific
-      call mpas_pool_get_config(domain % blocklist % configs, 'config_dt', dt)
+      call mpas_get_timeInterval(mpas_get_clock_timestep(clock, ierr), dt=dt)
       call mpas_pool_get_config(domain % blocklist % configs, 'config_do_restart', config_do_restart)
+      call mpas_pool_get_config(domain % blocklist % configs, 'config_do_DAcycling', config_do_DAcycling)
       call mpas_pool_get_config(domain % blocklist % configs, 'config_restart_timestamp_name', config_restart_timestamp_name)
 
       ! Avoid writing a restart file at the initial time
       call MPAS_stream_mgr_reset_alarms(domain % streamManager, streamID='restart', direction=MPAS_STREAM_OUTPUT, ierr=ierr)
+      ! Avoid writing a mpasout file at the initial time
+      if ( config_do_DAcycling .and. .not. config_do_restart) then
+         call MPAS_stream_mgr_reset_alarms(domain % streamManager, streamID='da_state', direction=MPAS_STREAM_OUTPUT, ierr=ierr)
+      end if
 
       ! Also, for restart runs, avoid writing the initial history or diagnostics fields to avoid overwriting those from the preceding run
       if (config_do_restart) then
@@ -955,16 +980,21 @@ module atm_core
    
       type (mpas_pool_type), pointer :: diag_physics
    
-      real (kind=RKIND), dimension(:), pointer :: refl10cm_1km_max, max_hail_diameter_sfc_acc
+      real (kind=RKIND), dimension(:), pointer :: refl10cm_1km_max, max_hail_diameter_sfc_acc, &
+           max_hail_diameter_column_acc
 
 #ifdef DO_PHYSICS
       call mpas_pool_get_array(diag_physics, 'refl10cm_1km_max', refl10cm_1km_max)
       call mpas_pool_get_array(diag_physics, 'max_hail_diameter_sfc_acc', max_hail_diameter_sfc_acc)
+      call mpas_pool_get_array(diag_physics, 'max_hail_diameter_column_acc', max_hail_diameter_column_acc)
       if(associated(refl10cm_1km_max)) then
          refl10cm_1km_max(:) = 0.
       endif
       if(associated(max_hail_diameter_sfc_acc)) then
          max_hail_diameter_sfc_acc(:) = 0.
+      endif
+      if(associated(max_hail_diameter_column_acc)) then
+         max_hail_diameter_column_acc(:) = 0.
       endif
 #endif
    

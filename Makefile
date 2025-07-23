@@ -119,6 +119,57 @@ ftn:   # BUILDTARGET Cray compilers
 	"OPENACC = $(OPENACC)" \
 	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI" )
 
+ftn-wcoss2:   # wcoss2
+	( $(MAKE) all \
+	"FC_PARALLEL = ftn" \
+	"CC_PARALLEL = cc" \
+	"CXX_PARALLEL = CC" \
+	"FC_SERIAL = ftn" \
+	"CC_SERIAL = cc" \
+	"CXX_SERIAL = CC" \
+	"FFLAGS_PROMOTION = -real-size 64" \
+	"FFLAGS_OPT = -O3 -convert big_endian -free -align array64byte" \
+	"CFLAGS_OPT = -O3" \
+	"CXXFLAGS_OPT = -O3" \
+	"LDFLAGS_OPT =  -O3" \
+	"FFLAGS_OMP = -mp" \
+	"CFLAGS_OMP = -mp" \
+	"FFLAGS_ACC =" \
+	"CFLAGS_ACC =" \
+	"BUILD_TARGET = $(@)" \
+	"CORE = $(CORE)" \
+	"DEBUG = $(DEBUG)" \
+	"USE_PAPI = $(USE_PAPI)" \
+	"OPENMP = $(OPENMP)" \
+	"OPENACC = $(OPENACC)" \
+	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI" )
+
+vecna_ifort:
+	( $(MAKE) all \
+	"FC_PARALLEL = mpif90" \
+	"CC_PARALLEL = mpicc -diag-disable=10441"  \
+	"CXX_PARALLEL = mpiicpc" \
+	"FC_SERIAL = ifort" \
+	"CC_SERIAL = icx" \
+	"CXX_SERIAL = icpc" \
+	"FFLAGS_PROMOTION = -real-size 64" \
+	"FFLAGS_OPT = -O3 -convert big_endian -free -align array64byte" \
+	"CFLAGS_OPT = -O3 " \
+	"CXXFLAGS_OPT = -O3" \
+	"LDFLAGS_OPT = -O3" \
+	"LIB_HDF5=-L$(HDF5_LIBRARIES) -lhdf5_hl -lhdf5 -L${ZLIB_LIBRARIES} -lz -ldl -lm" \
+	"FFLAGS_DEBUG = -g -convert big_endian -free -CU -CB -check all -check bounds -fpe0 -traceback" \
+	"CFLAGS_DEBUG = -g -traceback" \
+	"CXXFLAGS_DEBUG = -g -traceback" \
+	"LDFLAGS_DEBUG = -g -fpe0 -traceback" \
+	"FFLAGS_OMP = -qopenmp" \
+	"CFLAGS_OMP = -qopenmp" \
+	"CORE = $(CORE)" \
+	"DEBUG = $(DEBUG)" \
+	"USE_PAPI = $(USE_PAPI)" \
+	"OPENMP = $(OPENMP)" \
+	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI" )
+
 titan-cray:   # BUILDTARGET (deprecated) Cray compilers with options for ORNL Titan
 	( $(MAKE) all \
 	"FC_PARALLEL = ftn" \
@@ -386,6 +437,33 @@ intel-mpi:   # BUILDTARGET Intel compiler suite with Intel MPI library
 	"FC_SERIAL = ifort" \
 	"CC_SERIAL = icc" \
 	"CXX_SERIAL = icpc" \
+	"FFLAGS_PROMOTION = -real-size 64" \
+	"FFLAGS_OPT = -O3 -convert big_endian -free -align array64byte" \
+	"CFLAGS_OPT = -O3" \
+	"CXXFLAGS_OPT = -O3" \
+	"LDFLAGS_OPT = -O3" \
+	"FFLAGS_DEBUG = -g -convert big_endian -free -CU -CB -check all -fpe0 -traceback" \
+	"CFLAGS_DEBUG = -g -traceback" \
+	"CXXFLAGS_DEBUG = -g -traceback" \
+	"LDFLAGS_DEBUG = -g -fpe0 -traceback" \
+	"FFLAGS_OMP = -qopenmp" \
+	"CFLAGS_OMP = -qopenmp" \
+	"PICFLAG = -fpic" \
+	"BUILD_TARGET = $(@)" \
+	"CORE = $(CORE)" \
+	"DEBUG = $(DEBUG)" \
+	"USE_PAPI = $(USE_PAPI)" \
+	"OPENMP = $(OPENMP)" \
+	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI" )
+
+intel-mpi-ursa:   # usra
+	( $(MAKE) all \
+	"FC_PARALLEL = mpiifort" \
+	"CC_PARALLEL = mpiicc" \
+	"CXX_PARALLEL = mpiicpc" \
+	"FC_SERIAL = ifort" \
+	"CC_SERIAL = icx" \
+	"CXX_SERIAL = icpx" \
 	"FFLAGS_PROMOTION = -real-size 64" \
 	"FFLAGS_OPT = -O3 -convert big_endian -free -align array64byte" \
 	"CFLAGS_OPT = -O3" \
@@ -694,10 +772,10 @@ intel:   # BUILDTARGET Intel oneAPI Fortran, C, and C++ compiler suite
 	"CFLAGS_OPT = -O3" \
 	"CXXFLAGS_OPT = -O3" \
 	"LDFLAGS_OPT = -O3" \
-	"FFLAGS_DEBUG = -g -convert big_endian -free -check all -fpe0 -traceback" \
+	"FFLAGS_DEBUG = -g -convert big_endian -free -check bounds,pointers,arg_temp_created,format,shape,contiguous -fpe0 -traceback" \
 	"CFLAGS_DEBUG = -g -traceback" \
 	"CXXFLAGS_DEBUG = -g -traceback" \
-	"LDFLAGS_DEBUG = -g -check all -fpe0 -traceback" \
+	"LDFLAGS_DEBUG = -g -traceback" \
 	"FFLAGS_OMP = -qopenmp" \
 	"CFLAGS_OMP = -qopenmp" \
 	"PICFLAG = -fpic" \
@@ -1293,7 +1371,7 @@ ifeq "$(OPENACC)" "true"
 endif # OPENACC eq true
 
 
-pio_test: openmp_test openacc_test
+pio_test: openmp_test openacc_test pnetcdf_test
 	@#
 	@# PIO_VERS will be set to:
 	@#  0 if no working PIO library was detected (and .piotest.log will contain error messages)
@@ -1401,11 +1479,52 @@ mpi_f08_test:
 	$(if $(findstring 1,$(MPAS_MPI_F08)), $(eval MPI_F08_MESSAGE = "Using the mpi_f08 module."), )
 	$(if $(findstring 1,$(MPAS_MPI_F08)), $(info mpi_f08 module detected.))
 
+
+pnetcdf_test:
+	@#
+	@# Create test C programs that look for PNetCDF header file and some symbols in it
+	@#
+ifneq "$(PNETCDF)" ""
+	@echo "Checking for a working PnetCDF library..."
+	@printf "#include \"pnetcdf.h\"\n\
+			&#include \"mpi.h\"\n\
+			&int main(){\n\
+			&    int err, ncid;\n\
+			&    err = ncmpi_create(MPI_COMM_WORLD, \"foo.nc\", NC_NOCLOBBER, MPI_INFO_NULL, &ncid);\n\
+			&    return 0;\n\
+			&}\n" | sed 's/&/ /' > pnetcdf.c
+	@( $(CC) pnetcdf.c $(CPPINCLUDES) $(CFLAGS) $(LDFLAGS) -L$(PNETCDF)/$(PNETCDFLIBLOC) -lpnetcdf  -o pnetcdf.out > pnetcdf.log 2>&1; \
+	   if [ $$? -eq 0 ] ; then \
+	       echo "$(CC) can compile test PnetCDF C program."; \
+	   else \
+	       echo "*********************************************************"; \
+	       echo "ERROR: Test PnetCDF C program could not be compiled by $(CC)."; \
+	       echo "Please ensure you have a working PnetCDF library installed."; \
+	       echo ""; \
+	       echo "The following compilation command failed with errors:" ; \
+	       echo "$(CC) pnetcdf.c $(CPPINCLUDES) $(CFLAGS) $(LDFLAGS) -L$(PNETCDF)/$(PNETCDFLIBLOC) -lpnetcdf -o pnetcdf.out"; \
+	       echo ""; \
+	       echo "Test program pnetcdf.c and output pnetcdf.log have been left"; \
+	       echo "in the top-level MPAS directory for further debugging"; \
+	       echo "*********************************************************"; \
+	       rm -f pnetcdf.out; exit 1; \
+	   fi )
+
+	@rm -f pnetcdf.c pnetcdf.out pnetcdf.log
+else
+	@echo "*********************************************************"; \
+	 echo "ERROR: The PNETCDF environment variable isn't set."; \
+	 echo "Please set this variable to where PnetCDF is installed."; \
+	 echo "*********************************************************"; \
+	 exit 1
+endif
+
+
 ifneq "$(PIO)" ""
-MAIN_DEPS = rebuild_check openmp_test openacc_test pio_test mpi_f08_test
+MAIN_DEPS = rebuild_check openmp_test openacc_test pnetcdf_test pio_test mpi_f08_test
 override CPPFLAGS += "-DMPAS_PIO_SUPPORT"
 else
-MAIN_DEPS = rebuild_check openmp_test openacc_test mpi_f08_test
+MAIN_DEPS = rebuild_check openmp_test openacc_test pnetcdf_test mpi_f08_test
 IO_MESSAGE = "Using the SMIOL library."
 override CPPFLAGS += "-DMPAS_SMIOL_SUPPORT"
 endif

@@ -139,7 +139,8 @@
                      svp3,svpt0,ep1,ep2,karman,ch,qcg,   &
                      itimestep,wstar,qstar,ustm,ck,cka,  &
                      cd,cda,spp_pbl,rstoch1d,isftcflx,   &
-                     iz0tlnd,its,ite,errmsg,errflg       &
+                     iz0tlnd,its,ite,restart_or_cycle,   &
+                     errmsg,errflg                       &
                         )
  implicit none
 !=================================================================================================================
@@ -162,7 +163,7 @@
 !-----------------------------
 ! namelist options
 !-----------------------------
- logical,intent(in):: spp_pbl
+ logical,intent(in):: spp_pbl,restart_or_cycle
 
  integer,intent(in):: isfflx
  integer,intent(in),optional:: isftcflx,iz0tlnd
@@ -362,7 +363,7 @@
     !  Calculate the convective velocity scale (WSTAR) and
     !  subgrid-scale velocity (VSGD) following Beljaars (1995, QJRMS)
     !  and Mahrt and Sun (1995, MWR) low-res correction, respectively
-    !  (vsgd; for 13 km ~ 0.37 m/s; for 3 km == 0 m/s)
+    !  (vsgd; for coeff 0.32, 13 km ~ 0.37 m/s; for 3 km == 0 m/s)
     !-------------------------------------------------------
     !Use Beljaars over land and water
     fluxc = max(hfx(i)/rho1d(i)/cp                    &
@@ -370,12 +371,12 @@
     !wstar(i) = vconvc*(g/tsk(i)*pblh(i)*fluxc)**.33
     if (xland(i).gt.1.5 .or. qsfc(i).le.0.0) then   !water
        wstar(i) = vconvc*(g/tsk(i)*pblh(i)*fluxc)**.33
-       vsgd = 0.25 * (max(dx(i)/5000.-1.,0.))**.33
+       vsgd = 0.20 * (max(dx(i)/5000.-1.,0.))**.33
     else                                            !land
        !increase height scale, assuming that the non-local transoport
        !from the mass-flux (plume) mixing exceedsd the pblh.
        wstar(i) = vconvc*(g/tsk(i)*min(1.5*pblh(i),4000.)*fluxc)**.33
-       vsgd = 0.32 * (max(dx(i)/5000.-1.,0.))**.33
+       vsgd = 0.20 * (max(dx(i)/5000.-1.,0.))**.33
     endif
     wspd(i)=sqrt(wspd(i)*wspd(i)+wstar(i)*wstar(i)+vsgd*vsgd)
     wspd(i)=max(wspd(i),wmin)
@@ -385,7 +386,7 @@
     ! according to Akb(1976), Eq(12).
     !--------------------------------------------------------
     br(i)=govrth(i)*za(i)*dthvdz/(wspd(i)*wspd(i))
-    if (itimestep == 1) then
+    if (.not. restart_or_cycle .and. itimestep == 1) then
        !set limits according to Li et al. (2010) boundary-layer meteorol (p.158)
        br(i)=max(br(i),-2.0)
        br(i)=min(br(i),2.0)
@@ -599,8 +600,8 @@
           regime(i)=2.
        endif
 
-       !compute z/l first guess:
-       if (itimestep .le. 1) then
+       if (.not. restart_or_cycle .or. (restart_or_cycle .and. itimestep > 1) ) then
+          !compute z/l first guess:
           call li_etal_2010(zol(i),br(i),za(i)/zntstoch(i),zratio(i))
        else
           zol(i)=za(i)*karman*g*mol(i)/(th1d(i)*max(ust(i)*ust(i),0.0001))
@@ -684,8 +685,8 @@
        !==========================================================
        regime(i)=4.
 
-       !compute z/l first guess:
-       if (itimestep .le. 1) then
+       if (.not. restart_or_cycle .or. (restart_or_cycle .and. itimestep > 1) ) then
+          !compute z/l first guess:
           call li_etal_2010(zol(i),br(i),za(i)/zntstoch(i),zratio(i))
        else
           zol(i)=za(i)*karman*g*mol(i)/(th1d(i)*max(ust(i)*ust(i),0.001))
