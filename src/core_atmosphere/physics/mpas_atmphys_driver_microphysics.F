@@ -1024,7 +1024,7 @@
  real(kind=RKIND),dimension(:,:),allocatable,save:: rolling_precip_1min,rolling_precip_5min,rolling_precip_10min
 
 !local variables and arrays:
- character(len=3) :: desc
+ character(len=16) :: desc
  integer:: i,j,k,z
  integer :: n_sub_windows
  integer, dimension(5) :: sub_limit, sub_window_len
@@ -1065,8 +1065,8 @@
        sub_window_time(z) = sub_window_len(z)
     end if
     if (sub_limit(z) == 1) then
-       write(desc,*) sub_window_len(z)/60.
-       call mpas_log_write('WARNING: model time step is coarser than '//desc//' minute(s) and thus the ave_prate_[]min array will be either all zeros or meaningless!')
+       write(desc,'(I3)') int(sub_window_len(z)/60.)
+       call mpas_log_write('WARNING: model time step is coarser than '//trim(adjustl(desc))//' minute(s) and thus the ave_prate_[1-/5-/10-]min array will be either all zeros or meaningless.')
        init_rolling_precip_array(z) = .true.
     end if
  end do
