@@ -144,7 +144,7 @@ jobs:
       run: |
         echo "ls lib/"
         ls ${PNETCDF}/lib
-	echo "ls include/"
+        echo "ls include/"
         ls ${PNETCDF}/include
         cd ${driver_ROOT}/MPAS-Model/MPAS-Model
         make gfortran CORE=atmosphere
