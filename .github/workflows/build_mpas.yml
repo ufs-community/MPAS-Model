@@ -1,0 +1,144 @@
+name: CI test to build MPAS Standalone
+
+on: [pull_request,workflow_dispatch,push]
+
+jobs:
+  build_mpas:
+
+    # The type of runner that the job will run on
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        fortran-compiler: [gfortran-10, gfortran-11, gfortran-12]
+
+    # Environmental variables
+    env:
+      driver_ROOT: /home/runner/work
+      AUTOCONF_VERSION: 2.71
+      AUTOMAKE_VERSION: 1.17
+      M4_VERSION: 1.4.19
+      LIBTOOL_VERSION: 2.5.4
+      PNETCDF: /home/runner/PnetCDF
+
+    # Workflow steps
+    steps:
+
+    - name: Checkout code (into ${driver_ROOT})
+      uses: actions/checkout@v3
+
+    # NetCDF C and FORTRAN libraries
+    - name: Install NetCDF library
+      run: |
+        sudo apt-get update
+        sudo apt-get install libnetcdff-dev
+
+    # Cache openmpi
+    - name: Cache openmpi
+      id: cache-openmpi
+      uses: actions/cache@v4
+      with:
+        path: /home/runner/ompi-4.1.6
+        key: cache-openmpi-${{matrix.fortran-compiler}}-key
+
+    - name: Install openmpi
+      if: steps.cache-openmpi.outputs.cache-hit != 'true'
+      run: |
+        wget https://github.com/open-mpi/ompi/archive/refs/tags/v4.1.6.tar.gz
+        tar -xvf v4.1.6.tar.gz
+        cd ompi-4.1.6
+        ./autogen.pl
+        ./configure --prefix=/home/runner/ompi-4.1.6
+        make -j4
+        make install
+        echo "LD_LIBRARY_PATH=/home/runner/ompi-4.1.6/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+        echo "PATH=/home/runner/ompi-4.1.6/bin:$PATH" >> $GITHUB_ENV
+
+    # Cache GNU autotools
+    - name: Cache GNU autotools
+      id: cache-AUTOTOOLS
+      uses: actions/cache@v4
+      with:
+        path: /home/runner/AUTOTOOLS
+        key: cache-AUTOTOOLS-${{matrix.fortran-compiler}}-key
+
+    # Buld GNU Autotools
+    - name: Build GNU autotools
+      if: steps.cache-AUTOTOOLS.outputs.cache-hit != 'true'
+      run: |
+        wget -q https://ftp.gnu.org/gnu/m4/m4-${M4_VERSION}.tar.gz
+        gzip -dc m4-${M4_VERSION}.tar.gz | tar -xf -
+        cd m4-${M4_VERSION}
+        ./configure --prefix=/home/runner/AUTOTOOLS --silent
+        make -s -j 8 install > qout 2>&1
+        make -s -j 8 distclean >> qout 2>&1
+
+        wget -q https://ftp.gnu.org/gnu/autoconf/autoconf-${AUTOCONF_VERSION}.tar.gz
+        gzip -dc autoconf-${AUTOCONF_VERSION}.tar.gz | tar -xf -
+        cd autoconf-${AUTOCONF_VERSION}
+        ./configure --prefix=/home/runner/AUTOTOOLS --silent
+        make -s -j 8 install > qout 2>&1
+        make -s -j 8 distclean >> qout 2>&1
+
+        wget -q https://ftp.gnu.org/gnu/automake/automake-${AUTOMAKE_VERSION}.tar.gz
+        gzip -dc automake-${AUTOMAKE_VERSION}.tar.gz | tar -xf -
+        cd automake-${AUTOMAKE_VERSION}
+        ./configure --prefix=/home/runner/AUTOTOOLS --silent
+        make -s -j 8 install > qout 2>&1
+        make -s -j 8 distclean >> qout 2>&1
+
+        wget -q https://ftp.gnu.org/gnu/libtool/libtool-${LIBTOOL_VERSION}.tar.gz
+        gzip -dc libtool-${LIBTOOL_VERSION}.tar.gz | tar -xf -
+        cd libtool-${LIBTOOL_VERSION}
+        ./configure --prefix=/home/runner/AUTOTOOLS --silent
+        make -s -j 8 install > qout 2>&1
+        make -s -j 8 distclean >> qout 2>&1
+        echo "LD_LIBRARY_PATH=/home/runner/AUTOTOOLS/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+        echo "PATH=/home/runner/AUTOTOOLS/bin:$PATH" >> $GITHUB_ENV
+
+    # Cache PNetCDF
+    - name: Cache PnetCDF
+      id: cache-pnetcdf
+      uses: actions/cache@v4
+      with:
+        path: /home/runner/PnetCDF
+        key: cache-PnetCDF-${{matrix.fortran-compiler}}-key
+
+    # PNetCDF library
+    - name: Install PnetCDF
+      if: steps.cache-PnetCDF.outputs.cache-hit != 'true'
+      run: |
+        set -x
+        echo "LD_LIBRARY_PATH=/home/runner/AUTOTOOLS/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+        echo "PATH=/home/runner/AUTOTOOLS/bin:$PATH" >> $GITHUB_ENV
+        m4 --version
+        autoconf --version
+        automake --version
+        libtool --version
+        echo "Install PnetCDF on /home/runner/PnetCDF"
+        rm -rf PnetCDF ; mkdir PnetCDF ; cd PnetCDF
+        git clone -q https://github.com/Parallel-NetCDF/PnetCDF.git
+        cd PnetCDF
+        autoreconf -i
+        ./configure --prefix=/home/runner/PnetCDF --with-mpi=/home/runner/ompi-4.1.6
+        make -j 8 install
+        #make -s LIBTOOLFLAGS=--silent V=1 -j 8 install > qout 2>&1
+        #make -s distclean >> qout 2>&1
+        echo "PATH=/home/runner/PnetCDF/bin:$PATH" >> $GITHUB_ENV
+
+
+    - name: Environment for openmpi compiler
+      run: |
+        echo "FC=mpif90" >> $GITHUB_ENV
+        echo "CC=mpicc"  >> $GITHUB_ENV
+        echo "PNETCDF=/home/runner/PnetCDF" >> $GITHUB_ENV
+        echo "PATH=/home/runner/PnetCDF/bin:$PATH" >> $GITHUB_ENV
+        echo "LD_LIBRARY_PATH=/home/runner/PnetCDF/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+
+
+    # Build MPAS-A
+    - name: Build MPAS
+      run: |
+        ls ${PNETCDF}/lib
+        ls ${PNETCDF}/include
+        cd ${driver_ROOT}/MPAS-Model/MPAS-Model
+        make gfortran CORE=atmosphere
