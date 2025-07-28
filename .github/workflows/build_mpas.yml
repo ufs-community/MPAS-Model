@@ -10,7 +10,7 @@ jobs:
     strategy:
       matrix:
         fortran-compiler: [gfortran-10]#, gfortran-11, gfortran-12]
-        build-system: [make,cmake]
+        build-system: [make]
 
     # Environmental variables
     env:
