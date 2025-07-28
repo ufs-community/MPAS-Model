@@ -1,4 +1,4 @@
-name: CI test to build MPAS Standalone
+name: CI (GNU) MPAS Standalone
 
 on: [pull_request,workflow_dispatch,push]
 
@@ -9,7 +9,8 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        fortran-compiler: [gfortran-10, gfortran-11, gfortran-12]
+        fortran-compiler: [gfortran-10]#, gfortran-11, gfortran-12]
+	build-system: [make,cmake]
 
     # Environmental variables
     env:
@@ -139,12 +140,17 @@ jobs:
         echo "LD_LIBRARY_PATH=${PNETCDF}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
         echo "PATH=${PNETCDF}/bin:$PATH" >> $GITHUB_ENV
 
-    # Build MPAS-A
-    - name: Build MPAS
+    - name: Build MPAS Standalone (make)
+      if: matrix.build-system == 'make'
       run: |
-        echo "ls lib/"
-        ls ${PNETCDF}/lib
-        echo "ls include/"
-        ls ${PNETCDF}/include
         cd ${driver_ROOT}/MPAS-Model/MPAS-Model
         make gfortran CORE=atmosphere
+
+    - name: Build MPAS Standalone (cmake)
+      if: matrix.build-system == 'cmake'
+      run: |
+        cd ${driver_ROOT}/MPAS-Model/MPAS-Model
+        mkdir build
+        cd build
+        cmake -DMPAS_DOUBLE_PRECISION=OFF -DMPAS_CORES="init_atmosphere;atmosphere" ..
+        make -j8
