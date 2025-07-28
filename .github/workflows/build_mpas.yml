@@ -52,8 +52,8 @@ jobs:
         ./configure --prefix=${OMPI}
         make -j4
         make install
-        #echo "LD_LIBRARY_PATH=${OMPI}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
-        #echo "PATH=${OMPI}/bin:$PATH" >> $GITHUB_ENV
+        echo "LD_LIBRARY_PATH=${OMPI}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+        echo "PATH=${OMPI}/bin:$PATH" >> $GITHUB_ENV
 
     # Cache GNU autotools
     - name: Cache GNU autotools
@@ -131,9 +131,9 @@ jobs:
       run: |
         echo "FC=mpif90" >> $GITHUB_ENV
         echo "CC=mpicc"  >> $GITHUB_ENV
+        echo "PNETCDF=${PNETCDF}" >> $GITHUB_ENV
         echo "PATH=${AUTOTOOLS}/bin:$PATH" >> $GITHUB_ENV
         echo "LD_LIBRARY_PATH=${AUTOTOOLS}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
-        echo "PNETCDF=${PNETCDF}" >> $GITHUB_ENV
         echo "LD_LIBRARY_PATH=${OMPI}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
         echo "PATH=${OMPI}/bin:$PATH" >> $GITHUB_ENV
         echo "LD_LIBRARY_PATH=${PNETCDF}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV

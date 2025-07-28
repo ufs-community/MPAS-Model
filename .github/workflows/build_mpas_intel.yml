@@ -1,4 +1,4 @@
-name: CI test to build MPAS Standalone
+name: Build (Intel) MPAS Standalone
 
 on: [pull_request,workflow_dispatch,push]
 
@@ -20,7 +20,7 @@ jobs:
       LIBTOOL_VERSION: 2.5.4
       PNETCDF: /home/runner/PnetCDF
       AUTOTOOLS: /home/runner/AUTOTOOLS
-      OMPI: /home/runner/ompi-4.1.6
+      OMPI: /opt/intel/oneapi/mpi/2021.10.0
 
     # Workflow steps
     steps:
@@ -112,15 +112,15 @@ jobs:
         #make -s distclean >> qout 2>&1
         echo "PATH=${PNETCDF}/bin:$PATH" >> $GITHUB_ENV
 
-    - name: Setup environment for openmpi compiler
+    - name: Setup environment
       run: |
         echo "FC=mpif90" >> $GITHUB_ENV
         echo "CC=mpicc"  >> $GITHUB_ENV
+        echo "PNETCDF=${PNETCDF}" >> $GITHUB_ENV
         echo "PATH=${AUTOTOOLS}/bin:$PATH" >> $GITHUB_ENV
         echo "LD_LIBRARY_PATH=${AUTOTOOLS}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
-        echo "PNETCDF=${PNETCDF}" >> $GITHUB_ENV
-        echo "LD_LIBRARY_PATH=${PNETCDF}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
         echo "PATH=${PNETCDF}/bin:$PATH" >> $GITHUB_ENV
+        echo "LD_LIBRARY_PATH=${PNETCDF}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
 
     # Build MPAS-A
     - name: Build MPAS
