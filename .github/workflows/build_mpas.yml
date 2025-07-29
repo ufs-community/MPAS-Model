@@ -1,9 +1,9 @@
-name: CI (GNU) MPAS Standalone
+name: Build (GNU) MPAS Standalone
 
 on: [pull_request,workflow_dispatch,push]
 
 jobs:
-  build_mpas:
+  build_mpas_GNU:
 
     # The type of runner that the job will run on
     runs-on: ubuntu-22.04
@@ -29,13 +29,11 @@ jobs:
     - name: Checkout code (into ${driver_ROOT})
       uses: actions/checkout@v3
 
-    # NetCDF C and FORTRAN libraries
     - name: Install NetCDF library
       run: |
         sudo apt-get update
         sudo apt-get install libnetcdff-dev
 
-    # Cache openmpi
     - name: Cache openmpi
       id: cache-openmpi
       uses: actions/cache@v4
@@ -56,7 +54,6 @@ jobs:
         echo "LD_LIBRARY_PATH=${OMPI}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
         echo "PATH=${OMPI}/bin:$PATH" >> $GITHUB_ENV
 
-    # Cache GNU autotools
     - name: Cache GNU autotools
       id: cache-AUTOTOOLS
       uses: actions/cache@v4
@@ -64,7 +61,6 @@ jobs:
         path: ${AUTOTOOLS}
         key: cache-AUTOTOOLS-${{matrix.fortran-compiler}}-key
 
-    # Buld GNU Autotools
     - name: Build GNU autotools
       if: steps.cache-AUTOTOOLS.outputs.cache-hit != 'true'
       run: |
@@ -98,7 +94,6 @@ jobs:
         echo "LD_LIBRARY_PATH=${AUTOTOOLS}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
         echo "PATH=${AUTOTOOLS}/bin:$PATH" >> $GITHUB_ENV
 
-    # Cache PNetCDF
     - name: Cache PnetCDF
       id: cache-pnetcdf
       uses: actions/cache@v4
@@ -106,7 +101,6 @@ jobs:
         path: ${PNETCDF}
         key: cache-PnetCDF-${{matrix.fortran-compiler}}-key
 
-    # PNetCDF library
     - name: Install PnetCDF
       if: steps.cache-PnetCDF.outputs.cache-hit != 'true'
       run: |

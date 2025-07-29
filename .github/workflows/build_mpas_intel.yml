@@ -3,7 +3,7 @@ name: Build (Intel) MPAS Standalone
 on: [pull_request,workflow_dispatch,push]
 
 jobs:
-  build_mpas:
+  build_mpas_intel:
 
     # The type of runner that the job will run on
     runs-on: ubuntu-22.04
@@ -125,9 +125,5 @@ jobs:
     # Build MPAS-A
     - name: Build MPAS
       run: |
-        echo "ls lib/"
-        ls ${PNETCDF}/lib
-        echo "ls include/"
-        ls ${PNETCDF}/include
         cd ${driver_ROOT}/MPAS-Model/MPAS-Model
         make gfortran CORE=atmosphere
