@@ -40,12 +40,12 @@ jobs:
         sudo apt-get update
         sudo apt-get install libnetcdff-dev
 
-    - name: Cache openmpi
-      id: cache-openmpi
-      uses: actions/cache@v4
-      with:
-        path: /home/runner/ompi-4.1.6
-        key: cache-openmpi-${{matrix.fortran-compiler}}-key
+#    - name: Cache openmpi
+#      id: cache-openmpi
+#      uses: actions/cache@v4
+#      with:
+#        path: /home/runner/ompi-4.1.6
+#        key: cache-openmpi-${{matrix.fortran-compiler}}-key
 
     - name: Install openmpi
       if: steps.cache-openmpi.outputs.cache-hit != 'true'
@@ -60,12 +60,12 @@ jobs:
         echo "LD_LIBRARY_PATH=${OMPI}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
         echo "PATH=${OMPI}/bin:$PATH" >> $GITHUB_ENV
 
-    - name: Cache GNU autotools
-      id: cache-AUTOTOOLS
-      uses: actions/cache@v4
-      with:
-        path: /home/runner/AUTOTOOLS
-        key: cache-AUTOTOOLS-${{matrix.fortran-compiler}}-key
+#    - name: Cache GNU autotools
+#      id: cache-AUTOTOOLS
+#      uses: actions/cache@v4
+#      with:
+#        path: /home/runner/AUTOTOOLS
+#        key: cache-AUTOTOOLS-${{matrix.fortran-compiler}}-key
 
     - name: Build GNU autotools
       if: steps.cache-AUTOTOOLS.outputs.cache-hit != 'true'
