@@ -10,6 +10,7 @@ jobs:
     strategy:
       matrix:
         fortran-compiler: [intel]
+        build-system: [make, cmake]
 
     # Environmental variables
     env:
@@ -126,7 +127,17 @@ jobs:
         echo "PATH=${PNETCDF}/bin:$PATH" >> $GITHUB_ENV
         echo "LD_LIBRARY_PATH=${PNETCDF}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
 
-    - name: Build MPAS
+    - name: Build MPAS Standalone (make)
+      if: matrix.build-system == 'make'
       run: |
         cd ${driver_ROOT}/MPAS-Model/MPAS-Model
         make gfortran CORE=atmosphere
+
+    - name: Build MPAS Standalone (cmake)
+      if: matrix.build-system == 'cmake'
+      run: |
+        cd ${driver_ROOT}/MPAS-Model/MPAS-Model
+        mkdir build
+	cd build
+        cmake -DMPAS_DOUBLE_PRECISION=OFF -DMPAS_CORES="init_atmosphere;atmosphere" ..
+        make -j8

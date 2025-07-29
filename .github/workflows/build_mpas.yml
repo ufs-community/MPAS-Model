@@ -9,8 +9,8 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        fortran-compiler: [gfortran-10]#, gfortran-11, gfortran-12]
-        build-system: [make]
+        fortran-compiler: [gfortran-10, gfortran-11, gfortran-12]
+        build-system: [make, cmake]
 
     # Environmental variables
     env:
@@ -63,7 +63,7 @@ jobs:
       id: cache-AUTOTOOLS
       uses: actions/cache@v4
       with:
-        path: ${AUTOTOOLS}/home/runner/AUTOTOOLS
+        path: /home/runner/AUTOTOOLS
         key: cache-AUTOTOOLS-${{matrix.fortran-compiler}}-key
 
     - name: Build GNU autotools
@@ -99,12 +99,12 @@ jobs:
         echo "LD_LIBRARY_PATH=${AUTOTOOLS}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
         echo "PATH=${AUTOTOOLS}/bin:$PATH" >> $GITHUB_ENV
 
-    - name: Cache PnetCDF
-      id: cache-pnetcdf
-      uses: actions/cache@v4
-      with:
-        path: /home/runner/PnetCDF
-        key: cache-PnetCDF-${{matrix.fortran-compiler}}-key
+#    - name: Cache PnetCDF
+#      id: cache-pnetcdf
+#      uses: actions/cache@v4
+#      with:
+#        path: /home/runner/PnetCDF
+#        key: cache-PnetCDF-${{matrix.fortran-compiler}}-key
 
     - name: Install PnetCDF
       if: steps.cache-PnetCDF.outputs.cache-hit != 'true'
@@ -132,10 +132,10 @@ jobs:
         echo "PNETCDF=${PNETCDF}" >> $GITHUB_ENV
         echo "PATH=${AUTOTOOLS}/bin:$PATH" >> $GITHUB_ENV
         echo "LD_LIBRARY_PATH=${AUTOTOOLS}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
-        echo "LD_LIBRARY_PATH=${OMPI}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
         echo "PATH=${OMPI}/bin:$PATH" >> $GITHUB_ENV
-        echo "LD_LIBRARY_PATH=${PNETCDF}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+        echo "LD_LIBRARY_PATH=${OMPI}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
         echo "PATH=${PNETCDF}/bin:$PATH" >> $GITHUB_ENV
+        echo "LD_LIBRARY_PATH=${PNETCDF}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
 
     - name: Build MPAS Standalone (make)
       if: matrix.build-system == 'make'
