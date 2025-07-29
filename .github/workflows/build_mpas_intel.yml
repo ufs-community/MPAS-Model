@@ -37,7 +37,14 @@ jobs:
       uses: NOAA-EMC/ci-install-intel-toolkit@develop
       with:
         install-mpi: true
-  
+
+    - name: Cache Intel
+      id: cache-INTEL
+      uses: actions/cache@v4
+      with:
+        path: /opt/intel/oneapi/mpi/2021.10.0
+        key: cache-AUTOTOOLS-${{matrix.fortran-compiler}}-key
+
     - name: Install NetCDF library
       run: |
         sudo apt-get update
