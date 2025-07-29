@@ -47,7 +47,7 @@ jobs:
       id: cache-AUTOTOOLS
       uses: actions/cache@v4
       with:
-        path: ${AUTOTOOLS}
+        path: /home/runner/AUTOTOOLS
         key: cache-AUTOTOOLS-${{matrix.fortran-compiler}}-key
 
     - name: Build GNU autotools
@@ -87,7 +87,7 @@ jobs:
       id: cache-pnetcdf
       uses: actions/cache@v4
       with:
-        path: ${PNETCDF}
+        path: /home/runner/PnetCDF
         key: cache-PnetCDF-${{matrix.fortran-compiler}}-key
 
     - name: Install PnetCDF
