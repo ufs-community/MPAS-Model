@@ -29,6 +29,11 @@ jobs:
     - name: Checkout code (into ${driver_ROOT})
       uses: actions/checkout@v3
 
+    - name: Initialize submodules
+      run: |
+        git submodule update --init --recursive
+        echo "ls -l src/core_atmosphere/physics/physics_mmm"
+          
     - name: Install NetCDF library
       run: |
         sudo apt-get update

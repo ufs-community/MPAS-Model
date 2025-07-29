@@ -28,19 +28,21 @@ jobs:
     - name: Checkout code (into ${driver_ROOT})
       uses: actions/checkout@v3
 
-    # Intel
+    - name: Initialize submodules
+      run: |
+        git submodule update --init --recursive
+        echo "ls -l src/core_atmosphere/physics/physics_mmm"
+
     - name: "Install Intel compilers & MPI"
       uses: NOAA-EMC/ci-install-intel-toolkit@develop
       with:
         install-mpi: true
   
-    # NetCDF C and FORTRAN libraries
     - name: Install NetCDF library
       run: |
         sudo apt-get update
         sudo apt-get install libnetcdff-dev
 
-    # Cache GNU autotools
     - name: Cache GNU autotools
       id: cache-AUTOTOOLS
       uses: actions/cache@v4
@@ -48,7 +50,6 @@ jobs:
         path: ${AUTOTOOLS}
         key: cache-AUTOTOOLS-${{matrix.fortran-compiler}}-key
 
-    # Build GNU Autotools
     - name: Build GNU autotools
       if: steps.cache-AUTOTOOLS.outputs.cache-hit != 'true'
       run: |
@@ -82,7 +83,6 @@ jobs:
         echo "LD_LIBRARY_PATH=${AUTOTOOLS}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
         echo "PATH=${AUTOTOOLS}/bin:$PATH" >> $GITHUB_ENV
 
-    # Cache PNetCDF
     - name: Cache PnetCDF
       id: cache-pnetcdf
       uses: actions/cache@v4
@@ -90,7 +90,6 @@ jobs:
         path: ${PNETCDF}
         key: cache-PnetCDF-${{matrix.fortran-compiler}}-key
 
-    # PNetCDF library
     - name: Install PnetCDF
       if: steps.cache-PnetCDF.outputs.cache-hit != 'true'
       run: |
@@ -108,8 +107,6 @@ jobs:
         autoreconf -i
         ./configure --prefix=${PNETCDF} --with-mpi=${OMPI}
         make -j 8 install
-        #make -s LIBTOOLFLAGS=--silent V=1 -j 8 install > qout 2>&1
-        #make -s distclean >> qout 2>&1
         echo "PATH=${PNETCDF}/bin:$PATH" >> $GITHUB_ENV
 
     - name: Setup environment
@@ -122,7 +119,6 @@ jobs:
         echo "PATH=${PNETCDF}/bin:$PATH" >> $GITHUB_ENV
         echo "LD_LIBRARY_PATH=${PNETCDF}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
 
-    # Build MPAS-A
     - name: Build MPAS
       run: |
         cd ${driver_ROOT}/MPAS-Model/MPAS-Model
