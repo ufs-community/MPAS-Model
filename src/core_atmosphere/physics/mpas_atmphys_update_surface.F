@@ -122,10 +122,6 @@
 
    call monthly_interp_to_date(nCellsSolve,current_date,lai12m,lai)
 
-   do iCell = 1,nCellsSolve
-     lai(iCell) = lai(iCell) / 10.
-   enddo
-
  end if
 
  end subroutine physics_update_surface
