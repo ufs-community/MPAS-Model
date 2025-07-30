@@ -3485,7 +3485,6 @@ module atm_time_integration
       real (kind=RKIND), dimension(:), pointer :: fnm, fnp, rdnw
       real (kind=RKIND), pointer :: coef_3rd_order
       
-!-
       logical, pointer  :: scalar_eddy_mix
       
       real (kind=RKIND), dimension(:), pointer :: meshScalingDel2
@@ -3497,7 +3496,6 @@ module atm_time_integration
       real (kind=RKIND), dimension(:), pointer :: invDcEdge, meshScalingDel4
       
       real (kind=RKIND), dimension(:,:), pointer :: kdiff, rho_edge
-!-
 
       integer, dimension(:), pointer :: bdyMaskCell, bdyMaskEdge    ! regional_MPAS addition
 
@@ -3509,7 +3507,7 @@ module atm_time_integration
       else
          local_advance_density = .true.
       end if
-    
+
       call mpas_pool_get_config(configs, 'config_coef_3rd_order', coef_3rd_order)
 
       call mpas_pool_get_array(state, trim(field_name), scalar_old, 1)
@@ -3544,8 +3542,6 @@ module atm_time_integration
       call mpas_pool_get_array(mesh, 'bdyMaskCell', bdyMaskCell)
       call mpas_pool_get_array(mesh, 'bdyMaskEdge', bdyMaskEdge)
       
-!- 
-
 ! ON/OFF eddy mixing for scalars?
       call mpas_pool_get_config(configs, 'config_scalar_eddy_mix', scalar_eddy_mix)
       
@@ -3567,8 +3563,6 @@ module atm_time_integration
       else
          h_scalar_filter4 = 0.0
       endif 
-!-
-
 
       call atm_advance_scalars_work(nCells, num_scalars, dt, &
              cellStart, cellEnd, &
@@ -3659,7 +3653,6 @@ module atm_time_integration
       real (kind=RKIND), dimension(:), intent(in) :: invAreaCell
       integer, dimension(:), intent(in) :: bdyMaskCell, bdyMaskEdge ! regional_MPAS addition
       
-!-
       integer, intent(in) :: cellStart, cellEnd
 
       real (kind=RKIND), dimension(:), intent(in) :: invDcEdge, meshScalingDel4, meshScalingDel2
@@ -3673,12 +3666,9 @@ module atm_time_integration
       real (kind=RKIND) ::  r_areaCell, edge_sign
       
       real (kind=RKIND) :: scalar_weight, scalar_turb_flux, kdiff_avg, pr_scale, prandtl_inv
-!-
 
       integer :: i, j, iCell, iAdvCell, iEdge, k, iScalar, cell1, cell2
-      
       real (kind=RKIND) :: rho_zz_new_inv
-
 
       real (kind=RKIND), dimension( num_scalars, nVertLevels + 1 ) :: wdtn
 
@@ -3761,9 +3751,7 @@ module atm_time_integration
             do i=1,nEdgesOnCell(iCell)
 
                iEdge     = edgesOnCell(i,iCell)
-               
                edge_sign = r_areaCell*edgesOnCell_sign(i,iCell) * dvEdge(iEdge) * invDcEdge(iEdge)
-               
                pr_scale  = prandtl_inv * meshScalingDel2(iEdge)
                
                cell1     = cellsOnEdge(1,iEdge)
