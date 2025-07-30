@@ -3458,7 +3458,7 @@ module atm_time_integration
       type (mpas_pool_type), intent(in) :: configs
       integer, intent(in) :: rk_step    !  rk substep we are integrating
       integer, intent(in) :: config_time_integration_order  ! time integration order
-      real (kind=RKIND)   :: dt
+      real (kind=RKIND) :: dt
       integer, intent(in) :: cellStart, cellEnd
       integer, intent(in) :: edgeStart, edgeEnd
       integer, intent(in) :: cellSolveStart, cellSolveEnd
@@ -3663,12 +3663,14 @@ module atm_time_integration
       
       real (kind=RKIND), dimension(:,:), intent(in) :: kdiff, rho_edge
       
-      real (kind=RKIND) ::  r_areaCell, edge_sign
+      real (kind=RKIND) :: r_areaCell, edge_sign
       
-      real (kind=RKIND) :: scalar_weight, scalar_turb_flux, kdiff_avg, pr_scale, prandtl_inv
+      real (kind=RKIND) :: scalar_turb_flux, kdiff_avg, pr_scale, prandtl_inv
 
       integer :: i, j, iCell, iAdvCell, iEdge, k, iScalar, cell1, cell2
       real (kind=RKIND) :: rho_zz_new_inv
+
+      real (kind=RKIND) :: scalar_weight
 
       real (kind=RKIND), dimension( num_scalars, nVertLevels + 1 ) :: wdtn
 
@@ -3717,7 +3719,6 @@ module atm_time_integration
       MPAS_ACC_TIMER_START('atm_advance_scalars [ACC_data_xfer]')
       !$acc enter data copyin(uhAvg, scalar_new)
       MPAS_ACC_TIMER_STOP('atm_advance_scalars [ACC_data_xfer]')
-      
 
       IF ( rk_step == 1 .and. scalar_eddy_mix .eqv. .true. ) THEN
       
