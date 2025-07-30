@@ -327,7 +327,7 @@ module mpas_convective_diagnostics
 
         real (kind=RKIND), allocatable, dimension(:,:) :: updraft_helicity, smooth_helicity
         real (kind=RKIND), allocatable, dimension(:,:) :: updraft_helicity_neg, smooth_helicity_neg
-        real (kind=RKIND), allocatable, dimension(:,:) :: wspd
+        real (kind=RKIND), allocatable, dimension(:)   :: wspd
         real (kind=RKIND), allocatable, dimension(:) :: z_agl, pres
         real (kind=RKIND), dimension(:,:), pointer :: kiteAreasOnVertex, vorticity, w, zgrid
         real (kind=RKIND), dimension(:), pointer :: areaCell, updraft_helicity_max, w_velocity_max
@@ -489,12 +489,12 @@ module mpas_convective_diagnostics
             endif
 
             if (is_needed_wind02_max) then
-                allocate(wspd(nVertLevels,nCells))
+                allocate(wspd(nVertLevels))
                 do iCell=1, nCellsSolve
                   z_agl(1:nVertLevels) = 0.5*(zgrid(1:nVertLevels,iCell)+zgrid(2:nVertlevelsP1,iCell)) - zgrid(1,iCell)
                   if (column_height_value(refl10cm(:,iCell),z_agl(1:nVertLevels),1000.0_RKIND,nVertLevels) > 20.0_RKIND) then
                     do k=1,nVertLevels
-                      wspd(k,iCell) = sqrt(uzonal(k,iCell)**2+umeridional(k,iCell)**2)
+                      wspd(k) = sqrt(uzonal(k,iCell)**2+umeridional(k,iCell)**2)
                     end do
                     wind02_max(iCell) = max(wind02_max(iCell), col_depth_max(wspd , z_agl, 0.0_RKIND, 2000.0_RKIND, nVertLevels ))
                   endif
