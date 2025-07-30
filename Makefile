@@ -472,7 +472,7 @@ intel-mpi-ursa:   # usra
 	"FFLAGS_DEBUG = -g -convert big_endian -free -CU -CB -check all -fpe0 -traceback" \
 	"CFLAGS_DEBUG = -g -traceback" \
 	"CXXFLAGS_DEBUG = -g -traceback" \
-	"LDFLAGS_DEBUG = -g -fpe0 -traceback" \
+	"LDFLAGS_DEBUG = -g -traceback" \
 	"FFLAGS_OMP = -qopenmp" \
 	"CFLAGS_OMP = -qopenmp" \
 	"PICFLAG = -fpic" \
@@ -1493,7 +1493,7 @@ ifneq "$(PNETCDF)" ""
 			&    err = ncmpi_create(MPI_COMM_WORLD, \"foo.nc\", NC_NOCLOBBER, MPI_INFO_NULL, &ncid);\n\
 			&    return 0;\n\
 			&}\n" | sed 's/&/ /' > pnetcdf.c
-	@( $(CC) pnetcdf.c $(CPPINCLUDES) $(CFLAGS) -L$(PNETCDF)/$(PNETCDFLIBLOC) -lpnetcdf  -o pnetcdf.out > pnetcdf.log 2>&1; \
+	@( $(CC) pnetcdf.c $(CPPINCLUDES) $(CFLAGS) $(LDFLAGS) -L$(PNETCDF)/$(PNETCDFLIBLOC) -lpnetcdf  -o pnetcdf.out > pnetcdf.log 2>&1; \
 	   if [ $$? -eq 0 ] ; then \
 	       echo "$(CC) can compile test PnetCDF C program."; \
 	   else \
