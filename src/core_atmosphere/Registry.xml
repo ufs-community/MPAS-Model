@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<registry model="mpas" core="atmosphere" core_abbrev="atm" version="8.3.0-1.10">
+<registry model="mpas" core="atmosphere" core_abbrev="atm" version="8.3.0-1.11">
 
 <!-- **************************************************************************************** -->
 <!-- ************************************** Dimensions ************************************** -->
@@ -2771,6 +2771,11 @@
                      description="Logical flag to turn on/off prognostic graupel number concentration and rime density"
                      possible_values=".true. or .false."/>
 
+		<nml_option name="config_tempo_cldfra" type="logical" default_value="false" in_defaults="false"
+		     units="-"
+                     description="Logical flag to turn on/off prognostic cloud fraction"
+                     possible_values=".true. or .false."/>
+
 		<nml_option name="config_tempo_ml_nc_pbl" type="logical" default_value="false" in_defaults="false"
 		     units="-"
                      description="Logical flag to turn on/off ML prediction of boundary layer cloud number concentrations"
@@ -2966,6 +2971,11 @@
                 <nml_option name="config_mynn_mixqt" type="integer" default_value="0" in_defaults="false"
                      units="-"
                      description="=0:activatevmixing of moisture species separately;= 1:activate mixing of total water in the mynn PBL scheme"
+                     possible_values="0,1"/>
+
+		<nml_option name="config_mynn_ess" type="integer" default_value="1" in_defaults="false"
+                     units="-"
+                     description="=0:use buoyancy-flux functions;= 1:use O-Gorman (2011)"
                      possible_values="0,1"/>
 
                 <nml_option name="config_icloud_bl" type="integer" default_value="1" in_defaults="false"
