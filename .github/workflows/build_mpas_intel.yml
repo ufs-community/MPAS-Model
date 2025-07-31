@@ -132,7 +132,8 @@ jobs:
       if: matrix.build-system == 'make'
       run: |
         cd ${driver_ROOT}/MPAS-Model/MPAS-Model
-        make intel-mpi CORE=init_atmosphere;atmosphere
+        make intel-mpi CORE=init_atmosphere
+        make intel-mpi CORE=atmosphere
 
     - name: Build MPAS Standalone (cmake)
       if: matrix.build-system == 'cmake'
