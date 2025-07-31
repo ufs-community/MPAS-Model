@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false  # Disable fail-fast
       matrix:
-        fortran-compiler: [gfortran-10, gfortran-11, gfortran-12]
+        fortran-compiler: [gfortran-12]
         build-system: [make, cmake]
 
     # Environmental variables
@@ -142,7 +142,7 @@ jobs:
       if: matrix.build-system == 'make'
       run: |
         cd ${driver_ROOT}/MPAS-Model/MPAS-Model
-        make gfortran CORE=atmosphere
+        make gfortran CORE=init_atmosphere;atmosphere
 
     - name: Build MPAS Standalone (cmake)
       if: matrix.build-system == 'cmake'

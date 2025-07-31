@@ -132,7 +132,7 @@ jobs:
       if: matrix.build-system == 'make'
       run: |
         cd ${driver_ROOT}/MPAS-Model/MPAS-Model
-        make gfortran CORE=atmosphere
+        make intel-mpi CORE=init_atmosphere;atmosphere
 
     - name: Build MPAS Standalone (cmake)
       if: matrix.build-system == 'cmake'
