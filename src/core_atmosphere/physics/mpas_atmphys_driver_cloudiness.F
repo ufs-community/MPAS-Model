@@ -86,6 +86,11 @@
     case("cld_fraction_mynn")
        if(.not.allocated(qibl_p)) allocate(qibl_p(ims:ime,kms:kme,jms:jme))
        if(.not.allocated(qcbl_p)) allocate(qcbl_p(ims:ime,kms:kme,jms:jme))
+
+    case("cld_tempo")
+       if(.not.allocated(qasgs_p)) allocate(qasgs_p(ims:ime,kms:kme,jms:jme))
+       if(.not.allocated(qcsgs_p)) allocate(qcsgs_p(ims:ime,kms:kme,jms:jme))
+       if(.not.allocated(qisgs_p)) allocate(qisgs_p(ims:ime,kms:kme,jms:jme))
     case default
 
  end select cld_fraction_select
@@ -124,6 +129,11 @@
 
        if(allocated(qibl_p)) deallocate(qibl_p)
        if(allocated(qcbl_p)) deallocate(qcbl_p)
+
+    case("cld_tempo")
+       if(allocated(qasgs_p)) deallocate(qasgs_p)
+       if(allocated(qcsgs_p)) deallocate(qcsgs_p)
+       if(allocated(qisgs_p)) deallocate(qisgs_p)
     case default
 
  end select cld_fraction_select
@@ -137,7 +147,7 @@
  end subroutine deallocate_cloudiness
 
 !=================================================================================================================
- subroutine cloudiness_from_MPAS(itimestep,configs,mesh,diag_physics,sfc_input,its,ite)
+ subroutine cloudiness_from_MPAS(itimestep,configs,mesh,state,diag_physics,sfc_input,its,ite)
 !=================================================================================================================
 
 !input arguments:
@@ -147,6 +157,7 @@
 !input and inout arguments:
  type(mpas_pool_type),intent(in)   :: configs
  type(mpas_pool_type),intent(in)   :: mesh
+ type(mpas_pool_type),intent(in)   :: state
  type(mpas_pool_type),intent(in)   :: sfc_input
 
 !inout arguments:
@@ -163,6 +174,10 @@
 
  character(len=StrKIND),pointer:: radt_cld_scheme
  character(len=StrKIND),pointer:: convection_scheme
+
+ integer,pointer:: index_qa_sgs, index_qc_sgs, index_qi_sgs
+ real(kind=RKIND),dimension(:,:,:),pointer:: scalars
+ real(kind=RKIND),dimension(:,:),pointer:: qasgs, qcsgs, qisgs
 
 !-----------------------------------------------------------------------------------------------------------------
 
@@ -235,6 +250,25 @@
        enddo
        enddo
 
+    case("cld_tempo")
+       call mpas_pool_get_array(state,'scalars',scalars)
+       call mpas_pool_get_dimension(state,'index_qa_sgs',index_qa_sgs)
+       call mpas_pool_get_dimension(state,'index_qc_sgs',index_qc_sgs)
+       call mpas_pool_get_dimension(state,'index_qi_sgs',index_qi_sgs)
+
+       qasgs   => scalars(index_qa_sgs,:,:)
+       qcsgs   => scalars(index_qc_sgs,:,:)
+       qisgs   => scalars(index_qi_sgs,:,:)
+       do j = jts,jte
+          do k = kts,kte
+             do i = its,ite
+                qasgs_p(i,k,j) = qasgs(k,i)
+                cldfrac_p(i,k,j) = qasgs(k,i)
+                qcsgs_p(i,k,j) = qcsgs(k,i)
+                qisgs_p(i,k,j) = qisgs(k,i)
+             enddo
+          enddo
+       enddo
     case default
 
  end select cld_fraction_select  
@@ -288,12 +322,13 @@
  end subroutine cloudiness_to_MPAS
 
 !=================================================================================================================
- subroutine driver_cloudiness(itimestep,configs,mesh,diag_physics,sfc_input,its,ite)
+ subroutine driver_cloudiness(itimestep,configs,mesh,state,diag_physics,sfc_input,its,ite)
 !=================================================================================================================
 
 !input arguments:
  type(mpas_pool_type),intent(in)   :: configs
  type(mpas_pool_type),intent(in)   :: mesh
+ type(mpas_pool_type),intent(in)   :: state
  type(mpas_pool_type),intent(in)   :: sfc_input
 
  integer,intent(in):: its,ite
@@ -316,7 +351,7 @@
  call mpas_pool_get_config(configs,'config_convection_scheme',convection_scheme)
 
 !copy MPAS arrays to local arrays:
- call cloudiness_from_MPAS(itimestep,configs,mesh,diag_physics,sfc_input,its,ite)
+ call cloudiness_from_MPAS(itimestep,configs,mesh,state,diag_physics,sfc_input,its,ite)
 
  cld_fraction_select: select case (trim(radt_cld_scheme))
     case("cld_incidence")
@@ -349,6 +384,12 @@
                        its,  ite , jts , jte , kts , kte  )
       call mpas_timer_stop('cal_mynncld')
 
+    case("cld_tempo")
+      call mpas_timer_start('cal_cldfra_tempo')
+      call cal_cldfra_tempo(qasgs_p , qcrad_p   , qirad_p    , &
+                       qcsgs_p    , qisgs_p    ,              &
+                       its,  ite , jts , jte , kts , kte  )
+      call mpas_timer_stop('cal_cldfra_tempo')
     case default
 
  end select cld_fraction_select
@@ -573,6 +614,41 @@
  enddo
 
  end subroutine cal_gflcld
+!=================================================================================================================
+!=================================================================================================================
+ subroutine cal_cldfra_tempo(cldfrac,qc,qi,qc_sgs,qi_sgs,its,ite,jts,jte,kts,kte)
+!=================================================================================================================
+
+!input arguments:
+ integer,intent(in):: its,ite,jts,jte,kts,kte
+ real(kind=RKIND),intent(inout),dimension(ims:ime,kms:kme,jms:jme):: qc,qi
+ real(kind=RKIND),intent(in),   dimension(ims:ime,kms:kme,jms:jme):: qc_sgs,qi_sgs
+ real(kind=RKIND),intent(in),   dimension(ims:ime,kms:kme,jms:jme):: cldfrac
+
+!local variables:
+ integer:: i,j,k
+
+ real(kind=RKIND),parameter:: qc_thresh  = 1.e-06
+ real(kind=RKIND),parameter:: qi_thresh  = 1.e-09
+ real(kind=RKIND),parameter:: cld_thresh = 1.e-03
+
+ do j = jts,jte
+ do k = kts,kte
+ do i = its,ite
+
+    if (qc(i,k,j) < qc_thresh .AND. cldfrac(i,k,j) > cld_thresh) THEN
+       !call mpas_log_write("Adding in cldfra_bl to qc at $i,$i,$i", intArgs=(/i,j,k/))
+       qc(i,k,j)=qc(i,k,j) + qc_sgs(i,k,j)
+    endif
+    if (qi(i,k,j) < qi_thresh .AND. cldfrac(i,k,j) > cld_thresh) THEN
+       !call mpas_log_write("Adding in cldfra_bl to qi at $i,$i,$i", intArgs=(/i,j,k/))
+       qi(i,k,j)=qi(i,k,j) + qi_sgs(i,k,j)
+    endif
+ enddo
+ enddo
+ enddo
+
+ end subroutine cal_cldfra_tempo
 !=================================================================================================================
  end module mpas_atmphys_driver_cloudiness
 !=================================================================================================================

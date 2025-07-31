@@ -107,6 +107,8 @@
                                   config_radt_sw_scheme,    &
                                   config_sfclayer_scheme
 
+ logical,pointer:: config_tempo_cldfra
+
 !-----------------------------------------------------------------------------------------------------------------
 !call mpas_log_write('')
 !call mpas_log_write('--- enter subroutine physics_namelist_check:')
@@ -121,6 +123,7 @@
  call mpas_pool_get_config(configs,'config_radt_lw_scheme'   ,config_radt_lw_scheme   )
  call mpas_pool_get_config(configs,'config_radt_sw_scheme'   ,config_radt_sw_scheme   )
  call mpas_pool_get_config(configs,'config_sfclayer_scheme'  ,config_sfclayer_scheme  )
+ call mpas_pool_get_config(configs,'config_tempo_cldfra'  ,config_tempo_cldfra  )
 
  call mpas_log_write('')
  call mpas_log_write('----- Setting up physics suite '''//trim(config_physics_suite)//''' -----')
@@ -264,6 +267,7 @@
            config_radt_cld_scheme .eq. 'cld_incidence'         .or. &
            config_radt_cld_scheme .eq. 'cld_fraction'          .or. &
            config_radt_cld_scheme .eq. 'cld_fraction_thompson' .or. &
+           config_radt_cld_scheme .eq. 'cld_tempo' .or. &
            config_radt_cld_scheme .eq. 'cld_fraction_mynn')) then
 
     write(mpas_err_message,'(A,A20)') 'illegal value for calculation of cloud fraction: ', &
@@ -292,6 +296,13 @@
                 trim(config_pbl_scheme)
           call physics_error_fatal(mpas_err_message)
 
+ endif
+
+ if ((config_microp_scheme .eq. 'mp_tempo') .and. (config_tempo_cldfra)) then
+    write(mpas_err_message,'(A,A20)') &
+      '     setting cloud fraction to config_radt_cld_scheme = cld_tempo'
+    call physics_message(mpas_err_message)
+    config_radt_cld_scheme = "cld_tempo"
  endif
 
 !surface-layer scheme:
