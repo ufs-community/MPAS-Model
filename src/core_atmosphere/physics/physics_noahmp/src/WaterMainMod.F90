@@ -163,7 +163,7 @@ contains
     ! calculate soil process only at soil timestep
     SoilSfcInflowAcc     = SoilSfcInflowAcc     + SoilSfcInflow
     EvapSoilSfcLiqAcc    = EvapSoilSfcLiqAcc    + EvapSoilSfcLiq
-    TranspWatLossSoilAcc = TranspWatLossSoilAcc + TranspWatLossSoil
+    TranspWatLossSoilAcc(:) = TranspWatLossSoilAcc(:) + TranspWatLossSoil(:)
 
     ! start soil water processes
     if ( FlagSoilProcess .eqv. .true. ) then
@@ -178,7 +178,7 @@ contains
        ! compute mean water flux during soil timestep
        SoilSfcInflowMean     = SoilSfcInflowAcc / NumSoilTimeStep
        EvapSoilSfcLiqMean    = EvapSoilSfcLiqAcc / NumSoilTimeStep
-       TranspWatLossSoilMean = TranspWatLossSoilAcc / NumSoilTimeStep
+       TranspWatLossSoilMean = TranspWatLossSoilAcc(:) / NumSoilTimeStep
 
        ! lake/soil water balances
        if ( SurfaceType == 2 ) then   ! lake

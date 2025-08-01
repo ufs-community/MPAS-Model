@@ -247,6 +247,7 @@
           if(.not.allocated(nccn_p) ) allocate(nccn_p(ims:ime,kms:kme,jms:jme))
           if(.not.allocated(volg_p)) allocate(volg_p(ims:ime,kms:kme,jms:jme))
           if(.not.allocated(volh_p)) allocate(volh_p(ims:ime,kms:kme,jms:jme))
+          if(.not.allocated(refl10cm_p)  ) allocate(refl10cm_p(ims:ime,kms:kme,jms:jme) )
           if(.not.allocated(refl10cm_1km_p)  ) allocate(refl10cm_1km_p(ims:ime,jms:jme) )
           
           if (nssl_moments == "nssl3m") then
