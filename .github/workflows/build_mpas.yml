@@ -23,12 +23,8 @@ jobs:
       PNETCDF: /home/runner/PnetCDF
       AUTOTOOLS: /home/runner/AUTOTOOLS
       OMPI: /home/runner/ompi-4.1.6
-      LD_LIBRARY_PATH: ${PNETCDF}:${LD_LIBRARY_PATH}
-      LD_LIBRARY_PATH: ${AUTOTOOLS}:${LD_LIBRARY_PATH}
-      LD_LIBRARY_PATH: ${OMPI}:${LD_LIBRARY_PATH}
-      PATH: ${PNETCDF}:${PATH}
-      PATH: ${AUTOTOOLS}:${PATH}
-      PATH: ${OMPI}:${PATH}
+      LD_LIBRARY_PATH: ${PNETCDF}:${AUTOTOOLS}:${OMPI}:${LD_LIBRARY_PATH}
+      PATH: ${PNETCDF}:${AUTOTOOLS}:${OMPI}${PATH}
 
     # Workflow steps
     steps:
