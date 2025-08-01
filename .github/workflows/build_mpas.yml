@@ -56,6 +56,9 @@ jobs:
         ./configure --prefix=${OMPI}
         make -j4
         make install
+
+    - name: Add (OMPI) to Paths
+      run: |
         echo "LD_LIBRARY_PATH=${OMPI}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
         echo "PATH=${OMPI}/bin:$PATH" >> $GITHUB_ENV
 
@@ -99,6 +102,11 @@ jobs:
         echo "LD_LIBRARY_PATH=${AUTOTOOLS}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
         echo "PATH=${AUTOTOOLS}/bin:$PATH" >> $GITHUB_ENV
 
+    - name: Add (autotools) to Paths
+      run: |
+        echo "LD_LIBRARY_PATH=${AUTOTOOLS}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+        echo "PATH=${AUTOTOOLS}/bin:$PATH" >> $GITHUB_ENV
+
     - name: Cache PnetCDF
       id: cache-pnetcdf
       uses: actions/cache@v4
@@ -110,8 +118,8 @@ jobs:
       if: steps.cache-PnetCDF.outputs.cache-hit != 'true'
       run: |
         set -x
-        echo "LD_LIBRARY_PATH=${AUTOTOOLS}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
-        echo "PATH=${AUTOTOOLS}/bin:$PATH" >> $GITHUB_ENV
+        #echo "LD_LIBRARY_PATH=${AUTOTOOLS}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+        #echo "PATH=${AUTOTOOLS}/bin:$PATH" >> $GITHUB_ENV
         m4 --version
         autoconf --version
         automake --version
@@ -123,19 +131,24 @@ jobs:
         autoreconf -i
         ./configure --prefix=${PNETCDF} --with-mpi=${OMPI}
         make -j 8 install
+
+    - name: Add (PNETCDF) to paths.
+      run: |
+        echo "PNETCDF=${PNETCDF}" >> $GITHUB_ENV
+        echo "LD_LIBRARY_PATH=${PNETCDF}/bin:$LD_LIBRARY_PATH" >> $GITHUB_ENV
         echo "PATH=${PNETCDF}/bin:$PATH" >> $GITHUB_ENV
 
-    - name: Setup environment
-      run: |
-        echo "FC=mpif90" >> $GITHUB_ENV
-        echo "CC=mpicc"  >> $GITHUB_ENV
-        echo "PNETCDF=${PNETCDF}" >> $GITHUB_ENV
-        echo "PATH=${AUTOTOOLS}/bin:$PATH" >> $GITHUB_ENV
-        echo "LD_LIBRARY_PATH=${AUTOTOOLS}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
-        echo "PATH=${OMPI}/bin:$PATH" >> $GITHUB_ENV
-        echo "LD_LIBRARY_PATH=${OMPI}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
-        echo "PATH=${PNETCDF}/bin:$PATH" >> $GITHUB_ENV
-        echo "LD_LIBRARY_PATH=${PNETCDF}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+#    - name: Setup environment
+#      run: |
+#        echo "FC=mpif90" >> $GITHUB_ENV
+#        echo "CC=mpicc"  >> $GITHUB_ENV
+#        echo "PNETCDF=${PNETCDF}" >> $GITHUB_ENV
+#        echo "PATH=${AUTOTOOLS}/bin:$PATH" >> $GITHUB_ENV
+#        echo "LD_LIBRARY_PATH=${AUTOTOOLS}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+#        echo "PATH=${OMPI}/bin:$PATH" >> $GITHUB_ENV
+#        echo "LD_LIBRARY_PATH=${OMPI}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+#        echo "PATH=${PNETCDF}/bin:$PATH" >> $GITHUB_ENV
+#        echo "LD_LIBRARY_PATH=${PNETCDF}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
 
     - name: Display environment
       run: |
