@@ -33,7 +33,6 @@ jobs:
     - name: Initialize submodules
       run: |
         git submodule update --init --recursive
-        echo "ls -l src/core_atmosphere/physics/physics_mmm"
           
     - name: Install NetCDF library
       run: |
@@ -126,7 +125,7 @@ jobs:
         make -j 8 install
         echo "PATH=${PNETCDF}/bin:$PATH" >> $GITHUB_ENV
 
-    - name: Setup environment for openmpi compiler
+    - name: Setup environment
       run: |
         echo "FC=mpif90" >> $GITHUB_ENV
         echo "CC=mpicc"  >> $GITHUB_ENV
@@ -137,6 +136,11 @@ jobs:
         echo "LD_LIBRARY_PATH=${OMPI}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
         echo "PATH=${PNETCDF}/bin:$PATH" >> $GITHUB_ENV
         echo "LD_LIBRARY_PATH=${PNETCDF}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+	echo "FC:              " ${FC}
+        echo "CC:              " ${CC}
+        echo "PATH:            " ${PATH}
+        echo "LD_LIBRARY_PATH: " ${LD_LIBRARY_PATH}
+        echo "PNETCDF:         " ${PNETCDF}
 
     - name: Build MPAS Standalone (make)
       if: matrix.build-system == 'make'
