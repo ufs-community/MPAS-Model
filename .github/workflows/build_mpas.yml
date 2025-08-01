@@ -135,8 +135,10 @@ jobs:
         echo "PATH=${OMPI}/bin:$PATH" >> $GITHUB_ENV
         echo "LD_LIBRARY_PATH=${OMPI}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
         echo "PATH=${PNETCDF}/bin:$PATH" >> $GITHUB_ENV
+
+    - name: Display environment
         echo "LD_LIBRARY_PATH=${PNETCDF}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
-	echo "FC:              " ${FC}
+        echo "FC:              " ${FC}
         echo "CC:              " ${CC}
         echo "PATH:            " ${PATH}
         echo "LD_LIBRARY_PATH: " ${LD_LIBRARY_PATH}
