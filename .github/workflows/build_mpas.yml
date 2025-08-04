@@ -1,6 +1,6 @@
 name: Build (GNU) MPAS Standalone
 
-on: [pull_request,workflow_dispatch,push]
+on: [pull_request,workflow_dispatch]
 
 jobs:
   build_mpas_GNU:
