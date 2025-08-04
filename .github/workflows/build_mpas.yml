@@ -11,7 +11,7 @@ jobs:
       fail-fast: false  # Disable fail-fast
       matrix:
         fortran-compiler: [gfortran-12]
-        build-system: [make, cmake]
+        build-system: [make]###, cmake]
 
     # Environmental variables
     env:
@@ -33,19 +33,18 @@ jobs:
     - name: Initialize submodules
       run: |
         git submodule update --init --recursive
-        echo "ls -l src/core_atmosphere/physics/physics_mmm"
           
     - name: Install NetCDF library
       run: |
         sudo apt-get update
         sudo apt-get install libnetcdff-dev
 
-#    - name: Cache openmpi
-#      id: cache-openmpi
-#      uses: actions/cache@v4
-#      with:
-#        path: /home/runner/ompi-4.1.6
-#        key: cache-openmpi-${{matrix.fortran-compiler}}-key
+    - name: Cache openmpi
+      id: cache-openmpi
+      uses: actions/cache@v4
+      with:
+        path: /home/runner/ompi-4.1.6
+        key: cache-openmpi-${{matrix.fortran-compiler}}-key
 
     - name: Install openmpi
       if: steps.cache-openmpi.outputs.cache-hit != 'true'
@@ -57,15 +56,18 @@ jobs:
         ./configure --prefix=${OMPI}
         make -j4
         make install
+
+    - name: Add (OMPI) to Paths
+      run: |
         echo "LD_LIBRARY_PATH=${OMPI}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
         echo "PATH=${OMPI}/bin:$PATH" >> $GITHUB_ENV
 
-#    - name: Cache GNU autotools
-#      id: cache-AUTOTOOLS
-#      uses: actions/cache@v4
-#      with:
-#        path: /home/runner/AUTOTOOLS
-#        key: cache-AUTOTOOLS-${{matrix.fortran-compiler}}-key
+    - name: Cache GNU autotools
+      id: cache-AUTOTOOLS
+      uses: actions/cache@v4
+      with:
+        path: /home/runner/AUTOTOOLS
+        key: cache-AUTOTOOLS-${{matrix.fortran-compiler}}-key
 
     - name: Build GNU autotools
       if: steps.cache-AUTOTOOLS.outputs.cache-hit != 'true'
@@ -100,19 +102,24 @@ jobs:
         echo "LD_LIBRARY_PATH=${AUTOTOOLS}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
         echo "PATH=${AUTOTOOLS}/bin:$PATH" >> $GITHUB_ENV
 
-#    - name: Cache PnetCDF
-#      id: cache-pnetcdf
-#      uses: actions/cache@v4
-#      with:
-#        path: /home/runner/PnetCDF
-#        key: cache-PnetCDF-${{matrix.fortran-compiler}}-key
+    - name: Add (autotools) to Paths
+      run: |
+        echo "LD_LIBRARY_PATH=${AUTOTOOLS}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+        echo "PATH=${AUTOTOOLS}/bin:$PATH" >> $GITHUB_ENV
+
+    - name: Cache PnetCDF
+      id: cache-pnetcdf
+      uses: actions/cache@v4
+      with:
+        path: /home/runner/PnetCDF
+        key: cache-PnetCDF-${{matrix.fortran-compiler}}-key
 
     - name: Install PnetCDF
       if: steps.cache-PnetCDF.outputs.cache-hit != 'true'
       run: |
         set -x
-        echo "LD_LIBRARY_PATH=${AUTOTOOLS}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
-        echo "PATH=${AUTOTOOLS}/bin:$PATH" >> $GITHUB_ENV
+        #echo "LD_LIBRARY_PATH=${AUTOTOOLS}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+        #echo "PATH=${AUTOTOOLS}/bin:$PATH" >> $GITHUB_ENV
         m4 --version
         autoconf --version
         automake --version
@@ -124,25 +131,39 @@ jobs:
         autoreconf -i
         ./configure --prefix=${PNETCDF} --with-mpi=${OMPI}
         make -j 8 install
+
+    - name: Add (PNETCDF) to paths.
+      run: |
+        echo "PNETCDF=${PNETCDF}" >> $GITHUB_ENV
+        echo "LD_LIBRARY_PATH=${PNETCDF}/bin:$LD_LIBRARY_PATH" >> $GITHUB_ENV
         echo "PATH=${PNETCDF}/bin:$PATH" >> $GITHUB_ENV
 
-    - name: Setup environment for openmpi compiler
+#    - name: Setup environment
+#      run: |
+#        echo "FC=mpif90" >> $GITHUB_ENV
+#        echo "CC=mpicc"  >> $GITHUB_ENV
+#        echo "PNETCDF=${PNETCDF}" >> $GITHUB_ENV
+#        echo "PATH=${AUTOTOOLS}/bin:$PATH" >> $GITHUB_ENV
+#        echo "LD_LIBRARY_PATH=${AUTOTOOLS}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+#        echo "PATH=${OMPI}/bin:$PATH" >> $GITHUB_ENV
+#        echo "LD_LIBRARY_PATH=${OMPI}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+#        echo "PATH=${PNETCDF}/bin:$PATH" >> $GITHUB_ENV
+#        echo "LD_LIBRARY_PATH=${PNETCDF}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+
+    - name: Display environment
       run: |
-        echo "FC=mpif90" >> $GITHUB_ENV
-        echo "CC=mpicc"  >> $GITHUB_ENV
-        echo "PNETCDF=${PNETCDF}" >> $GITHUB_ENV
-        echo "PATH=${AUTOTOOLS}/bin:$PATH" >> $GITHUB_ENV
-        echo "LD_LIBRARY_PATH=${AUTOTOOLS}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
-        echo "PATH=${OMPI}/bin:$PATH" >> $GITHUB_ENV
-        echo "LD_LIBRARY_PATH=${OMPI}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
-        echo "PATH=${PNETCDF}/bin:$PATH" >> $GITHUB_ENV
-        echo "LD_LIBRARY_PATH=${PNETCDF}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+        echo "FC:              " ${FC}
+        echo "CC:              " ${CC}
+        echo "PATH:            " ${PATH}
+        echo "LD_LIBRARY_PATH: " ${LD_LIBRARY_PATH}
+        echo "PNETCDF:         " ${PNETCDF}
 
     - name: Build MPAS Standalone (make)
       if: matrix.build-system == 'make'
       run: |
         cd ${driver_ROOT}/MPAS-Model/MPAS-Model
-        make gfortran CORE=init_atmosphere;atmosphere
+        make gfortran CORE=init_atmosphere
+        make gfortran CORE=atmosphere
 
     - name: Build MPAS Standalone (cmake)
       if: matrix.build-system == 'cmake'
