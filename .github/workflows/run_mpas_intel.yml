@@ -152,17 +152,17 @@ jobs:
         pwd
         ls -l ${mpas_bl_ROOT}/MPAS-Model-BL
 
-#    - name: Checkout MPAS codebase for testing.
-#      uses: actions/checkout@v3
-#
-#    - name: Initialize any submodules from testing codebase.
-#      run: |
-#        git submodule update --init --recursive
-#
-#    - name: Build MPAS standalone for testing
-#      run: |
-#        cd ${mpas_rt_ROOT}/MPAS-Model
-#        make intel-mpi CORE=atmosphere
+    - name: Checkout MPAS codebase for testing.
+      uses: actions/checkout@v3
+
+    - name: Initialize any submodules from testing codebase.
+      run: |
+        git submodule update --init --recursive
+
+    - name: Build MPAS standalone for testing
+      run: |
+        cd ${mpas_rt_ROOT}/MPAS-Model
+        make intel-mpi CORE=atmosphere DEBUG=true
 
     ##########################################################################################
     # Configure and run MPAS.
