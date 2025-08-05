@@ -1,4 +1,4 @@
-name: Run (Intel) MPAS S  tandalone
+name: Run (Intel) MPAS Standalone
 
 on: [push,pull_request,workflow_dispatch]
 
@@ -179,7 +179,7 @@ jobs:
     - name: Download required MPAS data
       run: |
         wget https://gsl.noaa.gov/thredds/catalog/retro/barlage/mpas_test_data/grid/${MPAS_domain}.${MPAS_res}km.graph.info.part.${MPAS_nproc}
-        wget https://gsl.noaa.gov/thredds/catalog/retro/barlage/mpas_test_data/create_case_output/gsl-${MPAS_version}-intelmpi/${MPAS_physics}.${MPAS_dataset}.${MPAS_domain}.${MPAS_res}km.gfs.${MPAS_timestamp}/case_files/
+        #wget https://gsl.noaa.gov/thredds/catalog/retro/barlage/mpas_test_data/create_case_output/gsl-${MPAS_version}-intelmpi/${MPAS_physics}.${MPAS_dataset}.${MPAS_domain}.${MPAS_res}km.gfs.${MPAS_timestamp}/case_files/
         pwd
         ls -l
 
