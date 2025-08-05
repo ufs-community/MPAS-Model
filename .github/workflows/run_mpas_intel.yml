@@ -11,7 +11,8 @@ jobs:
       fail-fast: false  # Disable fail-fast
       matrix:
         fortran-compiler: [intel]
-        build-system: [make]
+        build-system:     [make]
+        py-version:       [3.11]
 
     # Environmental variables
     env:
@@ -136,7 +137,7 @@ jobs:
       id: cache-mpas-bl
       uses: actions/cache@v4
       with:
-        path: ${mpas_bl_ROOT}/MPAS-Model-BL
+        path: /home/runner/MPAS-Model-BL
         key: cache-mpas-bl-${{matrix.fortran-compiler}}-key
 
     - name: Checkout and build MPAS standalone for baseline generation.
@@ -145,26 +146,58 @@ jobs:
         cd ${mpas_bl_ROOT}
         git clone --recursive --branch gsl/develop https://github.com/ufs-community/MPAS-Model.git MPAS-Model-BL
         cd ${mpas_bl_ROOT}/MPAS-Model-BL
-        make intel-mpi CORE=atmosphere
+        make intel-mpi CORE=atmosphere DEBUG=true
+        pwd
+        ls -l ${mpas_bl_ROOT}
+        pwd
+        ls -l ${mpas_bl_ROOT}/MPAS-Model-BL
 
-    - name: Checkout MPAS codebase for testing.
-      uses: actions/checkout@v3
-
-    - name: Initialize any submodules from testing codebase.
-      run: |
-        git submodule update --init --recursive
-
-    - name: Build MPAS standalone for testing
-      run: |
-        cd ${mpas_rt_ROOT}/MPAS-Model
-        make intel-mpi CORE=atmosphere
+#    - name: Checkout MPAS codebase for testing.
+#      uses: actions/checkout@v3
+#
+#    - name: Initialize any submodules from testing codebase.
+#      run: |
+#        git submodule update --init --recursive
+#
+#    - name: Build MPAS standalone for testing
+#      run: |
+#        cd ${mpas_rt_ROOT}/MPAS-Model
+#        make intel-mpi CORE=atmosphere
 
     ##########################################################################################
     # Configure and run MPAS.
     # Run twice. Once to create the baseline results using the gsl/develop branch, and again
     # using the feature branch.
     ##########################################################################################
+    - name: Download required MPAS data
+      run: |
+        pwd
+        ls -l
+
+    - name: Download MPAS testing repository with runtime configurations.
+      run: |
+        git clone --recursive --branch main https://github.com/barlage/mpas_testcase.git
+        pwd
+        ls -l mpas_testcase
+
+    - name: Run MPAS (baseline branch)
+      run: |
+        pwd
+        ls -l
+ 
+    - name: Run MPAS (feature branch)
+      run: |
+        pwd
+        ls -l
 
     ##########################################################################################
     # Compare feature branch to baseline branch.
     ##########################################################################################
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{matrix.py-version}}
+
+    - name: Install NetCDF Python libraries
+      run: |
+        pip install f90nml h5py netCDF4 matplotlib
