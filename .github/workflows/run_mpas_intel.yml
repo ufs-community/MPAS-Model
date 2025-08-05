@@ -26,8 +26,9 @@ jobs:
       AUTOTOOLS: /home/runner/AUTOTOOLS
       OMPI: /opt/intel/oneapi/mpi/2021.10.0
       MPAS_version:   8.2.2-2.11
-      MPAS_dataset:   gsl
-      MPAS_physics:   ncar
+      MPAS_codebase:  ncar
+      MPAS_namelist:  ncar
+      MPAS_source:    gfs
       MPAS_domain:    conus
       MPAS_res:       120
       MPAS_timestamp: 2023031015
@@ -179,7 +180,7 @@ jobs:
     - name: Download required MPAS data
       run: |
         wget https://gsl.noaa.gov/thredds/catalog/retro/barlage/mpas_test_data/grid/${MPAS_domain}.${MPAS_res}km.graph.info.part.${MPAS_nproc}
-        #wget https://gsl.noaa.gov/thredds/catalog/retro/barlage/mpas_test_data/create_case_output/gsl-${MPAS_version}-intelmpi/${MPAS_physics}.${MPAS_dataset}.${MPAS_domain}.${MPAS_res}km.gfs.${MPAS_timestamp}/case_files/
+        #wget https://gsl.noaa.gov/thredds/catalog/retro/barlage/mpas_test_data/create_case_output/gsl-${MPAS_version}-intelmpi/${MPAS_namelist}.${MPAS_codebase}.${MPAS_domain}.${MPAS_res}km.${MPAS_source}.${MPAS_timestamp}/case_files/
         pwd
         ls -l
 
