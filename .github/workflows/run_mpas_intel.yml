@@ -25,6 +25,13 @@ jobs:
       PNETCDF: /home/runner/PnetCDF
       AUTOTOOLS: /home/runner/AUTOTOOLS
       OMPI: /opt/intel/oneapi/mpi/2021.10.0
+      MPAS_version:   8.2.2-2.11
+      MPAS_dataset:   gsl
+      MPAS_physics:   ncar
+      MPAS_domain:    conus
+      MPAS_res:       120
+      MPAS_timestamp: 2023031015
+      MPAS_nproc:     2
 
     # Workflow steps
     steps:
@@ -152,17 +159,17 @@ jobs:
         pwd
         ls -l ${mpas_bl_ROOT}/MPAS-Model-BL
 
-    - name: Checkout MPAS codebase for testing.
-      uses: actions/checkout@v3
-
-    - name: Initialize any submodules from testing codebase.
-      run: |
-        git submodule update --init --recursive
-
-    - name: Build MPAS standalone for testing
-      run: |
-        cd ${mpas_rt_ROOT}/MPAS-Model
-        make intel-mpi CORE=atmosphere DEBUG=true
+#    - name: Checkout MPAS codebase for testing.
+#      uses: actions/checkout@v3
+#
+#    - name: Initialize any submodules from testing codebase.
+#      run: |
+#        git submodule update --init --recursive
+#
+#    - name: Build MPAS standalone for testing
+#      run: |
+#        cd ${mpas_rt_ROOT}/MPAS-Model
+#        make intel-mpi CORE=atmosphere DEBUG=true
 
     ##########################################################################################
     # Configure and run MPAS.
@@ -171,6 +178,8 @@ jobs:
     ##########################################################################################
     - name: Download required MPAS data
       run: |
+        wget https://gsl.noaa.gov/thredds/catalog/retro/barlage/mpas_test_data/grid/${MPAS_domain}.${MPAS_res}km.graph.info.part.${MPAS_nproc}
+        wget https://gsl.noaa.gov/thredds/catalog/retro/barlage/mpas_test_data/create_case_output/gsl-${MPAS_version}-intelmpi/${MPAS_physics}.${MPAS_dataset}.${MPAS_domain}.${MPAS_res}km.gfs.${MPAS_timestamp}/case_files/
         pwd
         ls -l
 
