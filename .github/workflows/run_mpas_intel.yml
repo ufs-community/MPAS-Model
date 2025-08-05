@@ -1,4 +1,4 @@
-name: Run (Intel) MPAS Standalone
+name: Run (Intel) MPAS S  tandalone
 
 on: [push,pull_request,workflow_dispatch]
 
@@ -15,8 +15,8 @@ jobs:
 
     # Environmental variables
     env:
-      driver_ROOT: /home/runner/work/MPAS-Model
-      baseline_ROOT: /home/runner
+      mpas_rt_ROOT: /home/runner/work/MPAS-Model
+      mpas_bl_ROOT: /home/runner
       AUTOCONF_VERSION: 2.71
       AUTOMAKE_VERSION: 1.17
       M4_VERSION: 1.4.19
@@ -128,24 +128,23 @@ jobs:
         echo "LD_LIBRARY_PATH=${PNETCDF}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
 
     ##########################################################################################
-    # Compile MPAS 
+    # Compile MPAS for testing.
+    # When generating new baselines, checkout the gsl/develop branch from the ufs-community 
+    # fork of MPAS-A and also compile MPAS from this branch
     ##########################################################################################
-
-    - name: Checkout MPAS codebase to generare baselines (ufs-community:gsl/develop).
-      run: |
-        cd ${baseline_ROOT}
-        git clone --recursive --branch gsl/develop https://github.com/ufs-community/MPAS-Model.git MPAS-Model-BL
-
     - name: Cache MPAS standalone needed to generate baselines
       id: cache-mpas-bl
       uses: actions/cache@v4
       with:
-        path: ${baseline_ROOT}/MPAS-Model-BL
+        path: ${mpas_bl_ROOT}/MPAS-Model-BL
         key: cache-mpas-bl-${{matrix.fortran-compiler}}-key
 
-    - name: Build MPAS standalone for baselines
+    - name: Checkout and build MPAS standalone for baseline generation.
+      if: steps.cache-mpas-bl.outputs.cache-hit != 'true'
       run: |
-        cd ${baseline_ROOT}/MPAS-Model-BL
+        cd ${mpas_bl_ROOT}
+        git clone --recursive --branch gsl/develop https://github.com/ufs-community/MPAS-Model.git MPAS-Model-BL
+        cd ${mpas_bl_ROOT}/MPAS-Model-BL
         make intel-mpi CORE=atmosphere
 
     - name: Checkout MPAS codebase for testing.
@@ -157,9 +156,15 @@ jobs:
 
     - name: Build MPAS standalone for testing
       run: |
-        cd ${driver_ROOT}/MPAS-Model
+        cd ${mpas_rt_ROOT}/MPAS-Model
         make intel-mpi CORE=atmosphere
 
     ##########################################################################################
-    # Configure and run MPAS
+    # Configure and run MPAS.
+    # Run twice. Once to create the baseline results using the gsl/develop branch, and again
+    # using the feature branch.
+    ##########################################################################################
+
+    ##########################################################################################
+    # Compare feature branch to baseline branch.
     ##########################################################################################
