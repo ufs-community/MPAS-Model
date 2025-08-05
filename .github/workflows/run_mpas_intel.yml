@@ -27,6 +27,12 @@ jobs:
     # Workflow steps
     steps:
 
+    ##########################################################################################
+    # Build Software Stack needed for MPAS on GitHub server, using Intel package created and
+    # cached by NOAA-EMC.
+    # NOTE: This is fine for the time being, but this whole block of the workflow could(should)
+    #       be replace with containers that we can maintain/update.
+    ##########################################################################################
     - name: "Install Intel compilers & MPI"
       uses: NOAA-EMC/ci-install-intel-toolkit@develop
       with:
@@ -120,15 +126,33 @@ jobs:
         echo "PATH=${PNETCDF}/bin:$PATH" >> $GITHUB_ENV
         echo "LD_LIBRARY_PATH=${PNETCDF}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
 
-     - name: Checkout code
-       run: |
-         cd ${driver_ROOT}
-         git clone --recursive --branch gsl/develop https://github.com/ufs-community/MPAS-Model.git
+    ##########################################################################################
+    # Compile MPAS 
+    ##########################################################################################
+    - name: Checkout MPAS codebase for testing.
+      uses: actions/checkout@v3
 
+    - name: Initialize any submodules from testing codebase.
+      run: |
+	git submodule update --init --recursive
 
-    - name: Build MPAS Standalone (make)
-      if: matrix.build-system == 'make'
+    - name: Checkout MPAS codebase to generare baselines (ufs-community:gsl/develop).
+      run: |
+        cd ${driver_ROOT}
+        git clone --recursive --branch gsl/develop https://github.com/ufs-community/MPAS-Model.git MPAS-Model-BL
+	echo "-------------------------------------------"
+	echo "ls -l ${driver_ROOT}"
+
+    - name: Build MPAS standalone for baselines
+      run: |
+        cd ${driver_ROOT}/MPAS-Model-BL
+        make intel-mpi CORE=atmosphere
+
+    - name: Build MPAS standalone for testing
       run: |
         cd ${driver_ROOT}/MPAS-Model
-        make intel-mpi CORE=init_atmosphere
         make intel-mpi CORE=atmosphere
+
+    ##########################################################################################
+    # Configure and run MPAS
+    ##########################################################################################
