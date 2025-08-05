@@ -472,7 +472,7 @@ intel-mpi-ursa:   # usra
 	"FFLAGS_DEBUG = -g -convert big_endian -free -CU -CB -check all -fpe0 -traceback" \
 	"CFLAGS_DEBUG = -g -traceback" \
 	"CXXFLAGS_DEBUG = -g -traceback" \
-	"LDFLAGS_DEBUG = -g -fpe0 -traceback" \
+	"LDFLAGS_DEBUG = -g -traceback" \
 	"FFLAGS_OMP = -qopenmp" \
 	"CFLAGS_OMP = -qopenmp" \
 	"PICFLAG = -fpic" \
