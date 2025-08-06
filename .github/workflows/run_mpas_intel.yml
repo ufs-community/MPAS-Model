@@ -206,9 +206,7 @@ jobs:
 #        make intel-mpi CORE=atmosphere DEBUG=true
 
     ##########################################################################################
-    # Configure and run MPAS.
-    # Run twice. Once to create the baseline results using the gsl/develop branch, and again
-    # using the feature branch.
+    # Fetch any data/files needed for MPAS runs.
     ##########################################################################################
     - name: Download MPAS data (grid info, IC and LBC files)
       run: |
@@ -230,6 +228,9 @@ jobs:
         pwd
         ls -l mpas_testcase
 
+    ##########################################################################################
+    # Configure MPAS baseline runs
+    ##########################################################################################
     - name: Create and populate run directory (baseline test)
       run: |
         cd ${mpas_run_ROOT} && mkdir run_bl && cd run_bl
@@ -238,37 +239,52 @@ jobs:
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*DATA .
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_noahmp/parameters/NoahmpTable.TBL .
         ln -sf ${mpas_run_ROOT}/run_data/${init_file} mpas.init.nc
-        ln -sf ${mpas_run_ROOT}/run_data/${sst_file} mpas.sfc_update.nc
         ln -sf ${mpas_run_ROOT}/run_data/${domain}.${res}km.graph.info.part.${nproc} graph.info.part.${nproc}
         ln -sf /home/runner/MPAS-Model-BL/${exec} atmosphere_model
-        pwd
-        ls
-        pwd
-        ls -ltr /home/runner/MPAS-Model-BL
+        pwd && ls -l
+        pwd && ls -ltr /home/runner/MPAS-Model-BL
 
-    - name: Link to lateral boundary condition file for regional MPAS.
+    - name: Link lateral boundary condition file for regional MPAS.
       if: env.domain == 'conus'
       run: |
         cd ${mpas_run_ROOT}/run_bl
         ln -sf ${mpas_run_ROOT}/run_data/${lbc_file} mpas.lbc.nc
+        pwd && ls -l
 
+    - name: Link surface file
+      if: env.source == 'gfs'
+      run: |
+        cd ${mpas_run_ROOT}/run_bl
+        ln -sf ${mpas_run_ROOT}/run_data/${sst_file} mpas.sfc_update.nc
+        pwd && ls -l
+
+    - name: Link orography data
+      if: env.nml_version == 'gsl'
+      run: |
+        cd ${mpas_run_ROOT}/run_bl
+        ln -sf ${mpas_run_ROOT}/run_data/${ugwp_file} mpas.ugwp_oro_data.nc
+        pwd && ls -l
+
+    ##########################################################################################
+    # Configure MPAS feature runs
+    ##########################################################################################
     - name: Create and populate run directory (feature test)
       run: |
         cd ${mpas_run_ROOT} && mkdir run_rt && cd run_rt
-        pwd
-        ls -l
+        pwd && ls -l
 
+    ##########################################################################################
+    # Run MPAS
+    ##########################################################################################
     - name: Run MPAS (baseline branch)
       run: |
         cd ${mpas_run_ROOT}/run_bl
-        pwd
-        ls -l
+        pwd && ls -l
  
     - name: Run MPAS (feature branch)
       run: |
         cd ${mpas_run_ROOT}/run_rt
-        pwd
-        ls -l
+        pwd && ls -l
 
     ##########################################################################################
     # Compare feature branch to baseline branch.
