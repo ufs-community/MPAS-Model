@@ -184,6 +184,13 @@ jobs:
     # Run twice. Once to create the baseline results using the gsl/develop branch, and again
     # using the feature branch.
     ##########################################################################################
+    - name: Set environmental variable
+      run: |
+        echo "datestring=${yyyy}${mm}${dd}${hh}" >> $GITHUB_ENV
+        pwd
+        echo ${yyyy}${mm}${dd}${hh}
+        echo ${datestring}
+
     - name: Download required MPAS data
       run: |
         wget -q https://gsl.noaa.gov/${grid_dir}/${domain}.${res}km.graph.info.part.${nproc}
