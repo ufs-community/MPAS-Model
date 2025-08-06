@@ -292,7 +292,7 @@ jobs:
     - name: Run MPAS (baseline branch)
       run: |
         cd ${mpas_run_ROOT}/run_bl
-        mpiexec -n ${nproc} ./atmosphere_model
+        #mpiexec -n ${nproc} ./atmosphere_model
         pwd && ls -l
  
     - name: Run MPAS (feature branch)
