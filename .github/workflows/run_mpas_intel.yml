@@ -231,14 +231,14 @@ jobs:
     ##########################################################################################
     # Configure MPAS baseline runs
     ##########################################################################################
-    - name: Create and populate run directory (baseline test)
+    - name: Create and populate run directory (baselines)
       run: |
         cd ${mpas_run_ROOT} && mkdir run_bl && cd run_bl
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.TBL .
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.DBL .
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*DATA .
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_noahmp/parameters/NoahmpTable.TBL .
-        ln -sf ${mpas_run_ROOT}/run_data/${init_file} mpas.init.nc
+        ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.init_file}} mpas.init.nc
         ln -sf ${mpas_run_ROOT}/run_data/${domain}.${res}km.graph.info.part.${nproc} graph.info.part.${nproc}
         ln -sf /home/runner/MPAS-Model-BL/${exec} atmosphere_model
         pwd && ls -l
@@ -248,21 +248,21 @@ jobs:
       if: env.domain == 'conus'
       run: |
         cd ${mpas_run_ROOT}/run_bl
-        ln -sf ${mpas_run_ROOT}/run_data/${lbc_file} mpas.lbc.nc
+        ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.lbc_file}} mpas.lbc.nc
         pwd && ls -l
 
-    - name: Link surface file
+    - name: Link surface files
       if: env.source == 'gfs'
       run: |
         cd ${mpas_run_ROOT}/run_bl
-        ln -sf ${mpas_run_ROOT}/run_data/${sst_file} mpas.sfc_update.nc
+        ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.sst_file}} mpas.sfc_update.nc
         pwd && ls -l
 
     - name: Link orography data
       if: env.nml_version == 'gsl'
       run: |
         cd ${mpas_run_ROOT}/run_bl
-        ln -sf ${mpas_run_ROOT}/run_data/${ugwp_file} mpas.ugwp_oro_data.nc
+        ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.ugwp_file}} mpas.ugwp_oro_data.nc
         pwd && ls -l
 
     ##########################################################################################
