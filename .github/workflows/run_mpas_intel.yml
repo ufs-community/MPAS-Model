@@ -150,6 +150,12 @@ jobs:
     # When generating new baselines, checkout the gsl/develop branch from the ufs-community 
     # fork of MPAS-A and re-compile.
     ##########################################################################################
+    - name: Set variables
+      id: set_vars
+      run: |
+        echo "datestring=${yyyy}"-"${mm}"-"${dd}"_"${hh}".00.00"" >> $GITHUB_OUTPUT
+        echo "Output from Step 1: ${{ steps.set_vars.outputs.datestring }}"
+
     - name: Cache MPAS standalone needed to generate baselines
       id: cache-mpas-bl
       uses: actions/cache@v4
