@@ -254,14 +254,14 @@ jobs:
         ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.lbc_file}} mpas.lbc.nc
         pwd && ls -l
 
-    - name: Link surface files
+    - name: Link surface files to run directory
       if: env.source == 'gfs'
       run: |
         cd ${mpas_run_ROOT}/run_bl
         ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.sst_file}} mpas.sfc_update.nc
         pwd && ls -l
 
-    - name: Link orography data
+    - name: Link orography data to run directory
       if: env.nml_version == 'gsl'
       run: |
         cd ${mpas_run_ROOT}/run_bl
@@ -294,7 +294,7 @@ jobs:
     - name: Run MPAS (baselines)
       run: |
         cd ${mpas_run_ROOT}/run_bl
-        mpiexec -n ${nproc} ./atmosphere_model
+        mpirun -n ${nproc} ./atmosphere_model
         pwd && ls -l
  
     - name: Run MPAS (feature branch)
