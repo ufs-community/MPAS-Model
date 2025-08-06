@@ -38,7 +38,7 @@ jobs:
       source:            gfs
       domain:            conus
       res:               120
-      exec:              atmosphere_model.v8.3.0-1.13.intdebug
+      exec:              atmosphere_model
       nproc:             2
       yyyy:              "2023"
       mm:                "03"
@@ -237,7 +237,9 @@ jobs:
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.DBL .
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*DATA .
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_noahmp/parameters/NoahmpTable.TBL .
-        cp ${mpas_run_ROOT}/run_data/*.nc .
+        ln -sf ${mpas_run_ROOT}/run_data/${init_file} mpas.init.nc
+        ln -sf ${mpas_run_ROOT}/run_data/${lbc_file} mpas.lbc.nc
+	ln -sf ${mpas_run_ROOT}/run_data/${sst_file} mpas.sfc_update.nc
         ln -sf ${mpas_run_ROOT}/run_data/${domain}.${res}km.graph.info.part.${nproc} graph.info.part.${nproc}
         ln -sf /home/runner/MPAS-Model-BL/${exec} atmosphere_model
         pwd
