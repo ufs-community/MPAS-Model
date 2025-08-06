@@ -25,7 +25,7 @@ jobs:
       PNETCDF: /home/runner/PnetCDF
       AUTOTOOLS: /home/runner/AUTOTOOLS
       OMPI: /opt/intel/oneapi/mpi/2021.10.0
-      MPAS_version:   8.2.2-2.11
+      MPAS_case:      ncar-v8.3.0-intelmpi
       MPAS_codebase:  ncar
       MPAS_namelist:  ncar
       MPAS_source:    gfs
@@ -180,7 +180,9 @@ jobs:
     - name: Download required MPAS data
       run: |
         wget https://gsl.noaa.gov/thredds/catalog/retro/barlage/mpas_test_data/grid/${MPAS_domain}.${MPAS_res}km.graph.info.part.${MPAS_nproc}
-        #wget https://gsl.noaa.gov/thredds/catalog/retro/barlage/mpas_test_data/create_case_output/gsl-${MPAS_version}-intelmpi/${MPAS_namelist}.${MPAS_codebase}.${MPAS_domain}.${MPAS_res}km.${MPAS_source}.${MPAS_timestamp}/case_files/
+        wget -e robots=off -nH --cut-dirs N -nc -r -lX -A '*' -R 'catalog*' -I /thredds/fileServer/,/thredds/catalog/ 'https://gsl.noaa.gov/thredds/catalog/retro/barlage/mpas_test_data/run_case_input/create_case_output/${MPAS_case}/${MPAS_namelist}.${MPAS_codebase}.${MPAS_domain}.${MPAS_res}km.${MPAS_source}.${MPAS_timestamp}/case_files/catalog.html'
+        #wget -e robots=off -nH --cut-dirs N -nc -r -lX -A '*' -R 'catalog*' -I /thredds/fileServer/,/thredds/catalog/ 'https://gsl.noaa.gov/thredds/catalog/retro/barlage/mpas_test_data/run_case_input/create_case_output/ncar-v8.2.2-intelmpi/ncar.ncar.conus.120km.gfs.2023031015/case_files/catalog.html'
+
         pwd
         ls -l
 
