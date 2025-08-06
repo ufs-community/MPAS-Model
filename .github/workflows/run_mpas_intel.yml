@@ -172,16 +172,6 @@ jobs:
         echo ${{steps.set_vars.outputs.sst_file}}
         echo ${{steps.set_vars.outputs.ugwp_file}}
 
-    - name: Create and populate run directory
-      run: |
-        cd ${mpas_rt_ROOT} && mkdir run && cd run
-        ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.TBL .
-        ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.DBL .
-        ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*DATA .
-        ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_noahmp/parameters/NoahmpTable.TBL .
-        pwd
-        ls
-
     - name: Cache MPAS standalone needed to generate baselines
       id: cache-mpas-bl
       uses: actions/cache@v4
@@ -201,6 +191,16 @@ jobs:
         pwd
         ls -l ${mpas_bl_ROOT}
 
+    - name: Create and populate run directory
+      run: |
+        cd ${mpas_rt_ROOT} && mkdir run && cd run
+        ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.TBL .
+        ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.DBL .
+        ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*DATA .
+        ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_noahmp/parameters/NoahmpTable.TBL .
+        pwd
+        ls
+	
 #    - name: Checkout MPAS codebase for testing.
 #      uses: actions/checkout@v3
 #
