@@ -247,7 +247,7 @@ jobs:
         ls -ltr /home/runner/MPAS-Model-BL
 
     - name: Link to lateral boundary condition file for regional MPAS.
-      if: ${domain} == 'conus'
+      if: domain == 'conus'
       run: |
         cd ${mpas_run_ROOT}/run_bl
         ln -sf ${mpas_run_ROOT}/run_data/${lbc_file} mpas.lbc.nc
