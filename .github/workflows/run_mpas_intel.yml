@@ -188,8 +188,8 @@ jobs:
       run: |
         wget -q https://gsl.noaa.gov/${grid_dir}/${domain}.${res}km.graph.info.part.${nproc}
         wget -q -e robots=off -nH --cut-dirs N -nc -r -lX -A '*' -R 'catalog*' -I /thredds/fileServer/,/thredds/catalog/ \
-        https://gsl.noaa.gov/thredds/catalog/${case_dir}/${case}/${namelist}.${codebase}.${domain}.${res}km.${source}.${yyyy}${mm}${dd}${hh}/case_files/catalog.html
-        mv thredds/fileServer/${case_dir}/${case}/${namelist}.${codebase}.${domain}.${res}km.${source}.${yyyy}${mm}${dd}${hh}/case_files/* .
+        https://gsl.noaa.gov/thredds/catalog/${case_dir}/${case}/${namelist}.${codebase}.${domain}.${res}km.${source}.${timestamp}/case_files/catalog.html
+        mv thredds/fileServer/${case_dir}/${case}/${namelist}.${codebase}.${domain}.${res}km.${source}.${timestamp}/case_files/* .
         rm -rf thredds
         pwd
         ls -l
