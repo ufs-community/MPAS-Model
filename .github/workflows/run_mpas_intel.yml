@@ -36,6 +36,7 @@ jobs:
       code_base:         ncar
       nml:               ncar
       source:            gfs
+      source_repo:       gsl
       domain:            conus
       res:               120
       exec:              atmosphere_model
