@@ -1258,7 +1258,8 @@
 !local pointers:
  logical,pointer:: config_do_DAcycling, &
                    config_do_restart,   &
-                   bl_mynn_tkeadvect
+                   bl_mynn_tkeadvect,   &
+                   mix_chem
 
  character(len=StrKIND),pointer:: pbl_scheme
 
@@ -1300,6 +1301,8 @@
 !initialization of CCPP-compliant flags:
  errmsg = ' '
  errflg = 0
+
+ mix_chem  = .false.
 
  call mpas_pool_get_config(configs,'config_do_DAcycling',config_do_DAcycling)
  call mpas_pool_get_config(configs,'config_do_restart'  ,config_do_restart  )
@@ -1507,6 +1510,8 @@
 !      call mpas_log_write('--- f_nwfa = $l',logicArgs=(/f_nwfa/))
 !      call mpas_log_write('--- f_nbca = $l',logicArgs=(/f_nbca/))
 
+       if (num_chem > 0 ) mix_chem = .true.
+
        call mpas_timer_start('bl_mynnedmf')
        call mynnedmf_driver( &
                   f_qc       = f_qc         , f_qi       = f_qi        , f_qs        = f_qs             , &
@@ -1563,7 +1568,7 @@
                   bl_mynn_cloudmix   = bl_mynn_cloudmix    ,                                              &
                   bl_mynn_mixqt      = bl_mynn_mixqt       ,                                              &
                   bl_mynn_ess        = bl_mynn_ess         ,                                              &
-                  mix_chem = .true.,   &
+                  mix_chem = mix_chem, &
                   nchem = num_chem,    &
                   ndvel = num_chem,    &
                   chem3d = chem_p,     &
