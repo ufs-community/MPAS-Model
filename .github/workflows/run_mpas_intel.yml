@@ -154,8 +154,10 @@ jobs:
       id: set_vars
       run: echo "datestring=${yyyy}'-'${mm}'-'${dd}'_'${hh}'.00.00'" >> $GITHUB_OUTPUT
 
-#    - name: Check varaibles
-#      run: echo "Output from Step 1: ${{ steps.set_vars.outputs.datestring }}"
+    - name: Check varaibles
+      run: |
+        pwd
+        echo ${{ steps.set_vars.outputs.datestring }}
 
     - name: Cache MPAS standalone needed to generate baselines
       id: cache-mpas-bl
