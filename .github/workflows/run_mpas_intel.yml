@@ -154,12 +154,12 @@ jobs:
       id: set_vars
       run: |
         echo "datestring=${yyyy}'-'${mm}'-'${dd}'_'${hh}'.00.00'" >> $GITHUB_OUTPUT
-        echo "input_case_directory=${code_base}.${nml}.${domain}.${res}km.${source}.${yyyy}${mm}${dd}${hh}" >> $GITHUB_OUTPUT
-        echo "static_file=mpas.${code_base}.${nml}.${domain}.${res}.static.nc" >> $GITHUB_OUTPUT
-        echo "init_file=mpas.${code_base}.${nml}.${domain}.${res}.${source}.init.$datestring.nc" >> $GITHUB_OUTPUT
-        echo "lbc_file=mpas.${code_base}.${nml}.${domain}.${res}.${source}.lbc.$datestring.nc" >> $GITHUB_OUTPUT
-        echo "sst_file=mpas.${code_base}.${nml}.${domain}.${res}.${source}.sfc_update.$datestring.nc" >> $GITHUB_OUTPUT
-        echo "ugwp_file=mpas.${code_base}.${nml}.${domain}.${res}.ugwp_oro_data.nc" >> $GITHUB_OUTPUT
+        echo "input_case_directory=${code_base}.${nml}.${domain}.${res}km.${source}.${{steps.set_vars.outputs.datestring}}" >> $GITHUB_OUTPUT
+        echo "static_file=mpas.${code_base}.${nml}.${domain}.${res}km.static.nc" >> $GITHUB_OUTPUT
+        echo "init_file=mpas.${code_base}.${nml}.${domain}.${res}km.${source}.init.$datestring.nc" >> $GITHUB_OUTPUT
+        echo "lbc_file=mpas.${code_base}.${nml}.${domain}.${res}km.${source}.lbc.$datestring.nc" >> $GITHUB_OUTPUT
+        echo "sst_file=mpas.${code_base}.${nml}.${domain}.${res}km.${source}.sfc_update.$datestring.nc" >> $GITHUB_OUTPUT
+        echo "ugwp_file=mpas.${code_base}.${nml}.${domain}.${res}km.ugwp_oro_data.nc" >> $GITHUB_OUTPUT
 
     - name: Display configuration
       run: |
