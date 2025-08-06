@@ -154,10 +154,22 @@ jobs:
       id: set_vars
       run: |
         echo "datestring=${yyyy}'-'${mm}'-'${dd}'_'${hh}'.00.00'" >> $GITHUB_OUTPUT
+        echo "input_case_directory=${code_base}.${nml}.${domain}.${res}km.${source}.${yyyy}${mm}${dd}${hh}" >> $GITHUB_OUTPUT
+        echo "static_file=mpas.${code_base}.${nml}.${domain}.${res}.static.nc" >> $GITHUB_OUTPUT
+        echo "init_file=mpas.${code_base}.${nml}.${domain}.${res}.${source}.init.$datestring.nc" >> $GITHUB_OUTPUT
+        echo "lbc_file=mpas.${code_base}.${nml}.${domain}.${res}.${source}.lbc.$datestring.nc" >> $GITHUB_OUTPUT
+        echo "sst_file=mpas.${code_base}.${nml}.${domain}.${res}.${source}.sfc_update.$datestring.nc" >> $GITHUB_OUTPUT
+        echo "ugwp_file=mpas.${code_base}.${nml}.${domain}.${res}.ugwp_oro_data.nc" >> $GITHUB_OUTPUT
 
-    - name: Check varaibles
+    - name: Display configuration
       run: |
         echo ${{steps.set_vars.outputs.datestring}}
+        echo ${{steps.set_vars.outputs.input_case_directory}}
+        echo ${{steps.set_vars.outputs.static_file}}
+        echo ${{steps.set_vars.outputs.init_file}}
+        echo ${{steps.set_vars.outputs.lbc_file}}
+        echo ${{steps.set_vars.outputs.sst_file}}
+        echo ${{steps.set_vars.outputs.ugwp_file}}
 
     - name: Cache MPAS standalone needed to generate baselines
       id: cache-mpas-bl
