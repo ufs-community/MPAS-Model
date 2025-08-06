@@ -137,9 +137,9 @@ jobs:
         echo "LD_LIBRARY_PATH=${PNETCDF}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
 
     ##########################################################################################
-    # Compile MPAS for testing.
+    # Compile MPAS for testing "feature" branch.
     # When generating new baselines, checkout the gsl/develop branch from the ufs-community 
-    # fork of MPAS-A and also compile MPAS from this branch
+    # fork of MPAS-A and re-compile.
     ##########################################################################################
     - name: Cache MPAS standalone needed to generate baselines
       id: cache-mpas-bl
@@ -181,7 +181,8 @@ jobs:
       run: |
         wget https://gsl.noaa.gov/thredds/catalog/retro/barlage/mpas_test_data/grid/${MPAS_domain}.${MPAS_res}km.graph.info.part.${MPAS_nproc}
         wget -e robots=off -nH --cut-dirs N -nc -r -lX -A '*' -R 'catalog*' -I /thredds/fileServer/,/thredds/catalog/ https://gsl.noaa.gov/thredds/catalog/retro/barlage/mpas_test_data/run_case_input/create_case_output/${MPAS_case}/${MPAS_namelist}.${MPAS_codebase}.${MPAS_domain}.${MPAS_res}km.${MPAS_source}.${MPAS_timestamp}/case_files/catalog.html
-        mv thredds/catalog/retro/barlage/mpas_test_data/run_case_input/create_case_output/${MPAS_case}/${MPAS_namelist}.${MPAS_codebase}.${MPAS_domain}.${MPAS_res}km.${MPAS_source}.${MPAS_timestamp}/case_files/ .
+        mv thredds/fileServer/retro/barlage/mpas_test_data/run_case_input/create_case_output/${MPAS_case}/${MPAS_namelist}.${MPAS_codebase}.${MPAS_domain}.${MPAS_res}km.${MPAS_source}.${MPAS_timestamp}/case_files/* .
+        rm -rf thredds	
         #wget -e robots=off -nH --cut-dirs N -nc -r -lX -A '*' -R 'catalog*' -I /thredds/fileServer/,/thredds/catalog/ 'https://gsl.noaa.gov/thredds/catalog/retro/barlage/mpas_test_data/run_case_input/create_case_output/ncar-v8.2.2-intelmpi/ncar.ncar.conus.120km.gfs.2023031015/case_files/catalog.html'
 
         pwd
