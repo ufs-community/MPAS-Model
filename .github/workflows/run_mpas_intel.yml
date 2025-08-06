@@ -16,9 +16,10 @@ jobs:
 
     # Environmental variables
     env:
-      runner_ROOT:  /home/runner
-      mpas_rt_ROOT: /home/runner/work/MPAS-Model
-      mpas_bl_ROOT: /home/runner/MPAS-Model-BL
+      runner_ROOT:   /home/runner
+      mpas_rt_ROOT:  /home/runner/work/MPAS-Model
+      mpas_bl_ROOT:  /home/runner/MPAS-Model-BL
+      mpas_run_ROOT: /home/runner/work
       AUTOCONF_VERSION: 2.71
       AUTOMAKE_VERSION: 1.17
       M4_VERSION: 1.4.19
@@ -191,16 +192,6 @@ jobs:
         pwd
         ls -l ${mpas_bl_ROOT}
 
-    - name: Create and populate run directory
-      run: |
-        cd ${mpas_rt_ROOT} && mkdir run && cd run
-        ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.TBL .
-        ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.DBL .
-        ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*DATA .
-        ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_noahmp/parameters/NoahmpTable.TBL .
-        pwd
-        ls
-
 #    - name: Checkout MPAS codebase for testing.
 #      uses: actions/checkout@v3
 #
@@ -218,8 +209,9 @@ jobs:
     # Run twice. Once to create the baseline results using the gsl/develop branch, and again
     # using the feature branch.
     ##########################################################################################
-    - name: Download required MPAS data
+    - name: Download MPAS data (grid info, IC and LBC files)
       run: |
+        cd ${mpas_run_ROOT} && mkdir run_data && cd run_data
         wget -q https://gsl.noaa.gov/${grid_dir}/${domain}.${res}km.graph.info.part.${nproc}
         wget -q -e robots=off -nH --cut-dirs N -nc -r -lX -A '*' -R 'catalog*' -I /thredds/fileServer/,/thredds/catalog/ \
         https://gsl.noaa.gov/thredds/catalog/${case_dir}/${case_base}/${nml}.${code_base}.${domain}.${res}km.${source}.${yyyy}${mm}${dd}${hh}/case_files/catalog.html
@@ -227,25 +219,41 @@ jobs:
         rm -rf thredds
         pwd
         ls -l
-        pwd
-        ls -l ${mpas_bl_ROOT}
 
     - name: Download MPAS testing repository with runtime configurations.
       run: |
+        cd ${mpas_run_ROOT}
         git clone --recursive --branch main https://github.com/barlage/mpas_testcase.git
         pwd
         ls -l
         pwd
         ls -l mpas_testcase
 
-    - name: Run MPAS (baseline branch)
+    - name: Create and populate run directory (baseline test)
       run: |
+        cd ${mpas_run_ROOT} && mkdir run_bl && cd run_bl
+        ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.TBL .
+        ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.DBL .
+        ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*DATA .
+        ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_noahmp/parameters/NoahmpTable.TBL .
+        pwd
+        ls
+
+    - name: Create and populate run directory (feature test)
+      run: |
+        cd ${mpas_run_ROOT} && mkdir run_rt && cd run_rt
         pwd
         ls -l
-        cd ${mpas_bl_ROOT}	
+
+    - name: Run MPAS (baseline branch)
+      run: |
+        cd ${mpas_run_ROOT}/run_bl
+        pwd
+        ls -l
  
     - name: Run MPAS (feature branch)
       run: |
+        cd ${mpas_run_ROOT}/run_rt
         pwd
         ls -l
 
