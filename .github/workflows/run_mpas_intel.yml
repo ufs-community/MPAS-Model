@@ -28,17 +28,20 @@ jobs:
       OMPI: /opt/intel/oneapi/mpi/2021.10.0
       grid_dir:  thredds/catalog/retro/barlage/mpas_test_data/grid
       case_dir:  retro/barlage/mpas_test_data/run_case_input/create_case_output
-      case:      ncar-v8.2.2-intelmpi
-      codebase:  ncar
-      namelist:  ncar
-      source:    gfs
-      domain:    conus
-      res:       120
-      nproc:     2
-      yyyy:      "2023"
-      mm:        "03"
-      dd:        "10"
-      hh:        "15"
+      nml_version: ncar
+      case_base:   ncar-v8.2.2-intelmpi
+      code_base:   gsl-v8.3.0-1.8-intdebug
+      physics:     mesoscale_reference
+      codebase:    ncar
+      nml:         ncar
+      source:      gfs
+      domain:      conus
+      res:         120
+      nproc:       2
+      yyyy:        "2023"
+      mm:          "03"
+      dd:          "10"
+      hh:          "15"
 
     # Workflow steps
     steps:
@@ -187,8 +190,8 @@ jobs:
       run: |
         wget -q https://gsl.noaa.gov/${grid_dir}/${domain}.${res}km.graph.info.part.${nproc}
         wget -q -e robots=off -nH --cut-dirs N -nc -r -lX -A '*' -R 'catalog*' -I /thredds/fileServer/,/thredds/catalog/ \
-        https://gsl.noaa.gov/thredds/catalog/${case_dir}/${case}/${namelist}.${codebase}.${domain}.${res}km.${source}.${yyyy}${mm}${dd}${hh}/case_files/catalog.html
-        mv thredds/fileServer/${case_dir}/${case}/${namelist}.${codebase}.${domain}.${res}km.${source}.${yyyy}${mm}${dd}${hh}/case_files/* .
+        https://gsl.noaa.gov/thredds/catalog/${case_dir}/${case_base}/${nml}.${codebase}.${domain}.${res}km.${source}.${yyyy}${mm}${dd}${hh}/case_files/catalog.html
+        mv thredds/fileServer/${case_dir}/${case_base}/${nml}.${codebase}.${domain}.${res}km.${source}.${yyyy}${mm}${dd}${hh}/case_files/* .
         rm -rf thredds
         pwd
         ls -l
