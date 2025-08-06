@@ -159,7 +159,8 @@
                                   config_radt_lw_scheme,    &
                                   config_radt_sw_scheme,    &
                                   config_sfclayer_scheme,   &
-                                  config_smoke_scheme
+                                  config_smoke_scheme,      &
+                                  config_dust_scheme
 
  logical, pointer:: config_oml1d
  real(kind=RKIND),pointer:: config_bucket_radt
@@ -192,8 +193,9 @@
  call mpas_pool_get_config(domain%configs,'config_frac_seaice'      ,config_frac_seaice      ) 
  call mpas_pool_get_config(domain%configs,'config_oml1d'            ,config_oml1d            )
  call mpas_pool_get_config(domain%configs,'config_smoke_scheme'     ,config_smoke_scheme     )
+ call mpas_pool_get_config(domain%configs,'config_dust_scheme'      ,config_dust_scheme      )
 
- if(config_smoke_scheme .ne. 'off') then
+ if(config_smoke_scheme .ne. 'off' .or. config_dust_scheme  .ne. 'off') then
     do_chemistry = .true.
  else
     do_chemistry = .false.

@@ -26,6 +26,7 @@
 
    <packages>
          <package name="mpas_smoke_in"  description="parameterization of smoke."/>
+	 <package name="mpas_dust_in"   description="parameterization of dust"/>
          <package name="mpas_anthro_in" description="parameterization of anthropogenic emissions for mpas-smoke"/>
          <package name="mpas_aerosols_in" description="parameterization of mpas aerosols"/>
    </packages>
@@ -38,6 +39,10 @@
       <nml_option name="config_smoke_scheme" type="character" default_value="off" in_defaults="false"
            units="-"
            description="configuration for mpas smoke model"
+           possible_values="`on',`off'"/>
+      <nml_option name="config_dust_scheme" type="character" default_value="off" in_defaults="false"
+           units="-"
+           description="configuration for mpas dust model"
            possible_values="`on',`off'"/>
       <nml_option name="config_anthro_scheme" type="character" default_value="off" in_defaults="false"
            units="-"
@@ -168,6 +173,7 @@
               <var name="fire_type"/>
               
               <var_array name="e_bb_out"/>
+	      <var_array name="e_dust_out"/>
       </stream>
 
       <stream name="smoke_retro_input"
@@ -196,6 +202,22 @@
          <var name="fre_prev24"/>
       </stream>
 
+      <stream name="dust_input"
+         type="input"
+         filename_template="x1.40962.dust.init.nc"
+         input_interval="initial_only"
+         immutable="true"
+         in_defaults="false">
+
+         <var name="sandfrac_in"/>
+         <var name="clayfrac_in"/>
+         <var name="uthres_in"/>
+         <var name="uthres_sg_in"/>
+         <var name="sep_in"/>
+         <var name="albedo_drag_m_in"/>
+         <var name="feff_m_in"/>
+      </stream>
+
       <stream name="anthro_input"
          type="input"
          filename_template="anthro.init.$Y-$M-$D_$h.$m.$s.nc"
@@ -218,6 +240,14 @@
          <var name="smoke_fine" array_group="chemistry" units="kg kg^{-1}"
               description="fine smoke mixing ratio"
               packages="mpas_smoke_in;mpas_anthro_in"/>
+
+         <var name="dust_fine" array_group="chemistry" units="kg kg^{-1}"
+              description="fine dust mixing ratio"
+              packages="mpas_dust_in;mpas_anthro_in"/>
+
+         <var name="dust_coarse" array_group="chemistry" units="kg kg^{-1}"
+              description="coarse dust mixing ratio"
+              packages="mpas_dust_in;mpas_anthro_in"/>
       </var_array>
    </var_struct>
 
@@ -235,6 +265,12 @@
          <var name="e_ant_in_smoke_fine" name_in_code="e_ant_in_smoke_fine" array_group="ant_in_aerosols" units="ug m^{-2} s^{-1}"
               description="input anthropogenic fine smoke emissions"
               packages="mpas_anthro_in"/>
+         <var name="e_ant_in_dust_fine" name_in_code="e_ant_in_dust_fine" array_group="ant_in_aerosols" units="ug m^{-2} s^{-1}"
+              description="input anthropogenic fine dust emissions"
+              packages="mpas_anthro_in"/>
+         <var name="e_ant_in_dust_coarse" name_in_code="e_ant_in_dust_coarse" array_group="ant_in_aerosols" units="ug m^{-2} s^{-1}"
+              description="input anthropogenic coarse dust emissions"
+              packages="mpas_anthro_in"/>
       </var_array>
    </var_struct>
 
@@ -248,9 +284,24 @@
       </var_array>
 
       <var_array name="e_ant_out" type="real" dimensions="nVertLevels nCells Time">
+	 <var name="e_ant_out_dust_fine" name_in_code="e_ant_out_dust_fine" array_group="ant_out_aerosols" units="ug m^{-2} s^{-1}"
+              description="ouput anthropogenic fine dust emissions"
+              packages="mpas_anthro_in"/>
+         <var name="e_ant_out_dust_coarse" name_in_code="e_ant_out_dust_coarse" array_group="ant_out_aerosols" units="ug m^{-2} s^{-1}"
+              description="output anthropogenic coarse dust emissions"
+              packages="mpas_anthro_in"/>
          <var name="e_ant_out_smoke_fine" name_in_code="e_ant_out_smoke_fine" array_group="ant_out_aerosols" units="ug m^{-2} s^{-1}"
               description="output anthropogenic fine smoke emissions"
               packages="mpas_anthro_in"/>
+      </var_array>
+
+      <var_array name="e_dust_out" type="real" dimensions="nVertLevels nCells Time">
+         <var name="e_dust_out_dust_fine"   name_in_code="e_dust_out_dust_fine" array_group="dust_out_aerosols" units="ug m^{-2} s^{-1}"
+              description="emissions of fine dust"
+              packages="mpas_dust_in"/>
+         <var name="e_dust_out_dust_coarse" name_in_code="e_dust_out_dust_coarse" array_group="dust_out_aerosols" units="ug m^{-2} s^{-1}"
+              description="emissions of fine dust"
+              packages="mpas_dust_in"/>
       </var_array>
 
       <var name="frac_grid_burned" type="real" dimensions="nCells Time" units="-"
@@ -321,6 +372,33 @@
            description="particulate matter less than or equal to 2.5 micrometers in diameter"/>
       <var name="PM10"             type="real" dimensions="nVertLevels nCells Time" units="ug m^{-3}"
            description="particulate matter less than or equal to 10 micrometers in diameter"/>
+      <var name="feff"                  type="real" dimensions="nCells Time" units="-"
+           description="drag partition (alternate)"
+           packages="mpas_dust_in"/>
+      <var name="albedo_drag"           type="real" dimensions="nCells Time" units="-"
+           description="drag partition"
+           packages="mpas_dust_in"/>
+      <var name="uthres_in" type="real" dimensions="nCells" units="-"
+           description="threshold friction velocity"
+           packages="mpas_dust_in"/>
+      <var name="uthres_sg_in" type="real" dimensions="nCells" units="-"
+           description="threshold friction velocity (alternate"
+           packages="mpas_dust_in"/>
+      <var name="sandfrac_in" type="real" dimensions="nCells" units="-"
+           description="sand fraction"
+           packages="mpas_dust_in"/>
+      <var name="clayfrac_in" type="real" dimensions="nCells" units="-"
+           description="clay fraction"
+           packages="mpas_dust_in"/>
+      <var name="albedo_drag_m_in" type="real" dimensions="nMonths nCells" units="-"
+           description="drag partition"
+           packages="mpas_dust_in"/>
+      <var name="feff_m_in" type="real" dimensions="nMonths nCells" units="-"
+           description="drag partition (alternate)"
+           packages="mpas_dust_in"/>
+      <var name="sep_in" type="real" dimensions="nCells" units="-"
+           description="soil erosion potential"
+           packages="mpas_dust_in"/>
   </var_struct>
 
 
@@ -333,6 +411,13 @@
          <var name="tend_smoke_fine" name_in_code="smoke_fine" array_group="chemistry" units="kg m^{-3} s^{-1}"
                description="Tendency of fine smoke mass per unit volume divided by d(zeta)/dz"
                packages="mpas_smoke_in"/>
+         <var name="tend_dust_fine" name_in_code="dust_fine" array_group="chemistry" units="kg m^{-3} s^{-1}"
+               description="Tendency of fine dust mass per unit volume divided by d(zeta)/dz"
+               packages="mpas_dust_in"/>
+
+          <var name="tend_dust_coarse" name_in_code="dust_coarse" array_group="chemistry" units="kg m^{-3} s^{-1}"
+               description="Tendency of fine dust mass per unit volume divided by d(zeta)/dz"
+               packages="mpas_dust_in"/>
             </var_array>
 #endif
         </var_struct>
@@ -344,6 +429,11 @@
       <var_array name="lbc_scalars" type="real" dimensions="nVertLevels nCells Time">
          <var name="lbc_smoke_fine" name_in_code="smoke_fine" array_group="chemistry"  packages="mpas_smoke_in" units="kg kg^{-1} s^{-1}"
               description="Lateral boundary tendency of fine smoke mixing ratio"/>
+         <var name="lbc_dust_fine" name_in_code="dust_fine" array_group="chemistry"  packages="mpas_dust_in" units="kg kg^{-1} s^{-1}"
+              description="Lateral boundary tendency of fine dust mixing ratio"/>
+
+         <var name="lbc_dust_coarse" name_in_code="dust_coarse" array_group="chemistry"  packages="mpas_dust_in" units="kg kg^{-1} s^{-1}"
+              description="Lateral boundary tendency of coarse dust mixing ratio"/>
       </var_array>
    </var_struct>
 

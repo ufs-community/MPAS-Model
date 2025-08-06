@@ -12,6 +12,11 @@ OBJS = \
 	dep_data_mod.o \
 	module_wetdep_ls.o \
 	module_zero_plumegen_coms.o \
+	dust_data_mod.o \
+	dust_fengsha_mod.o \
+	ssalt_mod.o \
+	seas_ngac_mod.o \
+	seas_data_mod.o \
 	module_smoke_plumerise.o \
 	module_add_emiss_burn.o \
 	module_plumerise.o \
@@ -30,6 +35,14 @@ dep_dry_mod_emerson.o: \
         dep_data_mod.o \
 	mpas_smoke_init.o \
 	mpas_smoke_config.o
+
+dust_fengsha_mod.o: \
+	mpas_smoke_config.o \
+	dust_data_mod.o \
+	mpas_smoke_init.o
+
+dust_data_mod.o: \
+	mpas_smoke_init.o
 
 module_wetdep_ls.o: \
 	mpas_smoke_config.o \
@@ -56,6 +69,15 @@ mpas_smoke_wrapper.o:      \
 
 module_zero_plumegen_coms.o: \ \
         mpas_smoke_config.o
+
+ssalt_mod.o: \
+	seas_ngac_mod.o \
+	seas_data_mod.o \
+	mpas_smoke_init.o
+
+seas_data_mod.o:
+
+seas_ngac_mod.o:
 
 #module_smoke_plumerise.o: module_smoke_plumerise.F90
 #	$(FC) $(CPPFLAGS) $(COREDEF) $(FFLAGS) -c module_smoke_plumerise.F90 $(CPPINCLUDES) $(FCINCLUDES) -I.. -I../../../framework -I../../../external/esmf_time_f90

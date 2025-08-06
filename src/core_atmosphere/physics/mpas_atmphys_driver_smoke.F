@@ -39,6 +39,7 @@
  type(mpas_pool_type),intent(in):: configs
  
  character(len=StrKIND),pointer :: config_smoke_scheme
+ character(len=StrKIND),pointer :: config_dust_scheme
  integer, pointer :: ebb_dcycle
  integer, pointer :: wetdep_ls_opt
  integer, pointer :: drydep_opt
@@ -47,6 +48,7 @@
  integer:: i,k,j
 
  call mpas_pool_get_config(configs,'config_smoke_scheme', config_smoke_scheme)
+ call mpas_pool_get_config(configs,'config_dust_scheme', config_dust_scheme)
  call mpas_pool_get_config(configs,'ebb_dcycle', ebb_dcycle)
  call mpas_pool_get_config(configs,'wetdep_ls_opt',wetdep_ls_opt)
  call mpas_pool_get_config(configs,'drydep_opt',drydep_opt)
@@ -118,6 +120,15 @@
        if(.not.allocated(max_bb_plume_p))        allocate(max_bb_plume_p(ims:ime,jms:jme))
     endif
  endif
+ if ( config_dust_scheme .ne. 'off' ) then
+    if(.not.allocated(clayfrac_in_p))        allocate(clayfrac_in_p(ims:ime,jms:jme))
+    if(.not.allocated(sandfrac_in_p))        allocate(sandfrac_in_p(ims:ime,jms:jme))
+    if(.not.allocated(uthres_in_p))          allocate(uthres_in_p(ims:ime,jms:jme))
+    if(.not.allocated(uthres_sg_in_p))       allocate(uthres_sg_in_p(ims:ime,jms:jme))
+    if(.not.allocated(albedo_drag_p))        allocate(albedo_drag_p(ims:ime,jms:jme))
+    if(.not.allocated(sep_in_p))             allocate(sep_in_p(ims:ime,jms:jme))
+    if(.not.allocated(feff_p))               allocate(feff_p(ims:ime,jms:jme))
+ endif
 
  if(.not.allocated(ddvel_p))              allocate(ddvel_p(ims:ime,jms:jme,1:num_chem))
 
@@ -137,6 +148,9 @@
  endif
  if ( num_e_bb_out .gt. 0 .and. config_smoke_scheme .ne. 'off' ) then
     if(.not.allocated(e_bb_out_p))          allocate(e_bb_out_p  (ims:ime,kms:kme,jms:jme,1:num_e_bb_out)  )
+ endif
+ if ( num_e_dust_out .gt. 0 .and. config_dust_scheme .ne. 'off' ) then
+    if(.not.allocated(e_dust_out_p))        allocate(e_dust_out_p(ims:ime,kms:kme,jms:jme,1:num_e_dust_out))
  endif
 
  end subroutine allocate_smoke
@@ -192,6 +206,14 @@
  if(allocated(fre_prev24_p))       deallocate(fre_prev24_p)
  if(allocated(fire_end_hr_p))      deallocate(fire_end_hr_p)
 
+ if(allocated(clayfrac_in_p)    )     deallocate(clayfrac_in_p    )
+ if(allocated(sandfrac_in_p)    )     deallocate(sandfrac_in_p    )
+ if(allocated(uthres_in_p)      )     deallocate(uthres_in_p      )
+ if(allocated(uthres_sg_in_p)   )     deallocate(uthres_sg_in_p   )
+ if(allocated(albedo_drag_p)    )     deallocate(albedo_drag_p    )
+ if(allocated(feff_p)           )     deallocate(feff_p           )
+ if(allocated(sep_in_p)         )     deallocate(sep_in_p         )
+
  if(allocated(ddvel_p)       )        deallocate(ddvel_p)
  if(allocated(wetdep_resolved_p)   )  deallocate(wetdep_resolved_p)
  if(allocated(tend_chem_settle_p))    deallocate(tend_chem_settle_p)
@@ -203,6 +225,7 @@
  if(allocated(e_bb_in_p))             deallocate(e_bb_in_p)
 
  if(allocated(e_bb_out_p))            deallocate(e_bb_out_p)
+ if(allocated(e_dust_out_p))          deallocate(e_dust_out_p)
  
 !-----------------------------------------------------------------------------------------------------------------
 
@@ -248,14 +271,17 @@
       real(kind=RKIND),dimension(:,:),pointer    :: totprcp_prev24, hwp_prev24, frp_prev24, fre_prev24
       real(kind=RKIND),dimension(:),pointer      :: hfx_bb, qfx_bb, frac_grid_burned
       integer,dimension(:),pointer               :: min_bb_plume, max_bb_plume
+      real(kind=RKIND),dimension(:),pointer      :: sandfrac_in, clayfrac_in, uthres_in, uthres_sg_in, &
+                                                    sep_in, albedo_drag, feff
       real(kind=RKIND),dimension(:,:,:),pointer  :: e_bb_in
-      real(kind=RKIND),dimension(:,:,:),pointer  :: e_bb_out
+      real(kind=RKIND),dimension(:,:,:),pointer  :: e_bb_out, e_dust_out
       integer,dimension(:),pointer               :: isltyp,ivgtyp,kpbl
      
       integer,pointer                            :: chemistry_start,chemistry_end
 
       integer,pointer                            :: ebb_dcycle
       character(len=StrKIND),pointer :: config_smoke_scheme
+      character(len=StrKIND),pointer :: config_dust_scheme
       character(len=StrKIND),pointer :: config_convection_scheme
       integer, pointer :: wetdep_ls_opt
       integer, pointer :: drydep_opt
@@ -273,6 +299,7 @@
       call mpas_pool_get_dimension(state, 'chemistry_start', chemistry_start) 
       call mpas_pool_get_dimension(state, 'chemistry_end', chemistry_end)
       call mpas_pool_get_config(configs,'config_smoke_scheme', config_smoke_scheme)
+      call mpas_pool_get_config(configs,'config_dust_scheme', config_dust_scheme)
       call mpas_pool_get_config(configs,'ebb_dcycle', ebb_dcycle)
       call mpas_pool_get_config(configs,'wetdep_ls_opt',wetdep_ls_opt)
       call mpas_pool_get_config(configs,'drydep_opt',drydep_opt)
@@ -295,7 +322,7 @@
       call mpas_pool_get_array(diag_physics,'hpbl',hpbl)
       call mpas_pool_get_array(diag_physics,'kpbl',kpbl)
       call mpas_pool_get_array(diag_physics,'znt',znt)
-      if ( config_convection_scheme .eq. 'cu_grell_freitas' ) then
+      if ( config_convection_scheme .eq. 'cu_grell_freitas_li' ) then
          call mpas_pool_get_array(diag_physics,'ktop_deep',ktop_deep)
       endif
      
@@ -320,6 +347,16 @@
          call mpas_pool_get_array(diag_physics,'wetdep_resolved',wetdep_resolved)
       endif
       call mpas_pool_get_array(tend_physics,'tend_chem_settle',tend_chem_settle)
+
+      if ( config_dust_scheme .ne. 'off' ) then
+         call mpas_pool_get_array(diag_physics, 'clayfrac_in',clayfrac_in)
+         call mpas_pool_get_array(diag_physics, 'sandfrac_in',sandfrac_in)
+         call mpas_pool_get_array(diag_physics, 'uthres_in',uthres_in)
+         call mpas_pool_get_array(diag_physics, 'uthres_sg_in',uthres_sg_in)
+         call mpas_pool_get_array(diag_physics, 'albedo_drag',albedo_drag) ! these have been updated to select
+         call mpas_pool_get_array(diag_physics, 'feff',feff)               ! the correct month
+         call mpas_pool_get_array(diag_physics, 'sep_in',sep_in)
+      endif
 
       if (config_smoke_scheme .ne. 'off' .and. num_e_bb_in .gt. 0 ) then
          call mpas_pool_get_array(emis_input, 'e_bb_in', e_bb_in)
@@ -354,6 +391,9 @@
       endif
       if ( num_e_bb_out .gt. 0 ) then
          call mpas_pool_get_array(diag_physics, 'e_bb_out',e_bb_out)
+      endif
+      if ( num_e_dust_out .gt. 0 ) then
+         call mpas_pool_get_array(diag_physics, 'e_dust_out',e_dust_out)
       endif
      
       chem => scalars(chemistry_start:chemistry_end,:,:)
@@ -407,7 +447,7 @@
          vegfra_p(i,j)  = vegfra(i)
      ! Met
          kpbl_p(i,j)    = kpbl(i)
-         if ( config_convection_scheme .eq. 'cu_grell_freitas' ) then
+         if ( config_convection_scheme .eq. 'cu_grell_freitas_li' ) then
             ktop_deep_p(i,j)=ktop_deep(i)
          else
             ktop_deep_p(i,j)=1
@@ -420,7 +460,7 @@
          z0_p(i,j)      = z0(i)
          snowh_p(i,j)   = snowh(i)
          rmol_p(i,j)    = rmol(i)
-         if ( config_convection_scheme .eq. 'cu_grell_freitas' ) then
+         if ( config_convection_scheme .eq. 'cu_grell_freitas_li' ) then
             raincv_p(i,j)  = raincv(i)
          else
             raincv_p(i,j) = 0._RKIND
@@ -460,6 +500,18 @@
             qfx_bb_p(i,j)       = 0._RKIND
          endif
      endif
+     !
+     ! Dust
+     !
+     if ( config_dust_scheme .ne. 'off' ) then
+         sandfrac_in_p(i,j)    = sandfrac_in(i)
+         clayfrac_in_p(i,j)    = clayfrac_in(i)
+         uthres_in_p(i,j)      = uthres_in(i)
+         uthres_sg_in_p(i,j)   = uthres_sg_in(i)
+         albedo_drag_p(i,j)    = albedo_drag(i)
+         feff_p(i,j)           = feff(i)
+         sep_in_p(i,j)         = sep_in(i)
+     endif
      ! Chem diags
          do n= 1,num_chem
             ddvel_p(i,j,n) = 0._RKIND
@@ -479,6 +531,11 @@
          if (num_e_bb_out .gt. 0 ) then
          do n = 1, num_e_bb_out
             e_bb_out_p(i,k,j,n)  = e_bb_out(n,k,i)
+         enddo
+         endif
+         if (num_e_dust_out .gt. 0 ) then
+         do n = 1, num_e_dust_out
+            e_dust_out_p(i,k,j,n) = e_dust_out(n,k,i)
          enddo
          endif
       enddo
@@ -511,12 +568,13 @@
  real(kind=RKIND),dimension(:),    pointer:: frp_out, fre_out, hwp, coef_bb_dc
  real(kind=RKIND),dimension(:),    pointer:: hfx_bb, qfx_bb, frac_grid_burned
  real(kind=RKIND),dimension(:,:)  ,pointer:: PM2_5, PM10
- real(kind=RKIND),dimension(:,:,:),pointer:: e_bb_out
+ real(kind=RKIND),dimension(:,:,:),pointer:: e_bb_out, e_dust_out
  integer,dimension(:),pointer:: min_bb_plume, max_bb_plume
  
  integer,pointer :: chemistry_start,chemistry_end
  integer,pointer                :: ebb_dcycle
  character(len=StrKIND),pointer :: config_smoke_scheme
+ character(len=StrKIND),pointer :: config_dust_scheme
  integer, pointer :: wetdep_ls_opt
  integer, pointer :: drydep_opt
  integer, pointer :: plumerise_opt
@@ -538,6 +596,7 @@
  call mpas_pool_get_dimension(state, 'chemistry_start', chemistry_start) 
  call mpas_pool_get_dimension(state, 'chemistry_end', chemistry_end) 
  call mpas_pool_get_config(configs,'config_smoke_scheme', config_smoke_scheme)
+ call mpas_pool_get_config(configs,'config_dust_scheme', config_dust_scheme)
  call mpas_pool_get_config(configs,'ebb_dcycle', ebb_dcycle)
  call mpas_pool_get_config(configs,'wetdep_ls_opt',wetdep_ls_opt)
  call mpas_pool_get_config(configs,'drydep_opt',drydep_opt)
@@ -547,6 +606,9 @@
 
  if (num_e_bb_out .gt. 0 ) then
     call mpas_pool_get_array(diag_physics, 'e_bb_out',e_bb_out)
+ endif
+ if (num_e_dust_out .gt. 0 ) then
+    call mpas_pool_get_array(diag_physics, 'e_dust_out',e_dust_out)
  endif
  if (config_smoke_scheme .ne. 'off' ) then
     call mpas_pool_get_array(diag_physics,'frp_out',frp_out)
@@ -585,6 +647,12 @@
    if (num_e_bb_out .gt. 0 ) then
    do n = 1, num_e_bb_out
       e_bb_out(n,k,i) = e_bb_out_p(i,k,j,n)
+   enddo
+   endif
+!
+   if (num_e_dust_out .gt. 0 ) then
+   do n = 1, num_e_dust_out
+      e_dust_out(n,k,i) = e_dust_out_p(i,k,j,n)
    enddo
    endif
 !
@@ -657,14 +725,16 @@
 
  !local pointers:
  integer,pointer :: index_smoke_fine
+ integer,pointer :: index_dust_fine, index_dust_coarse
  integer,pointer :: index_e_bb_in_smoke_fine
- integer,pointer :: index_e_bb_out_smoke_fine
+ integer,pointer :: index_e_bb_out_smoke_fine, index_e_dust_out_dust_fine, index_e_dust_out_dust_coarse
                   
  integer,pointer                :: chemistry_start
  !namelists
  logical,pointer                :: config_do_restart
  character(len=StrKIND),pointer :: config_smoke_scheme
- logical                        :: do_mpas_smoke
+ character(len=StrKIND),pointer :: config_dust_scheme
+ logical                        :: do_mpas_smoke, do_mpas_dust
  integer,pointer                :: hwp_method
  real(kind=RKIND),pointer       :: hwp_alpha
  integer,pointer                :: wetdep_ls_opt
@@ -679,10 +749,13 @@
  logical,pointer                :: add_fire_heat_flux
  logical,pointer                :: add_fire_moist_flux
  integer,pointer                :: plumerisefire_frq
+ real(kind=RKIND),pointer       :: dust_alpha, dust_gamma
+ real(kind=RKIND),pointer       :: dust_drylimit_factor, dust_moist_correction
 
  integer                        :: i,j,k
 
  do_mpas_smoke  = .false.
+ do_mpas_dust   = .false.
 
 !copy MPAS arrays to local arrays:
  call smoke_from_MPAS(dt_dyn, time_lev, emis_input, state, configs, mesh, &
@@ -691,6 +764,7 @@
  call mpas_pool_get_config(configs,'config_do_restart'       ,config_do_restart)
 ! Namelist: schemes
  call mpas_pool_get_config(configs,'config_smoke_scheme', config_smoke_scheme)
+ call mpas_pool_get_config(configs,'config_dust_scheme', config_dust_scheme)
 ! Namelist: smoke
  call mpas_pool_get_config(configs,'hwp_method',hwp_method)
  call mpas_pool_get_config(configs,'hwp_alpha',hwp_alpha)
@@ -707,14 +781,25 @@
  call mpas_pool_get_config(configs,'wetdep_ls_alpha',wetdep_ls_alpha) 
  call mpas_pool_get_config(configs,'drydep_opt',drydep_opt)
  call mpas_pool_get_config(configs,'pm_settling',pm_settling)
+! Namelist: dust
+ call mpas_pool_get_config(configs,'dust_alpha', dust_alpha)
+ call mpas_pool_get_config(configs,'dust_gamma', dust_gamma)
+ call mpas_pool_get_config(configs,'dust_drylimit_factor' ,dust_drylimit_factor)
+ call mpas_pool_get_config(configs,'dust_moist_correction', dust_moist_correction)
 ! Indexes: emissions in
  call mpas_pool_get_dimension(emis_input,'index_e_bb_in_smoke_fine',index_e_bb_in_smoke_fine)
 
+! Indexes: emissions out
  call mpas_pool_get_dimension(diag_physics,'index_e_bb_out_smoke_fine',index_e_bb_out_smoke_fine)
+
+ call mpas_pool_get_dimension(diag_physics,'index_e_dust_out_dust_fine',index_e_dust_out_dust_fine)
+ call mpas_pool_get_dimension(diag_physics,'index_e_dust_out_dust_coarse',index_e_dust_out_dust_coarse)
 
 ! Tracer indexes
  call mpas_pool_get_dimension(state,'chemistry_start', chemistry_start) 
  call mpas_pool_get_dimension(state,'index_smoke_fine'  ,index_smoke_fine )
+ call mpas_pool_get_dimension(state,'index_dust_fine'  ,index_dust_fine )
+ call mpas_pool_get_dimension(state,'index_dust_coarse'  ,index_dust_coarse )
 
  initflag = 1
  if(config_do_restart .or. itimestep > 1) initflag = 0
@@ -723,14 +808,21 @@
     (index_smoke_fine .gt. 0 )) then
      do_mpas_smoke = .true.
  endif
+ if (config_dust_scheme   .ne. 'off'  .and. &
+    (index_dust_fine .gt. 0 .or. index_dust_coarse .gt. 0 )) then
+     do_mpas_dust  = .true.
+ endif
 
  call mpas_timer_start('mpas_smoke')
  call mpas_smoke_driver(                                                                 &
            chem  = chem_p, num_chem = num_chem, chemistry_start = chemistry_start,       &
            kemit = kemit,  kfire = kfire, kbio = kbio, kvol = kvol,                      &
            index_smoke_fine = index_smoke_fine,                                          &  
+           index_dust_fine  = index_dust_fine,  index_dust_coarse  = index_dust_coarse,  &
            index_e_bb_in_smoke_fine     = index_e_bb_in_smoke_fine,                      &
            index_e_bb_out_smoke_fine    = index_e_bb_out_smoke_fine,                     &
+           index_e_dust_out_dust_fine   = index_e_dust_out_dust_fine,                    &
+           index_e_dust_out_dust_coarse = index_e_dust_out_dust_coarse,                  &
            hwp     = hwp_p,                                                              &
            frp_in         = frp_in_p,            frp_out = frp_out_p,                    &
            fre_in         = fre_in_p,            fre_out = fre_out_p,                    &
@@ -740,11 +832,15 @@
            frac_grid_burned                              = frac_grid_burned_p,           &
            min_bb_plume   = min_bb_plume_p, max_bb_plume = max_bb_plume_p,               &
            coef_bb_dc     = coef_bb_dc_p,   e_bb_in       = e_bb_in_p,                   &
+           sandfrac_in    = sandfrac_in_p, clayfrac_in    = clayfrac_in_p,               &
+           uthres_in      = uthres_in_p,   uthres_sg_in   = uthres_sg_in_p,              &
+           albedo_drag_in = albedo_drag_p, feff_in        = feff_p, sep_in = sep_in_p,   &
+           e_dust_out     = e_dust_out_p,   &
            e_bb_out       = e_bb_out_p,  num_e_bb_in    = num_e_bb_in,                   &
-           num_e_bb_out   = num_e_bb_out,                                                & 
+           num_e_bb_out   = num_e_bb_out, num_e_dust_out = num_e_dust_out,               &
            ddvel = ddvel_p, wetdep_resolved = wetdep_resolved_p,                         &
            tend_chem_settle = tend_chem_settle_p,                                        &
-           do_mpas_smoke = do_mpas_smoke,                                                &
+           do_mpas_smoke = do_mpas_smoke, do_mpas_dust   = do_mpas_dust,                 &
            hwp_method = hwp_method, hwp_alpha = hwp_alpha, wetdep_ls_opt = wetdep_ls_opt,&
            wetdep_ls_alpha        = wetdep_ls_alpha, plumerise_opt = plumerise_opt,      &
            plume_wind_eff         = plume_wind_eff,  plume_alpha   = plume_alpha,        &
@@ -754,6 +850,9 @@
            add_fire_heat_flux  = add_fire_heat_flux,                                     &
            add_fire_moist_flux = add_fire_moist_flux,                                    &
            plumerisefire_frq   = plumerisefire_frq,                                      &
+           dust_alpha = dust_alpha, dust_gamma = dust_gamma,                             &
+           dust_drylimit_factor  = dust_drylimit_factor,                                 &
+           dust_moist_correction = dust_moist_correction,                                &
            ktau    = itimestep   , dt       = dt_dyn     , dxcell   = dx_p       ,       &
            area    = area_p      ,                                                       &
            xland   = xland_p     , u10      = u10_p      , v10      = v10_p      ,       &
@@ -783,11 +882,13 @@
  do i = its,ite
     PM2_5_p(i,k,j) = 0.0_RKIND
        if (index_smoke_fine .gt. 0)  PM2_5_p(i,k,j) = PM2_5_p(i,k,j) + chem_p(i,k,j,index_smoke_fine - chemistry_start + 1)
+       if (index_dust_fine  .gt. 0)  PM2_5_p(i,k,j) = PM2_5_p(i,k,j) + chem_p(i,k,j,index_dust_fine  - chemistry_start + 1)
     PM2_5_p(i,k,j) = PM2_5_p(i,k,j) * rho_p(i,k,j)
 
-    !PM10_p(i,k,j) =  0.0_RKIND
-    !  if (index_smoke_coarse .gt. 0) PM10_p(i,k,j) = PM10_p(i,k,j) + chem_p(i,k,j,index_smoke_coarse - chemistry_start + 1)
-    !PM10_p(i,k,j) = PM10_p(i,k,j) *  rho_p(i,k,j)
+    PM10_p(i,k,j) =  0.0_RKIND
+     !if (index_smoke_coarse .gt. 0) PM10_p(i,k,j) = PM10_p(i,k,j) + chem_p(i,k,j,index_smoke_coarse - chemistry_start + 1)
+      if (index_dust_coarse .gt.  0) PM10_p(i,k,j) = PM10_p(i,k,j) + chem_p(i,k,j,index_dust_coarse  - chemistry_start + 1)
+    PM10_p(i,k,j) = PM10_p(i,k,j) *  rho_p(i,k,j)
  enddo
  enddo
  enddo

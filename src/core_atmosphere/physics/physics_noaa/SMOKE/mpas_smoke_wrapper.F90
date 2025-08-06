@@ -14,6 +14,8 @@ module mpas_smoke_wrapper
    use dep_dry_simple_mod,    only : dry_dep_driver_simple
    use dep_dry_mod_emerson,   only : dry_dep_driver_emerson
    use module_wetdep_ls,      only : wetdep_ls
+   use dust_fengsha_mod,      only : gocart_dust_fengsha_driver
+   use ssalt_mod
 
    implicit none
 
@@ -26,19 +28,27 @@ contains
     subroutine mpas_smoke_driver(                                                            &
            num_chem              , chemistry_start             , chem           ,            &    
            kemit                 , kbio, kfire, kvol, index_smoke_fine,                      &
+           index_dust_fine       , index_dust_coarse           ,                             &
            index_e_bb_in_smoke_fine, index_e_bb_out_smoke_fine,                              &
+           index_e_dust_out_dust_fine, index_e_dust_out_dust_coarse,                         &
            frp_in                , frp_out,    fre_in, fre_out, hwp,                         &
-           totprcp_prev24        , hwp_prev24     , frp_prev24,    fre_prev24,               &
-           hfx_bb                , qfx_bb         ,  frac_grid_burned    ,                   &
-           min_bb_plume          , max_bb_plume,                                             &
-           coef_bb_dc            , e_bb_in, e_bb_out,    num_e_bb_in, num_e_bb_out,          &
-           ddvel                 , wetdep_resolved       , tend_chem_settle      ,           & 
-           do_mpas_smoke         ,                                                           &
-           hwp_method            , hwp_alpha             , wetdep_ls_opt         ,           &
+           totprcp_prev24        , hwp_prev24     ,  frp_prev24,    fre_prev24  ,            &
+           hfx_bb                , qfx_bb         ,  frac_grid_burned           ,            &
+           min_bb_plume          , max_bb_plume   ,                                          &
+           sandfrac_in           , clayfrac_in           , uthres_in            ,            &
+           uthres_sg_in          , albedo_drag_in        , feff_in              ,            &
+           sep_in                ,                                                           &
+           coef_bb_dc            , e_bb_in,      e_bb_out, e_dust_out           ,            &
+           num_e_bb_in           , num_e_bb_out          , num_e_dust_out       ,            &
+           ddvel                 , wetdep_resolved       , tend_chem_settle     ,            & 
+           do_mpas_smoke         , do_mpas_dust          ,                                   &
+           hwp_method            , hwp_alpha             , wetdep_ls_opt        ,            &
            wetdep_ls_alpha       , plumerise_opt         , plume_wind_eff       ,            &
            plume_alpha           , bb_emis_scale_factor, ebb_dcycle             ,            &
            drydep_opt            , pm_settling           , add_fire_heat_flux   ,            &
            add_fire_moist_flux   , plumerisefire_frq     ,                                   &
+           dust_alpha            , dust_gamma            , dust_drylimit_factor ,            &
+           dust_moist_correction ,                                                           &
            ktau                  , dt                    , dxcell               ,            &
            area                  ,                                                           & 
            xland                 , u10                   , v10                  ,            &
@@ -75,7 +85,7 @@ contains
 ! Dimensions and indexes
     integer,intent(in):: nsoil, nlcat, num_chem, chemistry_start
     integer,intent(in):: kemit, kbio, kfire, kvol
-    integer,intent(in):: num_e_bb_in, num_e_bb_out
+    integer,intent(in):: num_e_bb_in, num_e_bb_out, num_e_dust_out
 ! 2D mesh arguments
     real(RKIND),intent(in), dimension(ims:ime, jms:jme)             :: xlat, xlong, dxcell, area, xland   ! grid
 ! 2D Met input
@@ -103,11 +113,13 @@ contains
     real(RKIND),intent(in), dimension(ims:ime,1:nsoil, jms:jme)               :: smois, tslb
     real(RKIND),intent(in), dimension(ims:ime,1:nlcat, jms:jme)               :: landusef
 ! Chemistry indexes into MPAS scalar array
-    integer, intent(in) :: index_smoke_fine
+    integer, intent(in) :: index_smoke_fine, index_dust_fine,  index_dust_coarse
     integer, intent(in) :: index_e_bb_in_smoke_fine
-    integer, intent(in) :: index_e_bb_out_smoke_fine
+    integer, intent(in) :: index_e_bb_out_smoke_fine, index_e_dust_out_dust_fine, index_e_dust_out_dust_coarse
 ! 2D chemistry input (only) arrays 
     real(RKIND),intent(in),dimension(ims:ime, jms:jme),optional  :: frp_in, fre_in      ! Fire input
+    real(RKIND),intent(in),dimension(ims:ime, jms:jme),optional  :: sandfrac_in, clayfrac_in, uthres_in, &        ! dust (FENGSHA) input
+                                                                    uthres_sg_in, albedo_drag_in, feff_in, sep_in ! dust (FENGSHA) input
 ! 2D input/output arrays
     real(RKIND),intent(inout),dimension(ims:ime, jms:jme),optional :: frp_out, fre_out
     real(RKIND),intent(inout),dimension(ims:ime, jms:jme),optional :: hwp, coef_bb_dc
@@ -118,6 +130,7 @@ contains
     real(RKIND),intent(inout), dimension(ims:ime, jms:jme, 1:num_chem),optional :: ddvel
 ! 3D output arrays
     real(RKIND),intent(inout), dimension(ims:ime, kms:kme, jms:jme,1:num_e_bb_out),optional    :: e_bb_out
+    real(RKIND),intent(inout), dimension(ims:ime, kms:kme, jms:jme,1:num_e_dust_out),optional  :: e_dust_out
 ! 3D + chem output arrays
     real(RKIND),intent(inout), dimension(ims:ime, kms:kme, jms:jme, 1:num_chem),optional :: tend_chem_settle
     real(RKIND),intent(inout), dimension(ims:ime, kms:kme, jms:jme, 1:num_chem) :: chem
@@ -134,6 +147,7 @@ contains
     real(RKIND), dimension(ims:ime, jms:jme) :: total_flashrate
 !>-- Namelist options
      logical,intent(in)                :: do_mpas_smoke
+     logical,intent(in)                :: do_mpas_dust
      integer,intent(in)                :: hwp_method
      real(RKIND),intent(in)            :: hwp_alpha
      integer,intent(in)                :: wetdep_ls_opt
@@ -148,6 +162,8 @@ contains
      logical,intent(in)                :: add_fire_heat_flux
      logical,intent(in)                :: add_fire_moist_flux
      integer,intent(in)                :: plumerisefire_frq
+     real(RKIND),intent(in)            :: dust_alpha, dust_gamma
+     real(RKIND),intent(in)            :: dust_drylimit_factor, dust_moist_correction
 
 !>- plume variables
     ! -- buffers
@@ -189,7 +205,7 @@ contains
     errflg = 0
  
   ! If not simulating smoke or pollen, get outta here...
-    if ( .not. do_mpas_smoke) return
+    if ( (.not. do_mpas_smoke) .and. (.not. do_mpas_dust)) return
 
     uspdavg2d   = 0._RKIND
     hpbl2d      = 0._RKIND
@@ -209,7 +225,7 @@ contains
 !   Reorder chemistry indices -- TODO if ktau = 1?
 !
     call set_scalar_indices(chemistry_start,                             &
-                    index_smoke_fine)
+                    index_smoke_fine, index_dust_fine, index_dust_coarse)
 !
 !
 !
@@ -348,6 +364,41 @@ contains
                         its,ite, jts,jte, kts,kte                     )
     endif
   endif ! if do_mpas_smoke
+
+  ! -- add sea salt emissions
+    !if (do_mpas_ssalt) then
+    ! call gocart_seasalt_driver (                                     &
+    !         dt,rri,t_phy,u_phy,v_phy,                                &
+    !         num_chem,chem,rho_phy,dz8w,u10,v10,                      &
+    !         ust,p8w,tskin,xland,xlat,xlong,area,g,                   &
+    !         e_ss_out,num_e_ss_out,                                   &
+    !         index_e_ss_out_ssalt_fine,                               &
+    !         index_e_ss_out_ssalt_coarse,pi,                          &
+    !         num_emis_seas,seas_opt,                                  &
+    !         ids,ide, jds,jde, kds,kde,                               &
+    !         ims,ime, jms,jme, kms,kme,                               &
+    !         its,ite, jts,jte, kts,kte                                )
+    !endif
+
+    if ( do_mpas_dust ) then
+    !-- compute dust (FENGSHA)
+       call gocart_dust_fengsha_driver(dt,chem,rho_phy,               &
+            smois,tslb,p8w,                                           &
+            isltyp,snowh,xland,area,g,                                &
+            ust,znt,                                                  &
+            clayfrac_in,sandfrac_in,                                  &
+            uthres_in, uthres_sg_in,                                  &
+            albedo_drag_in, feff_in, sep_in,                          &
+            e_dust_out, num_e_dust_out,                               &
+            index_e_dust_out_dust_fine,                               &
+            index_e_dust_out_dust_coarse,                             &
+            num_emis_dust,num_chem,nsoil,                             &
+            dust_alpha, dust_gamma, dust_drylimit_factor,             &
+            dust_moist_correction,                                    &
+            ids,ide, jds,jde, kds,kde,                                &
+            ims,ime, jms,jme, kms,kme,                                &
+            its,ite, jts,jte, kts,kte                                 )
+    end if
 
     !>-- compute dry deposition, based on Emerson et al., (2020)
     if (drydep_opt == 1) then
