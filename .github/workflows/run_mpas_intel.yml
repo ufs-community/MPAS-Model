@@ -236,6 +236,8 @@ jobs:
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.DBL .
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*DATA .
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_noahmp/parameters/NoahmpTable.TBL .
+        cp ${mpas_run_ROOT}/run_data/*.nc .
+        cp ${mpas_run_ROOT}/run_data/conus.* .
         pwd
         ls
 
