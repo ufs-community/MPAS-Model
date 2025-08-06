@@ -234,7 +234,7 @@ jobs:
     - name: Create and populate run directory (baselines)
       run: |
         cd ${mpas_run_ROOT} && mkdir run_bl && cd run_bl
-        cp ${mpas_run_ROOT}/mpas_testcase/case_files/${nml_version}/${domain}km/${source}.${yyyy}${mm}${dd}${hh}/${physics}/* .
+        cp ${mpas_run_ROOT}/mpas_testcase/case_files/${nml_version}/${domain}/${source}.${yyyy}${mm}${dd}${hh}/${physics}/* .
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.TBL .
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.DBL .
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*DATA .
@@ -289,10 +289,10 @@ jobs:
     ##########################################################################################
     # Run MPAS
     ##########################################################################################
-    - name: Run MPAS (baseline branch)
+    - name: Run MPAS (baselines)
       run: |
         cd ${mpas_run_ROOT}/run_bl
-        #mpiexec -n ${nproc} ./atmosphere_model
+        mpiexec -n ${nproc} ./atmosphere_model
         pwd && ls -l
  
     - name: Run MPAS (feature branch)
