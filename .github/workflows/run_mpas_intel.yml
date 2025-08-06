@@ -294,7 +294,7 @@ jobs:
     - name: Run MPAS (baselines)
       run: |
         cd ${mpas_run_ROOT}/run_bl
-        srun -np 2 ./atmosphere_model
+        mpirun -np 2 ./atmosphere_model
         pwd && ls -l
  
     - name: Run MPAS (feature branch)
