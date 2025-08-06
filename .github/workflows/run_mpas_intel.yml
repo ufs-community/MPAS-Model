@@ -239,7 +239,7 @@ jobs:
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_noahmp/parameters/NoahmpTable.TBL .
         ln -sf ${mpas_run_ROOT}/run_data/${init_file} mpas.init.nc
         ln -sf ${mpas_run_ROOT}/run_data/${lbc_file} mpas.lbc.nc
-	ln -sf ${mpas_run_ROOT}/run_data/${sst_file} mpas.sfc_update.nc
+        ln -sf ${mpas_run_ROOT}/run_data/${sst_file} mpas.sfc_update.nc
         ln -sf ${mpas_run_ROOT}/run_data/${domain}.${res}km.graph.info.part.${nproc} graph.info.part.${nproc}
         ln -sf /home/runner/MPAS-Model-BL/${exec} atmosphere_model
         pwd
