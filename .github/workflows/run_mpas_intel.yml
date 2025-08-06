@@ -25,7 +25,7 @@ jobs:
       PNETCDF: /home/runner/PnetCDF
       AUTOTOOLS: /home/runner/AUTOTOOLS
       OMPI: /opt/intel/oneapi/mpi/2021.10.0
-      MPAS_case:      ncar-v8.3.0-intelmpi
+      MPAS_case:      ncar-v8.2.2-intelmpi
       MPAS_codebase:  ncar
       MPAS_namelist:  ncar
       MPAS_source:    gfs
