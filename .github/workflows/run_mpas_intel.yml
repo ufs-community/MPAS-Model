@@ -37,7 +37,7 @@ jobs:
       timestamp: 2023031015
       nproc:     2
       yyyy:      2023
-      mm:        03
+      mm:        "03"
       dd:        10
       hh:        15
 
