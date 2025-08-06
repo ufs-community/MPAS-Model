@@ -265,6 +265,18 @@ jobs:
         ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.ugwp_file}} mpas.ugwp_oro_data.nc
         pwd && ls -l
 
+    - name: Link TEMPO MP data tables to run directory (DJS ToDo)
+      if: env.physics == 'hrrrv5'
+      run: |
+        cd ${mpas_run_ROOT}/run_bl
+        pwd && ls -l
+
+    - name: Link Thompson MP data tables to run directory
+      if: contains(env.physics, 'convection_permitting')
+      run: |
+        cd ${mpas_run_ROOT}/run_bl
+        pwd && ls -l
+
     ##########################################################################################
     # Configure MPAS feature runs
     ##########################################################################################
