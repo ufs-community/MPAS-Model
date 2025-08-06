@@ -149,6 +149,7 @@ jobs:
     # Compile MPAS for testing "feature" branch.
     # When generating new baselines, checkout the gsl/develop branch from the ufs-community 
     # fork of MPAS-A and re-compile.
+    # $model_base_directory = 
     ##########################################################################################
     - name: Set variables
       id: set_vars
@@ -170,6 +171,16 @@ jobs:
         echo ${{steps.set_vars.outputs.lbc_file}}
         echo ${{steps.set_vars.outputs.sst_file}}
         echo ${{steps.set_vars.outputs.ugwp_file}}
+
+    - name: Create and populate run directory
+      run: |
+        cd ${mpas_rt_ROOT} && mkdir run && cd run
+        ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.TBL .
+        ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.DBL .
+        ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*DATA .
+        ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_noahmp/parameters/NoahmpTable.TBL .
+        pwd
+        ls
 
     - name: Cache MPAS standalone needed to generate baselines
       id: cache-mpas-bl
