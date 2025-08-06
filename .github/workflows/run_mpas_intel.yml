@@ -25,6 +25,7 @@ jobs:
       PNETCDF: /home/runner/PnetCDF
       AUTOTOOLS: /home/runner/AUTOTOOLS
       OMPI: /opt/intel/oneapi/mpi/2021.10.0
+      grid_dir:  thredds/catalog/retro/barlage/mpas_test_data/grid
       case_dir:  retro/barlage/mpas_test_data/run_case_input/create_case_output
       case:      ncar-v8.2.2-intelmpi
       codebase:  ncar
@@ -180,14 +181,15 @@ jobs:
     ##########################################################################################
     - name: Download required MPAS data
       run: |
-        wget https://gsl.noaa.gov/thredds/catalog/retro/barlage/mpas_test_data/grid/${domain}.${res}km.graph.info.part.${nproc}
-        wget -e robots=off -nH --cut-dirs N -nc -r -lX -A '*' -R 'catalog*' \
-        -I /thredds/fileServer/,/thredds/catalog/ \
+        wget -q https://gsl.noaa.gov/${grid_dir}/${domain}.${res}km.graph.info.part.${nproc}
+        wget -q -e robots=off -nH --cut-dirs N -nc -r -lX -A '*' -R 'catalog*' -I /thredds/fileServer/,/thredds/catalog/ \
         https://gsl.noaa.gov/thredds/catalog/${case_dir}/${case}/${namelist}.${codebase}.${domain}.${res}km.${source}.${timestamp}/case_files/catalog.html
         mv thredds/fileServer/${case_dir}/${case}/${namelist}.${codebase}.${domain}.${res}km.${source}.${timestamp}/case_files/* .
         rm -rf thredds
         pwd
         ls -l
+        pwd
+        ls -l ${mpas_bl_ROOT}
 
     - name: Download MPAS testing repository with runtime configurations.
       run: |
