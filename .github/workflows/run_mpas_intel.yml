@@ -25,14 +25,15 @@ jobs:
       PNETCDF: /home/runner/PnetCDF
       AUTOTOOLS: /home/runner/AUTOTOOLS
       OMPI: /opt/intel/oneapi/mpi/2021.10.0
-      MPAS_case:      ncar-v8.2.2-intelmpi
-      MPAS_codebase:  ncar
-      MPAS_namelist:  ncar
-      MPAS_source:    gfs
-      MPAS_domain:    conus
-      MPAS_res:       120
-      MPAS_timestamp: 2023031015
-      MPAS_nproc:     2
+      case_dir:  retro/barlage/mpas_test_data/run_case_input/create_case_output
+      case:      ncar-v8.2.2-intelmpi
+      codebase:  ncar
+      namelist:  ncar
+      source:    gfs
+      domain:    conus
+      res:       120
+      timestamp: 2023031015
+      nproc:     2
 
     # Workflow steps
     steps:
@@ -179,18 +180,20 @@ jobs:
     ##########################################################################################
     - name: Download required MPAS data
       run: |
-        wget https://gsl.noaa.gov/thredds/catalog/retro/barlage/mpas_test_data/grid/${MPAS_domain}.${MPAS_res}km.graph.info.part.${MPAS_nproc}
-        wget -e robots=off -nH --cut-dirs N -nc -r -lX -A '*' -R 'catalog*' -I /thredds/fileServer/,/thredds/catalog/ https://gsl.noaa.gov/thredds/catalog/retro/barlage/mpas_test_data/run_case_input/create_case_output/${MPAS_case}/${MPAS_namelist}.${MPAS_codebase}.${MPAS_domain}.${MPAS_res}km.${MPAS_source}.${MPAS_timestamp}/case_files/catalog.html
-        mv thredds/fileServer/retro/barlage/mpas_test_data/run_case_input/create_case_output/${MPAS_case}/${MPAS_namelist}.${MPAS_codebase}.${MPAS_domain}.${MPAS_res}km.${MPAS_source}.${MPAS_timestamp}/case_files/* .
-        rm -rf thredds	
-        #wget -e robots=off -nH --cut-dirs N -nc -r -lX -A '*' -R 'catalog*' -I /thredds/fileServer/,/thredds/catalog/ 'https://gsl.noaa.gov/thredds/catalog/retro/barlage/mpas_test_data/run_case_input/create_case_output/ncar-v8.2.2-intelmpi/ncar.ncar.conus.120km.gfs.2023031015/case_files/catalog.html'
-
+        wget https://gsl.noaa.gov/thredds/catalog/retro/barlage/mpas_test_data/grid/${domain}.${res}km.graph.info.part.${nproc}
+        wget -e robots=off -nH --cut-dirs N -nc -r -lX -A '*' -R 'catalog*' \
+        -I /thredds/fileServer/,/thredds/catalog/ \
+        https://gsl.noaa.gov/thredds/catalog/${case_dir}/${case}/${namelist}.${codebase}.${domain}.${res}km.${source}.${timestamp}/case_files/catalog.html
+        mv thredds/fileServer/${case_dir}/${case}/${namelist}.${codebase}.${domain}.${res}km.${source}.${timestamp}/case_files/* .
+        rm -rf thredds
         pwd
         ls -l
 
     - name: Download MPAS testing repository with runtime configurations.
       run: |
         git clone --recursive --branch main https://github.com/barlage/mpas_testcase.git
+        pwd
+        ls -l
         pwd
         ls -l mpas_testcase
 
