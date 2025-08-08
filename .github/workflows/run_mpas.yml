@@ -313,6 +313,7 @@ jobs:
         cd ${mpas_run_ROOT}/run_bl
         which mpirun
         which mpiexec
+        ls /home/runner/PnetCDF/bin
         mpiexec -np ${nproc} ./atmosphere_model
         pwd && ls -l
  
