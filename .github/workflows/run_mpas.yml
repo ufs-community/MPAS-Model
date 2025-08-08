@@ -1,16 +1,16 @@
-name: Run (Intel) MPAS Standalone
+name: Run (GNU) MPAS Standalone
 
 on: [push,pull_request,workflow_dispatch]
 
 jobs:
-  run_mpas_intel:
+  run_mpas_gnu:
 
     # The type of runner that the job will run on
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false  # Disable fail-fast
       matrix:
-        fortran-compiler: [intel]
+        fortran-compiler: [gfortrna-12]
         build-system:     [make]
         py-version:       [3.11]
 
@@ -26,7 +26,7 @@ jobs:
       LIBTOOL_VERSION: 2.5.4
       PNETCDF: /home/runner/PnetCDF
       AUTOTOOLS: /home/runner/AUTOTOOLS
-      OMPI: /opt/intel/oneapi/mpi/2021.10.0
+      OMPI: /home/runner/ompi-4.1.6
       grid_dir:          thredds/catalog/retro/barlage/mpas_test_data/grid
       case_dir:          retro/barlage/mpas_test_data/run_case_input/create_case_output
       nml_version:       ncar
@@ -50,27 +50,36 @@ jobs:
     steps:
 
     ##########################################################################################
-    # Build Software Stack needed for MPAS on GitHub server, using Intel package created and
-    # cached by NOAA-EMC.
-    # NOTE: This is fine for the time being, but this whole block of the workflow could(should)
-    #       be replace with containers that we can maintain/update w/ new compilers.
+    # Build Software Stack needed for MPAS on GitHub server, using GNU
     ##########################################################################################
-    - name: "Install Intel compilers & MPI"
-      uses: NOAA-EMC/ci-install-intel-toolkit@develop
-      with:
-        install-mpi: true
-
-    - name: Cache Intel
-      id: cache-INTEL
-      uses: actions/cache@v4
-      with:
-        path: /opt/intel/oneapi/mpi/2021.10.0
-        key: cache-AUTOTOOLS-${{matrix.fortran-compiler}}-key
 
     - name: Install NetCDF library
       run: |
         sudo apt-get update
         sudo apt-get install libnetcdff-dev
+
+    - name: Cache openmpi
+      id: cache-openmpi
+      uses: actions/cache@v4
+      with:
+        path: /home/runner/ompi-4.1.6
+        key: cache-openmpi-${{matrix.fortran-compiler}}-key
+
+    - name: Install openmpi
+      if: steps.cache-openmpi.outputs.cache-hit != 'true'
+      run: |
+        wget https://github.com/open-mpi/ompi/archive/refs/tags/v4.1.6.tar.gz
+        tar -xvf v4.1.6.tar.gz
+        cd ompi-4.1.6
+        ./autogen.pl
+        ./configure --prefix=${OMPI}
+        make -j4
+        make install
+
+    - name: Add (OMPI) to Paths
+      run: |
+        echo "LD_LIBRARY_PATH=${OMPI}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+        echo "PATH=${OMPI}/bin:$PATH" >> $GITHUB_ENV
 
     - name: Cache GNU autotools
       id: cache-AUTOTOOLS
@@ -112,6 +121,11 @@ jobs:
         echo "LD_LIBRARY_PATH=${AUTOTOOLS}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
         echo "PATH=${AUTOTOOLS}/bin:$PATH" >> $GITHUB_ENV
 
+    - name: Add (autotools) to Paths
+      run: |
+        echo "LD_LIBRARY_PATH=${AUTOTOOLS}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+        echo "PATH=${AUTOTOOLS}/bin:$PATH" >> $GITHUB_ENV
+
     - name: Cache PnetCDF
       id: cache-pnetcdf
       uses: actions/cache@v4
@@ -138,15 +152,18 @@ jobs:
         make -j 8 install
         echo "PATH=${PNETCDF}/bin:$PATH" >> $GITHUB_ENV
 
+    - name: Add (PNETCDF) to paths.
+      run: |
+        echo "PNETCDF=${PNETCDF}" >> $GITHUB_ENV
+        echo "LD_LIBRARY_PATH=${PNETCDF}/bin:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+        echo "PATH=${PNETCDF}/bin:$PATH" >> $GITHUB_ENV
+
     - name: Setup environment
       run: |
-        echo "FC=mpiifort" >> $GITHUB_ENV
-        echo "CC=mpiicc"   >> $GITHUB_ENV
-        echo "PNETCDF=${PNETCDF}" >> $GITHUB_ENV
-        echo "PATH=${AUTOTOOLS}/bin:$PATH" >> $GITHUB_ENV
-        echo "LD_LIBRARY_PATH=${AUTOTOOLS}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
-        echo "PATH=${PNETCDF}/bin:$PATH" >> $GITHUB_ENV
-        echo "LD_LIBRARY_PATH=${PNETCDF}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+        echo ----LD_LIBRARY_PATH----
+        echo $LD_LIBRARY_PATH
+        echo ----PATH----
+        echo $PATH
 
     ##########################################################################################
     # Compile MPAS for testing "feature" branch.
@@ -188,23 +205,23 @@ jobs:
         cd ${runner_ROOT}
         git clone --recursive --branch gsl/develop https://github.com/ufs-community/MPAS-Model.git MPAS-Model-BL
         cd ${mpas_bl_ROOT}
-        make intel-mpi CORE=atmosphere DEBUG=true
+        make gfortran CORE=atmosphere DEBUG=true
         pwd
         ls -l ${runner_ROOT}
         pwd
         ls -l ${mpas_bl_ROOT}
 
-#    - name: Checkout MPAS codebase for testing.
-#      uses: actions/checkout@v3
-#
-#    - name: Initialize any submodules from testing codebase.
-#      run: |
-#        git submodule update --init --recursive
-#
-#    - name: Build MPAS standalone for testing
-#      run: |
-#        cd ${mpas_rt_ROOT}/MPAS-Model
-#        make intel-mpi CORE=atmosphere DEBUG=true
+    - name: Checkout MPAS codebase for testing.
+      uses: actions/checkout@v3
+
+    - name: Initialize any submodules from testing codebase.
+      run: |
+        git submodule update --init --recursive
+
+    - name: Build MPAS standalone for testing
+      run: |
+        cd ${mpas_rt_ROOT}/MPAS-Model
+        make gfortran CORE=atmosphere DEBUG=true
 
     ##########################################################################################
     # Fetch any data/files needed for MPAS runs.
@@ -294,7 +311,9 @@ jobs:
     - name: Run MPAS (baselines)
       run: |
         cd ${mpas_run_ROOT}/run_bl
-        mpirun -np 2 ./atmosphere_model
+        which mpirun
+        which mpiexec
+        mpirun -np ${nproc} ./atmosphere_model
         pwd && ls -l
  
     - name: Run MPAS (feature branch)
