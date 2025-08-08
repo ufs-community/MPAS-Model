@@ -601,7 +601,6 @@
        endif
 
        if (.not. restart_or_cycle .and. itimestep .le. 1) then
-!       if (.not. restart_or_cycle .or. (restart_or_cycle .and. itimestep > 1) ) then
           !compute z/l first guess:
           call li_etal_2010(zol(i),br(i),za(i)/zntstoch(i),zratio(i))
        else
@@ -687,7 +686,6 @@
        regime(i)=4.
 
        if (.not. restart_or_cycle .and. itimestep .le. 1) then
-!       if (.not. restart_or_cycle .or. (restart_or_cycle .and. itimestep > 1) ) then
           !compute z/l first guess:
           call li_etal_2010(zol(i),br(i),za(i)/zntstoch(i),zratio(i))
        else
