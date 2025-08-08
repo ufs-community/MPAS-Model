@@ -311,9 +311,7 @@ jobs:
     - name: Run MPAS (baselines)
       run: |
         cd ${mpas_run_ROOT}/run_bl
-        which mpirun
-        which mpiexec
-        ls /home/runner/PnetCDF/lib
+        echo "PNETCDF=${PNETCDF}" >> $GITHUB_ENV
         mpiexec -np ${nproc} ./atmosphere_model
         pwd && ls -l
  
