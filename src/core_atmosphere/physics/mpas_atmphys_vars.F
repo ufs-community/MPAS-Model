@@ -221,7 +221,7 @@
     nifa2d_p
 
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
-      qasgs_p, qcsgs_p, qisgs_p
+      qalsgs_p, qaisgs_p
 
 !... arrays located at w (vertical velocity) points, or at interface between layers:
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
