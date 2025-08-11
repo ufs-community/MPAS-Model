@@ -45,16 +45,21 @@
  integer, pointer :: drydep_opt
  integer, pointer :: plumerise_opt
  logical, pointer :: add_fire_heat_flux, add_fire_moist_flux
- integer:: i,k,j
+ integer, pointer :: bb_input_prevh
+ integer:: i,k,j,nblocks
 
  call mpas_pool_get_config(configs,'config_smoke_scheme', config_smoke_scheme)
  call mpas_pool_get_config(configs,'config_dust_scheme', config_dust_scheme)
+
  call mpas_pool_get_config(configs,'ebb_dcycle', ebb_dcycle)
- call mpas_pool_get_config(configs,'wetdep_ls_opt',wetdep_ls_opt)
- call mpas_pool_get_config(configs,'drydep_opt',drydep_opt)
  call mpas_pool_get_config(configs,'plumerise_opt',plumerise_opt)
  call mpas_pool_get_config(configs,'add_fire_heat_flux',add_fire_heat_flux)
  call mpas_pool_get_config(configs,'add_fire_moist_flux',add_fire_moist_flux)
+ call mpas_pool_get_config(configs,'bb_input_prevh',bb_input_prevh)
+ nblocks = 24 / bb_input_prevh
+
+ call mpas_pool_get_config(configs,'wetdep_ls_opt',wetdep_ls_opt)
+ call mpas_pool_get_config(configs,'drydep_opt',drydep_opt)
 
 
  if(.not.allocated(dx_p)        ) allocate(dx_p(ims:ime,jms:jme)                 )
@@ -68,11 +73,11 @@
  if(.not.allocated(vegfra_p)    ) allocate(vegfra_p(ims:ime,jms:jme)             )
  if(.not.allocated(ivgtyp_p)    ) allocate(ivgtyp_p(ims:ime,jms:jme)             )
  if(.not.allocated(landusef_p)  ) allocate(landusef_p(ims:ime,1:num_landcat,jms:jme))
+ if(.not.allocated(coszr_p)     ) allocate(coszr_p(ims:ime,jms:jme)              )
 
  if(.not.allocated(tsk_p)       ) allocate(tsk_p(ims:ime,jms:jme)                )
  if(.not.allocated(hpbl_p)      ) allocate(hpbl_p(ims:ime,jms:jme)               )
  if(.not.allocated(t2m_p)       ) allocate(t2m_p(ims:ime,jms:jme)                )
-! if(.not.allocated(w_p)         ) allocate(w_p(ims:ime,kms:kme,jms:jme)          )
  if(.not.allocated(isltyp_p)    ) allocate(isltyp_p(ims:ime,jms:jme)             )
  if(.not.allocated(swdown_p)    ) allocate(swdown_p(ims:ime,jms:jme)             )
  if(.not.allocated(z0_p)        ) allocate(z0_p(ims:ime,jms:jme)                 )
@@ -83,30 +88,45 @@
  if(.not.allocated(kpbl_p)      ) allocate(kpbl_p(ims:ime,jms:jme)               )
  if(.not.allocated(znt_p)       ) allocate(znt_p(ims:ime,jms:jme)                )
  if(.not.allocated(dpt2m_p)     ) allocate(dpt2m_p(ims:ime,jms:jme)              )
- if(.not.allocated(mavail_p)    )  allocate(mavail_p(ims:ime,jms:jme)            )
+ if(.not.allocated(mavail_p)    ) allocate(mavail_p(ims:ime,jms:jme)             )
 
- if(.not.allocated(cldfrac_p)   ) allocate(cldfrac_p(ims:ime,kms:kme,jms:jme))
- if(.not.allocated(ktop_deep_p) ) allocate(ktop_deep_p(ims:ime,jms:jme)        )
+ if(.not.allocated(qcbl_p)      ) allocate(qcbl_p(ims:ime,kms:kme,jms:jme)       )
+ if(.not.allocated(qibl_p)      ) allocate(qibl_p(ims:ime,kms:kme,jms:jme)       )
+
+ if(.not.allocated(cldfrac_p)   ) allocate(cldfrac_p(ims:ime,kms:kme,jms:jme)    )
+ if(.not.allocated(ktop_deep_p) ) allocate(ktop_deep_p(ims:ime,jms:jme)          )
 
  if(.not.allocated(smois_p)     ) allocate(smois_p(ims:ime,1:num_soils,jms:jme)  )
  if(.not.allocated(tslb_p)      ) allocate(tslb_p(ims:ime,1:num_soils,jms:jme)   )
 
  if(.not.allocated(zgrid_p)     ) allocate(zgrid_p(ims:ime,kms:kme,jms:jme)      )
 
+ if(.not.allocated(vis_p)       ) allocate(vis_p(ims:ime,jms:jme)                )
+ if(.not.allocated(aod550_p)    ) allocate(aod550_p(ims:ime,jms:jme)                )
+ if(.not.allocated(aod3d_p))      allocate(aod3d_p(ims:ime,kms:kme,jms:jme))
+
  if ( config_smoke_scheme .ne. 'off' ) then
     if(.not.allocated(frp_out_p)   )         allocate(frp_out_p(ims:ime,jms:jme))
     if(.not.allocated(fre_out_p)   )         allocate(fre_out_p(ims:ime,jms:jme))
     if(.not.allocated(hwp_p)       )         allocate(hwp_p(ims:ime,jms:jme))
     if(.not.allocated(coef_bb_dc_p))         allocate(coef_bb_dc_p(ims:ime,jms:jme))
+    if(.not.allocated(aod3d_smoke_p))        allocate(aod3d_smoke_p(ims:ime,kms:kme,jms:jme))
     if (ebb_dcycle .eq. 1 ) then
        if(.not.allocated(frp_in_p)    )         allocate(frp_in_p(ims:ime,jms:jme))
        if(.not.allocated(fre_in_p)            )  allocate(fre_in_p(ims:ime,jms:jme))
     else
-       if(.not.allocated(totprcp_prev24_p)    )  allocate(totprcp_prev24_p(ims:ime,jms:jme,24))
-       if(.not.allocated(hwp_prev24_p)        )  allocate(hwp_prev24_p(ims:ime,jms:jme,24))
-       if(.not.allocated(frp_prev24_p)        )  allocate(frp_prev24_p(ims:ime,jms:jme,24))
-       if(.not.allocated(fre_prev24_p)        )  allocate(fre_prev24_p(ims:ime,jms:jme,24))
-       if(.not.allocated(fire_end_hr_p)       )  allocate(fire_end_hr_p(ims:ime,jms:jme))
+       if(.not.allocated(totprcp_prev24_p))  allocate(totprcp_prev24_p(ims:ime,jms:jme)) !should be always 2d
+       if(.not.allocated(hwp_avg_p)       )  allocate(hwp_avg_p(ims:ime,jms:jme,nblocks))
+       if(.not.allocated(frp_avg_p)       )  allocate(frp_avg_p(ims:ime,jms:jme,nblocks))
+       if(.not.allocated(fre_avg_p)       )  allocate(fre_avg_p(ims:ime,jms:jme,nblocks))
+       if(.not.allocated(fire_end_hr_p)   )  allocate(fire_end_hr_p(ims:ime,jms:jme)) !should be always 2d
+       if(.not.allocated(fmc_avg_p)       )  allocate(fmc_avg_p(ims:ime,jms:jme))  !should be always 2d
+       if(.not.allocated(eco_id_p)        )  allocate(eco_id_p(ims:ime,jms:jme))  !eco map 2d
+       if(.not.allocated(efs_smold_p)     )  allocate(efs_smold_p(ims:ime,jms:jme)) !EFs for smoldering
+       if(.not.allocated(efs_flam_p)      )  allocate(efs_flam_p(ims:ime,jms:jme)) !EFs for flaming
+       if(.not.allocated(efs_rsmold_p)    )  allocate(efs_rsmold_p(ims:ime,jms:jme)) !EFs for residual smoldering
+       if(.not.allocated(fire_end_hr_p)   )  allocate(fire_end_hr_p(ims:ime,jms:jme))
+       if(.not.allocated(fire_ef_out_p)   )  allocate(fire_ef_out_p(ims:ime,jms:jme))
     endif
     if (add_fire_heat_flux) then 
        if(.not.allocated(hfx_bb_p)           )  allocate(hfx_bb_p(ims:ime,jms:jme))
@@ -130,13 +150,12 @@
     if(.not.allocated(feff_p))               allocate(feff_p(ims:ime,jms:jme))
  endif
 
- if(.not.allocated(ddvel_p))              allocate(ddvel_p(ims:ime,jms:jme,1:num_chem))
-
- if ( wetdep_ls_opt .gt. 0 ) then
+ if ( wetdep_ls_opt .ne. 0 ) then
     if(.not.allocated(wetdep_resolved_p))    allocate(wetdep_resolved_p(ims:ime,jms:jme,1:num_chem))
  endif
- if ( drydep_opt .eq. 1 ) then
+ if ( drydep_opt .ne. 0 ) then
     if(.not.allocated(tend_chem_settle_p))   allocate(tend_chem_settle_p(ims:ime,kms:kme,jms:jme,1:num_chem))
+    if(.not.allocated(ddvel_p))              allocate(ddvel_p(ims:ime,jms:jme,1:num_chem))
  endif
 
  if(.not.allocated(chem_p))               allocate(chem_p(ims:ime,kms:kme,jms:jme,1:num_chem))
@@ -173,6 +192,9 @@
  if(allocated(vegfra_p)       ) deallocate(vegfra_p       )
  if(allocated(ivgtyp_p)       ) deallocate(ivgtyp_p       )
  if(allocated(landusef_p)     ) deallocate(landusef_p     )
+ if(allocated(coszr_p)        ) deallocate(coszr_p        )
+ if(allocated(qcbl_p)         ) deallocate(qcbl_p         )
+ if(allocated(qibl_p)         ) deallocate(qibl_p         )
 
  if(allocated(tsk_p)          ) deallocate(tsk_p          )
  if(allocated(hpbl_p)         ) deallocate(hpbl_p         )
@@ -188,23 +210,32 @@
  if(allocated(znt_p)          ) deallocate(znt_p          )
  if(allocated(dpt2m_p)        ) deallocate(dpt2m_p        )
  if(allocated(mavail_p)       ) deallocate(mavail_p       )
- 
+
  if(allocated(cldfrac_p)      ) deallocate(cldfrac_p      )
  if(allocated(ktop_deep_p)    ) deallocate(ktop_deep_p    )
 
  if(allocated(smois_p)        ) deallocate(smois_p        )
  if(allocated(tslb_p)         ) deallocate(tslb_p         )
 
+ if(allocated(vis_p)          ) deallocate(vis_p          )
+
  if(allocated(frp_in_p)       )       deallocate(frp_in_p     )
- if(allocated(frp_out_p)      )       deallocate(frp_out_p    )
  if(allocated(fre_in_p)       )       deallocate(fre_in_p     )
+
+ if(allocated(frp_out_p)      )       deallocate(frp_out_p    )
  if(allocated(fre_out_p)      )       deallocate(fre_out_p    )
 
- if(allocated(totprcp_prev24_p))   deallocate(totprcp_prev24_p)
- if(allocated(hwp_prev24_p))       deallocate(hwp_prev24_p)
- if(allocated(frp_prev24_p))       deallocate(frp_prev24_p)
- if(allocated(fre_prev24_p))       deallocate(fre_prev24_p)
+ if(allocated(hwp_avg_p))       deallocate(hwp_avg_p)
+ if(allocated(frp_avg_p))       deallocate(frp_avg_p)
+ if(allocated(fre_avg_p))       deallocate(fre_avg_p)
  if(allocated(fire_end_hr_p))      deallocate(fire_end_hr_p)
+ if(allocated(fmc_avg_p))      deallocate(fmc_avg_p)
+ if(allocated(eco_id_p))      deallocate(eco_id_p)
+ if(allocated(efs_smold_p))      deallocate(efs_smold_p)
+ if(allocated(efs_flam_p))      deallocate(efs_flam_p)
+ if(allocated(efs_rsmold_p))      deallocate(efs_rsmold_p)
+ if(allocated(totprcp_prev24_p))   deallocate(totprcp_prev24_p)
+ if(allocated(fire_ef_out_p))     deallocate(fire_ef_out_p)
 
  if(allocated(clayfrac_in_p)    )     deallocate(clayfrac_in_p    )
  if(allocated(sandfrac_in_p)    )     deallocate(sandfrac_in_p    )
@@ -221,6 +252,9 @@
  if(allocated(chem_p)     )           deallocate(chem_p)
  if(allocated(PM2_5_p)    )           deallocate(PM2_5_p)
  if(allocated(PM10_p)     )           deallocate(PM10_p)
+ if(allocated(aod550_p))              deallocate(aod550_p)
+ if(allocated(aod3d_smoke_p))         deallocate(aod3d_smoke_p)
+ if(allocated(aod3d_p))               deallocate(aod3d_p)
 
  if(allocated(e_bb_in_p))             deallocate(e_bb_in_p)
 
@@ -259,16 +293,20 @@
       real(kind=RKIND),dimension(:),pointer      :: raincv,rainncv,mavail
       real(kind=RKIND),dimension(:),pointer      :: rmol,snowh,z0,t2m,dpt2m
       real(kind=RKIND),dimension(:),pointer      :: dewpoint_surface
-      real(kind=RKIND),dimension(:),pointer      :: u10,v10,znt,hpbl,skintemp,vegfra
+      real(kind=RKIND),dimension(:),pointer      :: u10,v10,znt,hpbl,skintemp,vegfra,coszr
       real(kind=RKIND),dimension(:,:),pointer    :: cldfrac
       real(kind=RKIND),dimension(:,:),pointer    :: landusef
       real(kind=RKIND),dimension(:,:),pointer    :: smois,tslb
       real(kind=RKIND),dimension(:,:),pointer    :: zgrid
       real(kind=RKIND),dimension(:,:),pointer    :: ddvel
+      real(kind=RKIND),dimension(:,:),pointer    :: qc_bl, qi_bl
       real(kind=RKIND),dimension(:,:),pointer    :: wetdep_resolved
       real(kind=RKIND),dimension(:,:,:),pointer  :: tend_chem_settle
-      real(kind=RKIND),dimension(:),pointer      :: frp_in, frp_out, fre_in, fre_out, hwp, coef_bb_dc, fire_end_hr
-      real(kind=RKIND),dimension(:,:),pointer    :: totprcp_prev24, hwp_prev24, frp_prev24, fre_prev24
+      real(kind=RKIND),dimension(:),pointer      :: frp_in, frp_out, fre_in, fre_out, &
+                                                    hwp, coef_bb_dc, fire_end_hr, fire_ef_out
+      real(kind=RKIND),dimension(:,:),pointer    :: totprcp_prev24, hwp_prev24, frp_prev24, fre_prev24, fmc_prev24
+      real(kind=RKIND),dimension(:),pointer      :: efs_smold,efs_flam, efs_rsmold !JR eco regiona nd EF map
+      integer,dimension(:),pointer               :: eco_id
       real(kind=RKIND),dimension(:),pointer      :: hfx_bb, qfx_bb, frac_grid_burned
       integer,dimension(:),pointer               :: min_bb_plume, max_bb_plume
       real(kind=RKIND),dimension(:),pointer      :: sandfrac_in, clayfrac_in, uthres_in, uthres_sg_in, &
@@ -291,22 +329,31 @@
      
       real(kind=RKIND),dimension(:,:,:),pointer :: scalars
       real(kind=RKIND),dimension(:,:,:),pointer :: chem
+      integer, pointer :: bb_input_prevh !JR
      
-      integer:: i,j,k,n,h
+      integer:: i,j,k,n,h,t
+      integer:: nblocks, blk !JR
+      integer ::t_start, t_end, n_active, last_obs, t_size !JR
+      real(kind=RKIND) :: sum_fre, sum_frp, sum_hwp, sum_prcp, sum_cldfrac !JR
       
       call mpas_pool_get_array(state,'scalars',scalars,time_lev)
-     
       call mpas_pool_get_dimension(state, 'chemistry_start', chemistry_start) 
       call mpas_pool_get_dimension(state, 'chemistry_end', chemistry_end)
+
       call mpas_pool_get_config(configs,'config_smoke_scheme', config_smoke_scheme)
       call mpas_pool_get_config(configs,'config_dust_scheme', config_dust_scheme)
-      call mpas_pool_get_config(configs,'ebb_dcycle', ebb_dcycle)
+
       call mpas_pool_get_config(configs,'wetdep_ls_opt',wetdep_ls_opt)
       call mpas_pool_get_config(configs,'drydep_opt',drydep_opt)
+      call mpas_pool_get_config(configs,'config_convection_scheme',config_convection_scheme)
+
       call mpas_pool_get_config(configs,'plumerise_opt',plumerise_opt)
       call mpas_pool_get_config(configs,'add_fire_heat_flux',add_fire_heat_flux)
       call mpas_pool_get_config(configs,'add_fire_moist_flux',add_fire_moist_flux)
-      call mpas_pool_get_config(configs,'config_convection_scheme',config_convection_scheme)
+      call mpas_pool_get_config(configs,'ebb_dcycle', ebb_dcycle)
+      if (ebb_dcycle .eq. 2) then
+        nblocks = 24 / bb_input_prevh
+      endif
      
       call mpas_pool_get_config(configs,'config_len_disp',len_disp)
       call mpas_pool_get_array(mesh,'meshDensity',meshDensity)
@@ -315,13 +362,17 @@
       call mpas_pool_get_array(mesh,'areaCell',areaCell)
       call mpas_pool_get_array(sfc_input,'xland',xland)
       call mpas_pool_get_array(diag_physics,'ust',ust)
-     
+      call mpas_pool_get_array(diag_physics,'coszr',coszr)
       call mpas_pool_get_array(diag_physics,'u10',u10)
       call mpas_pool_get_array(diag_physics,'v10',v10)
       call mpas_pool_get_array(sfc_input,'skintemp',skintemp)
       call mpas_pool_get_array(diag_physics,'hpbl',hpbl)
       call mpas_pool_get_array(diag_physics,'kpbl',kpbl)
       call mpas_pool_get_array(diag_physics,'znt',znt)
+      ! TODO if (config_pbl_scheme .eq. 'mynnedmf')then
+      call mpas_pool_get_array(diag_physics,'qc_bl'     ,qc_bl     )
+      call mpas_pool_get_array(diag_physics,'qi_bl'     ,qi_bl     )
+      ! endif
       if ( config_convection_scheme .eq. 'cu_grell_freitas_li' ) then
          call mpas_pool_get_array(diag_physics,'ktop_deep',ktop_deep)
       endif
@@ -338,15 +389,16 @@
       call mpas_pool_get_array(diag_physics,'rmol',rmol)
       call mpas_pool_get_array(diag_physics,'raincv',raincv)
       call mpas_pool_get_array(diag_physics,'rainncv',rainncv)
-     ! call mpas_pool_get_array(diag_physics,'dewpoint_surface',dewpoint_surface)
       call mpas_pool_get_array(diag_physics,'mavail',mavail)
       call mpas_pool_get_array(diag_physics,'cldfrac',cldfrac)
      
-      call mpas_pool_get_array(diag_physics,'ddvel',ddvel)
-      if ( wetdep_ls_opt .eq. 1 ) then 
+      if ( wetdep_ls_opt .ne. 0 ) then
          call mpas_pool_get_array(diag_physics,'wetdep_resolved',wetdep_resolved)
       endif
-      call mpas_pool_get_array(tend_physics,'tend_chem_settle',tend_chem_settle)
+      if ( drydep_opt .ne. 0 ) then
+         call mpas_pool_get_array(tend_physics,'tend_chem_settle',tend_chem_settle)
+         call mpas_pool_get_array(diag_physics,'ddvel',ddvel)
+      endif
 
       if ( config_dust_scheme .ne. 'off' ) then
          call mpas_pool_get_array(diag_physics, 'clayfrac_in',clayfrac_in)
@@ -362,7 +414,7 @@
          call mpas_pool_get_array(emis_input, 'e_bb_in', e_bb_in)
       endif
 
-      if (config_smoke_scheme .ne. 'off' ) then 
+      if (config_smoke_scheme .ne. 'off' ) then
          call mpas_pool_get_array(diag_physics,'frp_out',frp_out)
          call mpas_pool_get_array(diag_physics,'fre_out',fre_out)
          call mpas_pool_get_array(diag_physics,'hwp',hwp)
@@ -376,6 +428,12 @@
             call mpas_pool_get_array(diag_physics,'frp_prev24',frp_prev24)
             call mpas_pool_get_array(diag_physics,'fre_prev24',fre_prev24)
             call mpas_pool_get_array(diag_physics,'fire_end_hr',fire_end_hr)
+            call mpas_pool_get_array(diag_physics,'fmc_prev24',fmc_prev24)
+            call mpas_pool_get_array(diag_physics,'eco_id',eco_id)
+            call mpas_pool_get_array(diag_physics,'efs_smold',efs_smold)
+            call mpas_pool_get_array(diag_physics,'efs_flam',efs_flam)
+            call mpas_pool_get_array(diag_physics,'efs_rsmold',efs_rsmold)
+            call mpas_pool_get_array(diag_physics,'fire_ef_out',fire_ef_out)
          endif
          if ( plumerise_opt .gt. 0 ) then
             call mpas_pool_get_array(diag_physics,'min_bb_plume',min_bb_plume)
@@ -403,9 +461,13 @@
       do i = its, ite
          zgrid_p(i,k,j)      = zgrid(k,i)
          cldfrac_p(i,k,j)    = cldfrac(k,i)
+         qcbl_p(i,k,j)     = qc_bl(k,i)
+         qibl_p(i,k,j)     = qi_bl(k,i)
          do n = 1, num_chem
             chem_p(i,k,j,n) = max(1.e-12_RKIND,chem(n,k,i))
-            tend_chem_settle_p(i,k,j,n) = 0._RKIND
+            if ( drydep_opt .ne. 0 ) then
+               tend_chem_settle_p(i,k,j,n) = 0._RKIND
+            endif
          enddo
       enddo
       enddo
@@ -432,6 +494,89 @@
       enddo
       enddo
       enddo
+
+     !
+     ! BB
+     !
+      if ( config_smoke_scheme .ne. 'off' ) then
+      do i = its, ite
+      do j = jts, jte
+          frp_out_p(i,j) = frp_out(i)
+          fre_out_p(i,j) = fre_out(i)
+          hwp_p(i,j)     = hwp(i)
+          coef_bb_dc_p(i,j) = coef_bb_dc(i)
+          if ( ebb_dcycle .eq. 1 ) then
+             frp_in_p(i,j)  = frp_in(i)
+             fre_in_p(i,j)  = fre_in(i)
+          else
+          eco_id_p     (i,j)  = eco_id(i)
+          efs_smold_p  (i,j)  = efs_smold(i)
+          efs_flam_p   (i,j)  = efs_flam(i)
+          efs_rsmold_p (i,j)  = efs_rsmold(i)
+          fire_ef_out_p(i,j)  = fire_ef_out(i)
+          fire_end_hr_p(i,j)  = fire_end_hr(i)
+          endif
+          if ( plumerise_opt .gt. 0 ) then
+             min_bb_plume_p(i,j) = 0
+             max_bb_plume_p(i,j) = 0
+          endif
+          if ( add_fire_heat_flux ) then
+             hfx_bb_p(i,j)       = 0._RKIND
+             frac_grid_burned_p(i,j) = frac_grid_burned(i)
+          endif
+          if ( add_fire_moist_flux ) then
+             qfx_bb_p(i,j)       = 0._RKIND
+          endif
+      enddo
+      enddo
+      endif
+      !
+
+      if ( config_smoke_scheme .ne. 'off' .and. ebb_dcycle .eq. 2 ) then
+      do blk = 1, nblocks
+        t_start = (blk - 1) * t_size + 1
+        t_end   = blk * t_size
+        do i = its, ite
+        do j = jts, jte
+           sum_frp = 0.0_RKIND
+           sum_fre = 0.0_RKIND
+           sum_hwp = 0.0_RKIND
+           !sum_prcp = 0.0_RKIND
+           n_active = 0
+           last_obs = -1
+           do t = t_start, t_end
+             if (frp_prev24(i,t) > 0.0_RKIND) then
+                sum_frp = sum_frp + frp_prev24(i,t)
+                sum_fre = sum_fre + fre_prev24(i,t)
+                sum_hwp = sum_hwp + hwp_prev24(i,t)
+                n_active = n_active + 1
+                last_obs = t
+             end if
+             sum_prcp = sum_prcp + totprcp_prev24(i,t)
+           end do
+
+           if (n_active > 0) then
+              frp_avg_p(i,j,blk) = sum_frp / n_active
+              fre_avg_p(i,j,blk) = sum_fre / n_active
+              hwp_avg_p(i,j,blk) = sum_hwp / n_active
+           else
+              frp_avg_p(i,j,blk) = 0.0_RKIND
+              fre_avg_p(i,j,blk) = 0.0_RKIND
+              hwp_avg_p(i,j,blk) = 0.0_RKIND
+           end if
+
+           if (blk == nblocks) then
+              totprcp_prev24_p(i,j) = sum_prcp
+              fire_end_hr_p(i,j) = 24
+              if (last_obs > 0) then
+                 fire_end_hr_p(i,j) = 24 - last_obs + 1
+                 fmc_avg_p(i,j) = fmc_prev24(i, t_end)     ! last observed
+              end if
+           endif
+        end do
+        end do
+      end do
+      end if
      
       do j = jts,jte
       do i = its,ite
@@ -445,6 +590,7 @@
          isltyp_p(i,j)  = isltyp(i)
          ivgtyp_p(i,j)  = ivgtyp(i)
          vegfra_p(i,j)  = vegfra(i)
+         coszr_p(i,j)   = coszr(i)
      ! Met
          kpbl_p(i,j)    = kpbl(i)
          if ( config_convection_scheme .eq. 'cu_grell_freitas_li' ) then
@@ -469,38 +615,6 @@
          dpt2m_p(i,j)   = 280. !dewpoint_surface(i)
          mavail_p(i,j)  = mavail(i)
      !
-     ! BB
-     !
-     if ( config_smoke_scheme .ne. 'off' ) then
-         frp_out_p(i,j) = frp_out(i)
-         fre_out_p(i,j) = fre_out(i)
-         hwp_p(i,j)     = hwp(i)
-         coef_bb_dc_p(i,j) = coef_bb_dc(i)
-         if ( ebb_dcycle .eq. 1 ) then
-            frp_in_p(i,j)  = frp_in(i)
-            fre_in_p(i,j)  = fre_in(i)
-         else
-            do h = 1,24 
-               totprcp_prev24_p(i,j,h) = totprcp_prev24(i,h)
-               hwp_prev24_p(i,j,h)     = hwp_prev24(i,h)
-               frp_prev24_p(i,j,h)     = frp_prev24(i,h)
-               fre_prev24_p(i,j,h)     = fre_prev24(i,h)
-               fire_end_hr_p(i,j)    = fire_end_hr(i)
-            enddo
-         endif
-         if ( plumerise_opt .gt. 0 ) then   
-            min_bb_plume_p(i,j) = 0
-            max_bb_plume_p(i,j) = 0
-         endif
-         if ( add_fire_heat_flux ) then
-            hfx_bb_p(i,j)       = 0._RKIND
-            frac_grid_burned_p(i,j) = frac_grid_burned(i)
-         endif
-         if ( add_fire_moist_flux ) then
-            qfx_bb_p(i,j)       = 0._RKIND
-         endif
-     endif
-     !
      ! Dust
      !
      if ( config_dust_scheme .ne. 'off' ) then
@@ -514,8 +628,12 @@
      endif
      ! Chem diags
          do n= 1,num_chem
-            ddvel_p(i,j,n) = 0._RKIND
-            wetdep_resolved_p(i,j,n) = 0._RKIND
+            if ( drydep_opt .ne. 0 ) then
+               ddvel_p(i,j,n) = 0._RKIND
+            endif
+            if ( wetdep_ls_opt .ne. 0 ) then
+               wetdep_resolved_p(i,j,n) = 0._RKIND
+            endif
          enddo
      ! Land cat
          do n= 1,num_landcat
@@ -561,13 +679,15 @@
  type(mpas_pool_type),intent(inout):: state
 
 !local variables:
- !real(kind=RKIND),dimension(:,:)  ,pointer:: cldfrac
  real(kind=RKIND),dimension(:,:,:),pointer:: scalars,chem
  real(kind=RKIND),dimension(:,:),  pointer:: ddvel, wetdep_resolved
  real(kind=RKIND),dimension(:,:,:),pointer:: tend_chem_settle
- real(kind=RKIND),dimension(:),    pointer:: frp_out, fre_out, hwp, coef_bb_dc
+ real(kind=RKIND),dimension(:)    ,pointer:: vis
+ real(kind=RKIND),dimension(:),    pointer:: frp_out, fre_out, hwp, coef_bb_dc, fire_ef_out
  real(kind=RKIND),dimension(:),    pointer:: hfx_bb, qfx_bb, frac_grid_burned
  real(kind=RKIND),dimension(:,:)  ,pointer:: PM2_5, PM10
+ real(kind=RKIND),dimension(:,:)  ,pointer:: aod3d_smoke, aod3d
+ real(kind=RKIND),dimension(:),    pointer:: aod550
  real(kind=RKIND),dimension(:,:,:),pointer:: e_bb_out, e_dust_out
  integer,dimension(:),pointer:: min_bb_plume, max_bb_plume
  
@@ -587,9 +707,13 @@
 
  call mpas_pool_get_array(diag_physics,'PM2_5',PM2_5)
  call mpas_pool_get_array(diag_physics,'PM10',PM10)
+ call mpas_pool_get_array(diag_physics,'aod3d',aod3d)
+ call mpas_pool_get_array(diag_physics,'aod550',aod550)
 
  call mpas_pool_get_array(diag_physics,'ddvel',ddvel)
  call mpas_pool_get_array(diag_physics,'wetdep_resolved',wetdep_resolved)
+
+ call mpas_pool_get_array(diag_physics,'vis',vis)
 
  call mpas_pool_get_array(tend_physics,'tend_chem_settle',tend_chem_settle)
 
@@ -611,10 +735,14 @@
     call mpas_pool_get_array(diag_physics, 'e_dust_out',e_dust_out)
  endif
  if (config_smoke_scheme .ne. 'off' ) then
+    call mpas_pool_get_array(diag_physics,'aod3d_smoke',aod3d_smoke)
     call mpas_pool_get_array(diag_physics,'frp_out',frp_out)
     call mpas_pool_get_array(diag_physics,'fre_out',fre_out)
     call mpas_pool_get_array(diag_physics,'hwp',hwp)
     call mpas_pool_get_array(diag_physics,'coef_bb_dc',coef_bb_dc)
+    if (ebb_dcycle .eq. 2 ) then
+       call mpas_pool_get_array(diag_physics,'fire_ef_out',fire_ef_out)
+    endif
     if (plumerise_opt .gt. 0 ) then
        call mpas_pool_get_array(diag_physics,'min_bb_plume',min_bb_plume)
        call mpas_pool_get_array(diag_physics,'max_bb_plume',max_bb_plume)
@@ -636,12 +764,20 @@
 !
    PM2_5(k,i)     = PM2_5_p(i,k,j)
    PM10(k,i)      = PM10_p(i,k,j)
+
+   aod3d(k,i) = aod3d_p(i,k,j)
 !
+   if ( config_smoke_scheme .ne. 'off' ) then
+      aod3d_smoke(k,i) = aod3d_smoke_p(i,k,j)
+   endif
+
    do n = 1, num_chem
       chem(n,k,i) = chem_p(i,k,j,n)
       !TODO floating point exception
       !chem(n,k,i) = min(max(1.e-12_RKIND,chem_p(i,k,j,n)),5000._RKIND)
-      tend_chem_settle(n,k,i) = tend_chem_settle_p(i,k,j,n)
+      if ( drydep_opt .ne. 0 ) then
+          tend_chem_settle(n,k,i) = tend_chem_settle_p(i,k,j,n)
+      endif
    enddo
 !
    if (num_e_bb_out .gt. 0 ) then
@@ -662,11 +798,16 @@
  
  do j = jts,jte
  do i = its,ite
+    vis(i)       = vis_p(i,j)
+    aod550(i)    = aod550_p(i,j)
     if (config_smoke_scheme .ne. 'off') then
        frp_out(i)          = frp_out_p(i,j)
        fre_out(i)          = fre_out_p(i,j)
        hwp(i)              = hwp_p(i,j)
        coef_bb_dc(i)       = coef_bb_dc_p(i,j)
+       if ( ebb_dcycle .eq. 2 ) then
+          fire_ef_out(i)   = fire_ef_out_p(i,j)
+       endif
        if ( plumerise_opt .gt. 0 ) then
           min_bb_plume(i)     = min_bb_plume_p(i,j)
           max_bb_plume(i)     = max_bb_plume_p(i,j)
@@ -680,7 +821,9 @@
        endif
     endif
     do n = 1,num_chem
-      ddvel(n,i) = ddvel_p(i,j,n)
+      if (drydep_opt .ne. 0 ) then
+         ddvel(n,i) = ddvel_p(i,j,n)
+      endif
       if (wetdep_ls_opt .gt. 0) then
          wetdep_resolved(n,i) = wetdep_resolved_p(i,j,n)
       endif
@@ -727,7 +870,8 @@
  integer,pointer :: index_smoke_fine
  integer,pointer :: index_dust_fine, index_dust_coarse
  integer,pointer :: index_e_bb_in_smoke_fine
- integer,pointer :: index_e_bb_out_smoke_fine, index_e_dust_out_dust_fine, index_e_dust_out_dust_coarse
+ integer,pointer :: index_e_bb_out_smoke_fine
+ integer,pointer :: index_e_dust_out_dust_fine, index_e_dust_out_dust_coarse
                   
  integer,pointer                :: chemistry_start
  !namelists
@@ -742,17 +886,20 @@
  integer,pointer                :: plumerise_opt
  integer,pointer                :: plume_wind_eff
  real(kind=RKIND),pointer       :: plume_alpha
- real(kind=RKIND),pointer       :: bb_emis_scale_factor
+ real(kind=RKIND),pointer       :: bb_emis_scale_factor, bb_qv_scale_factor
+ integer,pointer                :: bb_input_prevh
+ integer,pointer                :: bb_beta
  integer,pointer                :: ebb_dcycle
  integer,pointer                :: drydep_opt
  integer,pointer                :: pm_settling
+ logical,pointer                :: calc_bb_emis_online
  logical,pointer                :: add_fire_heat_flux
  logical,pointer                :: add_fire_moist_flux
  integer,pointer                :: plumerisefire_frq
  real(kind=RKIND),pointer       :: dust_alpha, dust_gamma
  real(kind=RKIND),pointer       :: dust_drylimit_factor, dust_moist_correction
 
- integer                        :: i,j,k
+ integer                        :: i,j,k,nblocks
 
  do_mpas_smoke  = .false.
  do_mpas_dust   = .false.
@@ -773,9 +920,13 @@
  call mpas_pool_get_config(configs,'plume_alpha',plume_alpha)
  call mpas_pool_get_config(configs,'bb_emis_scale_factor',bb_emis_scale_factor)
  call mpas_pool_get_config(configs,'ebb_dcycle',ebb_dcycle)
+ call mpas_pool_get_config(configs,'bb_input_prevh',bb_input_prevh)
  call mpas_pool_get_config(configs,'add_fire_heat_flux',add_fire_heat_flux)
  call mpas_pool_get_config(configs,'add_fire_moist_flux',add_fire_moist_flux)
  call mpas_pool_get_config(configs,'plumerisefire_frq',plumerisefire_frq)
+ call mpas_pool_get_config(configs,'calc_bb_emis_online',calc_bb_emis_online)
+ call mpas_pool_get_config(configs,'bb_beta',bb_beta)
+ call mpas_pool_get_config(configs,'bb_qv_scale_factor',bb_qv_scale_factor)
 ! Namelist: Wet/dry deposition
  call mpas_pool_get_config(configs,'wetdep_ls_opt',wetdep_ls_opt)
  call mpas_pool_get_config(configs,'wetdep_ls_alpha',wetdep_ls_alpha) 
@@ -805,8 +956,12 @@
  if(config_do_restart .or. itimestep > 1) initflag = 0
 
  if ( config_smoke_scheme  .ne. 'off' .and. &
+    !(index_smoke_fine .gt. 0 .or. index_smoke_coarse .gt. 0 )) then
     (index_smoke_fine .gt. 0 )) then
      do_mpas_smoke = .true.
+     if ( ebb_dcycle == 2 ) then
+        nblocks = 24 / bb_input_prevh
+     endif
  endif
  if (config_dust_scheme   .ne. 'off'  .and. &
     (index_dust_fine .gt. 0 .or. index_dust_coarse .gt. 0 )) then
@@ -826,25 +981,31 @@
            hwp     = hwp_p,                                                              &
            frp_in         = frp_in_p,            frp_out = frp_out_p,                    &
            fre_in         = fre_in_p,            fre_out = fre_out_p,                    &
-           totprcp_prev24 = totprcp_prev24_p, hwp_prev24 = hwp_prev24_p,                 &
-           frp_prev24     = frp_prev24_p,     fre_prev24 = fre_prev24_p,                 &
+           totprcp_prev24 = totprcp_prev24_p,    hwp_avg = hwp_avg_p,                    &!JR
+           frp_avg        = frp_avg_p,           fre_avg = fre_avg_p,                    &!JR
+           fire_end_hr    = fire_end_hr_p,       eco_id  = eco_id_p,                     &!JR:as the avg blocks are calculated here
+           efs_smold      = efs_smold_p,         efs_flam= efs_flam_p,                   &!JR
+           efs_rsmold     = efs_rsmold_p,        fmc_avg  = fmc_avg_p,                   &!JR
            hfx_bb         = hfx_bb_p,             qfx_bb = qfx_bb_p,                     &
-           frac_grid_burned                              = frac_grid_burned_p,           &
+           frac_grid_burned = frac_grid_burned_p, vis    = vis_p,                        &
            min_bb_plume   = min_bb_plume_p, max_bb_plume = max_bb_plume_p,               &
-           coef_bb_dc     = coef_bb_dc_p,   e_bb_in       = e_bb_in_p,                   &
+           coef_bb_dc     = coef_bb_dc_p, nblocks = nblocks,                             &
            sandfrac_in    = sandfrac_in_p, clayfrac_in    = clayfrac_in_p,               &
            uthres_in      = uthres_in_p,   uthres_sg_in   = uthres_sg_in_p,              &
            albedo_drag_in = albedo_drag_p, feff_in        = feff_p, sep_in = sep_in_p,   &
-           e_dust_out     = e_dust_out_p,   &
-           e_bb_out       = e_bb_out_p,  num_e_bb_in    = num_e_bb_in,                   &
-           num_e_bb_out   = num_e_bb_out, num_e_dust_out = num_e_dust_out,               &
+           e_bb_in        = e_bb_in_p,     e_bb_out       = e_bb_out_p,                  &
+           e_dust_out     = e_dust_out_p,                                                &
+           num_e_bb_in    = num_e_bb_in,   num_e_bb_out   = num_e_bb_out,                &
+           num_e_dust_out = num_e_dust_out,                                              &
            ddvel = ddvel_p, wetdep_resolved = wetdep_resolved_p,                         &
            tend_chem_settle = tend_chem_settle_p,                                        &
            do_mpas_smoke = do_mpas_smoke, do_mpas_dust   = do_mpas_dust,                 &
+           calc_bb_emis_online = calc_bb_emis_online,                                    &
            hwp_method = hwp_method, hwp_alpha = hwp_alpha, wetdep_ls_opt = wetdep_ls_opt,&
            wetdep_ls_alpha        = wetdep_ls_alpha, plumerise_opt = plumerise_opt,      &
            plume_wind_eff         = plume_wind_eff,  plume_alpha   = plume_alpha,        &
            bb_emis_scale_factor   = bb_emis_scale_factor,                                &
+           bb_qv_scale_factor     = bb_qv_scale_factor,                                  &
            ebb_dcycle             = ebb_dcycle,                                          &
            drydep_opt          = drydep_opt, pm_settling = pm_settling,                  &
            add_fire_heat_flux  = add_fire_heat_flux,                                     &
@@ -853,6 +1014,7 @@
            dust_alpha = dust_alpha, dust_gamma = dust_gamma,                             &
            dust_drylimit_factor  = dust_drylimit_factor,                                 &
            dust_moist_correction = dust_moist_correction,                                &
+           bb_beta = bb_beta,   bb_input_prevh = bb_input_prevh,                         &
            ktau    = itimestep   , dt       = dt_dyn     , dxcell   = dx_p       ,       &
            area    = area_p      ,                                                       &
            xland   = xland_p     , u10      = u10_p      , v10      = v10_p      ,       &
@@ -861,6 +1023,15 @@
            p8w     = pres2_hyd_p , dz8w     = dz_p       , z_at_w   = zgrid_p    ,       &
            p_phy   = pres_hyd_p  , t_phy    = t_p        , u_phy    = u_p        ,       &
            v_phy   = v_p         , qv       = qv_p       , vvel     = w_p        ,       &
+           qc_vis  = qc_p, & !(:,1:3,:), &   !!! TO DO !!!
+           qr_vis  = qr_p, & !(:,1:3,:), &   ! VIS calculation only needs first
+           qi_vis  = qi_p, & !(:,1:3,:), &   ! 3 layers but slicing doesn't work
+           qs_vis  = qs_p, & !(:,1:3,:), &
+           qg_vis  = qg_p, & !(:,1:3,:), &
+           blcldw_vis = qcbl_p, & !(:,1:3,:), &
+           blcldi_vis = qibl_p, & !(:,1:3,:), &
+           coszen = coszr_p, &
+           aod3d_smoke = aod3d_smoke_p, aod3d = aod3d_p, &
            pi_phy  = pi_p        , rho_phy  = rho_p      , kpbl     = kpbl_p     ,       &
            nsoil   = num_soils   , smois    = smois_p    , tslb     = tslb_p     ,       &
            ivgtyp  = ivgtyp_p    , isltyp   = isltyp_p   , nlcat    = num_landcat,       &
@@ -893,6 +1064,19 @@
  enddo
  enddo
 
+ do j = jts,jte
+ do i = its,ite
+    aod550_p(i,j) = 0.0_RKIND
+ enddo
+ enddo
+
+ do j = jts,jte
+ do k = kts,kte
+ do i = its,ite
+    aod550_p(i,j) = aod550_p(i,j) + aod3d_p(i,k,j) * dz_p(i,k,j) / 1000._RKIND
+ enddo
+ enddo
+ enddo
 
 
 !copy local arrays to MPAS grid:

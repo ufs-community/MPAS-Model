@@ -239,10 +239,16 @@
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
     ddvel_p, wetdep_resolved_p
 ! PM Diags
+ real(kind=RKIND),dimension(:,:),allocatable:: &
+    vis_p
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
     PM1_p, PM2_5_p, PM10_p
+ real(kind=RKIND),dimension(:,:,:),allocatable:: &
+    aod3d_smoke_p, aod3d_p
+ real(kind=RKIND),dimension(:,:),allocatable:: &
+    aod550_p
 ! Input/output smoke 2D fields - JLS
- real(kind=RKIND),dimension(:,:),allocatable::  &
+real(kind=RKIND),dimension(:,:),allocatable::  &
     frp_in_p,          &!
     frp_out_p,         &!
     fre_in_p,          &!
@@ -252,7 +258,17 @@
     hfx_bb_p,          &!
     qfx_bb_p,          &!
     frac_grid_burned_p,&!
-    fire_end_hr_p
+    fire_end_hr_p,     &!
+    totprcp_prev24_p,    &!
+    EFs_map_p,         &!JR:Estimated on module emiss
+    efs_smold_p,       &!JR
+    efs_flam_p,        &!JR
+    efs_rsmold_p,      &
+    fire_ef_out_p,     &
+    fmc_avg_p,         &
+    emis_ant_no_p
+ integer,dimension(:,:),allocatable:: &
+    eco_id_p !JR
 ! RWC fields
  real(kind=RKIND),dimension(:,:),allocatable:: &
     RWC_denominator_p,&
@@ -261,12 +277,10 @@
     RWC_annual_sum_smoke_coarse_p,&
     RWC_annual_sum_unspc_fine_p,&
     RWC_annual_sum_unspc_coarse_p
-! Previous 24 hours fields for BB
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
-    hwp_prev24_p,      &!
-    frp_prev24_p,      &!
-    fre_prev24_p,      &!
-    totprcp_prev24_p!
+    fre_avg_p,         &
+    frp_avg_p,         &
+    hwp_avg_p
  integer,dimension(:,:),allocatable:: &
     min_bb_plume_p, &!
     max_bb_plume_p
@@ -362,7 +376,8 @@
     f_no3a_fine,      &
     f_nh4a_fine,      &
     f_nh3,            &
-    f_so2
+    f_so2,            &
+    f_ch4
 
  real(kind=RKIND),dimension(:,:),allocatable:: &
     rainnc_p,         &!

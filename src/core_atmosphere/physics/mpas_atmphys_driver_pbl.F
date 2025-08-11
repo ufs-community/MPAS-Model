@@ -1258,8 +1258,7 @@
 !local pointers:
  logical,pointer:: config_do_DAcycling, &
                    config_do_restart,   &
-                   bl_mynn_tkeadvect,   &
-                   mix_chem
+                   bl_mynn_tkeadvect
 
  character(len=StrKIND),pointer:: pbl_scheme
 
@@ -1289,6 +1288,7 @@
 !local variables:
  integer:: initflag
  integer:: i,k,j
+ logical:: mix_chem
 
 !CCPP-compliant flags:
  character(len=StrKIND):: errmsg
