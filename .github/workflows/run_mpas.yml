@@ -251,7 +251,7 @@ jobs:
       run: |
         cd ${mpas_run_ROOT} && mkdir tempo && cd tempo
         wget -q -e robots=off -nH --cut-dirs N -nc -r -lX -A '*' -R 'catalog*' -I /thredds/fileServer/,/thredds/catalog/ \
-        https://gsl.noaa.gov/thredds/catalog/${mpdata_dir}/tempo
+        https://gsl.noaa.gov/thredds/catalog/${mpdata_dir}/tempo/catalog.html
         mv thredds/fileServer/${mpdata_dir}/tempo/* .
         rm -rf thredds
         pwd
@@ -261,7 +261,7 @@ jobs:
       run: |
         cd ${mpas_run_ROOT} && mkdir thompson && cd thompson
         wget -q -e robots=off -nH --cut-dirs N -nc -r -lX -A '*' -R 'catalog*' -I /thredds/fileServer/,/thredds/catalog/ \
-        https://gsl.noaa.gov/thredds/catalog/${mpdata_dir}/thompson
+        https://gsl.noaa.gov/thredds/catalog/${mpdata_dir}/thompson/catalog.html
         mv thredds/fileServer/${mpdata_dir}/thompson/* .
         rm -rf thredds
         pwd
@@ -271,7 +271,7 @@ jobs:
       run: |
         cd ${mpas_run_ROOT} && mkdir ugw && cd ugw
         wget -q -e robots=off -nH --cut-dirs N -nc -r -lX -A '*' -R 'catalog*' -I /thredds/fileServer/,/thredds/catalog/ \
-        https://gsl.noaa.gov/thredds/catalog/${mpdata_dir}/ugw
+        https://gsl.noaa.gov/thredds/catalog/${mpdata_dir}/ugw/catalog.html
         mv thredds/fileServer/${mpdata_dir}/ugw/* .
         rm -rf thredds
         pwd
