@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false  # Disable fail-fast
       matrix:
-        fortran-compiler: [gfortrna-12]
+        fortran-compiler: [gfortran-12]
         build-system:     [make]
         py-version:       [3.11]
 
