@@ -156,8 +156,8 @@ jobs:
     - name: Add (PNETCDF) to paths.
       run: |
         echo "PNETCDF=${PNETCDF}" >> $GITHUB_ENV
-        echo "LD_LIBRARY_PATH=${PNETCDF}/bin:$LD_LIBRARY_PATH" >> $GITHUB_ENV
-        echo "PATH=${PNETCDF}/bin:$PATH" >> $GITHUB_ENV
+        echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${PNETCDF}/bin" >> $GITHUB_ENV
+        echo "PATH=$PATH:${PNETCDF}/bin" >> $GITHUB_ENV
 
     - name: Setup environment
       run: |
@@ -247,17 +247,36 @@ jobs:
         pwd
         ls -l mpas_testcase
 
-    - name: Download TEMPO MP tables
-      if: env.physics == 'hrrrv5'
+    - name: Download TEMPO MP tables (if: env.physics == 'hrrrv5')
       run: |
         cd ${mpas_run_ROOT} && mkdir tempo && cd tempo
         wget -q -e robots=off -nH --cut-dirs N -nc -r -lX -A '*' -R 'catalog*' -I /thredds/fileServer/,/thredds/catalog/ \
         https://gsl.noaa.gov/thredds/catalog/${mpdata_dir}/tempo
-        mv thredds/fileServer/${mpdata_dir}/tempo* .
+        mv thredds/fileServer/${mpdata_dir}/tempo/* .
         rm -rf thredds
         pwd
         ls -l
-        
+
+    - name: Download Thompson MP tables (if: contains(env.physics, 'convection_permitting'))
+      run: |
+        cd ${mpas_run_ROOT} && mkdir thompson && cd thompson
+        wget -q -e robots=off -nH --cut-dirs N -nc -r -lX -A '*' -R 'catalog*' -I /thredds/fileServer/,/thredds/catalog/ \
+        https://gsl.noaa.gov/thredds/catalog/${mpdata_dir}/thompson
+        mv thredds/fileServer/${mpdata_dir}/thompson/* .
+        rm -rf thredds
+        pwd
+        ls -l
+
+    - name: Download GWD data (if: env.nml_version == 'gsl)
+      run: |
+        cd ${mpas_run_ROOT} && mkdir ugw && cd ugw
+        wget -q -e robots=off -nH --cut-dirs N -nc -r -lX -A '*' -R 'catalog*' -I /thredds/fileServer/,/thredds/catalog/ \
+        https://gsl.noaa.gov/thredds/catalog/${mpdata_dir}/ugw
+        mv thredds/fileServer/${mpdata_dir}/ugw/* .
+        rm -rf thredds
+        pwd
+        ls -l
+
     ##########################################################################################
     # Configure MPAS baseline runs
     ##########################################################################################
