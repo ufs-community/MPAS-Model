@@ -247,7 +247,7 @@ jobs:
         pwd
         ls -l mpas_testcase
 
-    - name: Download TEMPO MP tables (if: env.physics == 'hrrrv5')
+    - name: Download TEMPO MP tables
       run: |
         cd ${mpas_run_ROOT} && mkdir tempo && cd tempo
         wget -q -e robots=off -nH --cut-dirs N -nc -r -lX -A '*' -R 'catalog*' -I /thredds/fileServer/,/thredds/catalog/ \
@@ -257,7 +257,7 @@ jobs:
         pwd
         ls -l
 
-    - name: Download Thompson MP tables (if: contains(env.physics, 'convection_permitting'))
+    - name: Download Thompson MP tables
       run: |
         cd ${mpas_run_ROOT} && mkdir thompson && cd thompson
         wget -q -e robots=off -nH --cut-dirs N -nc -r -lX -A '*' -R 'catalog*' -I /thredds/fileServer/,/thredds/catalog/ \
@@ -267,7 +267,7 @@ jobs:
         pwd
         ls -l
 
-    - name: Download GWD data (if: env.nml_version == 'gsl)
+    - name: Download GWD data
       run: |
         cd ${mpas_run_ROOT} && mkdir ugw && cd ugw
         wget -q -e robots=off -nH --cut-dirs N -nc -r -lX -A '*' -R 'catalog*' -I /thredds/fileServer/,/thredds/catalog/ \
