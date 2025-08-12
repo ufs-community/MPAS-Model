@@ -251,13 +251,13 @@ jobs:
       id: cache-tempo-data
       uses: actions/cache@v4
       with:
-        path: /home/runner/tempo
+        path: ${runner_ROOT}/tempo
         key: cache-tempo-data-key
 
     - name: Download TEMPO MP tables
       if: steps.cache-tempo-data.outputs.cache-hit != 'true'
       run: |
-        cd ${mpas_run_ROOT} && mkdir tempo && cd tempo
+        cd ${runner_ROOT} && mkdir tempo && cd tempo
         wget -q -e robots=off -nH --cut-dirs N -nc -r -lX -A '*' -R 'catalog*' -I /thredds/fileServer/,/thredds/catalog/ \
         https://gsl.noaa.gov/thredds/catalog/${mpdata_dir}/tempo/catalog.html
         mv thredds/fileServer/${mpdata_dir}/tempo/* .
@@ -269,13 +269,13 @@ jobs:
       id: cache-thompson-data
       uses: actions/cache@v4
       with:
-        path: /home/runner/thompson
+        path: ${runner_ROOT}/thompson
         key: cache-thompson-data-key
 
     - name: Download Thompson MP tables
       if: steps.cache-thompson-data.outputs.cache-hit != 'true'
       run: |
-        cd ${mpas_run_ROOT} && mkdir thompson && cd thompson
+        cd ${runner_ROOT} && mkdir thompson && cd thompson
         wget -q -e robots=off -nH --cut-dirs N -nc -r -lX -A '*' -R 'catalog*' -I /thredds/fileServer/,/thredds/catalog/ \
         https://gsl.noaa.gov/thredds/catalog/${mpdata_dir}/thompson/catalog.html
         mv thredds/fileServer/${mpdata_dir}/thompson/* .
@@ -287,13 +287,13 @@ jobs:
       id: cache-ugw-data
       uses: actions/cache@v4
       with:
-        path: /home/runner/ugw
+        path: ${runner_ROOT}/ugw
         key: cache-ugw-data-key
 
     - name: Download GWD data
       if: steps.cache-ugw-data.outputs.cache-hit != 'true'
       run: |
-        cd ${mpas_run_ROOT} && mkdir ugw && cd ugw
+        cd ${runner_ROOT} && mkdir ugw && cd ugw
         wget -q -e robots=off -nH --cut-dirs N -nc -r -lX -A '*' -R 'catalog*' -I /thredds/fileServer/,/thredds/catalog/ \
         https://gsl.noaa.gov/thredds/catalog/${mpdata_dir}/ugw/catalog.html
         mv thredds/fileServer/${mpdata_dir}/ugw/* .
