@@ -247,7 +247,15 @@ jobs:
         pwd
         ls -l mpas_testcase
 
+    - name: Cache TEMPO MP tables
+      id: cache-tempo-data
+      uses: actions/cache@v4
+      with:
+        path: ${mpas_run_ROOT}/tempo
+        key: cache-tempo-data-key
+
     - name: Download TEMPO MP tables
+      if: steps.cache-tempo-data.outputs.cache-hit != 'true'
       run: |
         cd ${mpas_run_ROOT} && mkdir tempo && cd tempo
         wget -q -e robots=off -nH --cut-dirs N -nc -r -lX -A '*' -R 'catalog*' -I /thredds/fileServer/,/thredds/catalog/ \
@@ -257,7 +265,15 @@ jobs:
         pwd
         ls -l
 
+    - name: Cache Thompson MP tables
+      id: cache-thompson-data
+      uses: actions/cache@v4
+      with:
+        path: ${mpas_run_ROOT}/thompson
+        key: cache-thompson-data-key
+
     - name: Download Thompson MP tables
+      if: steps.cache-thompson-data.outputs.cache-hit != 'true'
       run: |
         cd ${mpas_run_ROOT} && mkdir thompson && cd thompson
         wget -q -e robots=off -nH --cut-dirs N -nc -r -lX -A '*' -R 'catalog*' -I /thredds/fileServer/,/thredds/catalog/ \
@@ -267,7 +283,15 @@ jobs:
         pwd
         ls -l
 
+    - name: Cache UGWD data
+      id: cache-ugw-data
+      uses: actions/cache@v4
+      with:
+        path: ${mpas_run_ROOT}/ugw
+        key: cache-ugw-data-key
+
     - name: Download GWD data
+      if: steps.cache-ugw-data.outputs.cache-hit != 'true'
       run: |
         cd ${mpas_run_ROOT} && mkdir ugw && cd ugw
         wget -q -e robots=off -nH --cut-dirs N -nc -r -lX -A '*' -R 'catalog*' -I /thredds/fileServer/,/thredds/catalog/ \
