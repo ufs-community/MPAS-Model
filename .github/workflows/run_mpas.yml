@@ -367,9 +367,10 @@ jobs:
     - name: Run MPAS (baselines)
       run: |
         cd ${mpas_run_ROOT}/run_bl
-        echo "PNETCDF=${PNETCDF}" >> $GITHUB_ENV
-        echo "LD_LIBRARY_PATH=${PNETCDF}/bin:$LD_LIBRARY_PATH" >> $GITHUB_ENV
-        echo "PATH=${PNETCDF}/bin:$PATH" >> $GITHUB_ENV
+        echo ----LD_LIBRARY_PATH----
+        echo $LD_LIBRARY_PATH
+        echo ----------PATH---------
+        echo $PATH
         mpiexec -np ${nproc} ./atmosphere_model
         pwd && ls -l
  
