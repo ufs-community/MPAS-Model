@@ -79,8 +79,8 @@ jobs:
 
     - name: Add (OMPI) to Paths
       run: |
-        echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${OMPI}/lib" >> $GITHUB_ENV
-        echo "PATH=$PATH:${OMPI}/lib" >> $GITHUB_ENV
+        echo "LD_LIBRARY_PATH=${OMPI}/lib" >> $GITHUB_ENV
+        echo "PATH=$PATH:${OMPI}/bin" >> $GITHUB_ENV
 
     - name: Cache GNU autotools
       id: cache-AUTOTOOLS
@@ -156,7 +156,7 @@ jobs:
     - name: Add (PNETCDF) to paths.
       run: |
         echo "PNETCDF=${PNETCDF}" >> $GITHUB_ENV
-        echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${PNETCDF}/bin" >> $GITHUB_ENV
+        echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${PNETCDF}/lib" >> $GITHUB_ENV
         echo "PATH=$PATH:${PNETCDF}/bin" >> $GITHUB_ENV
 
     - name: Setup environment
