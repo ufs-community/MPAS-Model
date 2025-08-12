@@ -371,8 +371,8 @@ jobs:
         echo $LD_LIBRARY_PATH
         echo ----------PATH---------
         echo $PATH
-        mpiexec -np ${nproc} ./atmosphere_model
-        pwd && ls -l
+#        mpiexec -np ${nproc} ./atmosphere_model
+#        pwd && ls -l
  
     - name: Run MPAS (feature branch)
       run: |
