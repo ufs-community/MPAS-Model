@@ -251,7 +251,7 @@ jobs:
       id: cache-tempo-data
       uses: actions/cache@v4
       with:
-        path: ${mpas_run_ROOT}/tempo
+        path: /home/runner/tempo
         key: cache-tempo-data-key
 
     - name: Download TEMPO MP tables
@@ -269,7 +269,7 @@ jobs:
       id: cache-thompson-data
       uses: actions/cache@v4
       with:
-        path: ${mpas_run_ROOT}/thompson
+        path: /home/runner/thompson
         key: cache-thompson-data-key
 
     - name: Download Thompson MP tables
@@ -287,7 +287,7 @@ jobs:
       id: cache-ugw-data
       uses: actions/cache@v4
       with:
-        path: ${mpas_run_ROOT}/ugw
+        path: /home/runner/ugw
         key: cache-ugw-data-key
 
     - name: Download GWD data
