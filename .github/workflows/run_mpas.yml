@@ -371,7 +371,6 @@ jobs:
         mpirun -np 1 ./atmosphere_model
         pwd && ls -ltr
 
- 
     - name: Run MPAS (feature branch)
       run: |
         cd ${mpas_run_ROOT}/run_rt
@@ -388,3 +387,17 @@ jobs:
     - name: Install NetCDF Python libraries
       run: |
         pip install f90nml h5py netCDF4 matplotlib
+
+    ##########################################################################################
+    # Upload GitHub artifact.
+    ##########################################################################################
+    - name: Create GitHub artifact
+      run: |
+        cd ${runner_ROOT} && artifact-${{matrix.fortran-compiler}} && cd artifact-${{matrix.fortran-compiler}}
+        cp ${mpas_run_ROOT}/run_bl/log.atmosphere.*.out .
+
+    - name: Upload SCM RTs as GitHub Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: mpas-baselines-${{matrix.fortran-compiler}}
+        path: /home/runner/artifact-${{matrix.fortran-compiler}}
