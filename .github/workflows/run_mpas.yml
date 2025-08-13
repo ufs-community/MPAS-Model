@@ -356,6 +356,51 @@ jobs:
       run: |
         cd ${mpas_run_ROOT} && mkdir run_rt && cd run_rt
         pwd && ls -l
+        cp ${mpas_run_ROOT}/mpas_testcase/run_case/case_files/${nml_version}/${domain}/${source}.${yyyy}${mm}${dd}${hh}/${physics}/* .
+        ln -sf ${mpas_rt_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.TBL .
+        ln -sf ${mpas_rt_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.DBL .
+        ln -sf ${mpas_rt_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*DATA .
+        ln -sf ${mpas_rt_ROOT}/src/core_atmosphere/physics/physics_noahmp/parameters/NoahmpTable.TBL .
+        ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.init_file}} mpas.init.nc
+        ln -sf ${mpas_run_ROOT}/run_data/${domain}.${res}km.graph.info.part.${nproc} graph.info.part.${nproc}
+        ln -sf /home/runner/MPAS-Model-RT/${exec} atmosphere_model
+        ln -sf namelist.atmosphere.${source_repo} namelist.atmosphere
+        pwd && ls -l
+        pwd && ls -ltr /home/runner/MPAS-Model-RT
+
+    - name: Link lateral boundary condition file for regional MPAS.
+      if: env.domain == 'conus'
+      run: |
+        cd ${mpas_run_ROOT}/run_rt
+        ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.lbc_file}} mpas.lbc.nc
+        pwd && ls -l
+
+    - name: Link surface files to run directory
+      if: env.source == 'gfs'
+      run: |
+        cd ${mpas_run_ROOT}/run_rt
+        ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.sst_file}} mpas.sfc_update.nc
+        pwd && ls -l
+
+    - name: Link orography data to run directory
+      if: env.nml_version == 'gsl'
+      run: |
+        cd ${mpas_run_ROOT}/run_rt
+        ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.ugwp_file}} mpas.ugwp_oro_data.nc
+        pwd && ls -l
+
+    - name: Link TEMPO MP data tables to run directory
+      if: env.physics == 'hrrrv5'
+      run: |
+        cd ${mpas_run_ROOT}/run_rt
+        cp ${mpas_run_ROOT}/tempo .
+        pwd && ls -l
+
+    - name: Link Thompson MP data tables to run directory
+      if: contains(env.physics, 'convection_permitting')
+      run: |
+        cd ${mpas_run_ROOT}/run_rt
+        pwd && ls -l
 
     ##########################################################################################
     # Run MPAS
