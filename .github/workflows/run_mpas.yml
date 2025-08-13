@@ -441,7 +441,7 @@ jobs:
     - name: Run comparison script
       run: |
         cd ${mpas_rt_ROOT}/MPAS-Model/testing_and_setup/ufs-community
-        ./cmp_rt2bl.py --dir_rt ${dir_rt} --dir_bl ${dir_bl}
+        ./cmp_rt2bl.py --dir_rt ${mpas_run_ROOT}/run_rt --dir_bl ${mpas_run_ROOT}/run_bl
 
     ##########################################################################################
     # Save log files as GitHub Artifact
