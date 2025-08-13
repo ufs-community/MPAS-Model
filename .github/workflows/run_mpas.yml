@@ -207,22 +207,18 @@ jobs:
         git clone --recursive --branch gsl/develop https://github.com/ufs-community/MPAS-Model.git MPAS-Model-BL
         cd ${mpas_bl_ROOT}
         make gfortran CORE=atmosphere DEBUG=true
-        pwd
-        ls -l ${runner_ROOT}
-        pwd
-        ls -l ${mpas_bl_ROOT}
 
-#    - name: Checkout MPAS codebase for testing.
-#      uses: actions/checkout@v3
-#
-#    - name: Initialize any submodules from testing codebase.
-#      run: |
-#        git submodule update --init --recursive
-#
-#    - name: Build MPAS standalone for testing
-#      run: |
-#        cd ${mpas_rt_ROOT}/MPAS-Model
-#        make gfortran CORE=atmosphere DEBUG=true
+    - name: Checkout MPAS codebase for testing.
+      uses: actions/checkout@v3
+
+    - name: Initialize any submodules from testing codebase.
+      run: |
+        git submodule update --init --recursive
+
+    - name: Build MPAS standalone for testing
+      run: |
+        cd ${mpas_rt_ROOT}/MPAS-Model
+        make gfortran CORE=atmosphere DEBUG=true
 
     ##########################################################################################
     # Fetch any data/files needed for MPAS runs.
@@ -374,6 +370,8 @@ jobs:
     - name: Run MPAS (feature branch)
       run: |
         cd ${mpas_run_ROOT}/run_rt
+        pwd && ls -l
+        mpiexec -np 1 ./atmosphere_model
         pwd && ls -l
 
     ##########################################################################################
