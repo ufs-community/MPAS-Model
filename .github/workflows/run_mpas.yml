@@ -440,7 +440,7 @@ jobs:
 
     - name: Run comparison script
       run: |
-        cd ${SCM_ROOT}/test
+        cd ${mpas_rt_ROOT}/MPAS-Model/testing_and_setup/ufs-community
         ./cmp_rt2bl.py --dir_rt ${dir_rt} --dir_bl ${dir_bl}
 
     ##########################################################################################
