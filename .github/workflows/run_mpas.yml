@@ -363,7 +363,7 @@ jobs:
         ln -sf ${mpas_rt_ROOT}/src/core_atmosphere/physics/physics_noahmp/parameters/NoahmpTable.TBL .
         ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.init_file}} mpas.init.nc
         ln -sf ${mpas_run_ROOT}/run_data/${domain}.${res}km.graph.info.part.${nproc} graph.info.part.${nproc}
-        ln -sf ${mpas_rt_ROOT}MPAS-Model/${exec} atmosphere_model
+        ln -sf ${mpas_rt_ROOT}/MPAS-Model/${exec} atmosphere_model
         ln -sf namelist.atmosphere.${source_repo} namelist.atmosphere
         pwd && ls -l
         pwd && ls -ltr /home/runner/MPAS-Model
