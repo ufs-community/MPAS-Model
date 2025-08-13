@@ -13,6 +13,7 @@ jobs:
         fortran-compiler: [gfortran-12]
         build-system:     [make]
         py-version:       [3.11]
+        physics:          [mesoscale_reference]
 
     # Environmental variables
     env:
@@ -33,7 +34,6 @@ jobs:
       nml_version:       ncar
       case_base:         ncar-v8.2.2-intelmpi
       model_code_base:   gsl-v8.3.0-1.8-intdebug
-      physics:           mesoscale_reference
       code_base:         ncar
       nml:               ncar
       source:            gfs
@@ -310,7 +310,7 @@ jobs:
     - name: Create and populate run directory (baselines)
       run: |
         cd ${mpas_run_ROOT} && mkdir run_bl && cd run_bl
-        cp ${mpas_run_ROOT}/mpas_testcase/run_case/case_files/${nml_version}/${domain}/${source}.${yyyy}${mm}${dd}${hh}/${physics}/* .
+        cp ${mpas_run_ROOT}/mpas_testcase/run_case/case_files/${nml_version}/${domain}/${source}.${yyyy}${mm}${dd}${hh}/${{matrix.physics}}/* .
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.TBL .
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.DBL .
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*DATA .
@@ -344,14 +344,14 @@ jobs:
         pwd && ls -l
 
     - name: Link TEMPO MP data tables to run directory
-      if: env.physics == 'hrrrv5'
+      if: ${{matrix.physics}} == 'hrrrv5'
       run: |
         cd ${mpas_run_ROOT}/run_bl
         cp ${mpas_run_ROOT}/tempo .
         pwd && ls -l
 
     - name: Link Thompson MP data tables to run directory
-      if: contains(env.physics, 'convection_permitting')
+      if: contains(${{matrix.physics}}, 'convection_permitting')
       run: |
         cd ${mpas_run_ROOT}/run_bl
         pwd && ls -l
@@ -363,7 +363,7 @@ jobs:
       run: |
         cd ${mpas_run_ROOT} && mkdir run_rt && cd run_rt
         pwd && ls -l
-        cp ${mpas_run_ROOT}/mpas_testcase/run_case/case_files/${nml_version}/${domain}/${source}.${yyyy}${mm}${dd}${hh}/${physics}/* .
+        cp ${mpas_run_ROOT}/mpas_testcase/run_case/case_files/${nml_version}/${domain}/${source}.${yyyy}${mm}${dd}${hh}/${{matrix.physics}}/* .
         ln -sf ${mpas_rt_ROOT}/MPAS-Model/src/core_atmosphere/physics/physics_wrf/files/*.TBL .
         ln -sf ${mpas_rt_ROOT}/MPAS-Model/src/core_atmosphere/physics/physics_wrf/files/*.DBL .
         ln -sf ${mpas_rt_ROOT}/MPAS-Model/src/core_atmosphere/physics/physics_wrf/files/*DATA .
@@ -397,14 +397,14 @@ jobs:
         pwd && ls -l
 
     - name: Link TEMPO MP data tables to run directory
-      if: env.physics == 'hrrrv5'
+      if: ${{matrix.physics}} == 'hrrrv5'
       run: |
         cd ${mpas_run_ROOT}/run_rt
         cp ${mpas_run_ROOT}/tempo .
         pwd && ls -l
 
     - name: Link Thompson MP data tables to run directory
-      if: contains(env.physics, 'convection_permitting')
+      if: contains(${{matrix.physics}}, 'convection_permitting')
       run: |
         cd ${mpas_run_ROOT}/run_rt
         pwd && ls -l
