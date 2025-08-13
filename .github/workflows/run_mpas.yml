@@ -389,14 +389,14 @@ jobs:
         pip install f90nml h5py netCDF4 matplotlib
 
     ##########################################################################################
-    # Upload GitHub artifact.
+    # Save log files as GitHub Artifact
     ##########################################################################################
     - name: Create GitHub artifact
       run: |
-        cd ${runner_ROOT} && artifact-${{matrix.fortran-compiler}} && cd artifact-${{matrix.fortran-compiler}}
-        cp ${mpas_run_ROOT}/run_bl/log.atmosphere.*.out .
+        cd ${runner_ROOT} && mkdir artifact-${{matrix.fortran-compiler}} && cd artifact-${{matrix.fortran-compiler}}
+        cp ${mpas_run_ROOT}/run_bl/log.atmosphere.*.out log.atmosphere.BL.out
 
-    - name: Upload SCM RTs as GitHub Artifact
+    - name: Upload log files as GitHub Artifact
       uses: actions/upload-artifact@v4
       with:
         name: mpas-baselines-${{matrix.fortran-compiler}}
