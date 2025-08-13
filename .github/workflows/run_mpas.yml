@@ -81,8 +81,6 @@ jobs:
       run: |
         echo "LD_LIBRARY_PATH=${OMPI}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
         echo "PATH=${OMPI}/bin:$PATH" >> $GITHUB_ENV
-#        echo "LD_LIBRARY_PATH=${OMPI}/lib" >> $GITHUB_ENV
-#        echo "PATH=$PATH:${OMPI}/bin" >> $GITHUB_ENV
 
     - name: Cache GNU autotools
       id: cache-AUTOTOOLS
@@ -123,15 +121,11 @@ jobs:
         make -s -j 8 distclean >> qout 2>&1
         echo "LD_LIBRARY_PATH=${AUTOTOOLS}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
         echo "PATH=${AUTOTOOLS}/bin:$PATH" >> $GITHUB_ENV
-#        echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${AUTOTOOLS}/lib" >> $GITHUB_ENV
-#        echo "PATH=$PATH:${AUTOTOOLS}/bin" >> $GITHUB_ENV
 
     - name: Add (autotools) to Paths
       run: |
         echo "LD_LIBRARY_PATH=${AUTOTOOLS}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
         echo "PATH=${AUTOTOOLS}/bin:$PATH" >> $GITHUB_ENV
-#        echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${AUTOTOOLS}/lib" >> $GITHUB_ENV
-#        echo "PATH=$PATH:${AUTOTOOLS}/bin" >> $GITHUB_ENV
 
     - name: Cache PnetCDF
       id: cache-pnetcdf
@@ -146,8 +140,6 @@ jobs:
         set -x
         echo "LD_LIBRARY_PATH=${AUTOTOOLS}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
         echo "PATH=${AUTOTOOLS}/bin:$PATH" >> $GITHUB_ENV
-#        echo "LD_LIBRARY_PATH=${AUTOTOOLS}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
-#        echo "PATH=${AUTOTOOLS}/bin:$PATH" >> $GITHUB_ENV
         m4 --version
         autoconf --version
         automake --version
@@ -166,8 +158,6 @@ jobs:
         echo "PNETCDF=${PNETCDF}" >> $GITHUB_ENV
         echo "LD_LIBRARY_PATH=${PNETCDF}/bin:$LD_LIBRARY_PATH" >> $GITHUB_ENV
         echo "PATH=${PNETCDF}/bin:$PATH" >> $GITHUB_ENV
-#        echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${PNETCDF}/lib" >> $GITHUB_ENV
-#        echo "PATH=$PATH:${PNETCDF}/bin" >> $GITHUB_ENV
 
     - name: Setup environment
       run: |
