@@ -31,9 +31,12 @@ def main():
     #
     (dir_rt, dir_bl, no_plots) = parse_args()
 
+    print("SWALES doing comparison")
+
     #
     error_count = 0
     for run in run_list:
+        print(run_list)
         for root, dirs, files in os.walk(dir_rt):
             for file in files:
                 if file.endswith('.nc'):
