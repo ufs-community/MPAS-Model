@@ -343,7 +343,7 @@ jobs:
         pwd && ls -l
 
     - name: Link TEMPO MP data tables to run directory
-      if: ${matrix.physics} == 'hrrrv5'
+      if: contain(${{matrix.physics}}, 'hrrrv5')
       run: |
         cd ${mpas_run_ROOT}/run_bl
         cp ${mpas_run_ROOT}/tempo .
