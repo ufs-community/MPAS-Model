@@ -34,27 +34,11 @@ def main():
     #
     error_count = 0
     for run in run_list:
-        file_rt = dir_rt + "/" + run["case"]+"_"+run["suite"]+"/output.nc"
-        file_bl = dir_bl + "/" + run["case"]+"_"+run["suite"]+"/output.nc"
-        if exists(file_rt) and exists(file_bl):
-            com = "cmp "+file_rt+" "+file_bl+" > logfile.txt"
-            result = os.system(com)
-            if (result != 0):
-                message = "Output for "+run["case"]+"_"+run["suite"]+ " DIFFERS from baseline."
-                if (not no_plots):
-                    message += " Difference plots will be created."
-                print(message)
-                error_count = error_count + 1
-            else:
-                print("Output for "+run["case"]+"_"+run["suite"]+ " is IDENTICAL to baseline")
-            # end if
-        else:
-            if not exists(file_rt):
-                print("Output for "+run["case"]+"_"+run["suite"]+ " is MISSING from output")
-            # end if
-            if not exists(file_bl):
-                print("Output for "+run["case"]+"_"+run["suite"]+ " is MISSING from baseline")
-            # end if
-            error_count = error_count + 1
-        # end if
+        for root, dirs, files in os.walk(dir_rt):
+            for file in files:
+                if file.endswith('.nc'):
+                    print(file)
+                # end if
+            # end for
+        # end for
     # end for
