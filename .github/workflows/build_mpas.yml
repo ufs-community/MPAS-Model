@@ -1,0 +1,175 @@
+name: Build (GNU) MPAS Standalone
+
+on: [pull_request,workflow_dispatch]
+
+jobs:
+  build_mpas_GNU:
+
+    # The type of runner that the job will run on
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false  # Disable fail-fast
+      matrix:
+        fortran-compiler: [gfortran-12]
+        build-system: [make]###, cmake]
+
+    # Environmental variables
+    env:
+      driver_ROOT: /home/runner/work
+      AUTOCONF_VERSION: 2.71
+      AUTOMAKE_VERSION: 1.17
+      M4_VERSION: 1.4.19
+      LIBTOOL_VERSION: 2.5.4
+      PNETCDF: /home/runner/PnetCDF
+      AUTOTOOLS: /home/runner/AUTOTOOLS
+      OMPI: /home/runner/ompi-4.1.6
+
+    # Workflow steps
+    steps:
+
+    - name: Checkout code (into ${driver_ROOT})
+      uses: actions/checkout@v3
+
+    - name: Initialize submodules
+      run: |
+        git submodule update --init --recursive
+          
+    - name: Install NetCDF library
+      run: |
+        sudo apt-get update
+        sudo apt-get install libnetcdff-dev
+
+    - name: Cache openmpi
+      id: cache-openmpi
+      uses: actions/cache@v4
+      with:
+        path: /home/runner/ompi-4.1.6
+        key: cache-openmpi-${{matrix.fortran-compiler}}-key
+
+    - name: Install openmpi
+      if: steps.cache-openmpi.outputs.cache-hit != 'true'
+      run: |
+        wget https://github.com/open-mpi/ompi/archive/refs/tags/v4.1.6.tar.gz
+        tar -xvf v4.1.6.tar.gz
+        cd ompi-4.1.6
+        ./autogen.pl
+        ./configure --prefix=${OMPI}
+        make -j4
+        make install
+
+    - name: Add (OMPI) to Paths
+      run: |
+        echo "LD_LIBRARY_PATH=${OMPI}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+        echo "PATH=${OMPI}/bin:$PATH" >> $GITHUB_ENV
+
+    - name: Cache GNU autotools
+      id: cache-AUTOTOOLS
+      uses: actions/cache@v4
+      with:
+        path: /home/runner/AUTOTOOLS
+        key: cache-AUTOTOOLS-${{matrix.fortran-compiler}}-key
+
+    - name: Build GNU autotools
+      if: steps.cache-AUTOTOOLS.outputs.cache-hit != 'true'
+      run: |
+        wget -q https://ftp.gnu.org/gnu/m4/m4-${M4_VERSION}.tar.gz
+        gzip -dc m4-${M4_VERSION}.tar.gz | tar -xf -
+        cd m4-${M4_VERSION}
+        ./configure --prefix=${AUTOTOOLS} --silent
+        make -s -j 8 install > qout 2>&1
+        make -s -j 8 distclean >> qout 2>&1
+
+        wget -q https://ftp.gnu.org/gnu/autoconf/autoconf-${AUTOCONF_VERSION}.tar.gz
+        gzip -dc autoconf-${AUTOCONF_VERSION}.tar.gz | tar -xf -
+        cd autoconf-${AUTOCONF_VERSION}
+        ./configure --prefix=${AUTOTOOLS} --silent
+        make -s -j 8 install > qout 2>&1
+        make -s -j 8 distclean >> qout 2>&1
+
+        wget -q https://ftp.gnu.org/gnu/automake/automake-${AUTOMAKE_VERSION}.tar.gz
+        gzip -dc automake-${AUTOMAKE_VERSION}.tar.gz | tar -xf -
+        cd automake-${AUTOMAKE_VERSION}
+        ./configure --prefix=${AUTOTOOLS} --silent
+        make -s -j 8 install > qout 2>&1
+        make -s -j 8 distclean >> qout 2>&1
+
+        wget -q https://ftp.gnu.org/gnu/libtool/libtool-${LIBTOOL_VERSION}.tar.gz
+        gzip -dc libtool-${LIBTOOL_VERSION}.tar.gz | tar -xf -
+        cd libtool-${LIBTOOL_VERSION}
+        ./configure --prefix=${AUTOTOOLS} --silent
+        make -s -j 8 install > qout 2>&1
+        make -s -j 8 distclean >> qout 2>&1
+        echo "LD_LIBRARY_PATH=${AUTOTOOLS}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+        echo "PATH=${AUTOTOOLS}/bin:$PATH" >> $GITHUB_ENV
+
+    - name: Add (autotools) to Paths
+      run: |
+        echo "LD_LIBRARY_PATH=${AUTOTOOLS}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+        echo "PATH=${AUTOTOOLS}/bin:$PATH" >> $GITHUB_ENV
+
+    - name: Cache PnetCDF
+      id: cache-pnetcdf
+      uses: actions/cache@v4
+      with:
+        path: /home/runner/PnetCDF
+        key: cache-PnetCDF-${{matrix.fortran-compiler}}-key
+
+    - name: Install PnetCDF
+      if: steps.cache-PnetCDF.outputs.cache-hit != 'true'
+      run: |
+        set -x
+        #echo "LD_LIBRARY_PATH=${AUTOTOOLS}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+        #echo "PATH=${AUTOTOOLS}/bin:$PATH" >> $GITHUB_ENV
+        m4 --version
+        autoconf --version
+        automake --version
+        libtool --version
+        echo "Install PnetCDF on ${PNETCDF}"
+        rm -rf PnetCDF ; mkdir PnetCDF ; cd PnetCDF
+        git clone -q https://github.com/Parallel-NetCDF/PnetCDF.git
+        cd PnetCDF
+        autoreconf -i
+        ./configure --prefix=${PNETCDF} --with-mpi=${OMPI}
+        make -j 8 install
+
+    - name: Add (PNETCDF) to paths.
+      run: |
+        echo "PNETCDF=${PNETCDF}" >> $GITHUB_ENV
+        echo "LD_LIBRARY_PATH=${PNETCDF}/bin:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+        echo "PATH=${PNETCDF}/bin:$PATH" >> $GITHUB_ENV
+
+#    - name: Setup environment
+#      run: |
+#        echo "FC=mpif90" >> $GITHUB_ENV
+#        echo "CC=mpicc"  >> $GITHUB_ENV
+#        echo "PNETCDF=${PNETCDF}" >> $GITHUB_ENV
+#        echo "PATH=${AUTOTOOLS}/bin:$PATH" >> $GITHUB_ENV
+#        echo "LD_LIBRARY_PATH=${AUTOTOOLS}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+#        echo "PATH=${OMPI}/bin:$PATH" >> $GITHUB_ENV
+#        echo "LD_LIBRARY_PATH=${OMPI}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+#        echo "PATH=${PNETCDF}/bin:$PATH" >> $GITHUB_ENV
+#        echo "LD_LIBRARY_PATH=${PNETCDF}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+
+    - name: Display environment
+      run: |
+        echo "FC:              " ${FC}
+        echo "CC:              " ${CC}
+        echo "PATH:            " ${PATH}
+        echo "LD_LIBRARY_PATH: " ${LD_LIBRARY_PATH}
+        echo "PNETCDF:         " ${PNETCDF}
+
+    - name: Build MPAS Standalone (make)
+      if: matrix.build-system == 'make'
+      run: |
+        cd ${driver_ROOT}/MPAS-Model/MPAS-Model
+        make gfortran CORE=init_atmosphere
+        make gfortran CORE=atmosphere
+
+    - name: Build MPAS Standalone (cmake)
+      if: matrix.build-system == 'cmake'
+      run: |
+        cd ${driver_ROOT}/MPAS-Model/MPAS-Model
+        mkdir build
+        cd build
+        cmake -DMPAS_DOUBLE_PRECISION=OFF -DMPAS_CORES="init_atmosphere;atmosphere" ..
+        make -j8
