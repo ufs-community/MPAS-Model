@@ -11,7 +11,6 @@ jobs:
       fail-fast: false  # Disable fail-fast
       matrix:
         fortran-compiler: [gfortran-12]
-        build-system:     [make]
         py-version:       [3.11]
         physics:          [mesoscale_reference]
 
@@ -344,7 +343,7 @@ jobs:
         pwd && ls -l
 
     - name: Link TEMPO MP data tables to run directory
-      if: ${{matrix.physics}} == 'hrrrv5'
+      if: ${matrix.physics} == 'hrrrv5'
       run: |
         cd ${mpas_run_ROOT}/run_bl
         cp ${mpas_run_ROOT}/tempo .
