@@ -369,6 +369,7 @@ jobs:
         cd ${mpas_run_ROOT}/run_bl
         pwd && ls -l
         mpirun -np 1 ./atmosphere_model
+        pwd && ls -ltr
 
  
     - name: Run MPAS (feature branch)
