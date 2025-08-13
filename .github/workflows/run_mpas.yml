@@ -215,6 +215,13 @@ jobs:
       run: |
         git submodule update --init --recursive
 
+    - name: Cache MPAS feature branch
+      id: cache-mpas-rt
+      uses: actions/cache@v4
+      with:
+        path: /home/runner/MPAS-Model/MPAS-Model
+        key: cache-mpas-rt-${{matrix.fortran-compiler}}-key
+
     - name: Build MPAS standalone for testing
       run: |
         cd ${mpas_rt_ROOT}/MPAS-Model
@@ -430,6 +437,11 @@ jobs:
     - name: Install NetCDF Python libraries
       run: |
         pip install f90nml h5py netCDF4 matplotlib
+
+    - name: Run comparison script
+      run: |
+        cd ${SCM_ROOT}/test
+        ./cmp_rt2bl.py --dir_rt ${dir_rt} --dir_bl ${dir_bl}
 
     ##########################################################################################
     # Save log files as GitHub Artifact
