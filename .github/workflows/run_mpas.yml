@@ -366,7 +366,7 @@ jobs:
         ln -sf ${mpas_rt_ROOT}/MPAS-Model/${exec} atmosphere_model
         ln -sf namelist.atmosphere.${source_repo} namelist.atmosphere
         pwd && ls -l
-        pwd && ls -ltr /home/runner/MPAS-Model
+        pwd && ls -ltr ${mpas_rt_ROOT}/MPAS-Model
 
     - name: Link lateral boundary condition file for regional MPAS.
       if: env.domain == 'conus'
