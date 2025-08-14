@@ -13,3 +13,6 @@
 [submodule "src/core_atmosphere/physics/physics_noaa/GFL"]
 	path = src/core_atmosphere/physics/physics_noaa/GFL
 	url = https://github.com/NOAA-GSL/GFL.git
+[submodule "src/core_atmosphere/physics/physics_noaa/SMOKE"]
+	path = src/core_atmosphere/physics/physics_noaa/SMOKE
+	url = https://github.com/NOAA-GSL/SMOKE.git
