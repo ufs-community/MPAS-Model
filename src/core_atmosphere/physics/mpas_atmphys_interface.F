@@ -670,7 +670,7 @@
  integer,pointer:: index_zrw,index_zgw,index_zhw
  integer,pointer:: index_ns,index_ng,index_nh,index_nccn
  integer,pointer:: index_volg,index_volh
- integer,pointer:: index_qal_sgs, index_qai_sgs
+ integer,pointer:: index_qal, index_qai
 
  real(kind=RKIND),dimension(:,:),pointer  :: zgrid,w
  real(kind=RKIND),dimension(:,:),pointer  :: zz,exner,pressure_b
@@ -678,7 +678,7 @@
  real(kind=RKIND),dimension(:,:),pointer  :: qv,qc,qr,qi,qs,qg
  real(kind=RKIND),dimension(:,:),pointer  :: qh
  real(kind=RKIND),dimension(:,:),pointer  :: nc,ni,nr,nifa,nwfa
- real(kind=RKIND),dimension(:,:),pointer  :: qal_sgs, qai_sgs
+ real(kind=RKIND),dimension(:,:),pointer  :: qal, qai, precipfrac
  real(kind=RKIND),dimension(:,:),pointer  :: ns,ng,nh,nccn
  real(kind=RKIND),dimension(:,:),pointer  :: volg,volh,zrw,zgw,zhw
  real(kind=RKIND),dimension(:,:),pointer  :: rainprod,evapprod
@@ -949,36 +949,37 @@
              endif
 
              if (config_tempo_cldfra) then
-                call mpas_pool_get_dimension(state,'index_qal_sgs' ,index_qal_sgs  )
-                call mpas_pool_get_dimension(state,'index_qai_sgs' ,index_qai_sgs  )
-
+                call mpas_pool_get_dimension(state,'index_qal' ,index_qal  )
+                call mpas_pool_get_dimension(state,'index_qai' ,index_qai  )
+                call mpas_pool_get_array(diag_physics,'precipfrac', precipfrac)
                 call mpas_pool_get_array(tend_physics,'rthblten',rthblten)
                 call mpas_pool_get_array(tend_physics,'rqvblten',rqvblten)
                 call mpas_pool_get_array(tend_physics,'rqcblten',rqcblten)
                 call mpas_pool_get_array(tend_physics,'rqiblten',rqiblten)
                 call mpas_pool_get_array(tend_physics,'rthratenlw',rthratenlw)
-                call mpas_pool_get_array(tend_physics,'rthratensw',rthratensw)                                
+                call mpas_pool_get_array(tend_physics,'rthratensw',rthratensw)
 
 !                call mpas_pool_get_array(diag_physics,'qc_bl',qc_bl)
 !                call mpas_pool_get_array(diag_physics,'cldfrac_bl',cldfrac_bl)
-                
-                qal_sgs => scalars(index_qal_sgs,:,:)
-                qai_sgs => scalars(index_qai_sgs,:,:)
+
+                qal => scalars(index_qal,:,:)
+                qai => scalars(index_qai,:,:)
 
                 do j = jts, jte
                 do k = kts, kte
                 do i = its, ite
-                   qalsgs_p(i,k,j) = qal_sgs(k,i)
-                   qaisgs_p(i,k,j) = qai_sgs(k,i)
+                   qal_p(i,k,j) = qal(k,i)
+                   qai_p(i,k,j) = qai(k,i)
 
+                   precipfrac_p(i,k,j) = precipfrac(k,i)
                    rthblten_p(i,k,j) = rthblten(k,i)
                    rqvblten_p(i,k,j) = rqvblten(k,i)
                    rqcblten_p(i,k,j) = rqcblten(k,i)
                    rqiblten_p(i,k,j) = rqiblten(k,i)
                    rthratenlw_p(i,k,j) = rthratenlw(k,i)
-                   rthratensw_p(i,k,j) = rthratensw(k,i)                                                         
+                   rthratensw_p(i,k,j) = rthratensw(k,i)
 !                   qcbl_p(i,k,j) = qc_bl(k,i)
-!                   cldfrac_p(i,k,j) = cldfrac_bl(k,i)                   
+!                   cldfrac_p(i,k,j) = cldfrac_bl(k,i)
                 enddo
                 enddo
                 enddo
@@ -1195,7 +1196,7 @@
  logical,pointer:: config_tempo_cldfra
  integer,pointer:: index_qv,index_qc,index_qr,index_qi,index_qs,index_qg
  integer,pointer:: index_nc,index_ni,index_nr,index_nifa,index_nwfa
- integer,pointer:: index_qal_sgs, index_qai_sgs
+ integer,pointer:: index_qal, index_qai
 !TEMPO/NSSL
  integer,pointer:: index_qh
  integer,pointer:: index_zrw,index_zgw,index_zhw
@@ -1212,7 +1213,7 @@
  real(kind=RKIND),dimension(:,:),pointer  :: qv,qc,qr,qi,qs,qg
  real(kind=RKIND),dimension(:,:),pointer  :: qh
  real(kind=RKIND),dimension(:,:),pointer  :: nc,ni,nr,nifa,nwfa
- real(kind=RKIND),dimension(:,:),pointer  :: qal_sgs, qai_sgs
+ real(kind=RKIND),dimension(:,:),pointer  :: qal, qai, precipfrac
  real(kind=RKIND),dimension(:,:),pointer  :: ns,ng,nh,nccn
  real(kind=RKIND),dimension(:,:),pointer  :: volg,volh,zrw,zgw,zhw
  real(kind=RKIND),dimension(:)  ,pointer  :: max_hail_diameter_sfc, max_hail_diameter_column
@@ -1495,17 +1496,19 @@
              endif
 
              if (config_tempo_cldfra) then
-                call mpas_pool_get_dimension(state,'index_qal_sgs' ,index_qal_sgs  )
-                call mpas_pool_get_dimension(state,'index_qai_sgs' ,index_qai_sgs  )
-                
-                qal_sgs => scalars(index_qal_sgs,:,:)
-                qai_sgs => scalars(index_qai_sgs,:,:)                
+                call mpas_pool_get_dimension(state,'index_qal' ,index_qal  )
+                call mpas_pool_get_dimension(state,'index_qai' ,index_qai  )
+                call mpas_pool_get_array(diag_physics,'precipfrac' ,precipfrac )
+
+                qal => scalars(index_qal,:,:)
+                qai => scalars(index_qai,:,:)
 
                 do j = jts, jte
                 do k = kts, kte
                 do i = its, ite
-                   qal_sgs(k,i) = qalsgs_p(i,k,j)
-                   qai_sgs(k,i) = qaisgs_p(i,k,j)
+                   qal(k,i) = qal_p(i,k,j)
+                   qai(k,i) = qai_p(i,k,j)
+                   precipfrac(k,i) = precipfrac_p(i,k,j)
                 enddo
                 enddo
                 enddo

@@ -88,8 +88,8 @@
        if(.not.allocated(qcbl_p)) allocate(qcbl_p(ims:ime,kms:kme,jms:jme))
 
     case("cld_tempo")
-       if(.not.allocated(qalsgs_p)) allocate(qalsgs_p(ims:ime,kms:kme,jms:jme))
-       if(.not.allocated(qaisgs_p)) allocate(qaisgs_p(ims:ime,kms:kme,jms:jme))
+       if(.not.allocated(qal_p)) allocate(qal_p(ims:ime,kms:kme,jms:jme))
+       if(.not.allocated(qai_p)) allocate(qai_p(ims:ime,kms:kme,jms:jme))
     case default
 
  end select cld_fraction_select
@@ -130,8 +130,8 @@
        if(allocated(qcbl_p)) deallocate(qcbl_p)
 
     case("cld_tempo")
-       if(allocated(qalsgs_p)) deallocate(qalsgs_p)
-       if(allocated(qaisgs_p)) deallocate(qaisgs_p)
+       if(allocated(qal_p)) deallocate(qal_p)
+       if(allocated(qai_p)) deallocate(qai_p)
     case default
 
  end select cld_fraction_select
@@ -173,9 +173,9 @@
  character(len=StrKIND),pointer:: radt_cld_scheme
  character(len=StrKIND),pointer:: convection_scheme
 
- integer,pointer:: index_qal_sgs, index_qai_sgs
+ integer,pointer:: index_qal, index_qai
  real(kind=RKIND),dimension(:,:,:),pointer:: scalars
- real(kind=RKIND),dimension(:,:),pointer:: qalsgs, qaisgs
+ real(kind=RKIND),dimension(:,:),pointer:: qal, qai
 
 !-----------------------------------------------------------------------------------------------------------------
 
@@ -250,17 +250,17 @@
 
     case("cld_tempo")
        call mpas_pool_get_array(state,'scalars',scalars)
-       call mpas_pool_get_dimension(state,'index_qal_sgs',index_qal_sgs)
-       call mpas_pool_get_dimension(state,'index_qai_sgs',index_qai_sgs)
+       call mpas_pool_get_dimension(state,'index_qal',index_qal)
+       call mpas_pool_get_dimension(state,'index_qai',index_qai)
 
-       qalsgs   => scalars(index_qal_sgs,:,:)
-       qaisgs   => scalars(index_qai_sgs,:,:)
+       qal   => scalars(index_qal,:,:)
+       qai   => scalars(index_qai,:,:)
        do j = jts,jte
           do k = kts,kte
              do i = its,ite
-                qalsgs_p(i,k,j) = qalsgs(k,i)
-                qaisgs_p(i,k,j) = qaisgs(k,i)                
-                cldfrac_p(i,k,j) = max(qalsgs(k,i), qaisgs(k,i))
+                qal_p(i,k,j) = qal(k,i)
+                qai_p(i,k,j) = qai(k,i)
+                cldfrac_p(i,k,j) = max(qal(k,i), qai(k,i))
              enddo
           enddo
        enddo
@@ -379,11 +379,6 @@
                        its,  ite , jts , jte , kts , kte  )
       call mpas_timer_stop('cal_mynncld')
 
-    case("cld_tempo")
-      call mpas_timer_start('cal_cldfra_tempo')
-      call cal_cldfra_tempo(qalsgs_p , qaisgs_p, qcrad_p   , qirad_p    , &
-                       its,  ite , jts , jte , kts , kte  )
-      call mpas_timer_stop('cal_cldfra_tempo')
     case default
 
  end select cld_fraction_select
@@ -608,40 +603,6 @@
  enddo
 
  end subroutine cal_gflcld
-!=================================================================================================================
-!=================================================================================================================
- subroutine cal_cldfra_tempo(cldfracl,cldfraci,qc,qi,its,ite,jts,jte,kts,kte)
-!=================================================================================================================
-
-!input arguments:
- integer,intent(in):: its,ite,jts,jte,kts,kte
- real(kind=RKIND),intent(inout),dimension(ims:ime,kms:kme,jms:jme):: qc,qi
- real(kind=RKIND),intent(in),   dimension(ims:ime,kms:kme,jms:jme):: cldfracl, cldfraci
-
-!local variables:
- integer:: i,j,k
-
- real(kind=RKIND),parameter:: qc_thresh  = 1.e-06
- real(kind=RKIND),parameter:: qi_thresh  = 1.e-09
- real(kind=RKIND),parameter:: cld_thresh = 1.e-02
-
- do j = jts,jte
- do k = kts,kte
- do i = its,ite
-
-    if (qc(i,k,j) < qc_thresh .AND. cldfracl(i,k,j) > cld_thresh) THEN
-       !call mpas_log_write("Adding in cldfra_bl to qc at $i,$i,$i", intArgs=(/i,j,k/))
-       qc(i,k,j)=qc(i,k,j)
-    endif
-    if (qi(i,k,j) < qi_thresh .AND. cldfraci(i,k,j) > cld_thresh) THEN
-       !call mpas_log_write("Adding in cldfra_bl to qi at $i,$i,$i", intArgs=(/i,j,k/))
-       qi(i,k,j)=qi(i,k,j)
-    endif
- enddo
- enddo
- enddo
-
- end subroutine cal_cldfra_tempo
 !=================================================================================================================
  end module mpas_atmphys_driver_cloudiness
 !=================================================================================================================

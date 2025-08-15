@@ -226,17 +226,18 @@
           endif
 
           if (config_tempo_cldfra) then
-             if(.not.allocated(qalsgs_p)) allocate(qalsgs_p(ims:ime,kms:kme,jms:jme))
-             if(.not.allocated(qaisgs_p)) allocate(qaisgs_p(ims:ime,kms:kme,jms:jme))
+             if(.not.allocated(qal_p)) allocate(qal_p(ims:ime,kms:kme,jms:jme))
+             if(.not.allocated(qai_p)) allocate(qai_p(ims:ime,kms:kme,jms:jme))
+             if(.not.allocated(precipfrac_p)) allocate(precipfrac_p(ims:ime,kms:kme,jms:jme))
 
              if(.not.allocated(rthblten_p)) allocate(rthblten_p(ims:ime,kms:kme,jms:jme))
              if(.not.allocated(rqvblten_p)) allocate(rqvblten_p(ims:ime,kms:kme,jms:jme))
              if(.not.allocated(rqcblten_p)) allocate(rqcblten_p(ims:ime,kms:kme,jms:jme))
              if(.not.allocated(rqiblten_p)) allocate(rqiblten_p(ims:ime,kms:kme,jms:jme))
              if(.not.allocated(rthratenlw_p)) allocate(rthratenlw_p(ims:ime,kms:kme,jms:jme))
-             if(.not.allocated(rthratensw_p)) allocate(rthratensw_p(ims:ime,kms:kme,jms:jme))                                                    
+             if(.not.allocated(rthratensw_p)) allocate(rthratensw_p(ims:ime,kms:kme,jms:jme))
 !             if(.not.allocated(cldfrac_p) ) allocate(cldfrac_p(ims:ime,kms:kme,jms:jme))
-!             if(.not.allocated(qcbl_p) ) allocate(qcbl_p(ims:ime,kms:kme,jms:jme))             
+!             if(.not.allocated(qcbl_p) ) allocate(qcbl_p(ims:ime,kms:kme,jms:jme))
           endif
 
           if (config_tempo_ml_nc_pbl) then
@@ -405,17 +406,18 @@
           endif
 
           if (config_tempo_cldfra) then
-             if(allocated(qalsgs_p)) deallocate(qalsgs_p)
-             if(allocated(qaisgs_p)) deallocate(qaisgs_p)
+             if(allocated(qal_p)) deallocate(qal_p)
+             if(allocated(qai_p)) deallocate(qai_p)
+             if(allocated(precipfrac_p)) deallocate(precipfrac_p)
 
              if(allocated(rthblten_p)) deallocate(rthblten_p)
              if(allocated(rqvblten_p)) deallocate(rqvblten_p)
              if(allocated(rqcblten_p)) deallocate(rqcblten_p)
              if(allocated(rqiblten_p)) deallocate(rqiblten_p)
              if(allocated(rthratenlw_p)) deallocate(rthratenlw_p)
-             if(allocated(rthratensw_p)) deallocate(rthratensw_p)             
+             if(allocated(rthratensw_p)) deallocate(rthratensw_p)
 !             if(allocated(cldfrac_p) ) deallocate(cldfrac_p)
-!             if(allocated(qcbl_p) ) deallocate(qcbl_p)             
+!             if(allocated(qcbl_p) ) deallocate(qcbl_p)
           endif
 
           if (config_tempo_ml_nc_pbl) then
@@ -639,7 +641,7 @@
                      th        = th_p        , qv         = qv_p         , qc         = qc_p         , &
                      qr        = qr_p        , qi         = qi_p         , qs         = qs_p         , &
                      qg        = qg_p        , ni         = ni_p         , nr         = nr_p         , &
-                     qalsgs     = qalsgs_p     , qaisgs      = qaisgs_p      , &
+                     qal       = qal_p       , qai        = qai_p        , precipfrac = precipfrac_p , &
                      !! ng        = ng_p        , qb         = volg_p                                   , &
                      !! nc        = nc_p        , nwfa       = nwfa_p       , nifa       = nifa_p       , &
                      !! nwfa2d    = nwfa2d_p    , nifa2d     = nifa2d_p                                 , &
@@ -662,7 +664,7 @@
                         th        = th_p        , qv         = qv_p         , qc         = qc_p         , &
                         qr        = qr_p        , qi         = qi_p         , qs         = qs_p         , &
                         qg        = qg_p        , ni         = ni_p         , nr         = nr_p         , &
-                        qalsgs     = qalsgs_p     , qaisgs      = qaisgs_p      , &
+                        qal       = qal_p       , qai        = qai_p        , precipfrac = precipfrac_p , &
                         !! ng        = ng_p        , qb         = volg_p                                   , &
                         nc        = nc_p        , nwfa       = nwfa_p       , nifa       = nifa_p       , &
                         nwfa2d    = nwfa2d_p    , nifa2d     = nifa2d_p                                 , &
@@ -686,7 +688,7 @@
                         qr        = qr_p        , qi         = qi_p         , qs         = qs_p         , &
                         qg        = qg_p        , ni         = ni_p         , nr         = nr_p         , &
                         ng        = ng_p        , qb         = volg_p                                   , &
-                        qalsgs     = qalsgs_p     , qaisgs      = qaisgs_p      , &
+                        qal       = qal_p       , qai        = qai_p        , precipfrac = precipfrac_p , &
                         !! nc        = nc_p        , nwfa       = nwfa_p       , nifa       = nifa_p       , &
                         !! nwfa2d    = nwfa2d_p    , nifa2d     = nifa2d_p                                 , &
                         pii       = pi_p        , p          = pres_p       , dz         = dz_p         , &
@@ -714,7 +716,7 @@
                      ng        = ng_p        , qb         = volg_p                                   , &
                      nc        = nc_p        , nwfa       = nwfa_p       , nifa       = nifa_p       , &
                      nwfa2d    = nwfa2d_p    , nifa2d     = nifa2d_p                                 , &
-                     qalsgs     = qalsgs_p     , qaisgs      = qaisgs_p      , &                     
+                     qal       = qal_p       , qai        = qai_p        , precipfrac = precipfrac_p , &
                      rthbl = rthblten_p, rqvbl = rqvblten_p, rqcbl = rqcblten_p, rqibl = rqiblten_p  , &
                      rthlw = rthratenlw_p, rthsw = rthratensw_p , &
                      pii       = pi_p        , p          = pres_p       , dz         = dz_p         , &

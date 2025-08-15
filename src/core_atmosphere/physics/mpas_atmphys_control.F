@@ -124,7 +124,7 @@
  call mpas_pool_get_config(configs,'config_radt_sw_scheme'   ,config_radt_sw_scheme   )
  call mpas_pool_get_config(configs,'config_sfclayer_scheme'  ,config_sfclayer_scheme  )
  call mpas_pool_get_config(configs,'config_tempo_cldfra'  ,config_tempo_cldfra  )
- call mpas_pool_get_config(configs,'config_mynn_cloudpdf'  ,config_mynn_cloudpdf  )      
+ call mpas_pool_get_config(configs,'config_mynn_cloudpdf'  ,config_mynn_cloudpdf  )
 
  call mpas_log_write('')
  call mpas_log_write('----- Setting up physics suite '''//trim(config_physics_suite)//''' -----')

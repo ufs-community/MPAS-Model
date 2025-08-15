@@ -1867,12 +1867,12 @@
                              description="Water-friendly aerosol number concentration"
                              packages="mp_thompson_aers_in;tempo_aerosolaware_in"/>
 
-                        <var name="qal_sgs" array_group="passive" units=""
-                             description="SGS prognostic cloud liquid fraction"
+                        <var name="qal" array_group="passive" units=""
+                             description="Prognostic loud liquid fraction"
                              packages="tempo_cldfra_in"/>
 
-                        <var name="qai_sgs" array_group="passive" units=""
-                             description="SGS prognostic cloud ice fraction"
+                        <var name="qai" array_group="passive" units=""
+                             description="Prognostic cloud ice fraction"
                              packages="tempo_cldfra_in"/>			
                 </var_array>
 #endif
@@ -2266,13 +2266,13 @@
                              description="Tendency of water-friendly aerosol number concentration multiplied by dry air density divided by d(zeta)/dz"
                              packages="mp_thompson_aers_in;tempo_aerosolaware_in"/>
 
-                        <var name="tend_qalsgs" name_in_code="qal_sgs" array_group="passive" units=""
-                             description="Tendency of sgs prognostic cloud liquid fraction multiplied by dry air density divided by d(zeta)/dz"
+                        <var name="tend_qal" name_in_code="qal" array_group="passive" units=""
+                             description="Tendency of prognostic cloud liquid fraction multiplied by dry air density divided by d(zeta)/dz"
                              packages="tempo_cldfra_in"/>
 
-                        <var name="tend_qaisgs" name_in_code="qai_sgs" array_group="passive" units=""
-                             description="Tendency of sgs prognostic cloud ice fraction multiplied by dry air density divided by d(zeta)/dz"
-                             packages="tempo_cldfra_in"/>			
+                        <var name="tend_qai" name_in_code="qai" array_group="passive" units=""
+                             description="Tendency of prognostic cloud ice fraction multiplied by dry air density divided by d(zeta)/dz"
+                             packages="tempo_cldfra_in"/>
                 </var_array>
 #endif
         </var_struct>
@@ -2373,13 +2373,13 @@
                              units="m^{-3} s^{-1}"
                              description="Lateral boundary tendency of water-friendly aerosol number concentration"/>
 
-                        <var name="lbc_qalsgs" name_in_code="qal_sgs" array_group="passive" packages="tempo_cldfra_in"
+                        <var name="lbc_qal" name_in_code="qal" array_group="passive" packages="tempo_cldfra_in"
                              units=""
-                             description="Lateral boundary tendency of sgs prognostic cloud liquid fraction"/>
+                             description="Lateral boundary tendency of prognostic cloud liquid fraction"/>
 
-                        <var name="lbc_qaisgs" name_in_code="qai_sgs" array_group="passive" packages="tempo_cldfra_in"
+                        <var name="lbc_qai" name_in_code="qai" array_group="passive" packages="tempo_cldfra_in"
                              units=""
-                             description="Lateral boundary tendency of sgs prognostic cloud ice fraction"/>			
+                             description="Lateral boundary tendency of prognostic cloud ice fraction"/>
                 </var_array>
         </var_struct>
 
@@ -2940,6 +2940,9 @@
                 <var name="precipw" type="real" dimensions="nCells Time" units="kg m^{-2}"
                      description="precipitable water"/>
 
+                <var name="precipfrac" type="real" dimensions="nVertLevels nCells Time" units=""
+                     description="rain/snow precipitation fraction"
+                     packages="tempo_cldfra_in"/>
 
                 <!-- ================================================================================================== -->
                 <!-- ... PARAMETERIZATION OF CONVECTION:                                                                -->
