@@ -12,7 +12,7 @@ jobs:
       matrix:
         fortran-compiler: [gfortran-12]
         py-version:       [3.11]
-        physics:          [mesoscale_reference,convection_permitting]
+        physics:          [mesoscale_reference, convection_permitting, mesoscale_reference_noahmp]
 
     # Environmental variables
     env:
@@ -434,8 +434,13 @@ jobs:
       run: |
         cd ${runner_ROOT} && mkdir artifact-${{matrix.fortran-compiler}} && cd artifact-${{matrix.fortran-compiler}}
         cp ${mpas_run_ROOT}/run_bl/log.atmosphere.*.out log.atmosphere.BL.out
+        mkdir data_bl && cd data_bl
         cp /home/runner/work/run_bl/history.*.nc .
         cp /home/runner/work/run_bl/diag.*.nc .
+        cd ..
+        mkdir data_rt && cd data_rt
+        cp /home/runner/work/run_rt/history.*.nc .
+        cp /home/runner/work/run_rt/diag.*.nc .
 
     - name: Upload log files as GitHub Artifact
       uses: actions/upload-artifact@v4
