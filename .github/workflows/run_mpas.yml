@@ -12,7 +12,7 @@ jobs:
       matrix:
         fortran-compiler: [gfortran-12]
         py-version:       [3.11]
-        physics:          [mesoscale_reference]
+        physics:          [mesoscale_reference,convection_permitting]
 
     # Environmental variables
     env:
