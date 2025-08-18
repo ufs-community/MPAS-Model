@@ -220,7 +220,7 @@ jobs:
       id: cache-mpas-rt
       uses: actions/cache@v4
       with:
-        path: /home/runner/MPAS-Model/MPAS-Model
+        path: /home/runner/work/MPAS-Model/MPAS-Model
         key: cache-mpas-rt-${{matrix.fortran-compiler}}-key
 
     - name: Build MPAS standalone for testing
@@ -335,16 +335,16 @@ jobs:
         ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.ugwp_file}} mpas.ugwp_oro_data.nc
 
     - name: Link TEMPO MP data tables to run directory
-      if: contains(${{matrix.physics}}, 'hrrrv5')
+      if: contains(matrix.physics, 'hrrrv5')
       run: |
         cd ${mpas_run_ROOT}/run_bl
-        ls ${runner_ROOT}/tempo
         cp ${runner_ROOT}/tempo/* .
 
     - name: Link Thompson MP data tables to run directory
-      if: contains(${{matrix.physics}}, 'convection_permitting')
+      if: contains(matrix.physics, 'convection_permitting')
       run: |
         cd ${mpas_run_ROOT}/run_bl
+        cp ${runner_ROOT}/thompson/* .
 
     ##########################################################################################
     # Configure MPAS feature runs
@@ -382,15 +382,16 @@ jobs:
         ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.ugwp_file}} mpas.ugwp_oro_data.nc
 
     - name: Link TEMPO MP data tables to run directory
-      if: contains(${{matrix.physics}}, 'hrrrv5')
+      if: contains(matrix.physics, 'hrrrv5')
       run: |
         cd ${mpas_run_ROOT}/run_rt
         cp ${runner_ROOT}/tempo/* .
 
     - name: Link Thompson MP data tables to run directory
-      if: contains(${{matrix.physics}}, 'convection_permitting')
+      if: contains(matrix.physics, 'convection_permitting')
       run: |
         cd ${mpas_run_ROOT}/run_rt
+        cp ${runner_ROOT}/thompson/* .
 
     ##########################################################################################
     # Run MPAS
