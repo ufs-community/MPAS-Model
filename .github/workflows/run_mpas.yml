@@ -52,6 +52,15 @@ jobs:
     ##########################################################################################
     # Build Software Stack needed for MPAS on GitHub server, using GNU
     ##########################################################################################
+    # Set up conda environment
+    - name: Setup conda environment
+      uses: conda-incubator/setup-miniconda@v3.2.0
+      with:
+        auto-update-conda: true
+        activate-environment: ci-env
+        environment-file: environment.yml
+        python-version: ${{ matrix.py-version }}
+        auto-activate-base: false
 
     - name: Install NetCDF library
       run: |
@@ -422,6 +431,10 @@ jobs:
       run: |
         pip install f90nml h5py netCDF4 matplotlib
 
+    - name: Install nccmp
+      uses: actions/checkout@v4
+      run: |
+        
     - name: Run comparison script
       run: |
         cd ${mpas_rt_ROOT}/MPAS-Model/testing_and_setup/ufs-community
