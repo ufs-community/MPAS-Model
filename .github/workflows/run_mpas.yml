@@ -194,12 +194,12 @@ jobs:
         echo ${{steps.set_vars.outputs.sst_file}}
         echo ${{steps.set_vars.outputs.ugwp_file}}
 
-#    - name: Cache MPAS standalone needed to generate baselines
-#      id: cache-mpas-bl
-#      uses: actions/cache@v4
-#      with:
-#        path: /home/runner/MPAS-Model-BL
-#        key: cache-mpas-bl-${{matrix.fortran-compiler}}-key
+    - name: Cache MPAS standalone needed to generate baselines
+      id: cache-mpas-bl
+      uses: actions/cache@v4
+      with:
+        path: /home/runner/MPAS-Model-BL
+        key: cache-mpas-bl-${{matrix.fortran-compiler}}-key
 
     - name: Checkout and build MPAS standalone for baseline generation.
       if: steps.cache-mpas-bl.outputs.cache-hit != 'true'
@@ -216,12 +216,12 @@ jobs:
       run: |
         git submodule update --init --recursive
 
-    - name: Cache MPAS feature branch
-      id: cache-mpas-rt
-      uses: actions/cache@v4
-      with:
-        path: /home/runner/work/MPAS-Model/MPAS-Model
-        key: cache-mpas-rt-${{matrix.fortran-compiler}}-key
+#    - name: Cache MPAS feature branch
+#      id: cache-mpas-rt
+#      uses: actions/cache@v4
+#      with:
+#        path: /home/runner/work/MPAS-Model/MPAS-Model
+#        key: cache-mpas-rt-${{matrix.fortran-compiler}}-key
 
     - name: Build MPAS standalone for testing
       run: |
