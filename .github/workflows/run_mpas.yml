@@ -348,6 +348,7 @@ jobs:
       if: contains(${{matrix.physics}}, 'hrrrv5')
       run: |
         cd ${mpas_run_ROOT}/run_bl
+        ls ${runner_ROOT}/tempo
         cp ${runner_ROOT}/tempo .
         pwd && ls -l
 
