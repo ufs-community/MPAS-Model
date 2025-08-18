@@ -58,7 +58,7 @@ jobs:
       with:
         auto-update-conda: true
         activate-environment: ci-env
-        environment-file: environment.yml
+        environment-file: .github/workflows/environment.yml
         python-version: ${{ matrix.py-version }}
         auto-activate-base: false
 
