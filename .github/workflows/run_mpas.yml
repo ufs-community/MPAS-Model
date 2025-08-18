@@ -52,22 +52,6 @@ jobs:
     ##########################################################################################
     # Build Software Stack needed for MPAS on GitHub server, using GNU
     ##########################################################################################
-    - name: Checkout MPAS codebase for testing.
-      uses: actions/checkout@v3
-
-    - name: Initialize any submodules from testing codebase.
-      run: |
-        git submodule update --init --recursive
-
-    # Set up conda environment
-    - name: Setup conda environment
-      uses: conda-incubator/setup-miniconda@v3.2.0
-      with:
-        auto-update-conda: true
-        activate-environment: ci-env
-        environment-file: testing_and_setup/ufs-community/environment.yml
-        python-version: ${{ matrix.py-version }}
-        auto-activate-base: false
 
     - name: Install NetCDF library
       run: |
@@ -225,12 +209,12 @@ jobs:
         cd ${mpas_bl_ROOT}
         make gfortran CORE=atmosphere DEBUG=true
 
-#    - name: Checkout MPAS codebase for testing.
-#      uses: actions/checkout@v3
-#
-#    - name: Initialize any submodules from testing codebase.
-#      run: |
-#        git submodule update --init --recursive
+    - name: Checkout MPAS codebase for testing.
+      uses: actions/checkout@v3
+
+    - name: Initialize any submodules from testing codebase.
+      run: |
+        git submodule update --init --recursive
 
     - name: Cache MPAS feature branch
       id: cache-mpas-rt
@@ -243,6 +227,16 @@ jobs:
       run: |
         cd ${mpas_rt_ROOT}/MPAS-Model
         make gfortran CORE=atmosphere DEBUG=true
+
+    # Set up conda environment
+    - name: Setup conda environment
+      uses: conda-incubator/setup-miniconda@v3.2.0
+      with:
+        auto-update-conda: true
+        activate-environment: ci-env
+        environment-file: ${mpas_rt_ROOT}/MPAS-Model/testing_and_setup/ufs-community/environment.yml
+        python-version: ${{ matrix.py-version }}
+        auto-activate-base: false
 
     ##########################################################################################
     # Fetch any data/files needed for MPAS runs.
