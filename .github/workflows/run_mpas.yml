@@ -167,9 +167,11 @@ jobs:
 
     ##########################################################################################
     # Compile MPAS for testing "feature" branch.
+    # MPAS for "baseline" branch has already been compiled and the executable if stored (cached)
+    # on the GitHub runner for later use.
     # When generating new baselines, checkout the gsl/develop branch from the ufs-community 
-    # fork of MPAS-A and re-compile.
-    # $model_base_directory = 
+    # fork of MPAS-A, re-compile, and update the cached baseline executable.
+    # 
     ##########################################################################################
     - name: Set variables
       id: set_vars
@@ -343,7 +345,7 @@ jobs:
         pwd && ls -l
 
     - name: Link TEMPO MP data tables to run directory
-      if: contain(${{matrix.physics}}, 'hrrrv5')
+      if: contains(${{matrix.physics}}, 'hrrrv5')
       run: |
         cd ${mpas_run_ROOT}/run_bl
         cp ${runner_ROOT}/tempo .
@@ -396,7 +398,7 @@ jobs:
         pwd && ls -l
 
     - name: Link TEMPO MP data tables to run directory
-      if: contain(${{matrix.physics}}, 'hrrrv5')
+      if: contains(${{matrix.physics}}, 'hrrrv5')
       run: |
         cd ${mpas_run_ROOT}/run_rt
         cp ${runner_ROOT}/tempo .
