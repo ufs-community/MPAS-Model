@@ -284,7 +284,8 @@
     graupelnc_p,      &!
     graupelncv_p,     &!
     sr_p,             &!
-    nwfa2d_p
+    nwfa2d_p,         &
+    prate_p
 
  real(kind=RKIND),dimension(:,:),allocatable:: &
     frainnc_p
@@ -305,7 +306,8 @@
 
 !... for Thompson cloud microphysics parameterization, including aerosol-aware option:
  real(kind=RKIND),dimension(:,:),allocatable:: &
-    refl10cm_1km_p
+    refl10cm_1km_p, &
+    refl10cm_max_p
  real(kind=RKIND),dimension(:,:),allocatable:: &
     max_hail_diameter_sfc_p, max_hail_diameter_column_p
 !=================================================================================================================
