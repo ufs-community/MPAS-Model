@@ -434,6 +434,8 @@ jobs:
       run: |
         cd ${runner_ROOT} && mkdir artifact-${{matrix.fortran-compiler}} && cd artifact-${{matrix.fortran-compiler}}
         cp ${mpas_run_ROOT}/run_bl/log.atmosphere.*.out log.atmosphere.BL.out
+        cp /home/runner/work/run_bl/history.*.nc .
+        cp /home/runner/work/run_bl/diag.*.nc .
 
     - name: Upload log files as GitHub Artifact
       uses: actions/upload-artifact@v4
