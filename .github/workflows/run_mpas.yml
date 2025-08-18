@@ -228,15 +228,6 @@ jobs:
         cd ${mpas_rt_ROOT}/MPAS-Model
         make gfortran CORE=atmosphere DEBUG=true
 
-#    # Set up conda environment
-#    - name: Setup conda environment
-#      uses: conda-incubator/setup-miniconda@v3.2.0
-#      with:
-#        auto-update-conda: true
-#        activate-environment: ci-env
-#        environment-file: testing_and_setup/ufs-community/environment.yml
-#        python-version: ${{ matrix.py-version }}
-
     ##########################################################################################
     # Fetch any data/files needed for MPAS runs.
     ##########################################################################################

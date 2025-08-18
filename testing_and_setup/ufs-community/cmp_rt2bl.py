@@ -44,9 +44,16 @@ def compare_files(dir_bl, dir_rt, files):
     file_bl = dir_bl+'/'+files
     file_rt = dir_rt+'/'+files
     if (os.path.isfile(file_rt)):
-        com = 'nccmp -d ' + file_bl + ' ' + file_rt
+        com = 'cmp ' + file_bl + ' ' + file_rt + ' > logfile.txt'
         print('Comparing ',file_bl,' to ',file_rt)
-        os.system(com)
+        result = os.system(com)
+        if (result != 0):
+            message = "  Output DIFFERS from baseline."
+        else:
+            message = "  Output IDENTICAL to baseline."
+        # End if
+        print(message)
+        # end if
         ierr = 0
     else:
         print("ERROR: Cannot find file for comparision, ",file_rt)
