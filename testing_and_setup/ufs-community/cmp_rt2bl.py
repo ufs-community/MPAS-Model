@@ -22,7 +22,7 @@ parser.add_argument('-np',   '--no_plots', help='flag to turn off generation of 
 def parse_args():
     args     = parser.parse_args()
     dir_rt   = args.dir_rt
-    dir_bl   = args.dir_rt
+    dir_bl   = args.dir_bl
     no_plots = args.no_plots
     return (dir_rt, dir_bl, no_plots)
 
