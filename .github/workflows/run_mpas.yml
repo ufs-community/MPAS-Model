@@ -58,7 +58,7 @@ jobs:
       with:
         auto-update-conda: true
         activate-environment: ci-env
-        environment-file: .github/workflows/environment.yml
+        environment-file: testing_and_setup/ufs-community/environment.yml
         python-version: ${{ matrix.py-version }}
         auto-activate-base: false
 
