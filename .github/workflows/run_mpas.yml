@@ -52,6 +52,13 @@ jobs:
     ##########################################################################################
     # Build Software Stack needed for MPAS on GitHub server, using GNU
     ##########################################################################################
+    - name: Checkout MPAS codebase for testing.
+      uses: actions/checkout@v3
+
+    - name: Initialize any submodules from testing codebase.
+      run: |
+        git submodule update --init --recursive
+
     # Set up conda environment
     - name: Setup conda environment
       uses: conda-incubator/setup-miniconda@v3.2.0
@@ -218,12 +225,12 @@ jobs:
         cd ${mpas_bl_ROOT}
         make gfortran CORE=atmosphere DEBUG=true
 
-    - name: Checkout MPAS codebase for testing.
-      uses: actions/checkout@v3
-
-    - name: Initialize any submodules from testing codebase.
-      run: |
-        git submodule update --init --recursive
+#    - name: Checkout MPAS codebase for testing.
+#      uses: actions/checkout@v3
+#
+#    - name: Initialize any submodules from testing codebase.
+#      run: |
+#        git submodule update --init --recursive
 
     - name: Cache MPAS feature branch
       id: cache-mpas-rt
