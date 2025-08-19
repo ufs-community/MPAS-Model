@@ -483,6 +483,7 @@
  logical,pointer:: do_restart
  character(len=StrKIND),pointer:: microp_scheme
  logical,pointer:: config_tempo_hailaware, config_tempo_aerosolaware
+ logical,pointer:: config_tempo_cldfra, config_tempo_incld
  character(len=StrKIND),pointer:: nssl_moments
 
  logical :: outputon = .false.
@@ -502,6 +503,8 @@
  call mpas_pool_get_config(configs,'config_microp_scheme',microp_scheme)
  call mpas_pool_get_config(configs,'config_tempo_hailaware',config_tempo_hailaware)
  call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
+ call mpas_pool_get_config(configs,'config_tempo_cldfra',config_tempo_cldfra)
+ call mpas_pool_get_config(configs,'config_tempo_incld',config_tempo_incld)
  call mpas_pool_get_config(configs,'config_nssl_moments',nssl_moments)
  call mpas_pool_get_config(configs,'config_do_restart'   ,do_restart   )
 
@@ -519,7 +522,8 @@
 
     case("mp_tempo")
        call tempo_init(l_mp_tables=l_mp_tables, &
-            hail_aware_flag=config_tempo_hailaware, aerosol_aware_flag=config_tempo_aerosolaware)
+            hail_aware_flag=config_tempo_hailaware, aerosol_aware_flag=config_tempo_aerosolaware, &
+            cldfra_flag=config_tempo_cldfra, incld_flag=config_tempo_incld)
 
        if (config_tempo_aerosolaware) then
           call init_tempo_aerosols_forMPAS(do_restart,dminfo,mesh,state,time_lev,diag_physics)

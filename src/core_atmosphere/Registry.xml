@@ -2553,6 +2553,11 @@
                      description="Logical flag to turn on/off prognostic cloud fraction"
                      possible_values=".true. or .false."/>
 
+		<nml_option name="config_tempo_incld" type="logical" default_value="false" in_defaults="false"
+		     units="-"
+                     description="Logical flag to turn on/off in-cloud microphysics when config_tempo_cldfra is true"
+                     possible_values=".true. or .false."/>
+
 		<nml_option name="config_tempo_ml_nc_pbl" type="logical" default_value="false" in_defaults="false"
 		     units="-"
                      description="Logical flag to turn on/off ML prediction of boundary layer cloud number concentrations"
