@@ -93,8 +93,9 @@ def main():
 
     # Compare MPAS baselines to feature branch
     print('-'*50)
+    error_count = 0
     for file_hist in file_bl_hist:
-        error_count = compare_files(dir_bl, dir_rt, file_hist)
+        error_count = error_count + compare_files(dir_bl, dir_rt, file_hist)
     # end for
     for file_diag in file_bl_diag:
         error_count = error_count + compare_files(dir_bl, dir_rt, file_diag)
