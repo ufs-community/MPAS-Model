@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 
 ##############################################################################
-#
-# This script compares MPAS RT output to baselines.
-#
+# Dependencies
 ##############################################################################
 import os
 import sys
@@ -14,8 +12,8 @@ import argparse
 # Command line arguments
 ##############################################################################
 parser = argparse.ArgumentParser()
-parser.add_argument('-drt',  '--dir_rt',   help='Directory containing SCM RT output',    required=True)
-parser.add_argument('-dbl',  '--dir_bl',   help='Directory containing SCM RT baselines', required=True)
+parser.add_argument('-drt', '--dir_rt', help='MPAS run directory for testing',   required=True)
+parser.add_argument('-dbl', '--dir_bl', help='MPAS run directory for baselines', required=True)
 
 def parse_args():
     args   = parser.parse_args()
@@ -25,7 +23,7 @@ def parse_args():
 # end def
 
 ##############################################################################
-# Procedure to return <file_list> in a provided <directory> for the
+# Procedure to return <file_list> from a given <directory> provided the
 # file <prefix> and <suffix>.
 ##############################################################################
 def get_files(directory, prefix, suffix):
@@ -79,8 +77,8 @@ def compare_files(dir_bl, dir_rt, filein):
 # Main program
 # Given two MPAS run directories, <dir_bl> and <dir_rt>, compare all of the
 # history and diagnostic files within
-# <dir_bl> contains MPAS output from the unmodified authoratative gsl/develop
-# branch, the "baseline".
+# <dir_bl> contains MPAS output from the unmodified authoratative codebase,
+# the "baseline".
 # <dir_rt> contains MPAS output from the "feature" branch being propsed to the
 # authoratative gsl/develop for inclusion.
 #
@@ -93,7 +91,7 @@ def main():
     file_bl_hist = get_files(dir_bl,'history.','.nc')
     file_bl_diag = get_files(dir_bl,'diag.','.nc')
 
-    # Compare baselines to regression_test.
+    # Compare MPAS baselines to feature branch
     print('-'*50)
     for file_hist in file_bl_hist:
         error_count = compare_files(dir_bl, dir_rt, file_hist)

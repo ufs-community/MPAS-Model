@@ -44,7 +44,6 @@ jobs:
       source_repo:       gsl
       domain:            conus
       res:               120
-      exec:              atmosphere_model
       nproc:             2
       yyyy:              "2023"
       mm:                "03"
@@ -55,9 +54,8 @@ jobs:
     steps:
 
     ##########################################################################################
-    # Build Software Stack needed for MPAS on GitHub server, using GNU
+    # Build Software Stack needed for MPAS on GitHub server, using GNU.
     ##########################################################################################
-
     - name: Install NetCDF library
       run: |
         sudo apt-get update
@@ -155,20 +153,12 @@ jobs:
         autoreconf -i
         ./configure --prefix=${PNETCDF} --with-mpi=${OMPI}
         make -j 8 install
-#        echo "PATH=${PNETCDF}/bin:$PATH" >> $GITHUB_ENV
 
     - name: Add (PNETCDF) to paths.
       run: |
         echo "PNETCDF=${PNETCDF}" >> $GITHUB_ENV
         echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${PNETCDF}/lib" >> $GITHUB_ENV
         echo "PATH=$PATH:${PNETCDF}/bin" >> $GITHUB_ENV
-
-    - name: Setup environment
-      run: |
-        echo ----LD_LIBRARY_PATH----
-        echo $LD_LIBRARY_PATH
-        echo ----------PATH---------
-        echo $PATH
 
     ##########################################################################################
     # Compile MPAS for testing "feature" branch.
@@ -221,13 +211,6 @@ jobs:
       run: |
         git submodule update --init --recursive
 
-#    - name: Cache MPAS feature branch
-#      id: cache-mpas-rt
-#      uses: actions/cache@v4
-#      with:
-#        path: /home/runner/work/MPAS-Model/MPAS-Model
-#        key: cache-mpas-rt-${{matrix.fortran-compiler}}-key
-
     - name: Build MPAS standalone for testing
       run: |
         cd ${mpas_rt_ROOT}/MPAS-Model
@@ -244,17 +227,11 @@ jobs:
         https://gsl.noaa.gov/thredds/catalog/${case_dir}/${case_base}/${nml}.${code_base}.${domain}.${res}km.${source}.${yyyy}${mm}${dd}${hh}/case_files/catalog.html
         mv thredds/fileServer/${case_dir}/${case_base}/${nml}.${code_base}.${domain}.${res}km.${source}.${yyyy}${mm}${dd}${hh}/case_files/* .
         rm -rf thredds
-        pwd
-        ls -l
 
     - name: Download MPAS testing repository with runtime configurations.
       run: |
         cd ${mpas_run_ROOT}
         git clone --recursive --branch main https://github.com/barlage/mpas_testcase.git
-        pwd
-        ls -l
-        pwd
-        ls -l mpas_testcase
 
     - name: Cache TEMPO MP tables
       id: cache-tempo-data
@@ -317,9 +294,8 @@ jobs:
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_noahmp/parameters/NoahmpTable.TBL .
         ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.init_file}} mpas.init.nc
         ln -sf ${mpas_run_ROOT}/run_data/${domain}.${res}km.graph.info.part.${nproc} graph.info.part.${nproc}
-        ln -sf /home/runner/MPAS-Model-BL/${exec} atmosphere_model
+        ln -sf /home/runner/MPAS-Model-BL/atmosphere_model .
         ln -sf namelist.atmosphere.${source_repo} namelist.atmosphere
-        pwd && ls -l
 
     - name: Link lateral boundary condition file for regional MPAS.
       if: env.domain == 'conus'
@@ -364,9 +340,8 @@ jobs:
         ln -sf ${mpas_rt_ROOT}/MPAS-Model/src/core_atmosphere/physics/physics_noahmp/parameters/NoahmpTable.TBL .
         ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.init_file}} mpas.init.nc
         ln -sf ${mpas_run_ROOT}/run_data/${domain}.${res}km.graph.info.part.${nproc} graph.info.part.${nproc}
-        ln -sf ${mpas_rt_ROOT}/MPAS-Model/${exec} atmosphere_model
+        ln -sf ${mpas_rt_ROOT}/MPAS-Model/atmosphere_model .
         ln -sf namelist.atmosphere.${source_repo} namelist.atmosphere
-        pwd && ls -l
 
     - name: Link lateral boundary condition file for regional MPAS.
       if: env.domain == 'conus'
@@ -404,16 +379,12 @@ jobs:
     - name: Run MPAS (baselines)
       run: |
         cd ${mpas_run_ROOT}/run_bl
-        pwd && ls -l
         mpiexec -np 1 ./atmosphere_model
-        pwd && ls -ltr
 
     - name: Run MPAS (feature branch)
       run: |
         cd ${mpas_run_ROOT}/run_rt
-        pwd && ls -l
         mpiexec -np 1 ./atmosphere_model
-        pwd && ls -l
 
     ##########################################################################################
     # Compare feature branch to baseline branch.
@@ -433,19 +404,22 @@ jobs:
         ./cmp_rt2bl.py --dir_rt ${mpas_run_ROOT}/run_rt --dir_bl ${mpas_run_ROOT}/run_bl
 
     ##########################################################################################
-    # Save log files as GitHub Artifact
+    # Save MPAS output and log files as GitHub Artifact.
     ##########################################################################################
     - name: Create GitHub artifact
       run: |
-        cd ${runner_ROOT} && mkdir artifact-${{matrix.fortran-compiler}}-${{matrix.physics}} && cd artifact-${{matrix.fortran-compiler}}-${{matrix.physics}}
-        cp ${mpas_run_ROOT}/run_bl/log.atmosphere.*.out log.atmosphere.BL.out
+        cd ${runner_ROOT}
+        mkdir artifact-${{matrix.fortran-compiler}}-${{matrix.physics}}
+        cd artifact-${{matrix.fortran-compiler}}-${{matrix.physics}}
         mkdir data_bl && cd data_bl
-        cp /home/runner/work/run_bl/history.*.nc .
-        cp /home/runner/work/run_bl/diag.*.nc .
+        cp ${mpas_run_ROOT}/run_bl/log.atmosphere.*.out log.atmosphere.BL.out
+        cp ${mpas_run_ROOT}/run_bl/history.*.nc .
+        cp ${mpas_run_ROOT}/run_bl/diag.*.nc .
         cd ..
         mkdir data_rt && cd data_rt
-        cp /home/runner/work/run_rt/history.*.nc .
-        cp /home/runner/work/run_rt/diag.*.nc .
+        cp ${mpas_run_ROOT}/run_rt/log.atmosphere.*.out log.atmosphere.RT.out
+        cp ${mpas_run_ROOT}/run_rt/history.*.nc .
+        cp ${mpas_run_ROOT}/run_rt/diag.*.nc .
 
     - name: Upload log files as GitHub Artifact
       uses: actions/upload-artifact@v4
