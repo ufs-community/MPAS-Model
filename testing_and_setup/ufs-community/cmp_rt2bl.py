@@ -94,7 +94,7 @@ def main():
         # Compare baselines to regression_test.
         print('-'*50)
         for file_hist in file_bl_hist:
-            ierr = compare_files(dir_bl, dir_rt, file_list)
+            ierr = compare_files(dir_bl, dir_rt, file_hist)
         # end for
         for file_diag in file_bl_diag:
             ierr = ierr + compare_files(dir_bl, dir_rt, file_diag)
