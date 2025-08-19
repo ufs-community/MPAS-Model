@@ -14,6 +14,11 @@ jobs:
         py-version:       [3.11]
         physics:          [mesoscale_reference, convection_permitting, mesoscale_reference_noahmp]
 
+    # 
+    defaults:
+      run:
+        shell: bash -el {0}
+
     # Environmental variables
     env:
       runner_ROOT:   /home/runner
@@ -413,24 +418,15 @@ jobs:
     ##########################################################################################
     # Compare feature branch to baseline branch.
     ##########################################################################################
-
-#    - name: Setup Python
-#      uses: actions/setup-python@v5
-#      with:
-#        python-version: ${{matrix.py-version}}
-#
-#    - name: Install NetCDF Python libraries
-#      run: |
-#        pip install f90nml h5py netCDF4 matplotlib
-#
     - name: Setup Miniconda
-      uses: conda-incubator/setup-miniconda@v3
+      uses: conda-incubator/setup-miniconda@v3.2.0
       with:
-        miniconda-version: 'latest'
+        python-version:  ${{matrix.py-version}}
         auto-update-conda: true
         auto-activate-base: false
         environment-file: testing_and_setup/ufs-community/environment.yml
         activate-environment: mpas-ci-env
+
     - name: Run comparison script
       run: |
         cd ${mpas_rt_ROOT}/MPAS-Model/testing_and_setup/ufs-community
