@@ -1,6 +1,6 @@
 name: Run (GNU) MPAS Standalone
 
-on: [push,pull_request,workflow_dispatch]
+on: [push, pull_request, workflow_dispatch]
 
 jobs:
   run_mpas_gnu:
@@ -10,9 +10,8 @@ jobs:
     strategy:
       fail-fast: false  # Disable fail-fast
       matrix:
-        fortran-compiler: [gfortran-12]
-        py-version:       [3.11]
         physics:          [mesoscale_reference, convection_permitting, mesoscale_reference_noahmp]
+        fortran-compiler: [gfortran-12]
 
     # 
     defaults:
@@ -21,6 +20,7 @@ jobs:
 
     # Environmental variables
     env:
+      py-version:    3.11
       runner_ROOT:   /home/runner
       mpas_rt_ROOT:  /home/runner/work/MPAS-Model
       mpas_bl_ROOT:  /home/runner/MPAS-Model-BL
@@ -421,7 +421,7 @@ jobs:
     - name: Setup Miniconda
       uses: conda-incubator/setup-miniconda@v3.2.0
       with:
-        python-version:  ${{matrix.py-version}}
+        python-version:  ${py-version}
         auto-update-conda: true
         auto-activate-base: false
         environment-file: testing_and_setup/ufs-community/environment.yml

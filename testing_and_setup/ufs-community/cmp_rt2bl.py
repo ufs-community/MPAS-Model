@@ -26,11 +26,15 @@ def parse_args():
     no_plots = args.no_plots
     return (dir_rt, dir_bl, no_plots)
 
-def get_files(dirIN,prefix):
+##############################################################################
+# Procedure to return <file_list> in a provided <directory> for the
+# file <prefix> and <suffix>.
+##############################################################################
+def get_files(directory, prefix, suffix):
     file_list = []
-    for root, dirs, files in os.walk(dirIN):
+    for root, dirs, files in os.walk(directory):
         for file in files:
-            if file.endswith('.nc'):
+            if file.endswith(suffix):
                 if file.startswith(prefix):
                     file_list.append(file)
                 # end if
@@ -40,26 +44,39 @@ def get_files(dirIN,prefix):
     return file_list
 # end def
 
-def compare_files(dir_bl, dir_rt, files):
-    file_bl = dir_bl+'/'+files
-    file_rt = dir_rt+'/'+files
+##############################################################################
+# Procedure to compare <filein> in <dir_bl> to <dir_rt>.
+# NOTE.This procedure assumes the baseline <filein> exists.
+##############################################################################
+def compare_files(dir_bl, dir_rt, filein):
+    file_bl = dir_bl+'/'+filein
+    file_rt = dir_rt+'/'+filein
+    error_count   = 0
+    error_message = ''
     if (os.path.isfile(file_rt)):
         com = 'nccmp -d ' + file_bl + ' ' + file_rt + ' > logfile.txt'
         print('Comparing ',file_bl,' to ',file_rt)
         result = os.system(com)
         if (result != 0):
-            message = "  Output DIFFERS from baseline."
+            message = "  NOT IDENTICAL"
+            error_count = error_count + 1
         else:
-            message = "  Output IDENTICAL to baseline."
+            message = "  PASS"
         # End if
         print(message)
         # end if
         ierr = 0
     else:
-        print("ERROR: Cannot find file for comparision, ",file_rt)
-        ierr = 1
+        if not exists(file_rt):
+            message = "  MISSING testing file: " + file_rt
+        # end if
+        if not exists(file_bl):
+            message = "  MISSING baseline file: " + file_bl
+        # end if
+        error_count = error_count + 1
     # end if
-    return ierr
+
+    return error_count
 # end def
 
 def main():
@@ -70,20 +87,24 @@ def main():
     for run in run_list:
         print(run_list)
 
-        # MPAS history files (baselines)
-        file_bl_hist = get_files(dir_bl,'history.')
-
-        # MAPS diagnsotic files (baselines)
-        file_bl_diag = get_files(dir_bl,'diag.')
+        # MPAS baseline files
+        file_bl_hist = get_files(dir_bl,'history.','.nc')
+        file_bl_diag = get_files(dir_bl,'diag.','.nc')
 
         # Compare baselines to regression_test.
-        for files in file_bl_hist:
-            ierr = compare_files(dir_bl, dir_rt, files)
+        print('-'*50)
+        for file_hist in file_bl_hist:
+            ierr = compare_files(dir_bl, dir_rt, file_list)
         # end for
-
-        for files in file_bl_diag:
-            ierr = compare_files(dir_bl, dir_rt, files)
+        for file_diag in file_bl_diag:
+            ierr = ierr + compare_files(dir_bl, dir_rt, file_diag)
         # end for
+        
+        if ierr == 0:
+            print("ALL TESTS PASSED, OUTPUT IS IDENTICAL.")
+        else:
+            print("ALL TESTS PASSED, BUT OUTPUT DIFFERS FROM BASELINE.")
+        # end if
 #
 if __name__ == '__main__':
     main()
