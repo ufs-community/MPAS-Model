@@ -381,12 +381,16 @@ jobs:
     - name: Run MPAS (baselines)
       run: |
         cd ${mpas_run_ROOT}/run_bl
+        pwd && ls -l
         mpiexec -np 1 ./atmosphere_model
+        pwd && ls -l
 
     - name: Run MPAS (feature branch)
       run: |
         cd ${mpas_run_ROOT}/run_rt
+        pwd && ls -l
         mpiexec -np 1 ./atmosphere_model
+        pwd && ls -l
 
     ##########################################################################################
     # Compare feature branch to baseline branch.
