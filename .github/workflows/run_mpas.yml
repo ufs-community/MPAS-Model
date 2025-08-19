@@ -445,5 +445,5 @@ jobs:
     - name: Upload log files as GitHub Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: mpas-baselines-${{matrix.fortran-compiler}}
+        name: mpas-baselines-${{matrix.fortran-compiler}}-${{matrix.physics}}
         path: /home/runner/artifact-${{matrix.fortran-compiler}}-${{matrix.physics}}
