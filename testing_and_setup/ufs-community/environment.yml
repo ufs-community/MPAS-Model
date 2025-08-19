@@ -1,4 +1,4 @@
-name: ci-env
+name: mpas-ci-env
 channels:
   - conda-forge
   - defaults
@@ -8,3 +8,4 @@ dependencies:
   - h5py
   - netCDF4
   - matplotlib
+  - nccmp

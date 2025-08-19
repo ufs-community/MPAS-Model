@@ -44,7 +44,7 @@ def compare_files(dir_bl, dir_rt, files):
     file_bl = dir_bl+'/'+files
     file_rt = dir_rt+'/'+files
     if (os.path.isfile(file_rt)):
-        com = 'cmp ' + file_bl + ' ' + file_rt + ' > logfile.txt'
+        com = 'nccmp ' + file_bl + ' ' + file_rt + ' > logfile.txt'
         print('Comparing ',file_bl,' to ',file_rt)
         result = os.system(com)
         if (result != 0):
