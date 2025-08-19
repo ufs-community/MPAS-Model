@@ -39,6 +39,8 @@ jobs:
       case_base:         ncar-v8.2.2-intelmpi
       model_code_base:   gsl-v8.3.0-1.8-intdebug
       code_base:         ncar
+      repo:              MPAS-Dev
+      branch:            master
       nml:               ncar
       source:            gfs
       source_repo:       gsl
@@ -197,10 +199,10 @@ jobs:
         key: cache-mpas-bl-${{matrix.fortran-compiler}}-key
 
     - name: Checkout and build MPAS standalone for baseline generation.
-      if: steps.cache-mpas-bl.outputs.cache-hit != 'true'
+      #if: steps.cache-mpas-bl.outputs.cache-hit != 'true'
       run: |
         cd ${runner_ROOT}
-        git clone --recursive --branch gsl/develop https://github.com/ufs-community/MPAS-Model.git MPAS-Model-BL
+        git clone --recursive --branch env.branch https://github.com/env.repo/MPAS-Model.git MPAS-Model-BL
         cd ${mpas_bl_ROOT}
         make gfortran CORE=atmosphere DEBUG=true
 
