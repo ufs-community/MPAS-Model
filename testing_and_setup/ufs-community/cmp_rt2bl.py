@@ -7,24 +7,22 @@
 ##############################################################################
 import os
 import sys
-from rt_test_cases import run_list
 from os.path import exists
 import argparse
-#from plot_scm_out import plot_results
 
-#
+##############################################################################
+# Command line arguments
+##############################################################################
 parser = argparse.ArgumentParser()
-parser.add_argument('-drt',  '--dir_rt',   help='Directory containing SCM RT output',              required=True)
-parser.add_argument('-dbl',  '--dir_bl',   help='Directory containing SCM RT baselines',           required=True)
-parser.add_argument('-np',   '--no_plots', help='flag to turn off generation of difference plots', required=False, action='store_true')
+parser.add_argument('-drt',  '--dir_rt',   help='Directory containing SCM RT output',    required=True)
+parser.add_argument('-dbl',  '--dir_bl',   help='Directory containing SCM RT baselines', required=True)
 
-#
 def parse_args():
-    args     = parser.parse_args()
-    dir_rt   = args.dir_rt
-    dir_bl   = args.dir_bl
-    no_plots = args.no_plots
-    return (dir_rt, dir_bl, no_plots)
+    args   = parser.parse_args()
+    dir_rt = args.dir_rt
+    dir_bl = args.dir_bl
+    return (dir_rt, dir_bl)
+# end def
 
 ##############################################################################
 # Procedure to return <file_list> in a provided <directory> for the
@@ -78,33 +76,42 @@ def compare_files(dir_bl, dir_rt, filein):
     return error_count
 # end def
 
-def main():
-    #
-    (dir_rt, dir_bl, no_plots) = parse_args()
-
-    #
-    for run in run_list:
-        print(run_list)
-
-        # MPAS baseline files
-        file_bl_hist = get_files(dir_bl,'history.','.nc')
-        file_bl_diag = get_files(dir_bl,'diag.','.nc')
-
-        # Compare baselines to regression_test.
-        print('-'*50)
-        for file_hist in file_bl_hist:
-            error_count = compare_files(dir_bl, dir_rt, file_hist)
-        # end for
-        for file_diag in file_bl_diag:
-            error_count = error_count + compare_files(dir_bl, dir_rt, file_diag)
-        # end for
-        
-        if error_count == 0:
-            print("ALL TESTS PASSED, OUTPUT IS IDENTICAL.")
-        else:
-            print("ALL TESTS PASSED, BUT OUTPUT DIFFERS FROM BASELINE.")
-            1/0
-        # end if
+##############################################################################
+# Main program
+# Given two MPAS run directories, <dir_bl> and <dir_rt>, compare all of the
+# history and diagnostic files within
+# <dir_bl> contains MPAS output from the unmodified authoratative gsl/develop
+# branch, the "baseline".
+# <dir_rt> contains MPAS output from the "feature" branch being propsed to the
+# authoratative gsl/develop for inclusion.
 #
+##############################################################################
+def main():
+    # Get command line arguments.
+    (dir_rt, dir_bl) = parse_args()
+
+    # MPAS baseline files
+    file_bl_hist = get_files(dir_bl,'history.','.nc')
+    file_bl_diag = get_files(dir_bl,'diag.','.nc')
+
+    # Compare baselines to regression_test.
+    print('-'*50)
+    for file_hist in file_bl_hist:
+        error_count = compare_files(dir_bl, dir_rt, file_hist)
+    # end for
+    for file_diag in file_bl_diag:
+        error_count = error_count + compare_files(dir_bl, dir_rt, file_diag)
+    # end for
+        
+    if error_count == 0:
+        print("ALL TESTS PASSED, OUTPUT IS IDENTICAL.")
+    else:
+        print("ALL TESTS PASSED, BUT OUTPUT DIFFERS FROM BASELINE.")
+    # end if
+# end def
+
+##############################################################################
+#
+##############################################################################
 if __name__ == '__main__':
     main()
