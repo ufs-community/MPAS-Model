@@ -12,6 +12,7 @@ jobs:
       matrix:
         physics:          [mesoscale_reference, convection_permitting, mesoscale_reference_noahmp]
         fortran-compiler: [gfortran-12]
+        py-version:       [3.11]
 
     # 
     defaults:
@@ -20,7 +21,6 @@ jobs:
 
     # Environmental variables
     env:
-      py-version:    3.11
       runner_ROOT:   /home/runner
       mpas_rt_ROOT:  /home/runner/work/MPAS-Model
       mpas_bl_ROOT:  /home/runner/MPAS-Model-BL
@@ -421,7 +421,7 @@ jobs:
     - name: Setup Miniconda
       uses: conda-incubator/setup-miniconda@v3.2.0
       with:
-        python-version:  ${py-version}
+        python-version: ${{ matrix.py-version }}
         auto-update-conda: true
         auto-activate-base: false
         environment-file: testing_and_setup/ufs-community/environment.yml
