@@ -3,5 +3,8 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - netcdf4
-  - nccmp
+  - python=3.11
+  - f90nml
+  - h5py
+  - netCDF4
+  - matplotlib
