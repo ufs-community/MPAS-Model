@@ -50,24 +50,23 @@ def compare_files(dir_bl, dir_rt, filein):
     file_bl = dir_bl+'/'+filein
     file_rt = dir_rt+'/'+filein
     error_count   = 0
-    error_message = ''
-    message = 'Comparing ',file_bl,' to ',file_rt
+    message = 'Comparing ' + file_bl + ' to ' + file_rt
     if (os.path.isfile(file_rt)):
         com = 'nccmp -d ' + file_bl + ' ' + file_rt + ' > logfile.txt'
         result = os.system(com)
         if (result != 0):
-            message = message + "  NOT IDENTICAL"
+            message = message + '  NOT IDENTICAL'
             error_count = error_count + 1
         else:
-            message = message + "  PASS"
+            message = message + '  PASS'
         # End if
         # end if
     else:
         if not exists(file_rt):
-            message = message + "  MISSING testing file:  " + file_rt
+            message = message + '  MISSING testing file:  ' + file_rt
         # end if
         if not exists(file_bl):
-            message = message + "  MISSING baseline file: " + file_bl
+            message = message + '  MISSING baseline file: ' + file_bl
         # end if
         error_count = error_count + 1
     # end if
