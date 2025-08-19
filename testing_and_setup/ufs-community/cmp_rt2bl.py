@@ -53,28 +53,27 @@ def compare_files(dir_bl, dir_rt, filein):
     file_rt = dir_rt+'/'+filein
     error_count   = 0
     error_message = ''
+    message = 'Comparing ',file_bl,' to ',file_rt
     if (os.path.isfile(file_rt)):
         com = 'nccmp -d ' + file_bl + ' ' + file_rt + ' > logfile.txt'
-        print('Comparing ',file_bl,' to ',file_rt)
         result = os.system(com)
         if (result != 0):
-            message = "  NOT IDENTICAL"
+            message = message + "  NOT IDENTICAL"
             error_count = error_count + 1
         else:
-            message = "  PASS"
+            message = message + "  PASS"
         # End if
-        print(message)
         # end if
-        ierr = 0
     else:
         if not exists(file_rt):
-            message = "  MISSING testing file: " + file_rt
+            message = message + "  MISSING testing file:  " + file_rt
         # end if
         if not exists(file_bl):
-            message = "  MISSING baseline file: " + file_bl
+            message = message + "  MISSING baseline file: " + file_bl
         # end if
         error_count = error_count + 1
     # end if
+    print(message)
 
     return error_count
 # end def
@@ -94,16 +93,17 @@ def main():
         # Compare baselines to regression_test.
         print('-'*50)
         for file_hist in file_bl_hist:
-            ierr = compare_files(dir_bl, dir_rt, file_hist)
+            error_count = compare_files(dir_bl, dir_rt, file_hist)
         # end for
         for file_diag in file_bl_diag:
-            ierr = ierr + compare_files(dir_bl, dir_rt, file_diag)
+            error_count = error_count + compare_files(dir_bl, dir_rt, file_diag)
         # end for
         
-        if ierr == 0:
+        if error_count == 0:
             print("ALL TESTS PASSED, OUTPUT IS IDENTICAL.")
         else:
             print("ALL TESTS PASSED, BUT OUTPUT DIFFERS FROM BASELINE.")
+            1/0
         # end if
 #
 if __name__ == '__main__':
