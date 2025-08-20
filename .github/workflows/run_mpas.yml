@@ -38,11 +38,11 @@ jobs:
       nml_version:       ncar
       case_base:         ncar-v8.2.2-intelmpi
       code_base:         ncar
-      repo:              ufs-community
-      branch:            gsl/develop
+      repo:              MPAS-Dev
+      branch:            master
       nml:               ncar
       source:            gfs
-      source_repo:       gsl
+      source_repo:       ncar
       domain:            conus
       res:               120
       nproc:             2
