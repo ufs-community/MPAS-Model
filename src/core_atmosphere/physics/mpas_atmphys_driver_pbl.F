@@ -440,12 +440,13 @@
  end subroutine deallocate_pbl
 
 !=================================================================================================================
- subroutine pbl_from_MPAS(configs,mesh,sfc_input,diag_physics,tend_physics,its,ite)
+ subroutine pbl_from_MPAS(configs,mesh,state,sfc_input,diag_physics,tend_physics,its,ite)
 !=================================================================================================================
 
 !input arguments:
  type(mpas_pool_type),intent(in):: configs
  type(mpas_pool_type),intent(in):: mesh
+ type(mpas_pool_type),intent(in):: state
  type(mpas_pool_type),intent(in):: diag_physics
  type(mpas_pool_type),intent(in):: sfc_input
  type(mpas_pool_type),intent(in):: tend_physics
@@ -474,7 +475,10 @@
  real(kind=RKIND),dimension(:,:),pointer:: cldfrac_bl,qc_bl,qi_bl
  real(kind=RKIND),dimension(:,:),pointer:: edmf_a,edmf_ent,edmf_qc,edmf_qt,edmf_thl,edmf_w
  real(kind=RKIND),dimension(:,:),pointer:: sub_thl,sub_qv,det_thl,det_qv
-      
+ real(kind=RKIND),dimension(:,:),pointer  :: qal, qai
+ real(kind=RKIND),dimension(:,:,:),pointer  :: scalars
+ integer,pointer:: index_qal, index_qai
+
 !local pointers for MYJ scheme:
  real(kind=RKIND),dimension(:),pointer   :: chlowq,thz0,qz0,uz0,vz0,ct,akhs,akms,lh,mixht
  real(kind=RKIND),dimension(:,:),pointer :: zgrid
@@ -675,6 +679,13 @@
        call mpas_pool_get_array(diag_physics,'det_thl'   ,det_thl   )
        call mpas_pool_get_array(diag_physics,'det_qv'    ,det_qv    )
 
+       call mpas_pool_get_array(state,'scalars',scalars)
+       call mpas_pool_get_dimension(state,'index_qal' ,index_qal  )
+       call mpas_pool_get_dimension(state,'index_qai' ,index_qai  )
+
+       qal => scalars(index_qal,:,:)
+       qai => scalars(index_qai,:,:)
+
        do j = jts,jte
        do i = its,ite
           dx_p(i,j)   = len_disp / meshDensity(i)**0.25
@@ -695,7 +706,8 @@
           qkeadv_p(i,k,j)   = qke_adv(k,i)
           sh3d_p(i,k,j)     = sh3d(k,i)
           sm3d_p(i,k,j)     = sm3d(k,i)
-          cldfrabl_p(i,k,j) = cldfrac_bl(k,i)
+!          cldfrabl_p(i,k,j) = cldfrac_bl(k,i)
+          cldfrabl_p(i,k,j) = max(qal(k,i), qai(k,i))
           qcbl_p(i,k,j)     = qc_bl(k,i)
           qibl_p(i,k,j)     = qi_bl(k,i)
           edmfa_p(i,k,j)    = edmf_a(k,i)
@@ -1176,12 +1188,13 @@
  end subroutine init_pbl
 
 !=================================================================================================================
- subroutine driver_pbl(itimestep,configs,mesh,sfc_input,diag_physics,tend_physics,its,ite)
+ subroutine driver_pbl(itimestep,configs,mesh,state,sfc_input,diag_physics,tend_physics,its,ite)
 !=================================================================================================================
 
 !input arguments:
  type(mpas_pool_type),intent(in):: configs
  type(mpas_pool_type),intent(in):: mesh
+ type(mpas_pool_type),intent(in):: state
 
  integer,intent(in):: its,ite
  integer,intent(in):: itimestep
@@ -1241,7 +1254,7 @@
  call mpas_pool_get_config(configs,'config_pbl_scheme'  ,pbl_scheme         )
 
 !copy MPAS arrays to local arrays:
- call pbl_from_MPAS(configs,mesh,sfc_input,diag_physics,tend_physics,its,ite)
+ call pbl_from_MPAS(configs,mesh,state,sfc_input,diag_physics,tend_physics,its,ite)
 
  initflag = 1
  if(config_do_restart .or. itimestep > 1) initflag = 0
