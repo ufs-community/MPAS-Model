@@ -437,8 +437,8 @@ module mpas_log
             write(unitNumber, '(a,i7.1)') '    for domain ID ',  mpas_log_info % domainID
          end if
          call date_and_time(date,time)
-         write(unitNumber, '(a)') '    Opened at ' // date(1:4)//'/'//date(5:6)//'/'//date(7:8) // &
-            ' ' // time(1:2)//':'//time(3:4)//':'//time(5:6)
+         !write(unitNumber, '(a)') '    Opened at ' // date(1:4)//'/'//date(5:6)//'/'//date(7:8) // &
+         !   ' ' // time(1:2)//':'//time(3:4)//':'//time(5:6)
          write(unitNumber, '(a)') '----------------------------------------------------------------------'
          write(unitNumber, '(a)') ''
          flush(unitNumber)  ! flush header message immediately to eliminate potential confusion
