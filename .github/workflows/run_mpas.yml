@@ -39,7 +39,7 @@ jobs:
       case_base:         ncar-v8.2.2-intelmpi
       code_base:         ncar
       repo:              ufs-community
-      branch:            master
+      branch:            gsl/develop
       nml:               ncar
       source:            gfs
       source_repo:       gsl
