@@ -1,9 +1,9 @@
-name: Run MPAS Standalone (GSL baselines)
+name: Run MPAS Standalone (GSL tests)
 
 on: [push, pull_request, workflow_dispatch]
 
 jobs:
-  run_mpas_gsl:
+  run_mpas_gsl_tests:
 
     # The type of runner that the job will run on
     runs-on: ubuntu-22.04
