@@ -241,6 +241,7 @@
           if(.not.allocated(ddvel_p)) allocate(ddvel_p(ims:ime,jms:jme,1:num_chem))
           if(.not.allocated(tend_chem_settle_p)) allocate(tend_chem_settle_p(ims:ime,kms:kme,jms:jme,1:num_chem))
           if(.not.allocated(chem_p)) allocate(chem_p(ims:ime,kms:kme,jms:jme,1:num_chem))
+          if(.not.allocated(frp_out_p)) allocate(frp_out_p(ims:ime,jms:jme))
        endif
 
     case("bl_myj")
@@ -425,6 +426,7 @@
           if(allocated(ddvel_p)           ) deallocate(ddvel_p           )
           if(allocated(chem_p)            ) deallocate(chem_p            )
           if(allocated(tend_chem_settle_p)) deallocate(tend_chem_settle_p)
+          if(allocated(frp_out_p)         ) deallocate(frp_out_p)
        endif
 
    case("bl_myj")
@@ -496,6 +498,9 @@
  real(kind=RKIND),dimension(:,:,:),pointer :: tend_chem_settle
  real(kind=RKIND),dimension(:,:  ),pointer :: ddvel
  real(kind=RKIND),dimension(:,:,:),pointer :: chem
+ real(kind=RKIND),dimension(:),pointer     :: frp_out
+ integer,pointer:: drydep_opt
+ logical,pointer:: enh_mix
       
 !local pointers for MYJ scheme:
  real(kind=RKIND),dimension(:),pointer   :: chlowq,thz0,qz0,uz0,vz0,ct,akhs,akms,lh,mixht
@@ -698,11 +703,18 @@
        call mpas_pool_get_array(diag_physics,'det_qv'    ,det_qv    )
        if ( num_chem .gt. 0 ) then
           call mpas_pool_get_array(state,'scalars',scalars,1)
-          call mpas_pool_get_array(diag_physics,'ddvel',ddvel)
-          call mpas_pool_get_array(tend_physics,'tend_chem_settle',tend_chem_settle)
+          call mpas_pool_get_config(configs,'drydep_opt',drydep_opt)
+          if ( drydep_opt .ne. 0 ) then
+             call mpas_pool_get_array(tend_physics,'tend_chem_settle',tend_chem_settle)
+             call mpas_pool_get_array(diag_physics,'ddvel',ddvel)
+          endif
           call mpas_pool_get_dimension(state, 'chemistry_start', chemistry_start)
           call mpas_pool_get_dimension(state, 'chemistry_end', chemistry_end)
           chem => scalars(chemistry_start:chemistry_end,:,:)
+          call mpas_pool_get_config(configs,'config_mynn_enh_mix',enh_mix)
+          if (enh_mix) then
+             call mpas_pool_get_array(diag_physics,'frp_out',frp_out)
+          end if
        endif
 
        do j = jts,jte
@@ -711,10 +723,17 @@
           ch_p(i,j)   = ch(i)
           qsfc_p(i,j) = qsfc(i)
           tsk_p(i,j)  = skintemp(i)
+          if ( enh_mix ) then
+             frp_out_p(i,j)     = frp_out(i)
+          endif
           if ( num_chem .gt. 0 ) then
-             do n = 1,num_chem
-               ddvel_p(i,j,n) = ddvel(n,i)
-             enddo
+             if ( drydep_opt .ne. 0 ) then
+                do n = 1,num_chem
+                  ddvel_p(i,j,n) = ddvel(n,i)
+                enddo
+             else
+                  ddvel_p(i,j,:) = 0._RKIND
+             endif
           endif
        enddo
        enddo
@@ -760,7 +779,11 @@
           if ( num_chem .gt. 0) then
              do n = 1, num_chem
                 chem_p(i,k,j,n) = chem(n,k,i)
-                tend_chem_settle_p(i,k,j,n) = tend_chem_settle(n,k,i)
+                if ( drydep_opt .ne. 0 ) then
+                   tend_chem_settle_p(i,k,j,n) = tend_chem_settle(n,k,i)
+                else
+                   tend_chem_settle_p(i,k,j,n) = 0._RKIND
+                endif
              enddo
           endif
        enddo
@@ -1260,6 +1283,8 @@
                    config_do_restart,   &
                    bl_mynn_tkeadvect
 
+ logical,pointer:: enh_mix
+
  character(len=StrKIND),pointer:: pbl_scheme
 
  integer,pointer:: bl_mynn_cloudpdf,    &
@@ -1479,6 +1504,7 @@
        call mpas_pool_get_config(configs,'config_mynn_tkebudget'  ,bl_mynn_tkebudget  )
        call mpas_pool_get_config(configs,'config_icloud_bl'       ,icloud_bl          )
        call mpas_pool_get_config(configs,'config_spp_pbl'         ,spp_pbl            )
+       call mpas_pool_get_config(configs,'config_mynn_enh_mix'    ,enh_mix            )
 
 !      call mpas_log_write(' ')
 !      call mpas_log_write('--- enter subroutine mynn_bl_driver:')
@@ -1574,7 +1600,8 @@
                   chem3d = chem_p,     &
                   vd3d = ddvel_p,      &
                   settle3d = tend_chem_settle_p, &
-                  frp_mean = xland_p,  &
+                  enh_mix  = enh_mix, &
+                  frp_mean = frp_out_p,  &
                   emis_ant_no = xland_p, &
                   ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde ,                 &
                   ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme ,                 &
