@@ -18,9 +18,8 @@ jobs:
         exclude:
           - repo: MPAS-Dev
             branch: gsl/develop
-        exclude:
-        - repo: ufs-community
-          branch: v8.3.0
+          - repo: ufs-community
+            branch: v8.3.0
 
     # 
     defaults:
