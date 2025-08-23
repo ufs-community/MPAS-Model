@@ -21,6 +21,7 @@
  use mpas_atmphys_driver_seaice,only: allocate_seaice,deallocate_seaice,driver_seaice
  use mpas_atmphys_driver_sfclayer
  use mpas_atmphys_driver_oml
+ use mpas_atmphys_driver_smoke
  use mpas_atmphys_constants
  use mpas_atmphys_interface
  use mpas_atmphys_sfc_diagnostics,only: atmphys_sfc_diagnostics
@@ -145,7 +146,8 @@
                                  tend_physics,        &
                                  atm_input,           &
                                  ngw_input,           &
-                                 sfc_input
+                                 sfc_input,           &
+                                 emis_input
 
  logical,pointer:: config_frac_seaice
 
@@ -156,7 +158,9 @@
                                   config_pbl_scheme,        &
                                   config_radt_lw_scheme,    &
                                   config_radt_sw_scheme,    &
-                                  config_sfclayer_scheme
+                                  config_sfclayer_scheme,   &
+                                  config_smoke_scheme,      &
+                                  config_dust_scheme
 
  logical, pointer:: config_oml1d
  real(kind=RKIND),pointer:: config_bucket_radt
@@ -166,6 +170,7 @@
 
  integer:: time_lev
  integer:: thread
+ logical:: do_chemistry
 
  integer,pointer:: nThreads
  integer,dimension(:),pointer:: cellSolveThreadStart, cellSolveThreadEnd
@@ -187,6 +192,14 @@
  call mpas_pool_get_config(domain%configs,'config_bucket_update'    ,config_bucket_update    )
  call mpas_pool_get_config(domain%configs,'config_frac_seaice'      ,config_frac_seaice      ) 
  call mpas_pool_get_config(domain%configs,'config_oml1d'            ,config_oml1d            )
+ call mpas_pool_get_config(domain%configs,'config_smoke_scheme'     ,config_smoke_scheme     )
+ call mpas_pool_get_config(domain%configs,'config_dust_scheme'      ,config_dust_scheme      )
+
+ if(config_smoke_scheme .ne. 'off' .or. config_dust_scheme  .ne. 'off') then
+    do_chemistry = .true.
+ else
+    do_chemistry = .false.
+ endif
 
  if(config_convection_scheme .ne. 'off' .or. &
     config_lsm_scheme        .ne. 'off' .or. &
@@ -208,6 +221,9 @@
     call mpas_pool_get_subpool(block%structs,'sfc_input'          ,sfc_input          )
     call mpas_pool_get_subpool(block%structs,'ngw_input'          ,ngw_input          )
     call mpas_pool_get_subpool(block%structs,'tend_physics'       ,tend_physics       )
+    if ( do_chemistry ) then
+       call mpas_pool_get_subpool(block%structs,'emis_input',emis_input)
+    endif
 
     call mpas_pool_get_dimension(block%dimensions,'nThreads',nThreads)
 
@@ -332,12 +348,26 @@
 !$OMP END PARALLEL DO
     endif
 
+    !call to mpas smoke model:
+    if ( do_chemistry ) then
+       time_lev = 1
+       call allocate_smoke(block%configs)
+!$OMP PARALLEL DO
+       do thread=1,nThreads
+          call driver_smoke(itimestep,time_lev,emis_input,state,block%configs,mesh,      &
+                            sfc_input,diag_physics,tend_physics,                         &
+                            cellSolveThreadStart(thread),cellSolveThreadEnd(thread)      )
+       end do
+!$OMP END PARALLEL DO
+       call deallocate_smoke(block%configs)
+    endif
+
     !call to pbl schemes:
     if(config_pbl_scheme .ne. 'off' .and. config_sfclayer_scheme .ne. 'off') then
        call allocate_pbl(block%configs)
 !$OMP PARALLEL DO
        do thread=1,nThreads
-          call driver_pbl(itimestep,block%configs,mesh,sfc_input,diag_physics,tend_physics, &
+          call driver_pbl(itimestep,block%configs,state,mesh,sfc_input,diag_physics,tend_physics, &
                           cellSolveThreadStart(thread),cellSolveThreadEnd(thread))
        end do
 !$OMP END PARALLEL DO
@@ -368,7 +398,7 @@
        call allocate_convection(block%configs)
 !$OMP PARALLEL DO
        do thread=1,nThreads
-          call driver_convection(itimestep,block%configs,mesh,sfc_input,diag_physics,tend_physics,diag,domain%dminfo, &
+          call driver_convection(itimestep,block%configs,state,mesh,sfc_input,diag_physics,tend_physics,diag,domain%dminfo, &
                                  cellSolveThreadStart(thread),cellSolveThreadEnd(thread),exchange_halo_group,block)
        end do
 !$OMP END PARALLEL DO

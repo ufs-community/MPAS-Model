@@ -33,6 +33,7 @@ set(ATMOSPHERE_CORE_PHYSICS_SOURCES
     mpas_atmphys_driver_radiation_sw.F
     mpas_atmphys_driver_seaice.F
     mpas_atmphys_driver_sfclayer.F
+    mpas_atmphys_driver_smoke.F
     mpas_atmphys_init.F
     mpas_atmphys_init_tempo.F
     mpas_atmphys_lsm_shared.F
@@ -113,6 +114,30 @@ set(ATMOSPHERE_CORE_PHYSICS_GFL_SOURCES
     module_cu_gfl_sh.F
 )
 list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_GFL_SOURCES PREPEND physics/physics_noaa/GFL/)
+
+# physics/physics_noaa/SMOKE/
+set(ATMOSPHERE_CORE_PHYSICS_SMOKE_SOURCES
+    mpas_smoke_wrapper.F90
+    mpas_smoke_init.F90
+    mpas_smoke_config.F90
+    dep_data_mod.F90
+    dep_dry_mod_emerson.F90
+    dep_dry_simple_mod.F90
+    dust_data_mod.F90
+    dust_fengsha_mod.F90
+    module_add_emiss_burn.F90
+    module_fire_emissions.F90
+    module_plumerise.F90
+    module_smoke_diagnostics.F90
+    module_smoke_plumerise.F90
+    module_wetdep_ls.F90
+    module_zero_plumegen_coms.F90
+    rad_data_mod.F90
+    seas_data_mod.F90
+    seas_ngac_mod.F90
+    ssalt_mod.F90
+)
+list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_SMOKE_SOURCES PREPEND physics/physics_noaa/SMOKE/)
 
 set(ATMOSPHERE_CORE_PHYSICS_MMM_DIR ${CMAKE_CURRENT_SOURCE_DIR}/physics/physics_mmm)
 
@@ -466,6 +491,7 @@ add_library(core_atmosphere ${ATMOSPHERE_CORE_SOURCES}
             ${ATMOSPHERE_CORE_PHYSICS_MYNN-EDMF_SOURCES}
             ${ATMOSPHERE_CORE_PHYSICS_RUCLSM_SOURCES}
 	    ${ATMOSPHERE_CORE_PHYSICS_GFL_SOURCES}
+	    ${ATMOSPHERE_CORE_PHYSICS_SMOKE_SOURCES}
             ${ATMOSPHERE_CORE_DIAGNOSTIC_SOURCES}
             ${ATMOSPHERE_CORE_DYNAMICS_SOURCES})
 

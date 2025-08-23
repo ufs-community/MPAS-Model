@@ -1650,4 +1650,6 @@
                      packages="met_stage_out"/>
 </var_struct>
 
+#include "registry.smoke.xml"
+
 </registry>

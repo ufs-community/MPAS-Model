@@ -1,0 +1,481 @@
+<!-- ========================================================================================================== -->
+<!-- MAIN CHEMISTRY REGISTRY:                                                                                    -->
+<!-- ========================================================================================================== -->
+
+<!-- **************************************************************************************** -->
+<!--           DIMENSIONS             -->
+<!-- **************************************************************************************** -->
+   <dims>
+      <dim name="nChem"              definition="namelist:num_chem"
+          description="Number of chemical tracers (nscalar minus nmoist)"/>
+      <dim name="nkanthro"             definition="namelist:kanthro"
+          description="Number of vertical levels in anthropogenic emission file"/>
+      <dim name="nkwildfire"             definition="namelist:kwildfire"
+          description="Number of vertical levels in biomass burning emission file"/>
+      <dim name="nkbiogenic"             definition="namelist:kbiogenic"
+          description="Number of vertical levels in biogenic emission file"/>
+      <dim name="nkvolcanic"             definition="namelist:kvolcanic"
+          description="Number of vertical levels in volcanic emission file"/>
+      <dim name="TWENTYFOUR"          definition="24"
+          description="A constant value of 24"/>
+   </dims>
+
+<!-- **************************************************************************************** -->
+<!-- **************************************  Packages  ************************************** -->
+<!-- **************************************************************************************** -->
+
+   <packages>
+         <package name="mpas_smoke_in"  description="parameterization of smoke."/>
+	 <package name="mpas_dust_in"   description="parameterization of dust"/>
+         <package name="mpas_anthro_in" description="parameterization of anthropogenic emissions for mpas-smoke"/>
+         <package name="mpas_aerosols_in" description="parameterization of mpas aerosols"/>
+   </packages>
+
+
+<!-- ============================================================================================================ -->
+<!--            CHEMISTRY NAMELIST -->
+<!-- ============================================================================================================ -->
+   <nml_record name="chemistry" in_defaults="true">
+      <nml_option name="config_smoke_scheme" type="character" default_value="off" in_defaults="false"
+           units="-"
+           description="configuration for mpas smoke model"
+           possible_values="`on',`off'"/>
+      <nml_option name="config_dust_scheme" type="character" default_value="off" in_defaults="false"
+           units="-"
+           description="configuration for mpas dust model"
+           possible_values="`on',`off'"/>
+      <nml_option name="config_anthro_scheme" type="character" default_value="off" in_defaults="false"
+           units="-"
+           description="configuration for mpas anthropogenic emissions model"
+           possible_values="`on',`off'"/>
+      <nml_option name="num_chem" type="integer" default_value="0"
+           units="-"
+           description="Number of chemical tracers"
+           possible_values="Positive integer values"/>
+      <nml_option name="kanthro" type="integer" default_value="1"
+           units="-"
+           description="Number of vertical levels in anthropogenic emission input"
+           possible_values="Positive integer values"/>
+      <nml_option name="kwildfire" type="integer" default_value="1"
+           units="-"
+           description="Number of vertical levels in biomaass burning emission input"
+           possible_values="Positive integer values"/>
+      <nml_option name="kbiogenic" type="integer" default_value="1"
+           units="-"
+           description="Number of vertical levels in biogenic emission input"
+           possible_values="Positive integer values"/>
+      <nml_option name="kvolcanic" type="integer" default_value="1"
+           units="-"
+           description="Number of vertical levels in volcanic emission input"
+           possible_values="Positive integer values"/>
+      <nml_option name="hwp_method" type="integer" default_value="1"
+           units="-"
+           description="Algorithm choice for the hourly wildfire potential"
+           possible_values="Positive integer values"/>
+      <nml_option name="hwp_alpha" type="real" default_value="1.0"
+           units="-"
+           description="Scale factor for the hourly wildfire potential"
+           possible_values="Positive real values"/>
+      <nml_option name="bb_input_prevh" type="integer" default_value="24"
+           units="-"
+           description="Number of previous hours to average smoke input variables"
+           possible_values="factors of 24 (1,2,3,4,6,8,12,24)"/>
+      <nml_option name="bb_beta" type="integer" default_value="1"
+           units="-"
+           description="Emission factor dataset choice"
+           possible_values="1,2"/>
+      <nml_option name="wetdep_ls_opt" type="integer" default_value="0"
+           units="-"
+           description="Flag to turn on offline wet deposition"
+           possible_values="Positive integer values"/>
+      <nml_option name="wetdep_ls_alpha" type="real" default_value="0.0"
+           units="-"
+           description="Removal fraction for offline wet deposition"
+           possible_values="Real values in the range [0,1]"/>
+      <nml_option name="plumerise_opt" type="integer" default_value="0"
+           units="-"
+           description="Algorithm choice for plumerise"
+           possible_values="Positive integer values"/>
+      <nml_option name="plume_wind_eff" type="integer" default_value="0"
+           units="-"
+           description="Algorithm choice for wind effects in plumerise"
+           possible_values="Positive integer values"/>
+      <nml_option name="plume_alpha" type="real" default_value="0.0"
+           units="-"
+           description="Enrainment constant for plumerise scheme"
+           possible_values="Positive integer values"/>
+      <nml_option name="bb_qv_scale_factor" type="real" default_value="1.0"
+           units="-"
+           description="Scaling factor for water vapor wildfire emissions"
+           possible_values="Positive integer values"/>
+      <nml_option name="ebb_dcycle" type="integer" default_value="0"
+           units="-"
+           description="Algorithm choice wildfire emission forecast"
+           possible_values="Positive integer values"/>
+      <nml_option name="add_fire_heat_flux" type="logical" default_value="false" in_defaults="false"
+           units="-"
+           description="Logical flag to turn on/off fire heat flux to the atmosphere"
+           possible_values=".true. or .false."/>
+      <nml_option name="add_fire_moist_flux" type="logical" default_value="false" in_defaults="false"
+           units="-"
+           description="Logical flag to turn on/off fire heat moisture to the atmosphere"
+           possible_values=".true. or .false."/>
+      <nml_option name="calc_bb_emis_online" type="logical" default_value="false"
+           units="-"
+           description="Flag to calculate emissions online"
+           possible_values="true or false"/>
+      <nml_option name="bb_emis_scale_factor" type="real" default_value="1.0"
+           units="-"
+           description="Scale factor applied to biomass burning fire emissions"
+           possible_values="Positive real values"/>
+      <nml_option name="drydep_opt" type="integer" default_value="0"
+           units="-"
+           description="Algorithm choice for dry deposition"
+           possible_values="Positive integer values"/>
+      <nml_option name="pm_settling" type="integer" default_value="0"
+           units="-"
+           description="Algorithm choice for particulate matter settling"
+           possible_values="Positive integer values"/>
+       <nml_option name="dust_alpha" type="real" default_value="1.0"
+           units="-"
+           description="Scaling (linear) factor for dust emissions"
+           possible_values="Positive real values"/>
+       <nml_option name="dust_gamma" type="real" default_value="1.0"
+           units="-"
+           description="Scaling (exponential) factor for sediment supply"
+           possible_values="Positive real values"/>
+       <nml_option name="dust_moist_correction" type="real" default_value="1.0"
+           units="-"
+           description="Moisture correction factor for FENGSHA dust"
+           possible_values="Positive real values"/>
+       <nml_option name="dust_drylimit_factor" type="real" default_value="1.0"
+           units="-"
+           description="soil moisture dry limit factor for FENGSHA dust"
+           possible_values="Positive real values"/>
+       <nml_option name="plumerisefire_frq" type="integer" default_value="60" in_defaults="false"
+            units="minutes"
+            description="frequency of call to fire plumerise"
+            possible_values="Positive integer values"/>
+       <nml_option name="aero_dir_rad_fdb" type="logical" default_value="false" in_defaults="false"
+            units="-"
+            description="Flag that controls the direct aerosol effect"
+            possbile_values=".true. or .false."/>
+       <nml_option name="config_mynn_enh_mix" type="logical" default_value="false" in_defaults="false"
+            units="-"
+            description="Flag that controls artificially enhancning the PBL exhange coefs"
+            possbile_values=".true. or .false."/>
+   </nml_record>
+
+<!-- **************************************************************************************** -->
+<!-- *************************************** Streams **************************************** -->
+<!-- **************************************************************************************** -->
+
+   <streams>
+      <stream name="output"
+              type="output"
+              filename_template="history.$Y-$M-$D_$h.$m.$s.nc"
+              output_interval="6:00:00"
+              runtime_format="separate_file">
+	      <var name="swdnb"/>
+              <var name="swdnbc"/>
+              <var name="aod3d_smoke"/>
+              <var name="aod3d"/>
+              <var name="aod550"/>
+              <var name="vis"/>
+              <var name="ddvel"/>
+              <var name="wetdep_resolved"/>
+              <var name="hwp"/>
+              <var name="frp_out"/>
+              <var name="fre_out"/>
+              <var name="hfx_bb"/>
+              <var name="qfx_bb"/>
+              <var name="PM2_5"/>
+              <var name="PM10"/>
+              <var name="max_bb_plume"/>
+              <var name="min_bb_plume"/>
+              <var name="coef_bb_dc"/>
+              <var name="fire_hist"/>
+              <var name="fire_peak_hr"/>
+              <var name="fire_type"/>
+              
+              <var_array name="e_bb_out"/>
+	      <var_array name="e_dust_out"/>
+      </stream>
+
+      <stream name="smoke_retro_input"
+         type="input"
+         filename_template="smoke.init.retro.$Y-$M-$D_$h.$m.$s.nc"
+         filename_interval="input_interval"
+         input_interval="1:00:00"
+         immutable="true"                        
+         in_defaults="false">
+
+         <var_array name="e_bb_in"/>
+         <var name="frp_in"/>
+         <var name="fre_in"/>
+      </stream>
+
+      <stream name="smoke_input"
+         type="input"
+         filename_template="x1.40962.bb.init.nc"
+         input_interval="initial_only"
+         immutable="true"                        
+         in_defaults="false">
+
+	 <var name="hwp_prev24"/>
+         <var name="totprcp_prev24"/>
+         <var name="frp_prev24"/>
+         <var name="fre_prev24"/>
+         <var name="fmc_prev24"/>
+      </stream>
+
+      <stream name="dust_input"
+         type="input"
+         filename_template="x1.40962.dust.init.nc"
+         input_interval="initial_only"
+         immutable="true"
+         in_defaults="false">
+
+         <var name="sandfrac_in"/>
+         <var name="clayfrac_in"/>
+         <var name="uthres_in"/>
+         <var name="uthres_sg_in"/>
+         <var name="sep_in"/>
+         <var name="albedo_drag_m_in"/>
+         <var name="feff_m_in"/>
+      </stream>
+
+      <stream name="anthro_input"
+         type="input"
+         filename_template="anthro.init.$Y-$M-$D_$h.$m.$s.nc"
+         filename_interval="input_interval"
+         input_interval="1:00:00"
+         immutable="true"
+         in_defaults="false">
+     
+         <var_array name="e_ant_in"/>
+      </stream>
+
+</streams>
+
+
+<!-- ================================ -->
+<!-- TRACERS = GASES + AEROSOLS -->
+<!-- ================================ -->
+   <var_struct name="state" time_levs="2">
+      <var_array name="scalars" type="real" dimensions="nVertLevels nCells Time">
+         <var name="smoke_fine" array_group="chemistry" units="kg kg^{-1}"
+              description="fine smoke mixing ratio"
+              packages="mpas_smoke_in;mpas_anthro_in"/>
+
+         <var name="dust_fine" array_group="chemistry" units="kg kg^{-1}"
+              description="fine dust mixing ratio"
+              packages="mpas_dust_in;mpas_anthro_in"/>
+
+         <var name="dust_coarse" array_group="chemistry" units="kg kg^{-1}"
+              description="coarse dust mixing ratio"
+              packages="mpas_dust_in;mpas_anthro_in"/>
+      </var_array>
+   </var_struct>
+
+<!-- INPUT EMISSIONS -->
+   <var_struct name="emis_input" time_levs="1">
+     <!-- BIOMASS BURNING -->
+      <var_array name="e_bb_in" type="real" dimensions="nkwildfire nCells Time">
+         <var name="e_bb_in_smoke_fine" name_in_code="e_bb_in_smoke_fine" array_group="bb_in_aerosols" units="ug m^{-2} s^{-1}"
+              description="input biomass burning fine smoke emissions"
+              packages="mpas_smoke_in"/>
+      </var_array>
+     <!-- Anthropogenic -->
+      <var_array name="e_ant_in" type="real" dimensions="nkanthro nCells Time">
+
+         <var name="e_ant_in_smoke_fine" name_in_code="e_ant_in_smoke_fine" array_group="ant_in_aerosols" units="ug m^{-2} s^{-1}"
+              description="input anthropogenic fine smoke emissions"
+              packages="mpas_anthro_in"/>
+         <var name="e_ant_in_dust_fine" name_in_code="e_ant_in_dust_fine" array_group="ant_in_aerosols" units="ug m^{-2} s^{-1}"
+              description="input anthropogenic fine dust emissions"
+              packages="mpas_anthro_in"/>
+         <var name="e_ant_in_dust_coarse" name_in_code="e_ant_in_dust_coarse" array_group="ant_in_aerosols" units="ug m^{-2} s^{-1}"
+              description="input anthropogenic coarse dust emissions"
+              packages="mpas_anthro_in"/>
+      </var_array>
+   </var_struct>
+
+<!-- Chemistry Diagnostics -->                   
+   <var_struct name="diag_physics" time_levs="1">
+<!-- OUTPUT EMISSIONS -->
+      <var_array name="e_bb_out" type="real" dimensions="nVertLevels nCells Time">
+         <var name="e_bb_out_smoke_fine" name_in_code="e_bb_out_smoke_fine" array_group="bb_out_aerosols" units="ug m^{-2} s^{-1}"
+              description="output biomass burning fine smoke emissions"
+              packages="mpas_smoke_in"/>
+      </var_array>
+
+      <var_array name="e_ant_out" type="real" dimensions="nVertLevels nCells Time">
+	 <var name="e_ant_out_dust_fine" name_in_code="e_ant_out_dust_fine" array_group="ant_out_aerosols" units="ug m^{-2} s^{-1}"
+              description="ouput anthropogenic fine dust emissions"
+              packages="mpas_anthro_in"/>
+         <var name="e_ant_out_dust_coarse" name_in_code="e_ant_out_dust_coarse" array_group="ant_out_aerosols" units="ug m^{-2} s^{-1}"
+              description="output anthropogenic coarse dust emissions"
+              packages="mpas_anthro_in"/>
+         <var name="e_ant_out_smoke_fine" name_in_code="e_ant_out_smoke_fine" array_group="ant_out_aerosols" units="ug m^{-2} s^{-1}"
+              description="output anthropogenic fine smoke emissions"
+              packages="mpas_anthro_in"/>
+      </var_array>
+
+      <var_array name="e_dust_out" type="real" dimensions="nVertLevels nCells Time">
+         <var name="e_dust_out_dust_fine"   name_in_code="e_dust_out_dust_fine" array_group="dust_out_aerosols" units="ug m^{-2} s^{-1}"
+              description="emissions of fine dust"
+              packages="mpas_dust_in"/>
+         <var name="e_dust_out_dust_coarse" name_in_code="e_dust_out_dust_coarse" array_group="dust_out_aerosols" units="ug m^{-2} s^{-1}"
+              description="emissions of fine dust"
+              packages="mpas_dust_in"/>
+      </var_array>
+
+      <var name="vis" type="real" dimensions="nCells Time" units="m"
+           description="Visibility"/>
+      <var name="frac_grid_burned" type="real" dimensions="nCells Time" units="-"
+           description="fraction of grid cell area burned"
+           packages="mpas_smoke_in"/>
+      <var name="hfx_bb" type="real" dimensions="nCells Time" units="W m^{-2}"
+           description="heat flux from biomass burning"
+           packages="mpas_smoke_in"/>
+      <var name="qfx_bb" type="real" dimensions="nCells Time" units="kg m^{-2}"
+           description="water vapor flux from biomass burning"
+           packages="mpas_smoke_in"/>
+      <var name="flam_frac" type="real" dimensions="nCells Time" units="-"
+           description="fraction of flaming bb emissions"
+           packages="mpas_smoke_in"/>
+      <var name="min_bb_plume" type="integer" dimensions="nCells Time" units="-"
+           description="minimumum biomass burning plumerise injection level"
+           packages="mpas_smoke_in"/>
+      <var name="max_bb_plume" type="integer" dimensions="nCells Time" units="-"
+           description="maximumum biomass burning plumerise injection level"
+           packages="mpas_smoke_in"/>
+      <var name="fire_type" type="integer" dimensions="nCells Time" units="-"
+           description="type of fire"
+           packages="mpas_smoke_in"/>
+      <var name="fire_peak_hr" type="real" dimensions="nCells Time" units="hr"
+           description="peak hour of wildfire"
+           packages="mpas_smoke_in"/>
+      <var name="fire_hist" type="real" dimensions="nCells Time" units="-"
+           description="coefficient to scale the fire activity depending on the fire duration"
+           packages="mpas_smoke_in"/>
+      <var name="coef_bb_dc" type="real" dimensions="nCells Time" units="-"
+           description="coefficient of diurnal cycle of biomass burning emissions"
+           packages="mpas_smoke_in"/>
+      <var name="frp_in" type="real" dimensions="nCells Time" units="MW"
+           description="Input fire radiative power"
+           packages="mpas_smoke_in"/>
+      <var name="frp_out" type="real" dimensions="nCells Time" units="MW"
+           description="Output fire radiative power"
+           packages="mpas_smoke_in"/>
+      <var name="fre_in" type="real" dimensions="nCells Time" units="MJs"
+           description="Input fire radiative energy"
+           packages="mpas_smoke_in"/>
+      <var name="fre_out" type="real" dimensions="nCells Time" units="MJs"
+           description="Output fire radiative energy"
+           packages="mpas_smoke_in"/>
+      <var name="hwp" type="real" dimensions="nCells Time" units="-"
+           description="Hourly Wildfire Potential"
+           packages="mpas_smoke_in"/>
+      <var name="hwp_prev24" type="real" dimensions="nCells TWENTYFOUR" units="-"
+           description="Hourly Wildfire Potential over the last 24 hours"
+           packages="mpas_smoke_in"/>
+      <var name="frp_prev24" type="real" dimensions="nCells TWENTYFOUR" units="MW"
+           description="Fire Radiative Power over the last 24 hours"
+           packages="mpas_smoke_in"/>
+      <var name="fre_prev24" type="real" dimensions="nCells TWENTYFOUR" units="MJs"
+           description="Fire Radiative Energy over the last 24 hours"
+           packages="mpas_smoke_in"/>
+      <var name="fmc_prev24" type="real" dimensions="nCells TWENTYFOUR" units="MJs"
+           description="Fuel Moisture Content over the last 24 hours"
+           packages="mpas_smoke_in"/>
+      <var name="totprcp_prev24" type="real" dimensions="nCells TWENTYFOUR" units="m" 
+           description="Total precipitation over the last 24 hours"
+           packages="mpas_smoke_in"/>
+      <var name="fire_end_hr" type="real" dimensions="nCells Time" units="hr"
+           description="Hours since fire was last detected"
+           packages="mpas_smoke_in"/>
+      <var name="ddvel"                 type="real" dimensions="nChem nCells Time" units="cm s^{-1}"
+           description="dry deposition velocitiy"/>
+      <var name="wetdep_resolved"       type="real" dimensions="nChem nCells Time" units="ug m^{-2} s^{-1}"
+           description="dry deposition velocitiy"/>
+      <var name="PM2_5"             type="real" dimensions="nVertLevels nCells Time" units="ug m^{-3}"
+           description="particulate matter less than or equal to 2.5 micrometers in diameter"/>
+      <var name="PM10"             type="real" dimensions="nVertLevels nCells Time" units="ug m^{-3}"
+           description="particulate matter less than or equal to 10 micrometers in diameter"/>
+      <var name="feff"                  type="real" dimensions="nCells Time" units="-"
+           description="drag partition (alternate)"
+           packages="mpas_dust_in"/>
+      <var name="albedo_drag"           type="real" dimensions="nCells Time" units="-"
+           description="drag partition"
+           packages="mpas_dust_in"/>
+      <var name="uthres_in" type="real" dimensions="nCells" units="-"
+           description="threshold friction velocity"
+           packages="mpas_dust_in"/>
+      <var name="uthres_sg_in" type="real" dimensions="nCells" units="-"
+           description="threshold friction velocity (alternate"
+           packages="mpas_dust_in"/>
+      <var name="sandfrac_in" type="real" dimensions="nCells" units="-"
+           description="sand fraction"
+           packages="mpas_dust_in"/>
+      <var name="clayfrac_in" type="real" dimensions="nCells" units="-"
+           description="clay fraction"
+           packages="mpas_dust_in"/>
+      <var name="albedo_drag_m_in" type="real" dimensions="nMonths nCells" units="-"
+           description="drag partition"
+           packages="mpas_dust_in"/>
+      <var name="feff_m_in" type="real" dimensions="nMonths nCells" units="-"
+           description="drag partition (alternate)"
+           packages="mpas_dust_in"/>
+      <var name="sep_in" type="real" dimensions="nCells" units="-"
+           description="soil erosion potential"
+           packages="mpas_dust_in"/>
+      <var name="aod3d_smoke"     type="real" dimensions="nVertLevels nCells Time" units="-"
+           description="aerosol optical depth from smoke"/>
+      <var name="aod3d"           type="real" dimensions="nVertLevels nCells Time" units="-"
+           description="aerosol optical depth from all aerosols"/>
+      <var name="aod550"           type="real" dimensions="nCells Time" units="-"
+           description="aerosol optical depth (2D) from all aerosols"/>
+  </var_struct>
+
+
+<!-- ================================ -->
+<!-- TRACER TENDENCIES -->
+<!-- ================================ -->
+   <var_struct name="tend" time_levs="1">
+#ifndef MPAS_CAM_DYCORE
+      <var_array name="scalars_tend" type="real" dimensions="nVertLevels nCells Time">
+         <var name="tend_smoke_fine" name_in_code="smoke_fine" array_group="chemistry" units="kg m^{-3} s^{-1}"
+               description="Tendency of fine smoke mass per unit volume divided by d(zeta)/dz"
+               packages="mpas_smoke_in"/>
+         <var name="tend_dust_fine" name_in_code="dust_fine" array_group="chemistry" units="kg m^{-3} s^{-1}"
+               description="Tendency of fine dust mass per unit volume divided by d(zeta)/dz"
+               packages="mpas_dust_in"/>
+
+          <var name="tend_dust_coarse" name_in_code="dust_coarse" array_group="chemistry" units="kg m^{-3} s^{-1}"
+               description="Tendency of fine dust mass per unit volume divided by d(zeta)/dz"
+               packages="mpas_dust_in"/>
+            </var_array>
+#endif
+        </var_struct>
+
+<!-- =================================== -->
+<!-- TRACER LATERAL BOUNDARY CONDITIONS  -->
+<!-- =================================== -->
+   <var_struct name="lbc" time_levs="2" packages="limited_area">
+      <var_array name="lbc_scalars" type="real" dimensions="nVertLevels nCells Time">
+         <var name="lbc_smoke_fine" name_in_code="smoke_fine" array_group="chemistry"  packages="mpas_smoke_in" units="kg kg^{-1} s^{-1}"
+              description="Lateral boundary tendency of fine smoke mixing ratio"/>
+         <var name="lbc_dust_fine" name_in_code="dust_fine" array_group="chemistry"  packages="mpas_dust_in" units="kg kg^{-1} s^{-1}"
+              description="Lateral boundary tendency of fine dust mixing ratio"/>
+
+         <var name="lbc_dust_coarse" name_in_code="dust_coarse" array_group="chemistry"  packages="mpas_dust_in" units="kg kg^{-1} s^{-1}"
+              description="Lateral boundary tendency of coarse dust mixing ratio"/>
+      </var_array>
+   </var_struct>
+
+   <var_struct name="tend_physics" time_levs="1">
+           <var  name="tend_chem_settle" type="real" dimensions="nChem nVertLevels nCells Time" units="kg kg^{-1} s^{-1}"
+                description="tendency of chemistry due to gravitational settling"/>
+   </var_struct>

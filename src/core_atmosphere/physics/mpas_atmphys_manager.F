@@ -162,6 +162,8 @@
                                   config_radtlw_interval,  &
                                   config_radtsw_interval
 
+ character(len=StrKIND),pointer:: config_dust_scheme
+
  type(block_type),pointer    :: block
  type(mpas_pool_type),pointer:: mesh
  type(mpas_pool_type),pointer:: configs
@@ -199,6 +201,7 @@
  call mpas_pool_get_config(domain%blocklist%configs,'config_gvf_update'         ,config_gvf_update         )
  call mpas_pool_get_config(domain%blocklist%configs,'config_sstdiurn_update'    ,config_sstdiurn_update    )
  call mpas_pool_get_config(domain%blocklist%configs,'config_deepsoiltemp_update',config_deepsoiltemp_update)
+ call mpas_pool_get_config(domain%blocklist%configs,'config_dust_scheme'        ,config_dust_scheme        )
 
 !update the current julian day and current year:
 
@@ -233,8 +236,8 @@
     !monthly values to current day:
     if(mpas_is_alarm_ringing(clock,greenAlarmID,ierr=ierr)) then
        call mpas_reset_clock_alarm(clock,greenAlarmID,ierr=ierr)
-       call mpas_log_write('--- time to update background surface albedo, greeness fraction.')
-       call physics_update_surface(timeStamp,config_sfc_albedo,config_gvf_update,mesh,sfc_input,diag_physics)
+       call mpas_log_write('--- time to update background surface albedo, greeness fraction, dust fields, ...')
+       call physics_update_surface(timeStamp,config_sfc_albedo,config_gvf_update,config_dust_scheme,mesh,sfc_input,diag_physics)
     endif
 
     !update surface boundary conditions with input sea-surface temperatures and fractional
@@ -376,13 +379,15 @@
  end subroutine physics_timetracker
 
 !=================================================================================================================
- subroutine physics_run_init(configs,mesh,state,clock,stream_manager)
+ subroutine physics_run_init(configs,mesh,state,emis_input,diag_physics,clock,stream_manager)
 !=================================================================================================================
 
 !input arguments:
  type(mpas_pool_type),intent(in):: mesh
  type(mpas_pool_type),intent(in):: configs
  type(mpas_pool_type),intent(in):: state
+ type(mpas_pool_type),intent(in):: diag_physics
+ type(mpas_pool_type),intent(in):: emis_input
  type(MPAS_Clock_type):: clock
  type (MPAS_streamManager_type), intent(inout) :: stream_manager
 
@@ -410,6 +415,9 @@
  integer,pointer:: nMonths
  integer,pointer:: nAerosols,nAerLevels,nOznLevels
  integer,pointer:: nCellsSolve,nSoilLevels,nVertLevels,nlcat,nscat
+ integer,pointer:: nChem,nkanthro,nkwildfire,nkbiogenic,nkvolcanic
+ integer,pointer:: n_e_bb_in
+ integer,pointer:: n_e_bb_out,n_e_dust_out
 
  real(kind=RKIND):: dt
 
@@ -453,6 +461,17 @@
  call mpas_pool_get_dimension(mesh,'nlcat'      ,nlcat      )
  call mpas_pool_get_dimension(mesh,'nscat'      , nscat     )
  call mpas_pool_get_dimension(state,'num_aerosols',nAerosols)
+
+ call mpas_pool_get_dimension(mesh,'nChem'     ,nChem       )
+ call mpas_pool_get_dimension(mesh,'nkanthro'     ,nkanthro       )
+ call mpas_pool_get_dimension(mesh,'nkwildfire'   ,nkwildfire     )
+ call mpas_pool_get_dimension(mesh,'nkbiogenic'   ,nkbiogenic     )
+ call mpas_pool_get_dimension(mesh,'nkvolcanic'   ,nkvolcanic     )
+
+ call mpas_pool_get_dimension(diag_physics, 'num_e_bb_out',n_e_bb_out    )
+ call mpas_pool_get_dimension(diag_physics, 'num_e_dust_out',n_e_dust_out)
+
+ call mpas_pool_get_dimension(emis_input,'num_e_bb_in',n_e_bb_in         )
 
 !initialization of gmt, julian day, and alarms:
 
@@ -680,6 +699,17 @@
  num_soils  = nSoilLevels
  num_landcat = nlcat
  num_soilcat = nscat
+
+ num_chem    = nChem
+ kanthro     = nkanthro
+ kwildfire   = nkwildfire
+ kbiogenic   = nkbiogenic
+ kvolcanic   = nkvolcanic
+
+ num_e_bb_in = n_e_bb_in
+
+ num_e_bb_out  = n_e_bb_out
+ num_e_dust_out= n_e_dust_out
 
  if(trim(config_lsm_scheme) .eq. "sf_noah") sf_surface_physics = 2
 

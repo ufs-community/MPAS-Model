@@ -236,6 +236,14 @@
        !allocation of additional arrays:
        if(.not.allocated(pattern_spp_pbl)) allocate(pattern_spp_pbl(ims:ime,kms:kme,jms:jme))
 
+       !allocation of chemistry arrays
+       if ( num_chem .gt. 0 ) then
+          if(.not.allocated(ddvel_p)) allocate(ddvel_p(ims:ime,jms:jme,1:num_chem))
+          if(.not.allocated(tend_chem_settle_p)) allocate(tend_chem_settle_p(ims:ime,kms:kme,jms:jme,1:num_chem))
+          if(.not.allocated(chem_p)) allocate(chem_p(ims:ime,kms:kme,jms:jme,1:num_chem))
+          if(.not.allocated(frp_out_p)) allocate(frp_out_p(ims:ime,jms:jme))
+       endif
+
     case("bl_myj")
        if(.not.allocated(ht_p)         ) allocate(ht_p(ims:ime,jms:jme)      )
        if(.not.allocated(chlowq_p)     ) allocate(chlowq_p(ims:ime,jms:jme)  )
@@ -413,6 +421,14 @@
        !deallocation of additional arrays:
        if(allocated(pattern_spp_pbl)) deallocate(pattern_spp_pbl)
 
+       !deallocation of chemistry arrays
+       if (num_chem .gt. 0) then
+          if(allocated(ddvel_p)           ) deallocate(ddvel_p           )
+          if(allocated(chem_p)            ) deallocate(chem_p            )
+          if(allocated(tend_chem_settle_p)) deallocate(tend_chem_settle_p)
+          if(allocated(frp_out_p)         ) deallocate(frp_out_p)
+       endif
+
    case("bl_myj")
        if(allocated(ht_p)         ) deallocate(ht_p      )
        if(allocated(chlowq_p)     ) deallocate(chlowq_p  )
@@ -440,7 +456,7 @@
  end subroutine deallocate_pbl
 
 !=================================================================================================================
- subroutine pbl_from_MPAS(configs,mesh,sfc_input,diag_physics,tend_physics,its,ite)
+ subroutine pbl_from_MPAS(configs,state,mesh,sfc_input,diag_physics,tend_physics,its,ite)
 !=================================================================================================================
 
 !input arguments:
@@ -449,11 +465,12 @@
  type(mpas_pool_type),intent(in):: diag_physics
  type(mpas_pool_type),intent(in):: sfc_input
  type(mpas_pool_type),intent(in):: tend_physics
+ type(mpas_pool_type),intent(in):: state
 
  integer,intent(in):: its,ite
 
 !local variables:
- integer:: i,k,j
+ integer:: i,k,j,n
 
 !local pointers:
  character(len=StrKIND),pointer:: pbl_scheme
@@ -474,6 +491,16 @@
  real(kind=RKIND),dimension(:,:),pointer:: cldfrac_bl,qc_bl,qi_bl
  real(kind=RKIND),dimension(:,:),pointer:: edmf_a,edmf_ent,edmf_qc,edmf_qt,edmf_thl,edmf_w
  real(kind=RKIND),dimension(:,:),pointer:: sub_thl,sub_qv,det_thl,det_qv
+
+!local pointers for chemistry
+ integer,pointer                           :: chemistry_start,chemistry_end
+ real(kind=RKIND),dimension(:,:,:),pointer :: scalars
+ real(kind=RKIND),dimension(:,:,:),pointer :: tend_chem_settle
+ real(kind=RKIND),dimension(:,:  ),pointer :: ddvel
+ real(kind=RKIND),dimension(:,:,:),pointer :: chem
+ real(kind=RKIND),dimension(:),pointer     :: frp_out
+ integer,pointer:: drydep_opt
+ logical,pointer:: enh_mix
       
 !local pointers for MYJ scheme:
  real(kind=RKIND),dimension(:),pointer   :: chlowq,thz0,qz0,uz0,vz0,ct,akhs,akms,lh,mixht
@@ -674,6 +701,21 @@
        call mpas_pool_get_array(diag_physics,'sub_qv'    ,sub_qv    )
        call mpas_pool_get_array(diag_physics,'det_thl'   ,det_thl   )
        call mpas_pool_get_array(diag_physics,'det_qv'    ,det_qv    )
+       if ( num_chem .gt. 0 ) then
+          call mpas_pool_get_array(state,'scalars',scalars,1)
+          call mpas_pool_get_config(configs,'drydep_opt',drydep_opt)
+          if ( drydep_opt .ne. 0 ) then
+             call mpas_pool_get_array(tend_physics,'tend_chem_settle',tend_chem_settle)
+             call mpas_pool_get_array(diag_physics,'ddvel',ddvel)
+          endif
+          call mpas_pool_get_dimension(state, 'chemistry_start', chemistry_start)
+          call mpas_pool_get_dimension(state, 'chemistry_end', chemistry_end)
+          chem => scalars(chemistry_start:chemistry_end,:,:)
+          call mpas_pool_get_config(configs,'config_mynn_enh_mix',enh_mix)
+          if (enh_mix) then
+             call mpas_pool_get_array(diag_physics,'frp_out',frp_out)
+          end if
+       endif
 
        do j = jts,jte
        do i = its,ite
@@ -681,6 +723,18 @@
           ch_p(i,j)   = ch(i)
           qsfc_p(i,j) = qsfc(i)
           tsk_p(i,j)  = skintemp(i)
+          if ( enh_mix ) then
+             frp_out_p(i,j)     = frp_out(i)
+          endif
+          if ( num_chem .gt. 0 ) then
+             if ( drydep_opt .ne. 0 ) then
+                do n = 1,num_chem
+                  ddvel_p(i,j,n) = ddvel(n,i)
+                enddo
+             else
+                  ddvel_p(i,j,:) = 0._RKIND
+             endif
+          endif
        enddo
        enddo
 
@@ -721,6 +775,17 @@
           rnwfablten_p(i,k,j) = 0._RKIND
 
           pattern_spp_pbl(i,k,j) = 0._RKIND
+
+          if ( num_chem .gt. 0) then
+             do n = 1, num_chem
+                chem_p(i,k,j,n) = chem(n,k,i)
+                if ( drydep_opt .ne. 0 ) then
+                   tend_chem_settle_p(i,k,j,n) = tend_chem_settle(n,k,i)
+                else
+                   tend_chem_settle_p(i,k,j,n) = 0._RKIND
+                endif
+             enddo
+          endif
        enddo
        enddo
        do i = its,ite
@@ -802,7 +867,7 @@
  end subroutine pbl_from_MPAS
 
 !=================================================================================================================
- subroutine pbl_to_MPAS(configs,diag_physics,tend_physics,its,ite)
+ subroutine pbl_to_MPAS(configs,state,diag_physics,tend_physics,its,ite)
 !=================================================================================================================
 
 !input arguments:
@@ -811,11 +876,12 @@
 !inout arguments:
  type(mpas_pool_type),intent(inout):: diag_physics
  type(mpas_pool_type),intent(inout):: tend_physics
+ type(mpas_pool_type),intent(inout):: state
 
  integer,intent(in):: its,ite
 
 !local variables:
- integer:: i,k,j
+ integer:: i,k,j,n
 
 !local pointers:
  character(len=StrKIND),pointer:: pbl_scheme
@@ -838,6 +904,13 @@
  real(kind=RKIND),dimension(:,:),pointer:: cldfrac_bl,qc_bl,qi_bl
  real(kind=RKIND),dimension(:,:),pointer:: edmf_a,edmf_ent,edmf_qc,edmf_qt,edmf_thl,edmf_w
  real(kind=RKIND),dimension(:,:),pointer:: sub_thl,sub_qv,det_thl,det_qv
+
+!local pointers for chemistry
+ real(kind=RKIND),dimension(:,:,:),pointer:: scalars
+ real(kind=RKIND),dimension(:,:,:),pointer:: chem
+ real(kind=RKIND),dimension(:,:,:),pointer:: tend_chem_settle
+ real(kind=RKIND),dimension(:,:),pointer  :: ddvel
+ integer,pointer :: chemistry_start,chemistry_end
 
 !local pointers for MYJ scheme:
  real(kind=RKIND),dimension(:),pointer   :: thz0,qz0,uz0,vz0,akhs,akms,ct,mixht,qsfc,ust,znt
@@ -1029,6 +1102,13 @@
 
        call mpas_pool_get_array(tend_physics,'rqsblten'  ,rqsblten  )
 
+       if ( num_chem .gt. 0 ) then
+          call mpas_pool_get_array(state,'scalars',scalars,1)
+          call mpas_pool_get_dimension(state, 'chemistry_start', chemistry_start)
+          call mpas_pool_get_dimension(state, 'chemistry_end', chemistry_end)
+          chem => scalars(chemistry_start:chemistry_end,:,:)
+       endif
+
        do j = jts,jte
        do i = its,ite
           maxmf(i)      = maxmfbl_p(i,j)
@@ -1070,6 +1150,12 @@
           qwt(k,i)        = qwt_p(i,k,j)
 
           rqsblten(k,i)   = rqsblten_p(i,k,j)
+
+          if ( num_chem .gt. 0 ) then
+             do n = 1,num_chem
+                chem(n,k,i)    = chem_p(i,k,j,n)
+             enddo
+          endif
        enddo
        enddo
        enddo
@@ -1176,12 +1262,13 @@
  end subroutine init_pbl
 
 !=================================================================================================================
- subroutine driver_pbl(itimestep,configs,mesh,sfc_input,diag_physics,tend_physics,its,ite)
+ subroutine driver_pbl(itimestep,configs,state,mesh,sfc_input,diag_physics,tend_physics,its,ite)
 !=================================================================================================================
 
 !input arguments:
  type(mpas_pool_type),intent(in):: configs
  type(mpas_pool_type),intent(in):: mesh
+ type(mpas_pool_type),intent(inout):: state
 
  integer,intent(in):: its,ite
  integer,intent(in):: itimestep
@@ -1195,6 +1282,8 @@
  logical,pointer:: config_do_DAcycling, &
                    config_do_restart,   &
                    bl_mynn_tkeadvect
+
+ logical,pointer:: enh_mix
 
  character(len=StrKIND),pointer:: pbl_scheme
 
@@ -1224,6 +1313,7 @@
 !local variables:
  integer:: initflag
  integer:: i,k,j
+ logical:: mix_chem
 
 !CCPP-compliant flags:
  character(len=StrKIND):: errmsg
@@ -1237,12 +1327,14 @@
  errmsg = ' '
  errflg = 0
 
+ mix_chem  = .false.
+
  call mpas_pool_get_config(configs,'config_do_DAcycling',config_do_DAcycling)
  call mpas_pool_get_config(configs,'config_do_restart'  ,config_do_restart  )
  call mpas_pool_get_config(configs,'config_pbl_scheme'  ,pbl_scheme         )
 
 !copy MPAS arrays to local arrays:
- call pbl_from_MPAS(configs,mesh,sfc_input,diag_physics,tend_physics,its,ite)
+ call pbl_from_MPAS(configs,state,mesh,sfc_input,diag_physics,tend_physics,its,ite)
 
  initflag = 1
  if(config_do_restart .or. itimestep > 1) initflag = 0
@@ -1412,6 +1504,7 @@
        call mpas_pool_get_config(configs,'config_mynn_tkebudget'  ,bl_mynn_tkebudget  )
        call mpas_pool_get_config(configs,'config_icloud_bl'       ,icloud_bl          )
        call mpas_pool_get_config(configs,'config_spp_pbl'         ,spp_pbl            )
+       call mpas_pool_get_config(configs,'config_mynn_enh_mix'    ,enh_mix            )
 
 !      call mpas_log_write(' ')
 !      call mpas_log_write('--- enter subroutine mynn_bl_driver:')
@@ -1442,6 +1535,8 @@
 !      call mpas_log_write('--- f_nifa = $l',logicArgs=(/f_nifa/))
 !      call mpas_log_write('--- f_nwfa = $l',logicArgs=(/f_nwfa/))
 !      call mpas_log_write('--- f_nbca = $l',logicArgs=(/f_nbca/))
+
+       if (num_chem > 0 ) mix_chem = .true.
 
        call mpas_timer_start('bl_mynnedmf')
        call mynnedmf_driver( &
@@ -1499,6 +1594,15 @@
                   bl_mynn_cloudmix   = bl_mynn_cloudmix    ,                                              &
                   bl_mynn_mixqt      = bl_mynn_mixqt       ,                                              &
                   bl_mynn_ess        = bl_mynn_ess         ,                                              &
+                  mix_chem = mix_chem, &
+                  nchem = num_chem,    &
+                  ndvel = num_chem,    &
+                  chem3d = chem_p,     &
+                  vd3d = ddvel_p,      &
+                  settle3d = tend_chem_settle_p, &
+                  enh_mix  = enh_mix, &
+                  frp_mean = frp_out_p,  &
+                  emis_ant_no = xland_p, &
                   ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde ,                 &
                   ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme ,                 &
                   its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte ,                 &
@@ -1602,7 +1706,7 @@
  end select pbl_select
 
 !copy local arrays to MPAS grid:
- call pbl_to_MPAS(configs,diag_physics,tend_physics,its,ite)
+ call pbl_to_MPAS(configs,state,diag_physics,tend_physics,its,ite)
 
 !call mpas_log_write('--- end subroutine driver_pbl.')
 
