@@ -8,13 +8,13 @@
    <dims>
       <dim name="nChem"              definition="namelist:num_chem"
           description="Number of chemical tracers (nscalar minus nmoist)"/>
-      <dim name="nkemit"             definition="namelist:kemit"
+      <dim name="nkanthro"             definition="namelist:kanthro"
           description="Number of vertical levels in anthropogenic emission file"/>
-      <dim name="nkfire"             definition="namelist:kfire"
+      <dim name="nkwildfire"             definition="namelist:kwildfire"
           description="Number of vertical levels in biomass burning emission file"/>
-      <dim name="nkbio"             definition="namelist:kbio"
+      <dim name="nkbiogenic"             definition="namelist:kbiogenic"
           description="Number of vertical levels in biogenic emission file"/>
-      <dim name="nkvol"             definition="namelist:kvol"
+      <dim name="nkvolcanic"             definition="namelist:kvolcanic"
           description="Number of vertical levels in volcanic emission file"/>
       <dim name="TWENTYFOUR"          definition="24"
           description="A constant value of 24"/>
@@ -52,19 +52,19 @@
            units="-"
            description="Number of chemical tracers"
            possible_values="Positive integer values"/>
-      <nml_option name="kemit" type="integer" default_value="1"
+      <nml_option name="kanthro" type="integer" default_value="1"
            units="-"
            description="Number of vertical levels in anthropogenic emission input"
            possible_values="Positive integer values"/>
-      <nml_option name="kfire" type="integer" default_value="1"
+      <nml_option name="kwildfire" type="integer" default_value="1"
            units="-"
            description="Number of vertical levels in biomaass burning emission input"
            possible_values="Positive integer values"/>
-      <nml_option name="kbio" type="integer" default_value="1"
+      <nml_option name="kbiogenic" type="integer" default_value="1"
            units="-"
            description="Number of vertical levels in biogenic emission input"
            possible_values="Positive integer values"/>
-      <nml_option name="kvol" type="integer" default_value="1"
+      <nml_option name="kvolcanic" type="integer" default_value="1"
            units="-"
            description="Number of vertical levels in volcanic emission input"
            possible_values="Positive integer values"/>
@@ -281,13 +281,13 @@
 <!-- INPUT EMISSIONS -->
    <var_struct name="emis_input" time_levs="1">
      <!-- BIOMASS BURNING -->
-      <var_array name="e_bb_in" type="real" dimensions="nkfire nCells Time">
+      <var_array name="e_bb_in" type="real" dimensions="nkwildfire nCells Time">
          <var name="e_bb_in_smoke_fine" name_in_code="e_bb_in_smoke_fine" array_group="bb_in_aerosols" units="ug m^{-2} s^{-1}"
               description="input biomass burning fine smoke emissions"
               packages="mpas_smoke_in"/>
       </var_array>
      <!-- Anthropogenic -->
-      <var_array name="e_ant_in" type="real" dimensions="nkemit nCells Time">
+      <var_array name="e_ant_in" type="real" dimensions="nkanthro nCells Time">
 
          <var name="e_ant_in_smoke_fine" name_in_code="e_ant_in_smoke_fine" array_group="ant_in_aerosols" units="ug m^{-2} s^{-1}"
               description="input anthropogenic fine smoke emissions"

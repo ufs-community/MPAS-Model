@@ -415,7 +415,7 @@
  integer,pointer:: nMonths
  integer,pointer:: nAerosols,nAerLevels,nOznLevels
  integer,pointer:: nCellsSolve,nSoilLevels,nVertLevels,nlcat,nscat
- integer,pointer:: nChem,nkemit,nkfire,nkbio,nkvol
+ integer,pointer:: nChem,nkanthro,nkwildfire,nkbiogenic,nkvolcanic
  integer,pointer:: n_e_bb_in
  integer,pointer:: n_e_bb_out,n_e_dust_out
 
@@ -463,10 +463,10 @@
  call mpas_pool_get_dimension(state,'num_aerosols',nAerosols)
 
  call mpas_pool_get_dimension(mesh,'nChem'     ,nChem       )
- call mpas_pool_get_dimension(mesh,'nkemit'    ,nkemit      )
- call mpas_pool_get_dimension(mesh,'nkfire'    ,nkfire      )
- call mpas_pool_get_dimension(mesh,'nkbio'     ,nkbio       )
- call mpas_pool_get_dimension(mesh,'nkvol'     ,nkvol       )
+ call mpas_pool_get_dimension(mesh,'nkanthro'     ,nkanthro       )
+ call mpas_pool_get_dimension(mesh,'nkwildfire'   ,nkwildfire     )
+ call mpas_pool_get_dimension(mesh,'nkbiogenic'   ,nkbiogenic     )
+ call mpas_pool_get_dimension(mesh,'nkvolcanic'   ,nkvolcanic     )
 
  call mpas_pool_get_dimension(diag_physics, 'num_e_bb_out',n_e_bb_out    )
  call mpas_pool_get_dimension(diag_physics, 'num_e_dust_out',n_e_dust_out)
@@ -701,10 +701,10 @@
  num_soilcat = nscat
 
  num_chem    = nChem
- kemit       = nkemit
- kfire       = nkfire
- kbio        = nkbio
- kvol        = nkvol
+ kanthro     = nkanthro
+ kwildfire   = nkwildfire
+ kbiogenic   = nkbiogenic
+ kvolcanic   = nkvolcanic
 
  num_e_bb_in = n_e_bb_in
 

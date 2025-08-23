@@ -163,7 +163,7 @@
  if(.not.allocated(PM10_p))               allocate(PM10_p(ims:ime,kms:kme,jms:jme))
  
  if ( num_e_bb_in .gt. 0 .and. config_smoke_scheme .ne. 'off' ) then
-    if(.not.allocated(e_bb_in_p))           allocate(e_bb_in_p (ims:ime,1:kfire,jms:jme,1:num_e_bb_in) )
+    if(.not.allocated(e_bb_in_p))           allocate(e_bb_in_p (ims:ime,1:kwildfire,jms:jme,1:num_e_bb_in) )
  endif
  if ( num_e_bb_out .gt. 0 .and. config_smoke_scheme .ne. 'off' ) then
     if(.not.allocated(e_bb_out_p))          allocate(e_bb_out_p  (ims:ime,kms:kme,jms:jme,1:num_e_bb_out)  )
@@ -266,7 +266,7 @@
  end subroutine deallocate_smoke
 
  !=================================================================================================================
- subroutine smoke_from_MPAS(dt_dyn, time_lev, emis_input, state, configs,  &
+ subroutine smoke_from_MPAS(dt_dyn, time_lev, emission_input, state, configs,  &
                             mesh,sfc_input, diag_physics, tend_physics, its, ite       )
 !=================================================================================================================
 
@@ -277,7 +277,7 @@
       type(mpas_pool_type),intent(in):: sfc_input
       type(mpas_pool_type),intent(in):: tend_physics
       type(mpas_pool_type),intent(in):: state
-      type(mpas_pool_type),intent(in):: emis_input
+      type(mpas_pool_type),intent(in):: emission_input
      
       integer,intent(in)             :: its,ite,time_lev
       real(kind=RKIND),intent(in)    :: dt_dyn
@@ -411,7 +411,7 @@
       endif
 
       if (config_smoke_scheme .ne. 'off' .and. num_e_bb_in .gt. 0 ) then
-         call mpas_pool_get_array(emis_input, 'e_bb_in', e_bb_in)
+         call mpas_pool_get_array(emission_input, 'e_bb_in', e_bb_in)
       endif
 
       if (config_smoke_scheme .ne. 'off' ) then
@@ -476,7 +476,7 @@
 !
      if ( num_e_bb_in .gt. 0 ) then 
       do j = jts, jte
-      do k = 1, kfire
+      do k = 1, kwildfire
       do i = its, ite
       do n = 1, num_e_bb_in
          e_bb_in_p(i,k,j,n) = e_bb_in(n,k,i)
@@ -844,7 +844,7 @@
  end subroutine init_smoke
 
 !=================================================================================================================
- subroutine driver_smoke(itimestep,time_lev,emis_input,state,configs,   &
+ subroutine driver_smoke(itimestep,time_lev,emission_input,state,configs,   &
                          mesh,sfc_input,diag_physics,tend_physics,its,ite)
 !=================================================================================================================
 
@@ -852,7 +852,7 @@
  type(mpas_pool_type),intent(in)   :: configs
  type(mpas_pool_type),intent(in)   :: mesh
  type(mpas_pool_type),intent(inout):: state
- type(mpas_pool_type),intent(in)   :: emis_input
+ type(mpas_pool_type),intent(in)   :: emission_input
 
  integer,intent(in):: its,ite
  integer,intent(in):: itimestep
@@ -905,7 +905,7 @@
  do_mpas_dust   = .false.
 
 !copy MPAS arrays to local arrays:
- call smoke_from_MPAS(dt_dyn, time_lev, emis_input, state, configs, mesh, &
+ call smoke_from_MPAS(dt_dyn, time_lev, emission_input, state, configs, mesh, &
                       sfc_input, diag_physics, tend_physics,its,ite)
  
  call mpas_pool_get_config(configs,'config_do_restart'       ,config_do_restart)
@@ -938,7 +938,7 @@
  call mpas_pool_get_config(configs,'dust_drylimit_factor' ,dust_drylimit_factor)
  call mpas_pool_get_config(configs,'dust_moist_correction', dust_moist_correction)
 ! Indexes: emissions in
- call mpas_pool_get_dimension(emis_input,'index_e_bb_in_smoke_fine',index_e_bb_in_smoke_fine)
+ call mpas_pool_get_dimension(emission_input,'index_e_bb_in_smoke_fine',index_e_bb_in_smoke_fine)
 
 ! Indexes: emissions out
  call mpas_pool_get_dimension(diag_physics,'index_e_bb_out_smoke_fine',index_e_bb_out_smoke_fine)
@@ -971,7 +971,7 @@
  call mpas_timer_start('mpas_smoke')
  call mpas_smoke_driver(                                                                 &
            chem  = chem_p, num_chem = num_chem, chemistry_start = chemistry_start,       &
-           kemit = kemit,  kfire = kfire, kbio = kbio, kvol = kvol,                      &
+           kanthro = kanthro,  kfire = kwildfire, kbio = kbiogenic, kvol = kvolcanic,    &
            index_smoke_fine = index_smoke_fine,                                          &  
            index_dust_fine  = index_dust_fine,  index_dust_coarse  = index_dust_coarse,  &
            index_e_bb_in_smoke_fine     = index_e_bb_in_smoke_fine,                      &
