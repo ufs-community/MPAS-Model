@@ -362,9 +362,9 @@ jobs:
         ln -sf /home/runner/MPAS-Model-BL/atmosphere_model .
 
     - name: Link to correct namelist list
-      if: env.nml_suffix_bl != ''
+      if: env.nml_suffix_bl != ' '
       run: |
-        ln -sf namelist.atmosphere${nml_suffix_bl} namelist.atmosphere
+        ln -sf namelist.atmosphere${{env.nml_suffix_bl}} namelist.atmosphere
 
     - name: Link lateral boundary condition file for regional MPAS.
       if: env.domain == 'conus'
@@ -412,9 +412,9 @@ jobs:
         ln -sf ${mpas_rt_ROOT}/MPAS-Model/atmosphere_model .
 
     - name: Link to correct namelist list
-      if: env.nml_suffix_bl != ''
+      if: env.nml_suffix_bl != ' '
       run: |
-        ln -sf namelist.atmosphere${nml_suffix_bl} namelist.atmosphere
+        ln -sf namelist.atmosphere${{env.nml_suffix_bl}} namelist.atmosphere
 
     - name: Link lateral boundary condition file for regional MPAS.
       if: env.domain == 'conus'
