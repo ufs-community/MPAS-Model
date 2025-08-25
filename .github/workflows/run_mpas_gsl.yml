@@ -45,10 +45,9 @@ jobs:
       grid_dir:          thredds/catalog/retro/barlage/mpas_test_data/grid
       case_dir:          retro/barlage/mpas_test_data/run_case_input/create_case_output
       mpdata_dir:        retro/barlage/mpas_test_data/run_case_input/tables
-      nml:               ncar
       ic_source:         gfs
       domain:            conus
-      res:               120
+      res:               120km
       nproc:             2
       yyyy:              "2023"
       mm:                "03"
@@ -176,6 +175,7 @@ jobs:
     - name: Set variables for NCAR tests
       if: contains(matrix.repo, 'MPAS-Dev')
       run: |
+        echo "nml=ncar"                       >> $GITHUB_ENV
         echo "nml_suffix=.ncar"               >> $GITHUB_ENV
         echo "nml_version=ncar"               >> $GITHUB_ENV
         echo "case_base=ncar-v8.2.2-intelmpi" >> $GITHUB_ENV
@@ -184,6 +184,7 @@ jobs:
     - name: Set	variables GSL tests
       if: contains(matrix.repo, 'ufs-community')
       run: |
+        echo "nml=gsl"	      	                  >> $GITHUB_ENV
         echo "nml_suffix=.gsl"                    >> $GITHUB_ENV
         echo "nml_version=ncar"                   >> $GITHUB_ENV
         echo "case_base=gsl-v8.2.2-2.11-intelmpi" >> $GITHUB_ENV
@@ -192,6 +193,7 @@ jobs:
     - name: No variables for GSL tests (hrrrv5)
       if: contains(matrix.repo, 'hrrrv5')
       run: |
+        echo "nml=gsl"                            >> $GITHUB_ENV
         echo "nml_suffix="                        >> $GITHUB_ENV
         echo "nml_version=gsl"                    >> $GITHUB_ENV
         echo "case_base=gsl-v8.2.2-2.11-intelmpi" >> $GITHUB_ENV
@@ -201,12 +203,12 @@ jobs:
       id: set_vars
       run: |
         echo "datestring=${yyyy}'-'${mm}'-'${dd}'_'${hh}'.00.00'" >> $GITHUB_OUTPUT
-        echo "input_case_directory=${code_base}.${nml}.${domain}.${res}km.${ic_source}.${yyyy}'-'${mm}'-'${dd}'_'${hh}'.00.00'" >> $GITHUB_OUTPUT
-        echo "static_file=mpas.${code_base}.${nml}.${domain}.${res}km.static.nc" >> $GITHUB_OUTPUT
-        echo "init_file=mpas.${code_base}.${nml}.${domain}.${res}km.${ic_source}.init.${yyyy}'-'${mm}'-'${dd}'_'${hh}'.00.00'.nc" >> $GITHUB_OUTPUT
-        echo "lbc_file=mpas.${code_base}.${nml}.${domain}.${res}km.${ic_source}.lbc.${yyyy}'-'${mm}'-'${dd}'_'${hh}'.00.00'.nc" >> $GITHUB_OUTPUT
-        echo "sst_file=mpas.${code_base}.${nml}.${domain}.${res}km.${ic_source}.sfc_update.${yyyy}'-'${mm}'-'${dd}'_'${hh}'.00.00'.nc" >> $GITHUB_OUTPUT
-        echo "ugwp_file=mpas.${code_base}.${nml}.${domain}.${res}km.ugwp_oro_data.nc" >> $GITHUB_OUTPUT
+        echo "input_case_directory=${code_base}.${nml}.${domain}.${res}.${ic_source}.${yyyy}'-'${mm}'-'${dd}'_'${hh}'.00.00'" >> $GITHUB_OUTPUT
+        echo "static_file=mpas.${code_base}.${nml}.${domain}.${res}.static.nc" >> $GITHUB_OUTPUT
+        echo "init_file=mpas.${code_base}.${nml}.${domain}.${res}.${ic_source}.init.${yyyy}'-'${mm}'-'${dd}'_'${hh}'.00.00'.nc" >> $GITHUB_OUTPUT
+        echo "lbc_file=mpas.${code_base}.${nml}.${domain}.${res}.${ic_source}.lbc.${yyyy}'-'${mm}'-'${dd}'_'${hh}'.00.00'.nc" >> $GITHUB_OUTPUT
+        echo "sst_file=mpas.${code_base}.${nml}.${domain}.${res}.${ic_source}.sfc_update.${yyyy}'-'${mm}'-'${dd}'_'${hh}'.00.00'.nc" >> $GITHUB_OUTPUT
+        echo "ugwp_file=mpas.${code_base}.${nml}.${domain}.${res}.ugwp_oro_data.nc" >> $GITHUB_OUTPUT
 
     - name: Display configuration
       run: |
@@ -251,10 +253,10 @@ jobs:
     - name: Download MPAS data (grid info, IC and LBC files)
       run: |
         cd ${mpas_run_ROOT} && mkdir run_data && cd run_data
-        wget -q https://gsl.noaa.gov/${grid_dir}/${domain}.${res}km.graph.info.part.${nproc}
+        wget -q https://gsl.noaa.gov/${grid_dir}/${domain}.${res}.graph.info.part.${nproc}
         wget -q -e robots=off -nH --cut-dirs N -nc -r -lX -A '*' -R 'catalog*' -I /thredds/fileServer/,/thredds/catalog/ \
-        https://gsl.noaa.gov/thredds/catalog/${case_dir}/${case_base}/${nml}.${code_base}.${domain}.${res}km.${ic_source}.${yyyy}${mm}${dd}${hh}/case_files/catalog.html
-        mv thredds/fileServer/${case_dir}/${case_base}/${nml}.${code_base}.${domain}.${res}km.${ic_source}.${yyyy}${mm}${dd}${hh}/case_files/* .
+        https://gsl.noaa.gov/thredds/catalog/${case_dir}/${case_base}/${nml}.${code_base}.${domain}.${res}.${ic_source}.${yyyy}${mm}${dd}${hh}/case_files/catalog.html
+        mv thredds/fileServer/${case_dir}/${case_base}/${nml}.${code_base}.${domain}.${res}.${ic_source}.${yyyy}${mm}${dd}${hh}/case_files/* .
         rm -rf thredds
 
     - name: Download MPAS testing repository with runtime configurations.
@@ -322,7 +324,7 @@ jobs:
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*DATA .
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_noahmp/parameters/NoahmpTable.TBL .
         ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.init_file}} mpas.init.nc
-        ln -sf ${mpas_run_ROOT}/run_data/${domain}.${res}km.graph.info.part.${nproc} graph.info.part.${nproc}
+        ln -sf ${mpas_run_ROOT}/run_data/${domain}.${res}.graph.info.part.${nproc} graph.info.part.${nproc}
         ln -sf /home/runner/MPAS-Model-BL/atmosphere_model .
         ln -sf namelist.atmosphere${nml_suffix} namelist.atmosphere
 
@@ -368,7 +370,7 @@ jobs:
         ln -sf ${mpas_rt_ROOT}/MPAS-Model/src/core_atmosphere/physics/physics_wrf/files/*DATA .
         ln -sf ${mpas_rt_ROOT}/MPAS-Model/src/core_atmosphere/physics/physics_noahmp/parameters/NoahmpTable.TBL .
         ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.init_file}} mpas.init.nc
-        ln -sf ${mpas_run_ROOT}/run_data/${domain}.${res}km.graph.info.part.${nproc} graph.info.part.${nproc}
+        ln -sf ${mpas_run_ROOT}/run_data/${domain}.${res}.graph.info.part.${nproc} graph.info.part.${nproc}
         ln -sf ${mpas_rt_ROOT}/MPAS-Model/atmosphere_model .
         ln -sf namelist.atmosphere${nml_suffix} namelist.atmosphere
 
