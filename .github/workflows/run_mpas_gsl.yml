@@ -5,7 +5,7 @@ on: [push, pull_request, workflow_dispatch]
 #############################################################################################
 # Testing script/workflow for ufs-community fork of MPAS-Dev/MPAS-A.
 #
-# Description (outside of software stack setup)
+# Description (outside of software stack setup (Step 0))
 #
 # - Clone and build MPAS for baseline generation.
 # - Clone and build MPAS for feature branch testing (against baselines).
@@ -95,7 +95,7 @@ jobs:
     steps:
 
     ##########################################################################################
-    # Build Software Stack needed for MPAS on GitHub server, using GNU.
+    # Step 0: Build Software Stack needed for MPAS on GitHub server.
     ##########################################################################################
     - name: Install NetCDF library
       run: |
@@ -202,16 +202,7 @@ jobs:
         echo "PATH=$PATH:${PNETCDF}/bin" >> $GITHUB_ENV
 
     ##########################################################################################
-    # Compile MPAS for testing "feature" branch.
-    # MPAS for "baseline" branch has already been compiled and the executable if stored (cached)
-    # on the GitHub runner for later use.
-    # When generating new baselines, checkout the gsl/develop branch from the ufs-community 
-    # fork of MPAS-A, re-compile, and update the cached baseline executable.
-    # 
-    ##########################################################################################
-
-    ##########################################################################################
-    # Baseline configuration (Always using the same feature branch).
+    # Step 1: Setup configuration for current test
     ##########################################################################################
     - name: Configuration for MPAS-Dev (baseline) tests.
       if: contains(matrix.repo, 'MPAS-Dev')
@@ -261,6 +252,9 @@ jobs:
         echo ${code_base}
         echo ${case_base}
 
+     ##########################################################################################
+     # Step 2: Clone MPAS and build.
+     ##########################################################################################
 #    - name: Cache MPAS standalone needed to generate baselines
 #      id: cache-mpas-bl
 #      uses: actions/cache@v4
@@ -289,7 +283,7 @@ jobs:
         make gfortran CORE=atmosphere DEBUG=true
 
     ##########################################################################################
-    # Fetch any data/files needed for MPAS runs.
+    # Step 3: Fetch any data/files needed for MPAS runs.
     ##########################################################################################
     - name: Download MPAS data (grid info, IC and LBC files)
       run: |
@@ -354,7 +348,7 @@ jobs:
         rm -rf thredds
 
     ##########################################################################################
-    # Configure MPAS baseline runs
+    # Step 4a: Configure MPAS baseline runs
     ##########################################################################################
     - name: Create and populate run directory (baselines)
       run: |
@@ -367,11 +361,6 @@ jobs:
         ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.init_file}} mpas.init.nc
         ln -sf ${mpas_run_ROOT}/run_data/${domain}.${res}.graph.info.part.${nproc} graph.info.part.${nproc}
         ln -sf /home/runner/MPAS-Model-BL/atmosphere_model .
-
-    - name: Link to correct namelist file.
-      if: ${{ vars.nml_suffix_bl != '' }}
-      run: |
-        cd ${mpas_run_ROOT}/run_bl
         ln -sf namelist.atmosphere${nml_suffix_bl} namelist.atmosphere
 
     - name: Link lateral boundary condition file for regional MPAS.
@@ -405,7 +394,7 @@ jobs:
         cp ${runner_ROOT}/thompson/* .
 
     ##########################################################################################
-    # Configure MPAS feature runs
+    # Step 4b: Configure MPAS feature runs
     ##########################################################################################
     - name: Create and populate run directory (feature test)
       run: |
@@ -418,11 +407,6 @@ jobs:
         ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.init_file}} mpas.init.nc
         ln -sf ${mpas_run_ROOT}/run_data/${domain}.${res}.graph.info.part.${nproc} graph.info.part.${nproc}
         ln -sf ${mpas_rt_ROOT}/MPAS-Model/atmosphere_model .
-
-    - name: Link to correct namelist file.
-      if: ${{ vars.nml_suffix_bl != '' }}
-      run: |
-        cd ${mpas_run_ROOT}/run_bl
         ln -sf namelist.atmosphere${nml_suffix_bl} namelist.atmosphere
 
     - name: Link lateral boundary condition file for regional MPAS.
@@ -456,7 +440,7 @@ jobs:
         cp ${runner_ROOT}/thompson/* .
 
     ##########################################################################################
-    # Run MPAS
+    # Step 5: Run MPAS
     ##########################################################################################
     - name: Run MPAS (baselines)
       run: |
@@ -473,7 +457,7 @@ jobs:
         pwd && ls -l
 
     ##########################################################################################
-    # Compare feature branch to baseline branch.
+    # Step 6: Compare feature branch to baseline branch.
     ##########################################################################################
     - name: Setup Miniconda
       uses: conda-incubator/setup-miniconda@v3.2.0
@@ -490,7 +474,7 @@ jobs:
         ./cmp_rt2bl.py --dir_rt ${mpas_run_ROOT}/run_rt --dir_bl ${mpas_run_ROOT}/run_bl
 
     ##########################################################################################
-    # Save MPAS output and log files as GitHub Artifact.
+    # Step 7: Save MPAS output and log files as GitHub Artifact.
     ##########################################################################################
     - name: Create GitHub artifact
       run: |
