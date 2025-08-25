@@ -219,6 +219,11 @@ jobs:
         echo ${{steps.set_vars.outputs.lbc_file}}
         echo ${{steps.set_vars.outputs.sst_file}}
         echo ${{steps.set_vars.outputs.ugwp_file}}
+        echo ${nml}
+        echo ${nml_suffix}
+        echo ${nml_version}
+        echo ${code_base}
+        echo ${case_base}
 
 #    - name: Cache MPAS standalone needed to generate baselines
 #      id: cache-mpas-bl
