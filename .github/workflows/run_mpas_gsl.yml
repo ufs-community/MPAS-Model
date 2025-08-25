@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false  # Disable fail-fast
       matrix:
-        physics:          [mesoscale_reference, convection_permitting, mesoscale_reference_noahmp]
+        physics:          [mesoscale_reference, convection_permitting, mesoscale_reference_noahmp, hrrrv5, hrrrv5, hrrrv5]
         repo:             [MPAS-Dev, ufs-community]
         branch:           [v8.3.0, gsl/develop]
         fortran-compiler: [gfortran-12]
@@ -20,6 +20,9 @@ jobs:
             branch: gsl/develop
           - repo: ufs-community
             branch: v8.3.0
+	  - physics: hrrrv5
+	    repo: MPAS-Dev
+	    branch: v8.3.0
 
     # 
     defaults:
@@ -189,10 +192,15 @@ jobs:
       run: |
         echo "nml_suffix=.ncar" >> $GITHUB_ENV
 
-    - name: Set	nml suffix for NCAR tests
+    - name: Set	nml suffix for GSL tests
       if: contains(matrix.repo, 'ufs-community')
       run: |
         echo "nml_suffix=.gsl" >> $GITHUB_ENV
+
+    - name: No nml suffix for hrrrv5 tests
+      if: contains(matrix.repo, 'hrrrv5')
+      run: |
+        echo "nml_suffix=" >> $GITHUB_ENV
 
     - name: Display configuration
       run: |
