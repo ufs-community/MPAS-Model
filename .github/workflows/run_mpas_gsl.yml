@@ -364,6 +364,7 @@ jobs:
     - name: Link to correct namelist list
       if: env.nml_suffix_bl != ' '
       run: |
+        cd ${mpas_run_ROOT}/run_bl
         ln -sf namelist.atmosphere${{env.nml_suffix_bl}} namelist.atmosphere
 
     - name: Link lateral boundary condition file for regional MPAS.
@@ -414,6 +415,7 @@ jobs:
     - name: Link to correct namelist list
       if: env.nml_suffix_bl != ' '
       run: |
+        cd ${mpas_run_ROOT}/run_rt
         ln -sf namelist.atmosphere${{env.nml_suffix_bl}} namelist.atmosphere
 
     - name: Link lateral boundary condition file for regional MPAS.
