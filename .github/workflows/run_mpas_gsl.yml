@@ -27,7 +27,16 @@ on: [push, pull_request, workflow_dispatch]
 # <branch>  - Baseline codebase repository branch.
 #
 # Tests:
-# 1) MPAS-Dev, 
+#    Baseline Codebase Repository:Branch            Test name
+# 1)         MPAS-Dev:v8.3.0                    mesoscale_reference
+# 2)         MPAS-Dev:v8.3.0                    convection_permitting
+# 3)         MPAS-Dev:v8.3.0                    mesoscale_reference_noahmp
+# 4)         ufs-community:gsl/develop          mesoscale_reference
+# 5)  	     ufs-community:gsl/develop          convection_permitting
+# 6)  	     ufs-community:gsl/develop          mesoscale_reference_noahmp
+# 7)  	     ufs-community:gsl/develop          hrrrv5
+# 8)  	     ufs-community:gsl/develop          hrrrv5
+# 9)  	     ufs-community:gsl/develop          hrrrv5
 #
 #############################################################################################
 jobs:
@@ -228,7 +237,6 @@ jobs:
       if: contains(matrix.physics, 'hrrrv5')
       run: |
         echo "nml=gsl"                            >> $GITHUB_ENV
-        echo "nml_suffix_bl="                     >> $GITHUB_ENV
         echo "nml_suffix=gsl"                     >> $GITHUB_ENV
         echo "nml_version=gsl"                    >> $GITHUB_ENV
         echo "case_base=gsl-v8.3.0-1.8-intelmpi"  >> $GITHUB_ENV
@@ -249,7 +257,6 @@ jobs:
         echo ${{steps.set_vars.outputs.sst_file}}
         echo ${{steps.set_vars.outputs.ugwp_file}}
         echo ${nml}
-        echo ${nml_suffix_bl}
         echo ${nml_version}
         echo ${code_base}
         echo ${case_base}
@@ -360,6 +367,11 @@ jobs:
         ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.init_file}} mpas.init.nc
         ln -sf ${mpas_run_ROOT}/run_data/${domain}.${res}.graph.info.part.${nproc} graph.info.part.${nproc}
         ln -sf /home/runner/MPAS-Model-BL/atmosphere_model .
+
+    - name: Link to correct namelist file.
+      if: ${nml_suffix_bl} == ''
+      run: |
+        cd ${mpas_run_ROOT}/run_bl
         ln -sf namelist.atmosphere${nml_suffix_bl} namelist.atmosphere
 
     - name: Link lateral boundary condition file for regional MPAS.
@@ -406,7 +418,12 @@ jobs:
         ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.init_file}} mpas.init.nc
         ln -sf ${mpas_run_ROOT}/run_data/${domain}.${res}.graph.info.part.${nproc} graph.info.part.${nproc}
         ln -sf ${mpas_rt_ROOT}/MPAS-Model/atmosphere_model .
-        ln -sf namelist.atmosphere${nml_suffix} namelist.atmosphere
+
+    - name: Link to correct namelist file.
+      if: ${nml_suffix_bl} == ''
+      run: |
+      	cd ${mpas_run_ROOT}/run_bl
+      	ln -sf namelist.atmosphere${nml_suffix_bl} namelist.atmosphere
 
     - name: Link lateral boundary condition file for regional MPAS.
       if: env.domain == 'conus'
@@ -461,7 +478,7 @@ jobs:
     - name: Setup Miniconda
       uses: conda-incubator/setup-miniconda@v3.2.0
       with:
-        python-version: ${py-version}
+        python-version: ${{env.py-version}}
         auto-update-conda: true
         auto-activate-base: false
         environment-file: testing_and_setup/ufs-community/environment.yml
