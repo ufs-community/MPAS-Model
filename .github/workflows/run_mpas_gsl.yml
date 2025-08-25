@@ -360,6 +360,10 @@ jobs:
         ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.init_file}} mpas.init.nc
         ln -sf ${mpas_run_ROOT}/run_data/${domain}.${res}.graph.info.part.${nproc} graph.info.part.${nproc}
         ln -sf /home/runner/MPAS-Model-BL/atmosphere_model .
+
+    - name: Link to correct namelist list
+      if: ${nml_suffix_bl} != ''
+      run: |
         ln -sf namelist.atmosphere${nml_suffix_bl} namelist.atmosphere
 
     - name: Link lateral boundary condition file for regional MPAS.
@@ -406,6 +410,10 @@ jobs:
         ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.init_file}} mpas.init.nc
         ln -sf ${mpas_run_ROOT}/run_data/${domain}.${res}.graph.info.part.${nproc} graph.info.part.${nproc}
         ln -sf ${mpas_rt_ROOT}/MPAS-Model/atmosphere_model .
+
+    - name: Link to correct namelist list
+      if: ${nml_suffix_bl} != ''
+      run: |
         ln -sf namelist.atmosphere${nml_suffix_bl} namelist.atmosphere
 
     - name: Link lateral boundary condition file for regional MPAS.
