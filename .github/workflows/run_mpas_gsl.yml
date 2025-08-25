@@ -420,8 +420,8 @@ jobs:
     - name: Create GitHub artifact
       run: |
         cd ${runner_ROOT}
-        mkdir artifact-${{matrix.fortran-compiler}}-${{matrix.physics}}
-        cd artifact-${{matrix.fortran-compiler}}-${{matrix.physics}}
+        mkdir artifact-${{matrix.fortran-compiler}}-${{repo}}-${{matrix.physics}}
+        cd artifact-${{matrix.fortran-compiler}}-${{repo}}-${{matrix.physics}}
         mkdir data_bl && cd data_bl
         cp ${mpas_run_ROOT}/run_bl/log.atmosphere.*.out log.atmosphere.BL.out
         cp ${mpas_run_ROOT}/run_bl/history.*.nc .
@@ -435,5 +435,5 @@ jobs:
     - name: Upload log files as GitHub Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: mpas-baselines-${{matrix.fortran-compiler}}-${{matrix.physics}}
-        path: /home/runner/artifact-${{matrix.fortran-compiler}}-${{matrix.physics}}
+        name: mpas-baselines-${{matrix.fortran-compiler}}-${{repo}}-${{matrix.physics}}
+        path: /home/runner/artifact-${{matrix.fortran-compiler}}-${{repo}}-${{matrix.physics}}
