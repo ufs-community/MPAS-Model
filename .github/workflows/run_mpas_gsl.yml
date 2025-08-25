@@ -422,8 +422,8 @@ jobs:
     - name: Link to correct namelist file.
       if: ${{ vars.nml_suffix_bl != '' }}
       run: |
-      	cd ${mpas_run_ROOT}/run_bl
-      	ln -sf namelist.atmosphere${nml_suffix_bl} namelist.atmosphere
+        cd ${mpas_run_ROOT}/run_bl
+        ln -sf namelist.atmosphere${nml_suffix_bl} namelist.atmosphere
 
     - name: Link lateral boundary condition file for regional MPAS.
       if: env.domain == 'conus'
