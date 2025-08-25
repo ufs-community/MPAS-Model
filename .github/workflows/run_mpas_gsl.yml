@@ -70,9 +70,9 @@ jobs:
       PNETCDF: /home/runner/PnetCDF
       AUTOTOOLS: /home/runner/AUTOTOOLS
       OMPI: /home/runner/ompi-4.1.6
-      grid_dir:          thredds/catalog/retro/barlage/mpas_test_data/grid
-      case_dir:          retro/barlage/mpas_test_data/run_case_input/create_case_output
-      mpdata_dir:        retro/barlage/mpas_test_data/run_case_input/tables
+      grid_dir:          thredds/catalog/retro/mpas_ci/mpas_test_data/grid
+      case_dir:          retro/mpas_ci/mpas_test_data/run_case_input/create_case_output
+      mpdata_dir:        retro/mpas_ci/mpas_test_data/run_case_input/tables
       ic_source:         gfs
       domain:            conus
       res:               120km
@@ -211,7 +211,7 @@ jobs:
         echo "nml_suffix_bl=.ncar"                >> $GITHUB_ENV
         echo "nml_suffix=.ncar"                   >> $GITHUB_ENV
         echo "nml_version=ncar"                   >> $GITHUB_ENV
-        echo "case_base=ncar-v8.2.2-intelmpi"     >> $GITHUB_ENV
+        echo "case_base=ncar-v8.3.0-intelmpi"     >> $GITHUB_ENV
         echo "code_base=ncar"                     >> $GITHUB_ENV
 
     - name: Configuration for ufs-community (baseline) tests.
@@ -221,7 +221,7 @@ jobs:
         echo "nml_suffix_bl=.gsl"                 >> $GITHUB_ENV
         echo "nml_suffix=.gsl"	      	          >> $GITHUB_ENV
         echo "nml_version=ncar"                   >> $GITHUB_ENV
-        echo "case_base=gsl-v8.2.2-2.11-intelmpi" >> $GITHUB_ENV
+        echo "case_base=gsl-v8.3.0-1.8-intelmpi"  >> $GITHUB_ENV
         echo "code_base=gsl" 	                  >> $GITHUB_ENV
 
     - name: Configuration for ufs-community (gsl/develop) tests.
@@ -231,7 +231,7 @@ jobs:
         echo "nml_suffix_bl="                     >> $GITHUB_ENV
         echo "nml_suffix=gsl"                     >> $GITHUB_ENV
         echo "nml_version=gsl"                    >> $GITHUB_ENV
-        echo "case_base=gsl-v8.2.2-2.11-intelmpi" >> $GITHUB_ENV
+        echo "case_base=gsl-v8.3.0-1.8-intelmpi"  >> $GITHUB_ENV
         echo "code_base=gsl"                      >> $GITHUB_ENV
 
     - name: Set test variables.
