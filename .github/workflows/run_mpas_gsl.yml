@@ -20,9 +20,9 @@ jobs:
             branch: gsl/develop
           - repo: ufs-community
             branch: v8.3.0
-	  - physics: hrrrv5
-	    repo: MPAS-Dev
-	    branch: v8.3.0
+          - physics: hrrrv5
+            repo: MPAS-Dev
+            branch: v8.3.0
 
     # 
     defaults:
