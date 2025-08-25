@@ -245,6 +245,7 @@ jobs:
         echo ${{steps.set_vars.outputs.lbc_file}}
         echo ${{steps.set_vars.outputs.sst_file}}
         echo ${{steps.set_vars.outputs.ugwp_file}}
+        echo ${nml_suffix_bl}
         echo ${nml}
         echo ${nml_version}
         echo ${code_base}
