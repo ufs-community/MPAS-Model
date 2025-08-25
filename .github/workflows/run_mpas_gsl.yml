@@ -362,7 +362,7 @@ jobs:
         ln -sf /home/runner/MPAS-Model-BL/atmosphere_model .
 
     - name: Link to correct namelist list
-      if: ${nml_suffix_bl} != ''
+      if: env.nml_suffix_bl != ''
       run: |
         ln -sf namelist.atmosphere${nml_suffix_bl} namelist.atmosphere
 
@@ -412,7 +412,7 @@ jobs:
         ln -sf ${mpas_rt_ROOT}/MPAS-Model/atmosphere_model .
 
     - name: Link to correct namelist list
-      if: ${nml_suffix_bl} != ''
+      if: env.nml_suffix_bl != ''
       run: |
         ln -sf namelist.atmosphere${nml_suffix_bl} namelist.atmosphere
 
