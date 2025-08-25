@@ -45,8 +45,6 @@ jobs:
       nml_version:       ncar
       case_base:         ncar-v8.2.2-intelmpi
       code_base:         ncar
-      repo:              MPAS-Dev
-      branch:            v8.3.0
       nml:               ncar
       ic_source:         gfs
       domain:            conus
@@ -186,6 +184,18 @@ jobs:
         echo "sst_file=mpas.${code_base}.${nml}.${domain}.${res}km.${ic_source}.sfc_update.${yyyy}'-'${mm}'-'${dd}'_'${hh}'.00.00'.nc" >> $GITHUB_OUTPUT
         echo "ugwp_file=mpas.${code_base}.${nml}.${domain}.${res}km.ugwp_oro_data.nc" >> $GITHUB_OUTPUT
 
+    - name: Set nml suffix for NCAR tests
+      if: contains(matrix.repo, 'MPAS-Dev')
+      id: set_config_vars
+      run: |
+        echo "nml_suffix=.ncar" >> $GITHUB_OUTPUT
+
+    - name: Set	nml suffix for NCAR tests
+      if: contains(matrix.repo, 'ufs-community')
+      id: set_config_vars
+      run: |
+        echo "nml_suffix=.gsl" >> $GITHUB_OUTPUT
+
     - name: Display configuration
       run: |
         echo ${{steps.set_vars.outputs.datestring}}
@@ -195,6 +205,7 @@ jobs:
         echo ${{steps.set_vars.outputs.lbc_file}}
         echo ${{steps.set_vars.outputs.sst_file}}
         echo ${{steps.set_vars.outputs.ugwp_file}}
+        echo ${{steps.set_config_vars.outputs.nml_suffix}}
 
 #    - name: Cache MPAS standalone needed to generate baselines
 #      id: cache-mpas-bl
@@ -207,7 +218,7 @@ jobs:
       #if: steps.cache-mpas-bl.outputs.cache-hit != 'true'
       run: |
         cd ${runner_ROOT}
-        git clone --recursive --branch ${branch} https://github.com/${repo}/MPAS-Model.git MPAS-Model-BL
+        git clone --recursive --branch ${{matrix.physics}} https://github.com/${{matrix.repo}}/MPAS-Model.git MPAS-Model-BL
         cd ${mpas_bl_ROOT}
         make gfortran CORE=atmosphere DEBUG=true
 
@@ -302,7 +313,7 @@ jobs:
         ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.init_file}} mpas.init.nc
         ln -sf ${mpas_run_ROOT}/run_data/${domain}.${res}km.graph.info.part.${nproc} graph.info.part.${nproc}
         ln -sf /home/runner/MPAS-Model-BL/atmosphere_model .
-        ln -sf namelist.atmosphere.ncar namelist.atmosphere
+        ln -sf namelist.atmosphere${{steps.set_config_vars.outputs.nml_suffix}} namelist.atmosphere
 
     - name: Link lateral boundary condition file for regional MPAS.
       if: env.domain == 'conus'
@@ -348,7 +359,7 @@ jobs:
         ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.init_file}} mpas.init.nc
         ln -sf ${mpas_run_ROOT}/run_data/${domain}.${res}km.graph.info.part.${nproc} graph.info.part.${nproc}
         ln -sf ${mpas_rt_ROOT}/MPAS-Model/atmosphere_model .
-        ln -sf namelist.atmosphere.gsl namelist.atmosphere
+        ln -sf namelist.atmosphere${{steps.set_config_vars.outputs.nml_suffix}} namelist.atmosphere
 
     - name: Link lateral boundary condition file for regional MPAS.
       if: env.domain == 'conus'
