@@ -2,10 +2,38 @@ name: Run MPAS Standalone (NOAA GSL tests)
 
 on: [push, pull_request, workflow_dispatch]
 
+#############################################################################################
+# Testing script/workflow for ufs-community fork of MPAS-Dev/MPAS-A.
+#
+# Description (outside of software stack setup)
+#
+# - Clone and build MPAS for baseline generation.
+# - Clone and build MPAS for feature branch testing (against baselines).
+# - Clone ufs-community MPAS testing repository.
+# - Fetch data from THREDDS server.
+# - Donwload any other data (e.g. MP tables, etc).
+# - Create/populate MPAS run directories.
+# - Run MPAS using baseline codebase/configuration.
+# - Run MPAS using feature branch.
+# - Compare results.
+# - Save output files to GitHub artifact (for comparision w/ inline/standaloen results)
+#
+# Comments:
+# - The test build/run configurations matrix is described below.
+# - This script uses a matrix run configuration with exclusions to achieve the desired "run list"
+#
+# <physics> - List of physics configuration to test. See https://github.com/barlage/mpas_testcase.git
+# <repo>    - Baseline codebase repository.
+# <branch>  - Baseline codebase repository branch.
+#
+# Tests:
+# 1) MPAS-Dev, v8.3.0
+#
+#############################################################################################
 jobs:
-  run_mpas_gsl:
-
-    # The type of runner that the job will run on
+  run_mpas:
+   
+    # 
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false  # Disable fail-fast
@@ -70,7 +98,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: /home/runner/ompi-4.1.6
-        key: cache-openmpi-${fortran-compiler}-key
+        key: cache-openmpi-env.fortran-compiler-key
 
     - name: Install openmpi
       if: steps.cache-openmpi.outputs.cache-hit != 'true'
@@ -93,7 +121,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: /home/runner/AUTOTOOLS
-        key: cache-AUTOTOOLS-${fortran-compiler}-key
+        key: cache-AUTOTOOLS-env.fortran-compiler-key
 
     - name: Build GNU autotools
       if: steps.cache-AUTOTOOLS.outputs.cache-hit != 'true'
@@ -138,7 +166,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: /home/runner/PnetCDF
-        key: cache-PnetCDF-${fortran-compiler}-key
+        key: cache-PnetCDF-env.fortran-compiler-key
 
     - name: Install PnetCDF
       if: steps.cache-PnetCDF.outputs.cache-hit != 'true'
@@ -231,7 +259,7 @@ jobs:
 #      uses: actions/cache@v4
 #      with:
 #        path: /home/runner/MPAS-Model-BL
-#        key: cache-mpas-bl-${fortran-compiler}-key
+#        key: cache-mpas-bl-env.fortran-compiler-key
 
     - name: Checkout and build MPAS standalone for baseline generation.
       #if: steps.cache-mpas-bl.outputs.cache-hit != 'true'
@@ -450,8 +478,8 @@ jobs:
     - name: Create GitHub artifact
       run: |
         cd ${runner_ROOT}
-        mkdir artifact-${fortran-compiler}-${{matrix.repo}}-${{matrix.physics}}
-        cd artifact-${fortran-compiler}-${{matrix.repo}}-${{matrix.physics}}
+        mkdir artifact-env.fortran-compiler-${{matrix.repo}}-${{matrix.physics}}
+        cd artifact-env.fortran-compiler-${{matrix.repo}}-${{matrix.physics}}
         mkdir data_bl && cd data_bl
         cp ${mpas_run_ROOT}/run_bl/log.atmosphere.*.out log.atmosphere.BL.out
         cp ${mpas_run_ROOT}/run_bl/history.*.nc .
@@ -465,5 +493,5 @@ jobs:
     - name: Upload log files as GitHub Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: mpas-baselines-${fortran-compiler}-${{matrix.repo}}-${{matrix.physics}}
-        path: /home/runner/artifact-${fortran-compiler}-${{matrix.repo}}-${{matrix.physics}}
+        name: mpas-baselines-env.fortran-compiler-${{matrix.repo}}-${{matrix.physics}}
+        path: /home/runner/artifact-env.fortran-compiler-${{matrix.repo}}-${{matrix.physics}}
