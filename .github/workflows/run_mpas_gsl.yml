@@ -215,7 +215,7 @@ jobs:
       #if: steps.cache-mpas-bl.outputs.cache-hit != 'true'
       run: |
         cd ${runner_ROOT}
-        git clone --recursive --branch ${{matrix.physics}} https://github.com/${{matrix.repo}}/MPAS-Model.git MPAS-Model-BL
+        git clone --recursive --branch ${{matrix.branch}} https://github.com/${{matrix.repo}}/MPAS-Model.git MPAS-Model-BL
         cd ${mpas_bl_ROOT}
         make gfortran CORE=atmosphere DEBUG=true
 
