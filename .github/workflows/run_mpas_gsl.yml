@@ -209,6 +209,7 @@ jobs:
       run: |
         echo "nml=ncar"                           >> $GITHUB_ENV
         echo "nml_suffix_bl=.ncar"                >> $GITHUB_ENV
+        echo "nml_suffix_rt=.gsl"                 >> $GITHUB_ENV
         echo "nml_version=ncar"                   >> $GITHUB_ENV
         echo "case_base=ncar-v8.3.0-intelmpi"     >> $GITHUB_ENV
         echo "code_base=ncar"                     >> $GITHUB_ENV
@@ -218,6 +219,7 @@ jobs:
       run: |
         echo "nml=gsl"	      	                  >> $GITHUB_ENV
         echo "nml_suffix_bl=.gsl"                 >> $GITHUB_ENV
+        echo "nml_suffix_rt=.gsl"                 >> $GITHUB_ENV
         echo "nml_version=ncar"                   >> $GITHUB_ENV
         echo "case_base=gsl-v8.3.0-1.8-intelmpi"  >> $GITHUB_ENV
         echo "code_base=gsl" 	                  >> $GITHUB_ENV
@@ -227,6 +229,7 @@ jobs:
       run: |
         echo "nml=gsl"                            >> $GITHUB_ENV
         echo "nml_suffix_bl= "                    >> $GITHUB_ENV
+        echo "nml_suffix_rt= "                    >> $GITHUB_ENV
         echo "nml_version=gsl"                    >> $GITHUB_ENV
         echo "case_base=gsl-v8.3.0-1.8-intelmpi"  >> $GITHUB_ENV
         echo "code_base=gsl"                      >> $GITHUB_ENV
@@ -246,6 +249,7 @@ jobs:
         echo ${{steps.set_vars.outputs.sst_file}}
         echo ${{steps.set_vars.outputs.ugwp_file}}
         echo ${nml_suffix_bl}
+        echo ${nml_suffix_rt}
         echo ${nml}
         echo ${nml_version}
         echo ${code_base}
@@ -413,10 +417,10 @@ jobs:
         ln -sf ${mpas_rt_ROOT}/MPAS-Model/atmosphere_model .
 
     - name: Link to correct namelist list
-      if: env.nml_suffix_bl != ' '
+      if: env.nml_suffix_rt != ' '
       run: |
         cd ${mpas_run_ROOT}/run_rt
-        ln -sf namelist.atmosphere${{env.nml_suffix_bl}} namelist.atmosphere
+        ln -sf namelist.atmosphere${{env.nml_suffix_rt}} namelist.atmosphere
 
     - name: Link lateral boundary condition file for regional MPAS.
       if: env.domain == 'conus'
