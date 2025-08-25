@@ -335,7 +335,7 @@ jobs:
         ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.sst_file}} mpas.sfc_update.nc
 
     - name: Link orography data to run directory
-      if: ${nml_version} == 'gsl'
+      if: nml_version == 'gsl'
       run: |
         cd ${mpas_run_ROOT}/run_bl
         ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.ugwp_file}} mpas.ugwp_oro_data.nc
@@ -381,7 +381,7 @@ jobs:
         ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.sst_file}} mpas.sfc_update.nc
 
     - name: Link orography data to run directory
-      if: ${nml_version} == 'gsl'
+      if: nml_version == 'gsl'
       run: |
         cd ${mpas_run_ROOT}/run_rt
         ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.ugwp_file}} mpas.ugwp_oro_data.nc
