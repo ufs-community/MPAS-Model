@@ -45,7 +45,6 @@ jobs:
       grid_dir:          thredds/catalog/retro/barlage/mpas_test_data/grid
       case_dir:          retro/barlage/mpas_test_data/run_case_input/create_case_output
       mpdata_dir:        retro/barlage/mpas_test_data/run_case_input/tables
-      nml_version:       ncar
       case_base:         ncar-v8.2.2-intelmpi
       code_base:         ncar
       nml:               ncar
@@ -191,16 +190,19 @@ jobs:
       if: contains(matrix.repo, 'MPAS-Dev')
       run: |
         echo "nml_suffix=.ncar" >> $GITHUB_ENV
+        echo "nml_version=ncar" >> $GITHUB_ENV
 
     - name: Set	nml suffix for GSL tests
       if: contains(matrix.repo, 'ufs-community')
       run: |
-        echo "nml_suffix=.gsl" >> $GITHUB_ENV
+        echo "nml_suffix=.gsl"  >> $GITHUB_ENV
+        echo "nml_version=ncar" >> $GITHUB_ENV
 
     - name: No nml suffix for hrrrv5 tests
       if: contains(matrix.repo, 'hrrrv5')
       run: |
         echo "nml_suffix=" >> $GITHUB_ENV
+        echo "nml_version=gsl" >> $GITHUB_ENV
 
     - name: Display configuration
       run: |
@@ -333,7 +335,7 @@ jobs:
         ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.sst_file}} mpas.sfc_update.nc
 
     - name: Link orography data to run directory
-      if: env.nml_version == 'gsl'
+      if: ${nml_version} == 'gsl'
       run: |
         cd ${mpas_run_ROOT}/run_bl
         ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.ugwp_file}} mpas.ugwp_oro_data.nc
@@ -379,7 +381,7 @@ jobs:
         ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.sst_file}} mpas.sfc_update.nc
 
     - name: Link orography data to run directory
-      if: env.nml_version == 'gsl'
+      if: ${nml_version} == 'gsl'
       run: |
         cd ${mpas_run_ROOT}/run_rt
         ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.ugwp_file}} mpas.ugwp_oro_data.nc
