@@ -82,6 +82,10 @@ jobs:
       mm:                "03"
       dd:                "10"
       hh:                "15"
+      nml:               ncar
+      case_base:         ncar-v8.3.0-intelmpi
+      code_base:         ncar
+      nml_version:       ncar
 
     # Workflow steps
     steps:
@@ -199,20 +203,20 @@ jobs:
     - name: Configuration for MPAS-Dev (baseline) tests.
       if: contains(matrix.repo, 'MPAS-Dev')
       run: |
-        echo "nml=ncar"                           >> $GITHUB_ENV
+#        echo "nml=ncar"                           >> $GITHUB_ENV
         echo "nml_suffix=ncar" 	                  >> $GITHUB_ENV
-        echo "nml_version=ncar"                   >> $GITHUB_ENV
-        echo "case_base=ncar-v8.3.0-intelmpi"     >> $GITHUB_ENV
-        echo "code_base=ncar"                     >> $GITHUB_ENV
+#        echo "nml_version=ncar"                   >> $GITHUB_ENV
+#        echo "case_base=ncar-v8.3.0-intelmpi"     >> $GITHUB_ENV
+#        echo "code_base=ncar"                     >> $GITHUB_ENV
 
     - name: Configuration for ufs-community (baseline) tests.
       if: contains(matrix.repo, 'ufs-community')
       run: |
-        echo "nml=ncar"	      	                  >> $GITHUB_ENV
+#        echo "nml=ncar"	      	                  >> $GITHUB_ENV
         echo "nml_suffix=gsl"                     >> $GITHUB_ENV
-        echo "nml_version=ncar"                   >> $GITHUB_ENV
-        echo "case_base=ncar-v8.3.0-intelmpi"     >> $GITHUB_ENV
-        echo "code_base=ncar" 	                  >> $GITHUB_ENV
+#        echo "nml_version=ncar"                   >> $GITHUB_ENV
+#        echo "case_base=ncar-v8.3.0-intelmpi"     >> $GITHUB_ENV
+#        echo "code_base=ncar" 	                  >> $GITHUB_ENV
 
     - name: Set test variables.
       id: set_vars
