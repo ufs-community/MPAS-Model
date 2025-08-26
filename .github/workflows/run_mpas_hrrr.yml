@@ -324,17 +324,22 @@ jobs:
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_noahmp/parameters/NoahmpTable.TBL .
         ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.init_file}} mpas.init.nc
         ln -sf ${mpas_run_ROOT}/run_data/${domain}.${res}.graph.info.part.${nproc} graph.info.part.${nproc}
-        ln -sf /home/runner/MPAS-Model-BL/atmosphere_model .
-        ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.sst_file}} mpas.sfc_update.nc
+        ln -sf ${mpas_bl_ROOT}/atmosphere_model atmosphere_model
         ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.ugwp_file}} mpas.ugwp_oro_data.nc
         ln -sf ${runner_ROOT}/tempo/* .
         ln -sf ${runner_ROOT}/ugw/ugwp_limb_tau.nc .
 
-    - name: Link lateral boundary condition file for regional MPAS.
+    - name: Link lateral boundary condition file for regional MPAS (baselines).
       if: env.domain == 'conus'
       run: |
         cd ${mpas_run_ROOT}/run_bl
         ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.lbc_file}} mpas.lbc.nc
+
+    - name: Link surface files to run directory (baselines)
+      if: ${{matrix.ic_source}} == 'gfs'
+      run: |
+        cd ${mpas_run_ROOT}/run_bl
+        ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.sst_file}} mpas.sfc_update.nc
 
     ##########################################################################################
     # Step 4b: Configure MPAS feature runs
@@ -349,17 +354,22 @@ jobs:
         ln -sf ${mpas_rt_ROOT}/MPAS-Model/src/core_atmosphere/physics/physics_noahmp/parameters/NoahmpTable.TBL .
         ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.init_file}} mpas.init.nc
         ln -sf ${mpas_run_ROOT}/run_data/${domain}.${res}.graph.info.part.${nproc} graph.info.part.${nproc}
-        ln -sf ${mpas_rt_ROOT}/MPAS-Model/atmosphere_model .
-        ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.sst_file}} mpas.sfc_update.nc
+        ln -sf ${mpas_rt_ROOT}/MPAS-Model/atmosphere_model atmosphere_model
         ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.ugwp_file}} mpas.ugwp_oro_data.nc
         ln -sf ${runner_ROOT}/tempo/* .
         ln -sf ${runner_ROOT}/ugw/ugwp_limb_tau.nc .
 
-    - name: Link lateral boundary condition file for regional MPAS.
+    - name: Link lateral boundary condition file for regional MPAS (feature)
       if: env.domain == 'conus'
       run: |
         cd ${mpas_run_ROOT}/run_rt
         ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.lbc_file}} mpas.lbc.nc
+
+    - name: Link surface files to run directory (feature)
+      if: ${{matrix.ic_source}} == 'gfs'
+      run: |
+        cd ${mpas_run_ROOT}/run_rt
+        ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.sst_file}} mpas.sfc_update.nc
 
     ##########################################################################################
     # Step 5: Run MPAS
