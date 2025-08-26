@@ -212,9 +212,9 @@ jobs:
     - name: Set test variables.
       id: set_vars
       run: |
-        echo "init_file=mpas.${code_base}.${nml}.${domain}.${res}.${{matrix.ic_source}}.init.${env.yyyy}'-'${env.mm}'-'${env.dd}'_'${env.hh}'.00.00'.nc" >> $GITHUB_OUTPUT
-        echo "lbc_file=mpas.${code_base}.${nml}.${domain}.${res}.${{matrix.ic_source}}.lbc.${env.yyyy}'-'${env.mm}'-'${env.dd}'_'${env.hh}'.00.00'.nc" >> $GITHUB_OUTPUT
-        echo "sst_file=mpas.${code_base}.${nml}.${domain}.${res}.${{matrix.ic_source}}.sfc_update.${env.yyyy}'-'${env.mm}'-'${env.dd}'_'${env.hh}'.00.00'.nc" >> $GITHUB_OUTPUT
+        echo "init_file=mpas.${code_base}.${nml}.${domain}.${res}.${{matrix.ic_source}}.init.${{env.yyyy}}'-'${{env.mm}}'-'${{env.dd}}'_'${{env.hh}}'.00.00'.nc" >> $GITHUB_OUTPUT
+        echo "lbc_file=mpas.${code_base}.${nml}.${domain}.${res}.${{matrix.ic_source}}.lbc.${{env.yyyy}}'-'${{env.mm}}'-'${{env.dd}}'_'${{env.hh}}'.00.00'.nc" >> $GITHUB_OUTPUT
+        echo "sst_file=mpas.${code_base}.${nml}.${domain}.${res}.${{matrix.ic_source}}.sfc_update.${{env.yyyy}}'-'${{env.mm}}'-'${{env.dd}}'_'${{env.hh}}'.00.00'.nc" >> $GITHUB_OUTPUT
         echo "ugwp_file=mpas.${code_base}.${nml}.${domain}.${res}.ugwp_oro_data.nc" >> $GITHUB_OUTPUT
 
     - name: Display configuration
