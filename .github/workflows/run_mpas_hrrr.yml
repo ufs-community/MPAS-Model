@@ -206,7 +206,7 @@ jobs:
       run: |
         echo "yyyy=2024" >> $GITHUB_ENV
         echo "mm=02"     >> $GITHUB_ENV
-        echo "dd=12"     >> $GITHUB_ENV
+        echo "dd=02"     >> $GITHUB_ENV
         echo "hh=18"     >> $GITHUB_ENV
  
     - name: Set test variables.
