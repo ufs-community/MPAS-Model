@@ -209,7 +209,7 @@ jobs:
     - name: Configuration for ufs-community (baseline) tests.
       if: contains(matrix.repo, 'ufs-community')
       run: |
-        echo "nml=ncar"	      	                  >> $GITHUB_ENV
+        echo "nml=gsl"	      	                  >> $GITHUB_ENV
         echo "nml_suffix_bl=.gsl"                 >> $GITHUB_ENV
         echo "nml_suffix_rt=.gsl"                 >> $GITHUB_ENV
         echo "nml_version=ncar"                   >> $GITHUB_ENV
