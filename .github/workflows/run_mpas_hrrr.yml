@@ -1,5 +1,5 @@
 name: Run MPAS Standalone (NOAA GSL HRRRv5 tests)
-1;95;0c
+
 on: [push, pull_request, workflow_dispatch]
 
 #############################################################################################
