@@ -74,10 +74,6 @@ jobs:
       domain:            conus
       res:               120km
       nproc:             2
-      yyyy:              "2023"
-      mm:                "03"
-      dd:                "10"
-      hh:                "15"
       nml:               ncar
       case_base:         ncar-v8.3.0-intelmpi
       code_base:         ncar
@@ -278,6 +274,22 @@ jobs:
         cd ${mpas_run_ROOT}
         git clone --recursive --branch main https://github.com/barlage/mpas_testcase.git
 
+    - name: Cache TEMPO MP tables
+      id: cache-tempo-data
+      uses: actions/cache@v4
+      with:
+        path: /home/runner/tempo
+        key: cache-tempo-data-key
+
+    - name: Download TEMPO MP tables
+      if: steps.cache-tempo-data.outputs.cache-hit != 'true'
+      run: |
+        cd ${runner_ROOT} && mkdir tempo && cd tempo
+        wget -q -e robots=off -nH --cut-dirs N -nc -r -lX -A '*' -R 'catalog*' -I /thredds/fileServer/,/thredds/catalog/ \
+        https://gsl.noaa.gov/thredds/catalog/${mpdata_dir}/tempo/catalog.html
+        mv thredds/fileServer/${mpdata_dir}/tempo/* .
+        rm -rf thredds
+
     - name: Cache UGWD data
       id: cache-ugw-data
       uses: actions/cache@v4
@@ -310,6 +322,8 @@ jobs:
         ln -sf /home/runner/MPAS-Model-BL/atmosphere_model .
         ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.sst_file}} mpas.sfc_update.nc
         ln -sf namelist.atmosphere.${{env.nml_suffix}} namelist.atmosphere
+        ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.ugwp_file}} mpas.ugwp_oro_data.nc
+        cp ${runner_ROOT}/tempo/* .
 
     - name: Link lateral boundary condition file for regional MPAS.
       if: env.domain == 'conus'
@@ -333,6 +347,8 @@ jobs:
         ln -sf ${mpas_rt_ROOT}/MPAS-Model/atmosphere_model .
         ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.sst_file}} mpas.sfc_update.nc
         ln -sf namelist.atmosphere.gsl namelist.atmosphere
+        ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.ugwp_file}} mpas.ugwp_oro_data.nc
+        cp ${runner_ROOT}/tempo/* .
 
     - name: Link lateral boundary condition file for regional MPAS.
       if: env.domain == 'conus'
