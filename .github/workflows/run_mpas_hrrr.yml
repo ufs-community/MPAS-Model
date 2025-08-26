@@ -1,5 +1,5 @@
 name: Run MPAS Standalone (NOAA GSL HRRRv5 tests)
-
+1;95;0c
 on: [push, pull_request, workflow_dispatch]
 
 #############################################################################################
@@ -27,10 +27,10 @@ on: [push, pull_request, workflow_dispatch]
 # <branch>  - Baseline codebase repository branch.
 #
 # Tests:
-#    Baseline Codebase Repository:Branch          Physics
-# 1)         ufs-community:gsl/develop            hrrrv5
-# 2)  	     ufs-community:gsl/develop            hrrrv5
-# 3)  	     ufs-community:gsl/develop            hrrrv5
+#        Baseline Codebase Repository:Branch  Physics   IC source   season   build-type
+# 1/4)   ufs-community:gsl/develop            hrrrv5    gfs         winter   Release/Debug
+# 2/5)   ufs-community:gsl/develop            hrrrv5    rap         summer   Release/Debug
+# 3/6)   ufs-community:gsl/develop            hrrrv5    rap         winter   Release/Debug
 #
 #############################################################################################
 jobs:
@@ -420,8 +420,8 @@ jobs:
     - name: Create GitHub artifact
       run: |
         cd ${runner_ROOT}
-        mkdir artifact-${{env.fortran-compiler}}-${{matrix.build-type}}-${{env.repo}}-${{env.physics}}
-        cd artifact-${{env.fortran-compiler}}-${{matrix.build-type}}-${{env.repo}}-${{env.physics}}
+        mkdir artifact-${{env.fortran-compiler}}-${{matrix.build-type}}-${{matrix.ic_source}}-${{matrix.season}}-${{env.physics}}
+        cd artifact-${{env.fortran-compiler}}-${{matrix.build-type}}-${{matrix.ic_source}}-${{matrix.season}}-${{env.physics}}
         mkdir data_bl && cd data_bl
         cp ${mpas_run_ROOT}/run_bl/log.atmosphere.*.out log.atmosphere.BL.out
         cp ${mpas_run_ROOT}/run_bl/history.*.nc .
@@ -435,5 +435,5 @@ jobs:
     - name: Upload log files as GitHub Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: mpas-baselines-${{env.fortran-compiler}}-${{matrix.build-type}}-${{env.repo}}-${{env.physics}}
-        path: /home/runner/artifact-${{env.fortran-compiler}}-${{matrix.build-type}}-${{env.repo}}-${{env.physics}}
+        name: mpas-baselines-${{env.fortran-compiler}}-${{matrix.build-type}}-${{matrix.ic_source}}-${{matrix.season}}-${{env.physics}}
+        path: /home/runner/artifact-${{env.fortran-compiler}}-${{matrix.build-type}}-${{matrix.ic_source}}-${{matrix.season}}-${{env.physics}}
