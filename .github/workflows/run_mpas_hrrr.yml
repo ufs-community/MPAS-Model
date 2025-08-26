@@ -74,9 +74,9 @@ jobs:
       domain:            conus
       res:               120km
       nproc:             2
-      nml:               ncar
-      case_base:         ncar-v8.3.0-intelmpi
-      code_base:         ncar
+      nml:               gsl
+      case_base:         gsl-v8.3.0-1.8-intelmpi
+      code_base:         gsl
       nml_version:       gsl
 
 
@@ -223,9 +223,6 @@ jobs:
         echo ${{steps.set_vars.outputs.lbc_file}}
         echo ${{steps.set_vars.outputs.sst_file}}
         echo ${{steps.set_vars.outputs.ugwp_file}}
-        echo ${nml}
-        echo ${code_base}
-        echo ${case_base}
 
      ##########################################################################################
      # Step 2: Clone MPAS and build.
@@ -321,7 +318,6 @@ jobs:
         ln -sf ${mpas_run_ROOT}/run_data/${domain}.${res}.graph.info.part.${nproc} graph.info.part.${nproc}
         ln -sf /home/runner/MPAS-Model-BL/atmosphere_model .
         ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.sst_file}} mpas.sfc_update.nc
-        ln -sf namelist.atmosphere.${{env.nml_suffix}} namelist.atmosphere
         ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.ugwp_file}} mpas.ugwp_oro_data.nc
         cp ${runner_ROOT}/tempo/* .
 
@@ -346,7 +342,6 @@ jobs:
         ln -sf ${mpas_run_ROOT}/run_data/${domain}.${res}.graph.info.part.${nproc} graph.info.part.${nproc}
         ln -sf ${mpas_rt_ROOT}/MPAS-Model/atmosphere_model .
         ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.sst_file}} mpas.sfc_update.nc
-        ln -sf namelist.atmosphere.gsl namelist.atmosphere
         ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.ugwp_file}} mpas.ugwp_oro_data.nc
         cp ${runner_ROOT}/tempo/* .
 
