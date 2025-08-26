@@ -1,4 +1,4 @@
-name: Run MPAS Standalone (NOAA GSL tests)
+name: Run MPAS Standalone (NOAA GSL HRRRv5 tests)
 
 on: [push, pull_request, workflow_dispatch]
 
@@ -197,7 +197,22 @@ jobs:
     ##########################################################################################
     # Step 1: Setup configuration for current test
     ##########################################################################################
+    - name: Set test start time (summer case).
+      if: contains(matrix.season, 'summer')
+      run: |
+        echo "yyyy=2024" >> $GITHUB_OUTPUT
+        echo "mm=08"     >> $GITHUB_OUTPUT
+        echo "dd=15"     >> $GITHUB_OUTPUT
+        echo "hh=18"     >> $GITHUB_OUTPUT
 
+    - name: Set test start time (winter case).
+      if: contains(matrix.season, 'winter')
+      run: |
+        echo "yyyy=2024" >> $GITHUB_OUTPUT
+        echo "mm=02"     >> $GITHUB_OUTPUT
+        echo "dd=12"     >> $GITHUB_OUTPUT
+        echo "hh=18"     >> $GITHUB_OUTPUT
+ 
     - name: Set test variables.
       id: set_vars
       run: |
