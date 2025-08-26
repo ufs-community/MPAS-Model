@@ -43,9 +43,10 @@ jobs:
     strategy:
       fail-fast: false  # Disable fail-fast
       matrix:
-        physics: [mesoscale_reference, convection_permitting, mesoscale_reference_noahmp]
-        repo:    [ufs-community, MPAS-Dev]
-        branch:  [gsl/develop, v8.3.0]
+        build-type: [Release, Debug]
+        physics:    [mesoscale_reference, convection_permitting, mesoscale_reference_noahmp]
+        repo:       [ufs-community, MPAS-Dev]
+        branch:     [gsl/develop, v8.3.0]
         exclude:
           - repo: MPAS-Dev
             branch: gsl/develop
@@ -232,20 +233,22 @@ jobs:
      ##########################################################################################
      # Step 2: Clone MPAS and build.
      ##########################################################################################
-#    - name: Cache MPAS standalone needed to generate baselines
-#      id: cache-mpas-bl
-#      uses: actions/cache@v4
-#      with:
-#        path: /home/runner/MPAS-Model-BL
-#        key: cache-mpas-bl-${{env.fortran-compiler}}-key
 
-    - name: Checkout and build MPAS standalone for baseline generation.
-      #if: steps.cache-mpas-bl.outputs.cache-hit != 'true'
+    - name: Checkout and build MPAS standalone for baseline generation (Debug)
+      if: contains(matrix.build-type, 'Debug')
       run: |
         cd ${runner_ROOT}
         git clone --recursive --branch ${{matrix.branch}} https://github.com/${{matrix.repo}}/MPAS-Model.git MPAS-Model-BL
         cd ${mpas_bl_ROOT}
         make gfortran CORE=atmosphere DEBUG=true
+
+    - name: Checkout and build MPAS standalone for baseline generation (Release)
+      if: contains(matrix.build-type, 'Release')
+      run: |
+        cd ${runner_ROOT}
+        git clone --recursive --branch ${{matrix.branch}} https://github.com/${{matrix.repo}}/MPAS-Model.git MPAS-Model-BL
+        cd ${mpas_bl_ROOT}
+        make gfortran CORE=atmosphere
 
     - name: Checkout MPAS codebase for testing.
       uses: actions/checkout@v3
@@ -254,10 +257,17 @@ jobs:
       run: |
         git submodule update --init --recursive
 
-    - name: Build MPAS standalone for testing
+    - name: Build MPAS standalone for testing (Debug)
+      if: contains(matrix.build-type, 'Debug')
       run: |
         cd ${mpas_rt_ROOT}/MPAS-Model
         make gfortran CORE=atmosphere DEBUG=true
+
+    - name: Build MPAS standalone for testing (Release)
+      if: contains(matrix.build-type, 'Release')
+      run: |
+        cd ${mpas_rt_ROOT}/MPAS-Model
+        make gfortran CORE=atmosphere
 
     ##########################################################################################
     # Step 3: Fetch any data/files needed for MPAS runs.
@@ -406,8 +416,8 @@ jobs:
     - name: Create GitHub artifact
       run: |
         cd ${runner_ROOT}
-        mkdir artifact-${{env.fortran-compiler}}-${{matrix.repo}}-${{matrix.physics}}
-        cd artifact-${{env.fortran-compiler}}-${{matrix.repo}}-${{matrix.physics}}
+        mkdir artifact-${{env.fortran-compiler}}-${{matrix.build-type}}-${{matrix.repo}}-${{matrix.physics}}
+        cd artifact-${{env.fortran-compiler}}-${{matrix.build-type}}-${{matrix.repo}}-${{matrix.physics}}
         mkdir data_bl && cd data_bl
         cp ${mpas_run_ROOT}/run_bl/log.atmosphere.*.out log.atmosphere.BL.out
         cp ${mpas_run_ROOT}/run_bl/history.*.nc .
@@ -421,5 +431,5 @@ jobs:
     - name: Upload log files as GitHub Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: mpas-baselines-${{env.fortran-compiler}}-${{matrix.repo}}-${{matrix.physics}}
-        path: /home/runner/artifact-${{env.fortran-compiler}}-${{matrix.repo}}-${{matrix.physics}}
+        name: mpas-baselines-${{env.fortran-compiler}}-${{matrix.build-type}}-${{matrix.repo}}-${{matrix.physics}}
+        path: /home/runner/artifact-${{env.fortran-compiler}}-${{matrix.build-type}}-${{matrix.repo}}-${{matrix.physics}}
