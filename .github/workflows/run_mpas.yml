@@ -34,9 +34,6 @@ on: [push, pull_request, workflow_dispatch]
 # 4)         ufs-community:gsl/develop          mesoscale_reference
 # 5)  	     ufs-community:gsl/develop          convection_permitting
 # 6)  	     ufs-community:gsl/develop          mesoscale_reference_noahmp
-# 7)  	     ufs-community:gsl/develop          hrrrv5
-# 8)  	     ufs-community:gsl/develop          hrrrv5
-# 9)  	     ufs-community:gsl/develop          hrrrv5
 #
 #############################################################################################
 jobs:
@@ -47,16 +44,13 @@ jobs:
     strategy:
       fail-fast: false  # Disable fail-fast
       matrix:
-        physics: [mesoscale_reference, convection_permitting, mesoscale_reference_noahmp, hrrrv5, hrrrv5, hrrrv5]
+        physics: [mesoscale_reference, convection_permitting, mesoscale_reference_noahmp]
         repo:    [ufs-community, MPAS-Dev]
         branch:  [gsl/develop, v8.3.0]
         exclude:
           - repo: MPAS-Dev
             branch: gsl/develop
           - repo: ufs-community
-            branch: v8.3.0
-          - physics: hrrrv5
-            repo: MPAS-Dev
             branch: v8.3.0
 
     # 
@@ -224,16 +218,6 @@ jobs:
         echo "case_base=gsl-v8.3.0-1.8-intelmpi"  >> $GITHUB_ENV
         echo "code_base=gsl" 	                  >> $GITHUB_ENV
 
-    - name: Configuration for ufs-community (gsl/develop) tests.
-      if: contains(matrix.physics, 'hrrrv5')
-      run: |
-        echo "nml=gsl"                            >> $GITHUB_ENV
-        echo "nml_suffix_bl= "                    >> $GITHUB_ENV
-        echo "nml_suffix_rt= "                    >> $GITHUB_ENV
-        echo "nml_version=gsl"                    >> $GITHUB_ENV
-        echo "case_base=gsl-v8.3.0-1.8-intelmpi"  >> $GITHUB_ENV
-        echo "code_base=gsl"                      >> $GITHUB_ENV
-
     - name: Set test variables.
       id: set_vars
       run: |
@@ -389,12 +373,6 @@ jobs:
         cd ${mpas_run_ROOT}/run_bl
         ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.ugwp_file}} mpas.ugwp_oro_data.nc
 
-    - name: Link TEMPO MP data tables to run directory
-      if: contains(matrix.physics, 'hrrrv5')
-      run: |
-        cd ${mpas_run_ROOT}/run_bl
-        cp ${runner_ROOT}/tempo/* .
-
     - name: Link Thompson MP data tables to run directory
       if: contains(matrix.physics, 'convection_permitting')
       run: |
@@ -439,12 +417,6 @@ jobs:
       run: |
         cd ${mpas_run_ROOT}/run_rt
         ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.ugwp_file}} mpas.ugwp_oro_data.nc
-
-    - name: Link TEMPO MP data tables to run directory
-      if: contains(matrix.physics, 'hrrrv5')
-      run: |
-        cd ${mpas_run_ROOT}/run_rt
-        cp ${runner_ROOT}/tempo/* .
 
     - name: Link Thompson MP data tables to run directory
       if: contains(matrix.physics, 'convection_permitting')
