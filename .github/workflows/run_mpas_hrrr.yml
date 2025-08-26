@@ -193,16 +193,24 @@ jobs:
     ##########################################################################################
     # Step 1: Setup configuration for current test
     ##########################################################################################
-    - name: Set test start time (summer case).
-      if: contains(matrix.season, 'summer')
+    - name: Set tests start time (GFS case)
+      if: contains(matrix.ic_source, 'gfs')
+      run: |
+        echo "yyyy=2023" >> $GITHUB_ENV
+        echo "mm=03"     >> $GITHUB_ENV
+        echo "dd=10"     >> $GITHUB_ENV
+        echo "hh=15"     >> $GITHUB_ENV
+
+    - name: Set test start time (RAP summer case).
+      if: contains(matrix.season, 'summer') && contains(matrix.ic_source, 'rap')
       run: |
         echo "yyyy=2024" >> $GITHUB_ENV
         echo "mm=08"     >> $GITHUB_ENV
         echo "dd=15"     >> $GITHUB_ENV
         echo "hh=18"     >> $GITHUB_ENV
 
-    - name: Set test start time (winter case).
-      if: contains(matrix.season, 'winter')
+    - name: Set test start time (RAP winter case).
+      if: contains(matrix.season, 'winter') && contains(matrix.ic_source, 'rap')
       run: |
         echo "yyyy=2024" >> $GITHUB_ENV
         echo "mm=02"     >> $GITHUB_ENV
@@ -319,7 +327,8 @@ jobs:
         ln -sf /home/runner/MPAS-Model-BL/atmosphere_model .
         ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.sst_file}} mpas.sfc_update.nc
         ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.ugwp_file}} mpas.ugwp_oro_data.nc
-        cp ${runner_ROOT}/tempo/* .
+        ln -sf ${runner_ROOT}/tempo/* .
+        ln -sf ${runner_ROOT}/ugw/ugwp_limb_tau.nc .
 
     - name: Link lateral boundary condition file for regional MPAS.
       if: env.domain == 'conus'
@@ -343,7 +352,8 @@ jobs:
         ln -sf ${mpas_rt_ROOT}/MPAS-Model/atmosphere_model .
         ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.sst_file}} mpas.sfc_update.nc
         ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.ugwp_file}} mpas.ugwp_oro_data.nc
-        cp ${runner_ROOT}/tempo/* .
+        ln -sf ${runner_ROOT}/tempo/* .
+        ln -sf ${runner_ROOT}/ugw/ugwp_limb_tau.nc .
 
     - name: Link lateral boundary condition file for regional MPAS.
       if: env.domain == 'conus'
