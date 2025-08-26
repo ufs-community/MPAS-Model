@@ -27,7 +27,7 @@ on: [push, pull_request, workflow_dispatch]
 # <branch>  - Baseline codebase repository branch.
 #
 # Tests:
-#    Baseline Codebase Repository:Branch            Test name
+#    Baseline Codebase Repository:Branch            Physics
 # 1)         MPAS-Dev:v8.3.0                    mesoscale_reference
 # 2)         MPAS-Dev:v8.3.0                    convection_permitting
 # 3)         MPAS-Dev:v8.3.0                    mesoscale_reference_noahmp
@@ -203,7 +203,7 @@ jobs:
       run: |
         echo "nml=ncar"                           >> $GITHUB_ENV
         echo "nml_suffix_bl=.ncar"                >> $GITHUB_ENV
-        echo "nml_suffix_rt=.gsl"                 >> $GITHUB_ENV
+        echo "nml_suffix_rt=.ncar"                >> $GITHUB_ENV
         echo "nml_version=ncar"                   >> $GITHUB_ENV
         echo "case_base=ncar-v8.3.0-intelmpi"     >> $GITHUB_ENV
         echo "code_base=ncar"                     >> $GITHUB_ENV
@@ -212,7 +212,7 @@ jobs:
       if: contains(matrix.repo, 'ufs-community')
       run: |
         echo "nml=gsl"	      	                  >> $GITHUB_ENV
-        echo "nml_suffix_bl=.gsl"                 >> $GITHUB_ENV
+        echo "nml_suffix_bl=.ncar"                >> $GITHUB_ENV
         echo "nml_suffix_rt=.gsl"                 >> $GITHUB_ENV
         echo "nml_version=ncar"                   >> $GITHUB_ENV
         echo "case_base=gsl-v8.3.0-1.8-intelmpi"  >> $GITHUB_ENV
@@ -348,11 +348,7 @@ jobs:
         ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.init_file}} mpas.init.nc
         ln -sf ${mpas_run_ROOT}/run_data/${domain}.${res}.graph.info.part.${nproc} graph.info.part.${nproc}
         ln -sf /home/runner/MPAS-Model-BL/atmosphere_model .
-
-    - name: Link to correct namelist list
-      if: env.nml_suffix_bl != ' '
-      run: |
-        cd ${mpas_run_ROOT}/run_bl
+        ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.sst_file}} mpas.sfc_update.nc
         ln -sf namelist.atmosphere${{env.nml_suffix_bl}} namelist.atmosphere
 
     - name: Link lateral boundary condition file for regional MPAS.
@@ -360,12 +356,6 @@ jobs:
       run: |
         cd ${mpas_run_ROOT}/run_bl
         ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.lbc_file}} mpas.lbc.nc
-
-    - name: Link surface files to run directory
-      if: env.ic_source == 'gfs'
-      run: |
-        cd ${mpas_run_ROOT}/run_bl
-        ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.sst_file}} mpas.sfc_update.nc
 
     - name: Link orography data to run directory
       if: env.nml_version == 'gsl'
@@ -393,11 +383,7 @@ jobs:
         ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.init_file}} mpas.init.nc
         ln -sf ${mpas_run_ROOT}/run_data/${domain}.${res}.graph.info.part.${nproc} graph.info.part.${nproc}
         ln -sf ${mpas_rt_ROOT}/MPAS-Model/atmosphere_model .
-
-    - name: Link to correct namelist list
-      if: env.nml_suffix_rt != ' '
-      run: |
-        cd ${mpas_run_ROOT}/run_rt
+        ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.sst_file}} mpas.sfc_update.nc
         ln -sf namelist.atmosphere${{env.nml_suffix_rt}} namelist.atmosphere
 
     - name: Link lateral boundary condition file for regional MPAS.
@@ -405,12 +391,6 @@ jobs:
       run: |
         cd ${mpas_run_ROOT}/run_rt
         ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.lbc_file}} mpas.lbc.nc
-
-    - name: Link surface files to run directory
-      if: env.ic_source == 'gfs'
-      run: |
-        cd ${mpas_run_ROOT}/run_rt
-        ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.sst_file}} mpas.sfc_update.nc
 
     - name: Link orography data to run directory
       if: env.nml_version == 'gsl'
