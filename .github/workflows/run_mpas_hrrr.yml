@@ -196,25 +196,25 @@ jobs:
     - name: Set test start time (summer case).
       if: contains(matrix.season, 'summer')
       run: |
-        echo "yyyy=2024" >> $GITHUB_OUTPUT
-        echo "mm=08"     >> $GITHUB_OUTPUT
-        echo "dd=15"     >> $GITHUB_OUTPUT
-        echo "hh=18"     >> $GITHUB_OUTPUT
+        echo "yyyy=2024" >> $GITHUB_ENV
+        echo "mm=08"     >> $GITHUB_ENV
+        echo "dd=15"     >> $GITHUB_ENV
+        echo "hh=18"     >> $GITHUB_ENV
 
     - name: Set test start time (winter case).
       if: contains(matrix.season, 'winter')
       run: |
-        echo "yyyy=2024" >> $GITHUB_OUTPUT
-        echo "mm=02"     >> $GITHUB_OUTPUT
-        echo "dd=12"     >> $GITHUB_OUTPUT
-        echo "hh=18"     >> $GITHUB_OUTPUT
+        echo "yyyy=2024" >> $GITHUB_ENV
+        echo "mm=02"     >> $GITHUB_ENV
+        echo "dd=12"     >> $GITHUB_ENV
+        echo "hh=18"     >> $GITHUB_ENV
  
     - name: Set test variables.
       id: set_vars
       run: |
-        echo "init_file=mpas.${code_base}.${nml}.${domain}.${res}.${{matrix.ic_source}}.init.${{env.yyyy}}'-'${{env.mm}}'-'${{env.dd}}'_'${{env.hh}}'.00.00'.nc" >> $GITHUB_OUTPUT
-        echo "lbc_file=mpas.${code_base}.${nml}.${domain}.${res}.${{matrix.ic_source}}.lbc.${{env.yyyy}}'-'${{env.mm}}'-'${{env.dd}}'_'${{env.hh}}'.00.00'.nc" >> $GITHUB_OUTPUT
-        echo "sst_file=mpas.${code_base}.${nml}.${domain}.${res}.${{matrix.ic_source}}.sfc_update.${{env.yyyy}}'-'${{env.mm}}'-'${{env.dd}}'_'${{env.hh}}'.00.00'.nc" >> $GITHUB_OUTPUT
+        echo "init_file=mpas.${code_base}.${nml}.${domain}.${res}.${{matrix.ic_source}}.init.${yyyy}'-'${mm}'-'${dd}'_'${hh}'.00.00'.nc" >> $GITHUB_OUTPUT
+        echo "lbc_file=mpas.${code_base}.${nml}.${domain}.${res}.${{matrix.ic_source}}.lbc.${yyyy}'-'${mm}'-'${dd}'_'${hh}'.00.00'.nc" >> $GITHUB_OUTPUT
+        echo "sst_file=mpas.${code_base}.${nml}.${domain}.${res}.${{matrix.ic_source}}.sfc_update.${yyyy}'-'${mm}'-'${dd}'_'${hh}'.00.00'.nc" >> $GITHUB_OUTPUT
         echo "ugwp_file=mpas.${code_base}.${nml}.${domain}.${res}.ugwp_oro_data.nc" >> $GITHUB_OUTPUT
 
     - name: Display configuration
@@ -265,8 +265,8 @@ jobs:
         cd ${mpas_run_ROOT} && mkdir run_data && cd run_data
         wget -q https://gsl.noaa.gov/${grid_dir}/${domain}.${res}.graph.info.part.${nproc}
         wget -q -e robots=off -nH --cut-dirs N -nc -r -lX -A '*' -R 'catalog*' -I /thredds/fileServer/,/thredds/catalog/ \
-        https://gsl.noaa.gov/thredds/catalog/${case_dir}/${case_base}/${nml}.${code_base}.${domain}.${res}.${{matrix.ic_source}}.${env.yyyy}${env.mm}${env.dd}${env.hh}/case_files/catalog.html
-        mv thredds/fileServer/${case_dir}/${case_base}/${nml}.${code_base}.${domain}.${res}.${{matrix.ic_source}}.${env.yyyy}${env.mm}${env.dd}${env.hh}/case_files/* .
+        https://gsl.noaa.gov/thredds/catalog/${case_dir}/${case_base}/${nml}.${code_base}.${domain}.${res}.${{matrix.ic_source}}.${yyyy}${mm}${dd}${hh}/case_files/catalog.html
+        mv thredds/fileServer/${case_dir}/${case_base}/${nml}.${code_base}.${domain}.${res}.${{matrix.ic_source}}.${yyyy}${mm}${dd}${hh}/case_files/* .
         rm -rf thredds
 
     - name: Download MPAS testing repository with runtime configurations.
@@ -312,7 +312,7 @@ jobs:
     - name: Create and populate run directory (baselines)
       run: |
         cd ${mpas_run_ROOT} && mkdir run_bl && cd run_bl
-        cp ${mpas_run_ROOT}/mpas_testcase/run_case/case_files/${nml_version}/${domain}/${{matrix.ic_source}}.${env.yyyy}${env.mm}${env.dd}${env.hh}/${{env.physics}}/* .
+        cp ${mpas_run_ROOT}/mpas_testcase/run_case/case_files/${nml_version}/${domain}/${{matrix.ic_source}}.${yyyy}${mm}${dd}${hh}/${{env.physics}}/* .
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.TBL .
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.DBL .
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*DATA .
@@ -337,7 +337,7 @@ jobs:
     - name: Create and populate run directory (feature test)
       run: |
         cd ${mpas_run_ROOT} && mkdir run_rt && cd run_rt
-        cp ${mpas_run_ROOT}/mpas_testcase/run_case/case_files/${nml_version}/${domain}/${{matrix.ic_source}}.${env.yyyy}${env.mm}${env.dd}${env.hh}/${{env.physics}}/* .
+        cp ${mpas_run_ROOT}/mpas_testcase/run_case/case_files/${nml_version}/${domain}/${{matrix.ic_source}}.${yyyy}${mm}${dd}${hh}/${{env.physics}}/* .
         ln -sf ${mpas_rt_ROOT}/MPAS-Model/src/core_atmosphere/physics/physics_wrf/files/*.TBL .
         ln -sf ${mpas_rt_ROOT}/MPAS-Model/src/core_atmosphere/physics/physics_wrf/files/*.DBL .
         ln -sf ${mpas_rt_ROOT}/MPAS-Model/src/core_atmosphere/physics/physics_wrf/files/*DATA .
