@@ -40,9 +40,9 @@ jobs:
     strategy:
       fail-fast: false  # Disable fail-fast
       matrix:
-        build-type: [Release, Debug]
         ic_source:  [gfs, rap]
         season:     [summer, winter]
+        build-type: [Release, Debug]
         exclude:
           - ic_source: gfs
             season: summer

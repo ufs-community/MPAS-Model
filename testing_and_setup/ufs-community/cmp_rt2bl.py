@@ -106,10 +106,13 @@ def main():
     else:
         print("ALL TESTS PASSED, BUT OUTPUT DIFFERS FROM BASELINE.")
     # end if
+    return error_count
 # end def
 
 ##############################################################################
 #
 ##############################################################################
 if __name__ == '__main__':
-    main()
+    error_count = main()
+    print(error_count)
+# end main
