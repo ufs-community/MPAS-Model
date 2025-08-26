@@ -37,8 +37,7 @@ on: [push, pull_request, workflow_dispatch]
 #
 #############################################################################################
 jobs:
-  run_mpas:
-   
+  run_mpas:   
     # 
     runs-on: ubuntu-22.04
     strategy:
@@ -52,7 +51,6 @@ jobs:
             branch: gsl/develop
           - repo: ufs-community
             branch: v8.3.0
-
     # 
     defaults:
       run:
@@ -60,19 +58,19 @@ jobs:
 
     # Environmental variables
     env:
-      fortran-compiler: gfortran-12
-      py-version:       3.11
-      runner_ROOT:   /home/runner
-      mpas_rt_ROOT:  /home/runner/work/MPAS-Model
-      mpas_bl_ROOT:  /home/runner/MPAS-Model-BL
-      mpas_run_ROOT: /home/runner/work
-      AUTOCONF_VERSION: 2.71
-      AUTOMAKE_VERSION: 1.17
-      M4_VERSION: 1.4.19
-      LIBTOOL_VERSION: 2.5.4
-      PNETCDF: /home/runner/PnetCDF
-      AUTOTOOLS: /home/runner/AUTOTOOLS
-      OMPI: /home/runner/ompi-4.1.6
+      fortran-compiler:  gfortran-12
+      py-version:        3.11
+      runner_ROOT:       /home/runner
+      mpas_rt_ROOT:      /home/runner/work/MPAS-Model
+      mpas_bl_ROOT:      /home/runner/MPAS-Model-BL
+      mpas_run_ROOT:     /home/runner/work
+      AUTOCONF_VERSION:  2.71
+      AUTOMAKE_VERSION:  1.17
+      M4_VERSION:        1.4.19
+      LIBTOOL_VERSION:   2.5.4
+      PNETCDF:           /home/runner/PnetCDF
+      AUTOTOOLS:         /home/runner/AUTOTOOLS
+      OMPI:              /home/runner/ompi-4.1.6
       grid_dir:          thredds/catalog/retro/mpas_ci/mpas_test_data/grid
       case_dir:          retro/mpas_ci/mpas_test_data/run_case_input/create_case_output
       mpdata_dir:        retro/mpas_ci/mpas_test_data/run_case_input/tables
@@ -211,8 +209,8 @@ jobs:
     - name: Configuration for ufs-community (baseline) tests.
       if: contains(matrix.repo, 'ufs-community')
       run: |
-        echo "nml=gsl"	      	                  >> $GITHUB_ENV
-        echo "nml_suffix_bl=.ncar"                >> $GITHUB_ENV
+        echo "nml=ncar"	      	                  >> $GITHUB_ENV
+        echo "nml_suffix_bl=.gsl"                 >> $GITHUB_ENV
         echo "nml_suffix_rt=.gsl"                 >> $GITHUB_ENV
         echo "nml_version=ncar"                   >> $GITHUB_ENV
         echo "case_base=gsl-v8.3.0-1.8-intelmpi"  >> $GITHUB_ENV
