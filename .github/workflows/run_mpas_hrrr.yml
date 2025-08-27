@@ -189,8 +189,8 @@ jobs:
     - name: Add (PNETCDF) to paths.
       run: |
         echo "PNETCDF=${PNETCDF}" >> $GITHUB_ENV
-        echo "LD_LIBRARY_PATH=${PNETCDF}/bin:$LD_LIBRARY_PATH" >> $GITHUB_ENV
-        echo "PATH=${PNETCDF}/bin:$PATH" >> $GITHUB_ENV
+        echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${PNETCDF}/lib" >> $GITHUB_ENV
+        echo "PATH=$PATH:${PNETCDF}/bin" >> $GITHUB_ENV
 
     ##########################################################################################
     # Step 1: Setup configuration for current test
