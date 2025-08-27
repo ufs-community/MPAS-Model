@@ -184,6 +184,7 @@ jobs:
         autoreconf -i
         ./configure --prefix=${PNETCDF} --with-mpi=${OMPI}
         make -j 8 install
+        echo "PATH=${PNETCDF}/bin:$PATH" >> $GITHUB_ENV
 
     - name: Add (PNETCDF) to paths.
       run: |
