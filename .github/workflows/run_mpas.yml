@@ -119,8 +119,8 @@ jobs:
 
     - name: Add (OMPI) to Paths
       run: |
-        echo "LD_LIBRARY_PATH=${OMPI}/lib" >> $GITHUB_ENV
-        echo "PATH=$PATH:${OMPI}/bin" >> $GITHUB_ENV
+        echo "LD_LIBRARY_PATH=${OMPI}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+        echo "PATH=${OMPI}/bin:$PATH" >> $GITHUB_ENV
 
     - name: Cache GNU autotools
       id: cache-AUTOTOOLS
@@ -159,13 +159,13 @@ jobs:
         ./configure --prefix=${AUTOTOOLS} --silent
         make -s -j 8 install > qout 2>&1
         make -s -j 8 distclean >> qout 2>&1
-        echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${AUTOTOOLS}/lib" >> $GITHUB_ENV
-        echo "PATH=$PATH:${AUTOTOOLS}/bin" >> $GITHUB_ENV
+        echo "LD_LIBRARY_PATH=${AUTOTOOLS}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+        echo "PATH=${AUTOTOOLS}/bin:$PATH" >> $GITHUB_ENV
 
     - name: Add (autotools) to Paths
       run: |
-        echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${AUTOTOOLS}/lib" >> $GITHUB_ENV
-        echo "PATH=$PATH:${AUTOTOOLS}/bin" >> $GITHUB_ENV
+        echo "LD_LIBRARY_PATH=${AUTOTOOLS}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+        echo "PATH=${AUTOTOOLS}/bin:$PATH" >> $GITHUB_ENV
 
     - name: Cache PnetCDF
       id: cache-pnetcdf
@@ -195,8 +195,8 @@ jobs:
     - name: Add (PNETCDF) to paths.
       run: |
         echo "PNETCDF=${PNETCDF}" >> $GITHUB_ENV
-        echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${PNETCDF}/lib" >> $GITHUB_ENV
-        echo "PATH=$PATH:${PNETCDF}/bin" >> $GITHUB_ENV
+        echo "LD_LIBRARY_PATH=${PNETCDF}/bin:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+        echo "PATH=${PNETCDF}/bin:$PATH" >> $GITHUB_ENV
 
     ##########################################################################################
     # Step 1: Setup configuration for current test
@@ -406,6 +406,7 @@ jobs:
         activate-environment: mpas-ci-env
 
     - name: Run comparison script
+      id: cmp
       run: |
         cd ${mpas_rt_ROOT}/MPAS-Model/testing_and_setup/ufs-community
         ./cmp_rt2bl.py --dir_rt ${mpas_run_ROOT}/run_rt --dir_bl ${mpas_run_ROOT}/run_bl
