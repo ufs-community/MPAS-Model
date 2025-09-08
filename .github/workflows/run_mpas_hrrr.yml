@@ -46,7 +46,6 @@ jobs:
         exclude:
           - ic_source: gfs
             season: summer
-        exclude:
           - ic_source: rap
             season: winter
             build-type: Debug
