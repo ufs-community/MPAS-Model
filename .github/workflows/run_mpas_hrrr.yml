@@ -42,13 +42,10 @@ jobs:
       matrix:
         ic_source:  [gfs, rap]
         season:     [summer, winter]
-        build-type: [Release, Debug]
+        build-type: [Release]
         exclude:
           - ic_source: gfs
             season: summer
-          - ic_source: rap
-            season: winter
-            build-type: Debug
     # 
     defaults:
       run:
