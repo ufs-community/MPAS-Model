@@ -158,6 +158,13 @@
 
  integer,public:: num_months          !number of months                                         [-]
 
+ integer,public:: num_chem             !Temporary workaround for defining dimensions holding chem data
+ integer,public:: kanthro,kbiogenic,kwildfire,kvolcanic!Number of vertical levels in input emission data
+ logical:: do_chemistry                !controls call to smoke, dust and other chemical processes
+
+ integer,public:: num_e_ant_in,num_e_bb_in,num_e_bio_in,num_e_vol_in
+ integer,public:: num_e_ant_out,num_e_bb_out,num_e_bio_out,num_e_dust_out,num_e_ss_out,num_e_vol_out
+
  real(kind=RKIND),public:: dt_dyn     !time-step for dynamics
  real(kind=RKIND),public:: dt_microp  !time-step for cloud microphysics parameterization.
  real(kind=RKIND),public:: dt_radtlw  !time-step for longwave radiation parameterization      [mns]
@@ -212,6 +219,7 @@
     nr_p,             &!
     ns_p, ng_p, nh_p, nccn_p, &
     volg_p, volh_p,   &!
+    zgrid_p,          &!
     nwfa_p,           &!
     nifa_p,             zrw_p, zgw_p, zhw_p
 
@@ -219,6 +227,79 @@
     muc_p,            &!
     ntc_p,            &!
     nifa2d_p
+
+! Array to hold just chemistry from scalars - JLS
+ real(kind=RKIND),dimension(:,:,:,:),allocatable:: &
+    chem_p
+ real(kind=RKIND),dimension(:,:,:),allocatable:: &
+    hno3_bkgd_p
+! Settling tendency from dry dep driver
+ real(kind=RKIND),dimension(:,:,:,:),allocatable:: &
+    tend_chem_settle_p
+! Dry dep velocities, resolved wetdep flux (nchem x ncells)
+ real(kind=RKIND),dimension(:,:,:),allocatable:: &
+    ddvel_p, wetdep_resolved_p, drydep_flux_p
+! PM Diags
+ real(kind=RKIND),dimension(:,:),allocatable:: &
+    vis_p
+ real(kind=RKIND),dimension(:,:,:),allocatable:: &
+    PM1_p, PM2_5_p, PM10_p
+ real(kind=RKIND),dimension(:,:,:),allocatable:: &
+    aod3d_smoke_p, aod3d_p
+ real(kind=RKIND),dimension(:,:),allocatable:: &
+    aod550_p
+! Input/output smoke 2D fields - JLS
+ real(kind=RKIND),dimension(:,:),allocatable::  &
+    frp_in_p,          &!
+    frp_out_p,         &!
+    fre_in_p,          &!
+    fre_out_p,         &!
+    hwp_p,             &!
+    coef_bb_dc_p,      &!
+    hfx_bb_p,          &!
+    qfx_bb_p,          &!
+    frac_grid_burned_p,&!
+    fire_end_hr_p,     &!
+    totprcp_prev24_p,    &!
+    EFs_map_p,         &!JR:Estimated on module emiss
+    efs_smold_p,       &!JR
+    efs_flam_p,        &!JR
+    efs_rsmold_p,      &
+    fire_ef_out_p,     &
+    fmc_avg_p,         &
+    emis_ant_no_p
+ integer,dimension(:,:),allocatable:: &
+    eco_id_p !JR
+! RWC fields
+ real(kind=RKIND),dimension(:,:),allocatable:: &
+    RWC_denominator_p
+ real(kind=RKIND),dimension(:,:,:),allocatable:: &
+    RWC_annual_sum_p,&
+    RWC_annual_sum_smoke_fine_p,&
+    RWC_annual_sum_smoke_coarse_p,&
+    RWC_annual_sum_unspc_fine_p,&
+    RWC_annual_sum_unspc_coarse_p
+ real(kind=RKIND),dimension(:,:,:),allocatable:: &
+    fre_avg_p,         &
+    frp_avg_p,         &
+    hwp_avg_p
+ integer,dimension(:,:),allocatable:: &
+    min_bb_plume_p, &!
+    max_bb_plume_p
+! Input dust 2D fields - JLS
+ real(kind=RKIND),dimension(:,:),allocatable:: &
+    clayfrac_in_p,       &!
+    sandfrac_in_p,       &!
+    uthres_in_p,         &!
+    uthres_sg_in_p,      &!
+    albedo_drag_p,       &!
+    feff_p,              &!
+    sep_in_p              !
+! Input biomass burning emissions - JLS
+ real(kind=RKIND),dimension(:,:,:,:),allocatable:: &
+    e_ant_in_p, e_bb_in_p, e_bio_in_p, e_vol_in_p
+ real(kind=RKIND),dimension(:,:,:,:),allocatable:: &
+    e_ant_out_p, e_bb_out_p, e_bio_out_p, e_dust_out_p, e_ss_out_p, e_vol_out_p
       
 !... arrays located at w (vertical velocity) points, or at interface between layers:
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
@@ -276,6 +357,30 @@
     f_ice,            &!fraction of cloud ice (used in WRF only).
     f_rain             !fraction of rain (used in WRF only).
 
+ logical :: &
+    f_smoke_fine,     &!parameter set to true to include the smoke mixing ratio.
+    f_smoke_coarse,   &
+    f_polp_all,       &
+    f_polp_tree,      &
+    f_polp_grass,     &
+    f_polp_weed,      &
+    f_pols_all,       &
+    f_pols_tree,      &
+    f_pols_grass,     &
+    f_pols_weed,      &
+    f_dust_fine,      &
+    f_dust_coarse,    &
+    f_unspc_fine,     &
+    f_unspc_coarse,   &
+    f_ssalt_fine,     &
+    f_ssalt_coarse,   &
+    f_so4_a_fine,     &
+    f_no3_a_fine,     &
+    f_nh4_a_fine,     &
+    f_nh3,            &
+    f_so2,            &
+    f_ch4
+
  real(kind=RKIND),dimension(:,:),allocatable:: &
     rainnc_p,         &!
     rainncv_p,        &!
@@ -299,9 +404,11 @@
     evapprod_p,       &!
     recloud_p,        &!
     reice_p,          &!
-    resnow_p,         &!
     refl10cm_p,       &!
-    refl10cm_cu_p      !
+    refl10cm_cu_p,    &!
+    resnow_p           !
+
+!... for Thompson cloud microphysics parameterization, including aerosol-aware option:
  real(kind=RKIND),dimension(:,:),allocatable:: &
     refl10cm_1km_p
  real(kind=RKIND),dimension(:,:),allocatable:: &
@@ -528,61 +635,61 @@
 !... variables for UGWP orographic gravity wave drag:
 
  real(kind=RKIND),dimension(:,:),allocatable:: &
-    var2dls_p,          &!orographic variance (meso-scale orographic variation)                                [m]
-    conls_p,            &!orographic convexity (meso-scale orographic variation)                               [-]
-    oa1ls_p,            &!orographic direction asymmetry function (meso-scale orographic variation)            [-]
-    oa2ls_p,            &!orographic direction asymmetry function (meso-scale orographic variation)            [-]
-    oa3ls_p,            &!orographic direction asymmetry function (meso-scale orographic variation)            [-]
-    oa4ls_p,            &!orographic direction asymmetry function (meso-scale orographic variation)            [-]
-    ol1ls_p,            &!orographic direction asymmetry function (meso-scale orographic variation)            [-]
-    ol2ls_p,            &!orographic direction asymmetry function (meso-scale orographic variation)            [-]
-    ol3ls_p,            &!orographic direction asymmetry function (meso-scale orographic variation)            [-]
-    ol4ls_p,            &!orographic direction asymmetry function (meso-scale orographic variation)            [-]
-    var2dss_p,          &!orographic variance (small-scale orographic variation)                               [m]
-    conss_p,            &!orographic convexity (small-scale orographic variation)                              [-]
-    oa1ss_p,            &!orographic direction asymmetry function (small-scale orographic variation)           [-]
-    oa2ss_p,            &!orographic direction asymmetry function (small-scale orographic variation)           [-]
-    oa3ss_p,            &!orographic direction asymmetry function (small-scale orographic variation)           [-]
-    oa4ss_p,            &!orographic direction asymmetry function (small-scale orographic variation)           [-]
-    ol1ss_p,            &!orographic direction asymmetry function (small-scale orographic variation)           [-]
-    ol2ss_p,            &!orographic direction asymmetry function (small-scale orographic variation)           [-]
-    ol3ss_p,            &!orographic direction asymmetry function (small-scale orographic variation)           [-]
-    ol4ss_p              !orographic direction asymmetry function (small-scale orographic variation)           [-]
+    var2dls_p,        &!orographic variance (meso-scale orographic variation)                                  [m]
+    conls_p,          &!orographic convexity (meso-scale orographic variation)                                 [-]
+    oa1ls_p,          &!orographic direction asymmetry function (meso-scale orographic variation)              [-]
+    oa2ls_p,          &!orographic direction asymmetry function (meso-scale orographic variation)              [-]
+    oa3ls_p,          &!orographic direction asymmetry function (meso-scale orographic variation)              [-]
+    oa4ls_p,          &!orographic direction asymmetry function (meso-scale orographic variation)              [-]
+    ol1ls_p,          &!orographic direction asymmetry function (meso-scale orographic variation)              [-]
+    ol2ls_p,          &!orographic direction asymmetry function (meso-scale orographic variation)              [-]
+    ol3ls_p,          &!orographic direction asymmetry function (meso-scale orographic variation)              [-]
+    ol4ls_p,          &!orographic direction asymmetry function (meso-scale orographic variation)              [-]
+    var2dss_p,        &!orographic variance (small-scale orographic variation)                                 [m]
+    conss_p,          &!orographic convexity (small-scale orographic variation)                                [-]
+    oa1ss_p,          &!orographic direction asymmetry function (small-scale orographic variation)             [-]
+    oa2ss_p,          &!orographic direction asymmetry function (small-scale orographic variation)             [-]
+    oa3ss_p,          &!orographic direction asymmetry function (small-scale orographic variation)             [-]
+    oa4ss_p,          &!orographic direction asymmetry function (small-scale orographic variation)             [-]
+    ol1ss_p,          &!orographic direction asymmetry function (small-scale orographic variation)             [-]
+    ol2ss_p,          &!orographic direction asymmetry function (small-scale orographic variation)             [-]
+    ol3ss_p,          &!orographic direction asymmetry function (small-scale orographic variation)             [-]
+    ol4ss_p            !orographic direction asymmetry function (small-scale orographic variation)             [-]
 
  real(kind=RKIND),dimension(:,:),allocatable:: &
-    dusfc_ls_p,         &!vertically-integrated mesoscale orog gravity wave drag u-stress                     [Pa]
-    dvsfc_ls_p,         &!vertically-integrated mesoscale orog gravity wave drag v-stress                     [Pa]
-    dusfc_bl_p,         &!vertically-integrated orog blocking drag u-stress                                   [Pa]
-    dvsfc_bl_p,         &!vertically-integrated orog blocking drag v-stress                                   [Pa]
-    dusfc_ss_p,         &!vertically-integrated small-scale orog gravity wave drag u-stres                    [Pa]
-    dvsfc_ss_p,         &!vertically-integrated small-scale orog gravity wave drag v-stres                    [Pa]
-    dusfc_fd_p,         &!vertically-integrated turb orog form drag u-stress                                  [Pa]
-    dvsfc_fd_p           !vertically-integrated turb orog form drag v-stress                                  [Pa]
+    dusfc_ls_p,       &!vertically-integrated mesoscale orog gravity wave drag u-stress                       [Pa]
+    dvsfc_ls_p,       &!vertically-integrated mesoscale orog gravity wave drag v-stress                       [Pa]
+    dusfc_bl_p,       &!vertically-integrated orog blocking drag u-stress                                     [Pa]
+    dvsfc_bl_p,       &!vertically-integrated orog blocking drag v-stress                                     [Pa]
+    dusfc_ss_p,       &!vertically-integrated small-scale orog gravity wave drag u-stres                      [Pa]
+    dvsfc_ss_p,       &!vertically-integrated small-scale orog gravity wave drag v-stres                      [Pa]
+    dusfc_fd_p,       &!vertically-integrated turb orog form drag u-stress                                    [Pa]
+    dvsfc_fd_p         !vertically-integrated turb orog form drag v-stress                                    [Pa]
 
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
-    dtaux3d_ls_p,        &!mesoscale orog gravity wave drag u-tendency                                        [m s-2]
-    dtauy3d_ls_p,        &!mesoscale orog gravity wave drag v-tendency                                        [m s-2]
-    dtaux3d_bl_p,        &!orog blocking drag u-tendency u-tendency                                           [m s-2]
-    dtauy3d_bl_p,        &!orog blocking drag u-tendency v-tendency                                           [m s-2]
-    dtaux3d_ss_p,        &!small-scale orog gravity wave drag u-tendency                                      [m s-2]
-    dtauy3d_ss_p,        &!small-scale orog gravity wave drag v-tendency                                      [m s-2]
-    dtaux3d_fd_p,        &!turb orog form drag u-tendency                                                     [m s-2]
-    dtauy3d_fd_p          !turb orog form drag u-tendency                                                     [m s-2]
+    dtaux3d_ls_p,     &!mesoscale orog gravity wave drag u-tendency                                        [m s-2]
+    dtauy3d_ls_p,     &!mesoscale orog gravity wave drag v-tendency                                        [m s-2]
+    dtaux3d_bl_p,     &!orog blocking drag u-tendency u-tendency                                           [m s-2]
+    dtauy3d_bl_p,     &!orog blocking drag u-tendency v-tendency                                           [m s-2]
+    dtaux3d_ss_p,     &!small-scale orog gravity wave drag u-tendency                                      [m s-2]
+    dtauy3d_ss_p,     &!small-scale orog gravity wave drag v-tendency                                      [m s-2]
+    dtaux3d_fd_p,     &!turb orog form drag u-tendency                                                     [m s-2]
+    dtauy3d_fd_p       !turb orog form drag u-tendency                                                     [m s-2]
 
 !... variables for UGWP non-stationary gravity wave (NGW) drag:
 
  integer,dimension(:,:),allocatable:: &
-    jindx1_tau_p,        &!lower latitude index of NGW momentum flux for interpolation                         [-]
-    jindx2_tau_p          !upper latitude index of NGW momentum flux for interpolation                         [-]
+    jindx1_tau_p,     &!lower latitude index of NGW momentum flux for interpolation                            [-]
+    jindx2_tau_p       !upper latitude index of NGW momentum flux for interpolation                            [-]
 
  real(kind=RKIND),dimension(:,:),allocatable:: &
-    ddy_j1tau_p,         &!latitude interpolation weight complement for NGW momentum flux                      [-]
-    ddy_j2tau_p           !latitude interpolation weight for NGW momentum flux                                 [-]
+    ddy_j1tau_p,      &!latitude interpolation weight complement for NGW momentum flux                         [-]
+    ddy_j2tau_p        !latitude interpolation weight for NGW momentum flux                                    [-]
 
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
-    dudt_ngw_p,          &!u-momentum tendency due to non-stationary gravity wave drag                        [m s-2]
-    dvdt_ngw_p,          &!v-momentum tendency due to non-stationary gravity wave drag                        [m s-2]
-    dtdt_ngw_p            !temperature tendency due to non-stationary gravity wave drag                       [K s-1]
+    dudt_ngw_p,       &!u-momentum tendency due to non-stationary gravity wave drag                        [m s-2]
+    dvdt_ngw_p,       &!v-momentum tendency due to non-stationary gravity wave drag                        [m s-2]
+    dtdt_ngw_p         !temperature tendency due to non-stationary gravity wave drag                       [K s-1]
 
 !=================================================================================================================
 !... variables and arrays related to parameterization of surface layer:
@@ -623,6 +730,7 @@
     v10_p,            &!v at 10 m                                                                            [m/s]
     wspd_p,           &!wind speed                                                                           [m/s]
     znt_p,            &!time-varying roughness length                                                          [m]
+    dpt2m_p,          &!dewpoint temperature at the surface                                                    [K]
     zol_p              !
 
 !... arrays only in monin_obukohv (module_sf_sfclay.F):

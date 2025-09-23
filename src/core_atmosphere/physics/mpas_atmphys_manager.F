@@ -162,6 +162,8 @@
                                   config_radtlw_interval,  &
                                   config_radtsw_interval
 
+ character(len=StrKIND),pointer:: config_dust_scheme
+
  type(block_type),pointer    :: block
  type(mpas_pool_type),pointer:: mesh
  type(mpas_pool_type),pointer:: configs
@@ -199,6 +201,7 @@
  call mpas_pool_get_config(domain%blocklist%configs,'config_gvf_update'         ,config_gvf_update         )
  call mpas_pool_get_config(domain%blocklist%configs,'config_sstdiurn_update'    ,config_sstdiurn_update    )
  call mpas_pool_get_config(domain%blocklist%configs,'config_deepsoiltemp_update',config_deepsoiltemp_update)
+ call mpas_pool_get_config(domain%blocklist%configs,'config_dust_scheme'        ,config_dust_scheme        )
 
 !update the current julian day and current year:
 
@@ -233,8 +236,8 @@
     !monthly values to current day:
     if(mpas_is_alarm_ringing(clock,greenAlarmID,ierr=ierr)) then
        call mpas_reset_clock_alarm(clock,greenAlarmID,ierr=ierr)
-       call mpas_log_write('--- time to update background surface albedo, greeness fraction.')
-       call physics_update_surface(timeStamp,config_sfc_albedo,config_gvf_update,mesh,sfc_input,diag_physics)
+       call mpas_log_write('--- time to update background surface albedo, greeness fraction, dust fields, ...')
+       call physics_update_surface(timeStamp,config_sfc_albedo,config_gvf_update,config_dust_scheme,mesh,sfc_input,diag_physics)
     endif
 
     !update surface boundary conditions with input sea-surface temperatures and fractional
@@ -376,13 +379,15 @@
  end subroutine physics_timetracker
 
 !=================================================================================================================
- subroutine physics_run_init(configs,mesh,state,clock,stream_manager)
+ subroutine physics_run_init(configs,mesh,state,emission_input,diag_physics,clock,stream_manager)
 !=================================================================================================================
 
 !input arguments:
  type(mpas_pool_type),intent(in):: mesh
  type(mpas_pool_type),intent(in):: configs
  type(mpas_pool_type),intent(in):: state
+ type(mpas_pool_type),intent(in):: diag_physics
+ type(mpas_pool_type),intent(in):: emission_input
  type(MPAS_Clock_type):: clock
  type (MPAS_streamManager_type), intent(inout) :: stream_manager
 
@@ -391,7 +396,9 @@
                                   config_lsm_scheme,        &
                                   config_microp_scheme,     &
                                   config_radt_lw_scheme,    &
-                                  config_radt_sw_scheme
+                                  config_radt_sw_scheme,    &
+                                  config_smoke_scheme,      &
+                                  config_dust_scheme
 
  character(len=StrKIND),pointer:: config_conv_interval,     &
                                   config_pbl_interval,      &
@@ -410,8 +417,11 @@
  integer,pointer:: nMonths
  integer,pointer:: nAerosols,nAerLevels,nOznLevels
  integer,pointer:: nCellsSolve,nSoilLevels,nVertLevels,nlcat,nscat
+ integer,pointer:: nChem,nkanthro,nkwildfire,nkbiogenic,nkvolcanic
+ integer,pointer:: n_e_bb_in
+ integer,pointer:: n_e_bb_out,n_e_dust_out
 
- real(kind=RKIND),pointer:: config_dt
+ real(kind=RKIND):: dt
 
 !local variables:
  type(MPAS_Time_Type):: startTime,alarmStartTime
@@ -439,8 +449,10 @@
  call mpas_pool_get_config(configs,'config_sst_update'       ,config_sst_update       )
  call mpas_pool_get_config(configs,'config_frac_seaice'      ,config_frac_seaice      )
  call mpas_pool_get_config(configs,'config_microp_re'        ,config_microp_re        )
+ call mpas_pool_get_config(configs,'config_smoke_scheme'     ,config_smoke_scheme     )
+ call mpas_pool_get_config(configs,'config_dust_scheme'      ,config_dust_scheme      )
 
- call mpas_pool_get_config(configs,'config_dt',config_dt)
+ call mpas_get_timeInterval(mpas_get_clock_timestep(clock, ierr), dt=dt)
 
 
  call mpas_pool_get_dimension(mesh,'cam_dim1'   ,cam_dim1   )
@@ -453,6 +465,17 @@
  call mpas_pool_get_dimension(mesh,'nlcat'      ,nlcat      )
  call mpas_pool_get_dimension(mesh,'nscat'      , nscat     )
  call mpas_pool_get_dimension(state,'num_aerosols',nAerosols)
+
+ call mpas_pool_get_dimension(mesh,'nChem'     ,nChem       )
+ call mpas_pool_get_dimension(mesh,'nkanthro'     ,nkanthro       )
+ call mpas_pool_get_dimension(mesh,'nkwildfire'   ,nkwildfire     )
+ call mpas_pool_get_dimension(mesh,'nkbiogenic'   ,nkbiogenic     )
+ call mpas_pool_get_dimension(mesh,'nkvolcanic'   ,nkvolcanic     )
+
+ call mpas_pool_get_dimension(diag_physics, 'num_e_bb_out',n_e_bb_out    )
+ call mpas_pool_get_dimension(diag_physics, 'num_e_dust_out',n_e_dust_out)
+
+ call mpas_pool_get_dimension(emission_input,'num_e_bb_in',n_e_bb_in         )
 
 !initialization of gmt, julian day, and alarms:
 
@@ -484,7 +507,7 @@
        call physics_error_fatal('subroutine physics_run_init: error defining dt_radtlw')
 
  elseif(trim(config_radtlw_interval) == "none") then
-    dt_radtlw = config_dt
+    dt_radtlw = dt
 
  else
     call physics_error_fatal('subroutine physics_run_init: dt_radtlw is not defined')
@@ -503,7 +526,7 @@
        call physics_error_fatal('subroutine physics_run_init: error defining radtswAlarmID')
 
  elseif(trim(config_radtsw_interval) == "none") then
-    dt_radtsw = config_dt
+    dt_radtsw = dt
 
  else
     call physics_error_fatal('subroutine physics_run_init: dt_radtsw is not defined')
@@ -522,7 +545,7 @@
        call physics_error_fatal('subroutine physics_run_init: error defining dt_cu')
 
  elseif(trim(config_conv_interval) == "none") then
-    dt_cu = config_dt
+    dt_cu = dt
 
  else
     call physics_error_fatal('subroutine physics_run_init: dt_cu is not defined')
@@ -541,7 +564,7 @@
        call physics_error_fatal('subroutine physics_run_init: error defining dt_pbl')
 
  elseif(trim(config_pbl_interval) == "none") then
-    dt_pbl = config_dt
+    dt_pbl = dt
 
  else
     call physics_error_fatal('subroutine physics_run_init: dt_pbl is not defined')
@@ -580,7 +603,7 @@
 !set alarm to write the "CAM" local arrays absnst_p, absnxt_p, and emstot_p to the MPAS arrays
 !for writing to the restart file at the bottom of the time-step:
  if(trim(config_radt_lw_scheme) .eq. "cam_lw" ) then
-    call mpas_set_timeInterval(camlwTimeStep,dt=config_dt,ierr=ierr)
+    call mpas_set_timeInterval(camlwTimeStep,dt=dt,ierr=ierr)
     call MPAS_stream_mgr_get_property(stream_manager, 'restart', MPAS_STREAM_PROPERTY_RECORD_INTV, stream_interval, &
                                       direction=MPAS_STREAM_OUTPUT, ierr=ierr)
     if(trim(stream_interval) /= 'none') then
@@ -595,7 +618,7 @@
 !set alarm to check if the accumulated rain due to cloud microphysics and convection is
 !greater than its maximum allowed value:
  if(config_bucket_update /= "none") then
-    call mpas_set_timeInterval(acrainTimeStep,dt=config_dt,ierr=ierr)
+    call mpas_set_timeInterval(acrainTimeStep,dt=dt,ierr=ierr)
     call mpas_set_timeInterval(alarmTimeStep,timeString=config_bucket_update,ierr=ierr)
     alarmStartTime = startTime + alarmTimeStep
     call mpas_add_clock_alarm(clock,acrainAlarmID,alarmStartTime,alarmTimeStep,ierr=ierr)
@@ -606,7 +629,7 @@
 !set alarm to check if the accumulated radiation diagnostics due to long- and short-wave radiation
 !is greater than its maximum allowed value:
  if(config_bucket_update /= "none") then
-    call mpas_set_timeInterval(acradtTimeStep,dt=config_dt,ierr=ierr)
+    call mpas_set_timeInterval(acradtTimeStep,dt=dt,ierr=ierr)
     call mpas_set_timeInterval(alarmTimeStep,timeString=config_bucket_update,ierr=ierr)
     alarmStartTime = startTime + alarmTimeStep
     call mpas_add_clock_alarm(clock,acradtAlarmID,alarmStartTime,alarmTimeStep,ierr=ierr)
@@ -681,11 +704,28 @@
  num_landcat = nlcat
  num_soilcat = nscat
 
+ num_chem    = nChem
+ kanthro     = nkanthro
+ kwildfire   = nkwildfire
+ kbiogenic   = nkbiogenic
+ kvolcanic   = nkvolcanic
+
+ num_e_bb_in = n_e_bb_in
+
+ num_e_bb_out  = n_e_bb_out
+ num_e_dust_out= n_e_dust_out
+
+ if(config_smoke_scheme .ne. 'off' .or. config_dust_scheme  .ne. 'off') then
+    do_chemistry = .true.
+ else
+    do_chemistry = .false.
+ endif
+
  if(trim(config_lsm_scheme) .eq. "sf_noah") sf_surface_physics = 2
 
 !initialization of local physics time-steps:
 !... dynamics:
- dt_dyn    = config_dt
+ dt_dyn    = dt
 !... cloud microphysics:
  dt_microp = dt_dyn
  n_microp  = 1

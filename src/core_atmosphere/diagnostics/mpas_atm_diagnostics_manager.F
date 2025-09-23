@@ -84,7 +84,7 @@ module mpas_atm_diagnostics_manager
 
         type (MPAS_pool_type), intent(in) :: configs
         type (MPAS_streamManager_type), target, intent(inout) :: stream_mgr
-        real (kind=RKIND), pointer, intent(inout) :: dt
+        real (kind=RKIND), intent(in) :: dt
 
         call diagnostic_template_update()
         call convective_diagnostics_update(configs,stream_mgr,dt)
