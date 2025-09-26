@@ -29,6 +29,10 @@
            units="-"
            description="configuration for mpas dust model"
            possible_values="`on',`off'"/>
+      <nml_option name="config_anthro_scheme" type="character" default_value="off" in_defaults="false"
+           units="-"
+           description="configuration for mpas anthropogenic emissions model"
+           possible_values="`on',`off'"/>
       <nml_option name="num_chem" type="integer" default_value="0"
            units="-"
            description="Number of chemical tracers"
@@ -71,27 +75,6 @@
 
 
 <!-- **************************************************************************************** -->
-<!-- *************************************** Streams **************************************** -->
-<!-- **************************************************************************************** -->
-
-	<streams>
-		<stream name="lbc"
-                        type="output"
-                        filename_template="lbc.$Y-$M-$D_$h.$m.$s.nc"
-                        output_interval="3:00:00"
-                        filename_interval="output_interval"
-                        packages="lbcs"
-                        immutable="true">
-
-			<var name="xtime"/>
-			<var name="Time"/>
-			<var_struct name="lbc_state"/>
-		</stream>
-
-	</streams>
-
-
-<!-- **************************************************************************************** -->
 <!-- ************************************** Variables *************************************** -->
 <!-- **************************************************************************************** -->
 
@@ -108,10 +91,12 @@
                       <var name="dust_fine" array_group="chemistry" units="kg kg^{-1}"
                            description="fine dust mixing ratio"
                            packages="mpas_dust_in;mpas_anthro_in"/>
- 
+
                       <var name="dust_coarse" array_group="chemistry" units="kg kg^{-1}"
                            description="coarse dust mixing ratio"
                            packages="mpas_dust_in;mpas_anthro_in"/>
+
+                </var_array>
         </var_struct>
 
         <var_struct name="lbc_state" time_levs="1">
@@ -121,7 +106,7 @@
 
                         <var name="lbc_dust_fine" array_group="chemistry"  packages="mpas_dust_in" units="kg kg^{-1} s^{-1}"
                              description="Lateral boundary tendency of fine dust mixing ratio"/>
-  
+
                         <var name="lbc_dust_coarse" array_group="chemistry"  packages="mpas_dust_in" units="kg kg^{-1} s^{-1}"
                              description="Lateral boundary tendency of coarse dust mixing ratio"/>
 
@@ -140,4 +125,5 @@
 		     packages="mpas_dust_in;mpas_anthro_in" description="First guess fine dust aerosols"/>
                 <var name="dust_coarse_fg" name_in_code="dust_coarse" type="real" dimensions="nFGLevels nCells Time" units="kg^{-1}"
 		     packages="mpas_dust_in;mpas_anthro_in" description="First guess coarse dust aerosols"/>
+
         </var_struct>
