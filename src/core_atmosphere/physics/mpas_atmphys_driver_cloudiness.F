@@ -261,6 +261,12 @@
                 qal_p(i,k,j) = qal(k,i)
                 qai_p(i,k,j) = qai(k,i)
                 cldfrac_p(i,k,j) = max(qal(k,i), qai(k,i))
+
+                if (qirad_p(i,k,j) > 1.e-7) then
+                   qirad_p(i,k,j) = qirad_p(i,k,j) + qsrad_p(i,k,j)
+                   qsrad_p(i,k,j) = 0.
+                endif
+
              enddo
           enddo
        enddo
