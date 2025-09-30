@@ -21,11 +21,12 @@
  use mpas_atmphys_driver_seaice,only: allocate_seaice,deallocate_seaice,driver_seaice
  use mpas_atmphys_driver_sfclayer
  use mpas_atmphys_driver_oml
+ use mpas_atmphys_driver_smoke
  use mpas_atmphys_constants
  use mpas_atmphys_interface
  use mpas_atmphys_sfc_diagnostics,only: atmphys_sfc_diagnostics
  use mpas_atmphys_update
- use mpas_atmphys_vars, only: l_camlw,l_conv,l_radtlw,l_radtsw
+ use mpas_atmphys_vars, only: l_camlw,l_conv,l_radtlw,l_radtsw,do_chemistry
  use mpas_timer
 
  implicit none
@@ -145,7 +146,8 @@
                                  tend_physics,        &
                                  atm_input,           &
                                  ngw_input,           &
-                                 sfc_input
+                                 sfc_input,           &
+                                 emission_input
 
  logical,pointer:: config_frac_seaice
 
@@ -208,6 +210,9 @@
     call mpas_pool_get_subpool(block%structs,'sfc_input'          ,sfc_input          )
     call mpas_pool_get_subpool(block%structs,'ngw_input'          ,ngw_input          )
     call mpas_pool_get_subpool(block%structs,'tend_physics'       ,tend_physics       )
+    if ( do_chemistry ) then
+       call mpas_pool_get_subpool(block%structs,'emission_input',emission_input)
+    endif
 
     call mpas_pool_get_dimension(block%dimensions,'nThreads',nThreads)
 
@@ -332,12 +337,26 @@
 !$OMP END PARALLEL DO
     endif
 
+    !call to mpas smoke model:
+    if ( do_chemistry ) then
+       time_lev = 1
+       call allocate_smoke(block%configs)
+!$OMP PARALLEL DO
+       do thread=1,nThreads
+          call driver_smoke(itimestep,time_lev,emission_input,state,block%configs,mesh,      &
+                            sfc_input,diag_physics,tend_physics,                         &
+                            cellSolveThreadStart(thread),cellSolveThreadEnd(thread)      )
+       end do
+!$OMP END PARALLEL DO
+       call deallocate_smoke(block%configs)
+    endif
+
     !call to pbl schemes:
     if(config_pbl_scheme .ne. 'off' .and. config_sfclayer_scheme .ne. 'off') then
        call allocate_pbl(block%configs)
 !$OMP PARALLEL DO
        do thread=1,nThreads
-          call driver_pbl(itimestep,block%configs,mesh,sfc_input,diag_physics,tend_physics, &
+          call driver_pbl(itimestep,block%configs,state,mesh,sfc_input,diag_physics,tend_physics, &
                           cellSolveThreadStart(thread),cellSolveThreadEnd(thread))
        end do
 !$OMP END PARALLEL DO
@@ -368,7 +387,7 @@
        call allocate_convection(block%configs)
 !$OMP PARALLEL DO
        do thread=1,nThreads
-          call driver_convection(itimestep,block%configs,mesh,sfc_input,diag_physics,tend_physics,diag,domain%dminfo, &
+          call driver_convection(itimestep,block%configs,state,mesh,sfc_input,diag_physics,tend_physics,diag,domain%dminfo, &
                                  cellSolveThreadStart(thread),cellSolveThreadEnd(thread),exchange_halo_group,block)
        end do
 !$OMP END PARALLEL DO
