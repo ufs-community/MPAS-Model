@@ -1021,14 +1021,16 @@
  real(kind=RKIND),dimension(:),pointer:: graupelncv,rainncv,snowncv,sr
  real(kind=RKIND),dimension(:),pointer:: frainnc
  real(kind=RKIND),dimension(:),pointer:: ave_prate_1min,ave_prate_5min,ave_prate_10min
- real(kind=RKIND),dimension(:,:),allocatable,save:: rolling_precip_1min,rolling_precip_5min,rolling_precip_10min
+! real(kind=RKIND),dimension(:,:),allocatable,save:: rolling_precip_1min,rolling_precip_5min,rolling_precip_10min
+ real(kind=RKIND),dimension(:,:,:),allocatable,save:: rolling_precip
 
 !local variables and arrays:
  character(len=16) :: desc
  integer:: i,j,k,z
  integer :: n_sub_windows
  integer, dimension(5) :: sub_limit, sub_window_len
- logical, dimension(5), save :: init_rolling_precip_array = .false.
+! logical, dimension(5), save :: init_rolling_precip_array = .false.
+ logical, save :: alloc_rolling_precip_array = .false.
  real(kind=RKIND), dimension(5) :: n_dt_sub, sub_window_time
  real(kind=RKIND):: rho_a
 
@@ -1054,6 +1056,7 @@
 
  n_sub_windows = 3
  sub_window_len(:n_sub_windows) = 60*(/1,5,10/) ! min -> sec
+ sub_limit = -1
  do z = 1,n_sub_windows
     n_dt_sub(z) = sub_window_len(z)/dt_microp
     ! Account for time steps that do not divide evenly into 1, 5, or 10 minutes
@@ -1067,24 +1070,14 @@
     if (sub_limit(z) == 1) then
        write(desc,'(I3)') int(sub_window_len(z)/60.)
        call mpas_log_write('WARNING: model time step is coarser than '//trim(adjustl(desc))//' minute(s) and thus the ave_prate_[1-/5-/10-]min array will be either all zeros or meaningless.')
-       init_rolling_precip_array(z) = .true.
+       alloc_rolling_precip_array = .true.
     end if
  end do
- ! if all is okay, allocate rolling precip arrays just once and never again
- if (.not. init_rolling_precip_array(1)) then
-    allocate(rolling_precip_1min(sub_limit(1),its:ite))
-    rolling_precip_1min = 0._RKIND
-    init_rolling_precip_array(1) = .true.
- end if
- if (.not. init_rolling_precip_array(2)) then
-    allocate(rolling_precip_5min(sub_limit(2),its:ite))
-    rolling_precip_5min = 0._RKIND
-    init_rolling_precip_array(2) = .true.
- end if
- if (.not. init_rolling_precip_array(3)) then
-    allocate(rolling_precip_10min(sub_limit(3),its:ite))
-    rolling_precip_10min = 0._RKIND
-    init_rolling_precip_array(3) = .true.
+ ! if all is okay, allocate rolling precip array once and then never again
+ if (.not. alloc_rolling_precip_array) then
+    allocate(rolling_precip(maxval(/sub_limit(1),sub_limit(2),sub_limit(3)/),its:ite))
+    rolling_precip = 0._RKIND
+    alloc_rolling_precip_array = .true.
  end if
 
  do i = its,ite
@@ -1110,29 +1103,37 @@
 
     ! update rolling precipitation totals for sub-history-interval average-precipitation-rate calculation
     ! 1-minute prate
-    IF (allocated(rolling_precip_1min)) THEN
-       DO k = sub_limit(1)-1,1,-1
-          rolling_precip_1min(k+1,:) = rolling_precip_1min(k,:)
+    IF (allocated(rolling_precip)) THEN
+!    IF (allocated(rolling_precip_1min)) THEN
+     DO z = 1,3
+       DO k = sub_limit(z)-1,1,-1
+!          rolling_precip_1min(k+1,:) = rolling_precip_1min(k,:)
+          rolling_precip(z,k+1,:) = rolling_precip(z,k,:)
        END DO
-       rolling_precip_1min(1,i) = rainnc(i)
-       ave_prate_1min(i) = max((rolling_precip_1min(1,i) - rolling_precip_1min(sub_limit(1),i))/sub_window_time(1),ave_prate_1min(i))
+!       rolling_precip_1min(1,i) = rainnc(i)
+       rolling_precip(z,1,i) = rainnc(i)
+     END DO
+     ave_prate_1min(i) = max((rolling_precip(1,1,i) - rolling_precip(1,sub_limit(1),i))/sub_window_time(1),ave_prate_1min(i))
+     ave_prate_5min(i) = max((rolling_precip(2,1,i) - rolling_precip(2,sub_limit(1),i))/sub_window_time(2),ave_prate_5min(i))
+     ave_prate_10min(i) = max((rolling_precip(3,1,i) - rolling_precip(3,sub_limit(1),i))/sub_window_time(3),ave_prate_10min(i))
+!       ave_prate_1min(i) = max((rolling_precip_1min(1,i) - rolling_precip_1min(sub_limit(1),i))/sub_window_time(1),ave_prate_1min(i))
     END IF
-    ! 5-minute prate
-    IF (allocated(rolling_precip_5min)) THEN
-       DO k = sub_limit(2)-1,1,-1
-          rolling_precip_5min(k+1,:) = rolling_precip_5min(k,:)
-       END DO
-       rolling_precip_5min(1,i) = rainnc(i)
-       ave_prate_5min(i) = max((rolling_precip_5min(1,i) - rolling_precip_5min(sub_limit(2),i))/sub_window_time(2),ave_prate_5min(i))
-    END IF
-    ! 10-minute prate
-    IF (allocated(rolling_precip_10min)) THEN
-       DO k = sub_limit(3)-1,1,-1
-          rolling_precip_10min(k+1,:) = rolling_precip_10min(k,:)
-       END DO
-       rolling_precip_10min(1,i) = rainnc(i)
-       ave_prate_10min(i) = max((rolling_precip_10min(1,i) - rolling_precip_10min(sub_limit(3),i))/sub_window_time(3),ave_prate_10min(i))
-    END IF
+!    ! 5-minute prate
+!    IF (allocated(rolling_precip_5min)) THEN
+!       DO k = sub_limit(2)-1,1,-1
+!          rolling_precip_5min(k+1,:) = rolling_precip_5min(k,:)
+!       END DO
+!       rolling_precip_5min(1,i) = rainnc(i)
+!       ave_prate_5min(i) = max((rolling_precip_5min(1,i) - rolling_precip_5min(sub_limit(2),i))/sub_window_time(2),ave_prate_5min(i))
+!    END IF
+!    ! 10-minute prate
+!    IF (allocated(rolling_precip_10min)) THEN
+!       DO k = sub_limit(3)-1,1,-1
+!          rolling_precip_10min(k+1,:) = rolling_precip_10min(k,:)
+!       END DO
+!       rolling_precip_10min(1,i) = rainnc(i)
+!       ave_prate_10min(i) = max((rolling_precip_10min(1,i) - rolling_precip_10min(sub_limit(3),i))/sub_window_time(3),ave_prate_10min(i))
+!    END IF
 
     if(l_acrain .and. config_bucket_rainnc.gt.0._RKIND .and. &
        rainnc(i).gt.config_bucket_rainnc) then
@@ -1271,7 +1272,7 @@
        ! Reflectivity is already computed in 3D in the refl10cm_p array, so just read out the values
        if(.not.allocated(dBz1d)) allocate(dBZ1d(kts:kte))
        if(.not.allocated(zp)   ) allocate(zp(kts:kte)   )
-       !call mpas_log_write("Computing refl10cm_1km_max")
+       call mpas_log_write("Computing refl10cm_1km_max")
        !call mpas_log_write("max before = $r dbz", realArgs=(/maxval(refl10cm_1km_max)/))
        do j = jts,jte ! Assuming here that jts == jte (2D arrays)
        do i = its,ite
