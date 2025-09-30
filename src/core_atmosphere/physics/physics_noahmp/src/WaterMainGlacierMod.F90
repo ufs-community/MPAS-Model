@@ -122,11 +122,11 @@ contains
                              SoilIceTmp(LoopInd) + SoilLiqWater(LoopInd) - SoilLiqWaterTmp(LoopInd))
        enddo
        WatReplaceSublim    = WatReplaceSublim * 1000.0 / MainTimeStep     ! convert to [mm/s]
-       SoilIce = min(1.0, SoilIceTmp)
+       SoilIce(:) = min(1.0, SoilIceTmp(:))
     elseif ( OptGlacierTreatment == 2 ) then
-       SoilIce = 1.0
+       SoilIce(:) = 1.0
     endif
-    SoilLiqWater = 1.0 - SoilIce
+    SoilLiqWater(:) = 1.0 - SoilIce(:)
 
     ! use RunoffSubsurface as a water balancer, GlacierExcessFlow is snow that disappears, WatReplaceSublim is
     ! water from below that replaces glacier loss

@@ -18,11 +18,13 @@
  use mpas_atmphys_driver_radiation_lw,only: init_radiation_lw
  use mpas_atmphys_driver_radiation_sw,only: init_radiation_sw
  use mpas_atmphys_driver_sfclayer,only: init_sfclayer
- use mpas_atmphys_vars,only: f_qc,f_qr,f_qi,f_qs,f_qg,f_qoz,f_nc,f_ni,f_nifa,f_nwfa,f_nbca
+ use mpas_atmphys_vars,only: f_qc,f_qr,f_qi,f_qs,f_qg,f_qoz,f_nc,f_ni,f_nifa,f_nwfa,f_nbca, &
+                             f_smoke_fine,f_dust_fine,f_dust_coarse
 
  use mpas_atmphys_landuse
  use mpas_atmphys_o3climatology
  use mpas_atmphys_lsm_noahmpinit,only: init_lsm_noahmp
+ use mpas_atmphys_driver_smoke,only: init_smoke
 
  use bl_ugwpv1_ngw, only: ugwpv1_ngw_init
 
@@ -118,7 +120,9 @@ use mpas_stream_manager
                    config_pbl_scheme,        &
                    config_sfclayer_scheme,   &
                    config_radt_lw_scheme,    &
-                   config_radt_sw_scheme
+                   config_radt_sw_scheme,    &
+                   config_smoke_scheme,      &
+                   config_dust_scheme
 
  integer,pointer:: nCellsSolve,nLags
  integer,dimension(:),pointer:: i_rainc,i_rainnc
@@ -172,6 +176,8 @@ use mpas_stream_manager
  call mpas_pool_get_config(configs,'config_sfclayer_scheme'  ,config_sfclayer_scheme  )
  call mpas_pool_get_config(configs,'config_radt_lw_scheme'   ,config_radt_lw_scheme   )
  call mpas_pool_get_config(configs,'config_radt_sw_scheme'   ,config_radt_sw_scheme   )
+ call mpas_pool_get_config(configs,'config_smoke_scheme'     ,config_smoke_scheme     )
+ call mpas_pool_get_config(configs,'config_dust_scheme'      ,config_dust_scheme      )
 
  call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
  call mpas_pool_get_dimension(mesh,'nLags'      ,nLags      )
@@ -249,7 +255,8 @@ use mpas_stream_manager
 
 !initialization of logical flags for cloud mixing ratios and number concentrations, and aerosols
 !number concentrations from the Thompson cloud microphysics:
- call init_physics_flags(state,f_qc,f_qr,f_qi,f_qs,f_qg,f_qoz,f_nc,f_ni,f_nifa,f_nwfa,f_nbca)
+ call init_physics_flags(state,f_qc,f_qr,f_qi,f_qs,f_qg,f_qoz,f_nc,f_ni,f_nifa,f_nwfa,f_nbca, &
+                         f_smoke_fine,f_dust_fine,f_dust_coarse)
 
 !initialization of counters i_rainc and i_rainnc. i_rainc and i_rainnc track the number of
 !times the accumulated convective (rainc) and grid-scale (rainnc) rain exceed the prescribed
@@ -458,6 +465,11 @@ use mpas_stream_manager
     endif
  endif
 
+!initialization of chemistry processes:
+ if(config_smoke_scheme .ne. 'off' .or. config_dust_scheme .ne. 'off') then
+    call init_smoke(mesh,configs)
+ endif
+
 ! call mpas_log_write('')
 ! call mpas_log_write('--- end subroutine physics_init')
 ! call mpas_log_write('')
@@ -465,7 +477,8 @@ use mpas_stream_manager
  end subroutine physics_init
 
 !=================================================================================================================
- subroutine init_physics_flags(state,f_qc,f_qr,f_qi,f_qs,f_qg,f_qoz,f_nc,f_ni,f_nifa,f_nwfa,f_nbca)
+ subroutine init_physics_flags(state,f_qc,f_qr,f_qi,f_qs,f_qg,f_qoz,f_nc,f_ni,f_nifa,f_nwfa,f_nbca, &
+                               f_smoke_fine,f_dust_fine,f_dust_coarse)
 !=================================================================================================================
 
 !input arguments:
@@ -474,10 +487,12 @@ use mpas_stream_manager
 !output arguments:
  logical,intent(out):: f_qc,f_qr,f_qi,f_qs,f_qg,f_qoz
  logical,intent(out):: f_nc,f_ni,f_nifa,f_nwfa,f_nbca
+ logical,intent(out):: f_smoke_fine,f_dust_fine,f_dust_coarse
 
 !local pointers:
  integer,pointer:: index_qc,index_qr,index_qi,index_qs,index_qg
  integer,pointer:: index_nc,index_ni,index_nifa,index_nwfa
+ integer,pointer:: index_smoke_fine,index_dust_fine,index_dust_coarse
 
 !-----------------------------------------------------------------------------------------------------------------
 
@@ -488,17 +503,26 @@ use mpas_stream_manager
  f_qs  = .false.
  f_qg  = .false.
  f_qoz = .false. !qoz is not defined in Registry.xml and f_qoz is initialized to false.
+ f_smoke_fine   = .false.
+ f_dust_fine    = .false.
+ f_dust_coarse  = .false.
  call mpas_pool_get_dimension(state,'index_qc',index_qc)
  call mpas_pool_get_dimension(state,'index_qr',index_qr)
  call mpas_pool_get_dimension(state,'index_qi',index_qi)
  call mpas_pool_get_dimension(state,'index_qs',index_qs)
  call mpas_pool_get_dimension(state,'index_qg',index_qg)
+ call mpas_pool_get_dimension(state,'index_smoke_fine',index_smoke_fine)
+ call mpas_pool_get_dimension(state,'index_dust_fine',index_dust_fine)
+ call mpas_pool_get_dimension(state,'index_dust_coarse',index_dust_coarse)
 
  if(index_qc .gt. -1) f_qc = .true.
  if(index_qr .gt. -1) f_qr = .true.
  if(index_qi .gt. -1) f_qi = .true.
  if(index_qs .gt. -1) f_qs = .true.
  if(index_qg .gt. -1) f_qg = .true.
+ if(index_smoke_fine .gt. -1) f_smoke_fine = .true.
+ if(index_dust_fine    .gt. -1) f_dust_fine = .true.
+ if(index_dust_coarse  .gt. -1) f_dust_coarse = .true.
 
 !initializes the logical assigned to number concentrations:
  f_nc   = .false.
