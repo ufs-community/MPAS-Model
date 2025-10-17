@@ -30,17 +30,16 @@ print("\n");
 
 $known = "Valid build targets: ";
 
+print("if(BUILDTARGET STREQUAL \"OFF\")\n");
+print("  message(\"Not using preset compilers and optimization settings. You will get whatever cmake automatically chooses.\")\n");
+
 while(<>) {
     chomp;
     # Find lines like:
     #     cray: # BUILDTARGET Cray Programming Environment
     if(/^(\S+):(\s*#.*$)?/) {
         $buildtarget = $1; # like "cray"
-        if($in_build_target) {
-            print("elseif(BUILDTARGET STREQUAL \"$buildtarget\")$2\n")
-        } else {
-            print("if(BUILDTARGET STREQUAL \"$buildtarget\")$2\n")
-        }
+        print("elseif(BUILDTARGET STREQUAL \"$buildtarget\")$2\n");
         $in_build_target = 1;
         print("  message(\"Using compiliation options for build target \\\"$buildtarget\\\"\")\n");
         $known .= "$buildtarget ";
@@ -84,9 +83,10 @@ while(<>) {
 
     } elsif(/^\S.*=/ and $in_build_target) {
         # End of BUILDTARGET list.
-        print("else()\n");
-        print("  message( FATAL_ERROR \"Aborting due to invalid build target \\\"\${BUILDTARGET}\\\". $known\" )\n");
-        print("endif()\n");
         last;
     }
 }
+
+print("else()\n");
+print("  message( FATAL_ERROR \"Aborting due to invalid build target \\\"\${BUILDTARGET}\\\". $known\" )\n");
+print("endif()\n");

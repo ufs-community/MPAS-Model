@@ -1,7 +1,7 @@
 ## MPAS-Model
 cmake_minimum_required(VERSION 3.12)
 
-option(BUILDTARGET "Optimization settings" "dummy")
+option(BUILDTARGET "Preset compiler and optimization settings" "OFF")
 include("cmake/buildtarget.cmake")
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Functions/MPAS_Functions.cmake)
