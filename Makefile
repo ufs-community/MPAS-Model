@@ -1636,3 +1636,5 @@ ifdef CORE
 	exit 1
 endif
 
+cmake/buildtarget.cmake: Makefile cmakify_buildtarget.pl
+	./cmakify_buildtarget.pl < Makefile > cmake/buildtarget.cmake
