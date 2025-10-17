@@ -74,12 +74,6 @@ while(<>) {
     } elsif($in_build_target and /^\t"CXXFLAGS_DEBUG\s*=\s*(.*?)"/) {
         print("  set(CMAKE_CXX_FLAGS_DEBUG \"\${CMAKE_CXX_FLAGS_DEBUG} $1\")\n");
 
-    } elsif($in_build_target and /^\t"FFLAGS_PROMOTION\s*=\s*(.*?)"/) {
-        print("  if(MPAS_PRECISION STREQUAL \"double\")\n");
-        print("    set(CMAKE_Fortran_FLAGS_RELEASE \"\${CMAKE_Fortran_FLAGS_RELEASE} $1\")\n");
-        print("    set(CMAKE_Fortran_FLAGS_DEBUG \"\${CMAKE_Fortran_FLAGS_DEBUG} $1\")\n");
-        print("  endif()\n");
-
 
     } elsif(/^\S.*=/ and $in_build_target) {
         # End of BUILDTARGET list.
