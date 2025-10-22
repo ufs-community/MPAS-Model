@@ -2,16 +2,15 @@ help([[
 This module loads libraries for rrfs-workflow
 ]])
 
-whatis([===[Loads libraries for rrfs-workflow ]===])
-prepend_path("MODULEPATH", "/work/noaa/epic/role-epic/spack-stack/orion/spack-stack-1.6.0/envs/unified-env-rocky9/install/modulefiles/Core")
+--whatis([===[Loads libraries for rrfs-workflow ]===])
+prepend_path("MODULEPATH", "/apps/contrib/spack-stack/spack-stack-1.9.3/envs/ue-oneapi-2024.2.1/install/modulefiles/Core")
 
-load("stack-intel/2021.9.0")
-load("stack-intel-oneapi-mpi/2021.9.0")
-load("intel-oneapi-compilers/2023.1.0")
-load("intel-oneapi-mpi/2021.9.0")
-load("cmake/3.23.1")
-load("parallel-netcdf/1.12.2")
-load("parallelio/2.5.10")
+load("stack-oneapi/2024.2.1")
+load("stack-intel-oneapi-mpi/2021.13")
+
+load("cmake/3.27.9")
+load("parallel-netcdf/1.12.3")
+load("parallelio/2.6.2")
 
 setenv("CMAKE_C_COMPILER", "mpiicc")
 setenv("CMAKE_CXX_COMPILER", "mpiicpc")
