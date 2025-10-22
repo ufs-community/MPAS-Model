@@ -22,7 +22,7 @@ while getopts "c:j:hf" opt; do
       CMAKE_OPTS=${OPTARG}
       ;;
     j)
-      BUILD_JOBS=${OPTARGi}
+      BUILD_JOBS=${OPTARG}
       ;;
     f)
       CLEAN_BUILD=YES

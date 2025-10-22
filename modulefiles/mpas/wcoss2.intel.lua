@@ -1,6 +1,6 @@
 help([[
 This loads libraries for building the RRFS workflow on the 
-NOAA operational machine WCOSS2 (Catcus/Dogwood)
+NOAA operational machine WCOSS2 (Cactus/Dogwood)
 ]])
 
 whatis([===[Loads libraries needed for building the RRFS workflow on WCOSS2 ]===])
