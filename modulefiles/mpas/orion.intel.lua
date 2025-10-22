@@ -12,14 +12,6 @@ load("intel-oneapi-mpi/2021.9.0")
 load("cmake/3.23.1")
 load("parallel-netcdf/1.12.2")
 load("parallelio/2.5.10")
-load("jasper/2.0.32")
-
-if mode() == "load" then
-  setenv("PIO", os.getenv("parallelio_ROOT"))
-end
-if mode() == "unload" then
-  unsetenv("PIO")
-end
 
 setenv("CMAKE_C_COMPILER", "mpiicc")
 setenv("CMAKE_CXX_COMPILER", "mpiicpc")
