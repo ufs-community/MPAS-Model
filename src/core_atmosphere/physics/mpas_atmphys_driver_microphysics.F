@@ -1023,15 +1023,16 @@
  real(kind=RKIND),dimension(:),pointer:: frainnc
  real(kind=RKIND),dimension(:),pointer:: ave_prate_1min,ave_prate_5min,ave_prate_10min
 ! real(kind=RKIND),dimension(:,:),allocatable,save:: rolling_precip_1min,rolling_precip_5min,rolling_precip_10min
- real(kind=RKIND),dimension(:,:,:),allocatable,save:: rolling_precip
+ real(kind=RKIND),dimension(:,:),allocatable,save:: rolling_precip
 
 !local variables and arrays:
  character(len=16) :: desc
  integer:: i,j,k,z
- integer :: n_sub_windows
+ integer :: n_sub_windows, longest_window_n
  integer, dimension(5) :: sub_limit, sub_window_len
 ! logical, dimension(5), save :: init_rolling_precip_array = .false.
  logical, save :: alloc_rolling_precip_array = .false.
+ logical :: calc_prate_max
  real(kind=RKIND), dimension(5) :: n_dt_sub, sub_window_time
  real(kind=RKIND):: rho_a
 
@@ -1055,31 +1056,37 @@
  call mpas_pool_get_array(diag_physics,'ave_prate_5min',ave_prate_5min)
  call mpas_pool_get_array(diag_physics,'ave_prate_10min',ave_prate_10min)
 
- n_sub_windows = 3
- sub_window_len(:n_sub_windows) = 60*(/1,5,10/) ! min -> sec
- sub_limit = -1
- do z = 1,n_sub_windows
-    n_dt_sub(z) = sub_window_len(z)/dt_microp
-    ! Account for time steps that do not divide evenly into 1, 5, or 10 minutes
-    if (abs(fraction(n_dt_sub(z))) .gt. 1e-6) then
-       sub_limit(z) = nint(n_dt_sub(z)) + 1
-       sub_window_time(z) = dt_microp*(sub_limit(z)-1)
-    else
-       sub_limit(z) = sub_window_len(z)/dt_microp + 1
-       sub_window_time(z) = sub_window_len(z)
-    end if
-    if (sub_limit(z) == 1) then
-       write(desc,'(I3)') int(sub_window_len(z)/60.)
-       call mpas_log_write('WARNING: model time step is coarser than '//trim(adjustl(desc))//' minute(s) and thus the ave_prate_[1-/5-/10-]min array will be either all zeros or meaningless.')
-       alloc_rolling_precip_array = .true.
-    end if
- end do
- ! if all is okay, allocate rolling precip array once and then never again
- if (.not. alloc_rolling_precip_array) then
-    allocate(rolling_precip(maxval(/sub_limit(1),sub_limit(2),sub_limit(3)/),its:ite))
-    rolling_precip = 0._RKIND
-    alloc_rolling_precip_array = .true.
- end if
+ calc_prate_max = .false.
+ if (microp_scheme == "mp_thompson" .or. microp_scheme == "mp_tempo" .or. microp_scheme == "mp_thompson_aerosols" .or. microp_scheme == "mp_nssl2m" .or. microp_scheme == "mp_wsm6") calc_prate_max = .true.
+
+ if (calc_prate_max) THEN
+  n_sub_windows = 3
+  sub_window_len(:n_sub_windows) = 60*(/1,5,10/) ! min -> sec
+  sub_limit = -1
+  do z = 1,n_sub_windows
+     n_dt_sub(z) = sub_window_len(z)/dt_microp
+     ! Account for time steps that do not divide evenly into 1, 5, or 10 minutes
+     if (abs(fraction(n_dt_sub(z))) .gt. 1e-6) then
+        sub_limit(z) = nint(n_dt_sub(z)) + 1
+        sub_window_time(z) = dt_microp*(sub_limit(z)-1)
+     else
+        sub_limit(z) = sub_window_len(z)/dt_microp + 1
+        sub_window_time(z) = sub_window_len(z)
+     end if
+     if (sub_limit(z) == 1) then
+        write(desc,'(I3)') int(sub_window_len(z)/60.)
+        call mpas_log_write('WARNING: model time step is coarser than '//trim(adjustl(desc))//' minute(s) and thus the ave_prate_[1-/5-/10-]min array will be either all zeros or meaningless.')
+        alloc_rolling_precip_array = .true.
+     end if
+  end do
+  ! if all is okay, allocate rolling precip array once and then never again
+  longest_window_n = maxval(sub_limit)
+  if (.not. alloc_rolling_precip_array) then
+     allocate(rolling_precip(longest_window_n,its:ite))
+     rolling_precip = 0._RKIND
+     alloc_rolling_precip_array = .true.
+  end if
+ END IF ! calc_prate_max
 
  do i = its,ite
     precipw(i) = 0._RKIND
@@ -1097,44 +1104,44 @@
 
     !time-step precipitation:
     rainncv(i) = rainnc_p(i,j)
-    prate_max(i) = max(rainnc_p(i,j)/dt_microp,prate_max(i))
+    IF (calc_prate_max) prate_max(i) = max(rainnc_p(i,j)/dt_microp,prate_max(i))
 
     !accumulated precipitation:
     rainnc(i) = rainnc(i) + rainncv(i)
 
-    ! update rolling precipitation totals for sub-history-interval average-precipitation-rate calculation
-    ! 1-minute prate
-    IF (allocated(rolling_precip)) THEN
-!    IF (allocated(rolling_precip_1min)) THEN
-     DO z = 1,3
-       DO k = sub_limit(z)-1,1,-1
-!          rolling_precip_1min(k+1,:) = rolling_precip_1min(k,:)
-          rolling_precip(z,k+1,:) = rolling_precip(z,k,:)
-       END DO
-!       rolling_precip_1min(1,i) = rainnc(i)
-       rolling_precip(z,1,i) = rainnc(i)
-     END DO
-     ave_prate_1min(i) = max((rolling_precip(1,1,i) - rolling_precip(1,sub_limit(1),i))/sub_window_time(1),ave_prate_1min(i))
-     ave_prate_5min(i) = max((rolling_precip(2,1,i) - rolling_precip(2,sub_limit(1),i))/sub_window_time(2),ave_prate_5min(i))
-     ave_prate_10min(i) = max((rolling_precip(3,1,i) - rolling_precip(3,sub_limit(1),i))/sub_window_time(3),ave_prate_10min(i))
-!       ave_prate_1min(i) = max((rolling_precip_1min(1,i) - rolling_precip_1min(sub_limit(1),i))/sub_window_time(1),ave_prate_1min(i))
-    END IF
-!    ! 5-minute prate
-!    IF (allocated(rolling_precip_5min)) THEN
-!       DO k = sub_limit(2)-1,1,-1
-!          rolling_precip_5min(k+1,:) = rolling_precip_5min(k,:)
-!       END DO
-!       rolling_precip_5min(1,i) = rainnc(i)
-!       ave_prate_5min(i) = max((rolling_precip_5min(1,i) - rolling_precip_5min(sub_limit(2),i))/sub_window_time(2),ave_prate_5min(i))
-!    END IF
-!    ! 10-minute prate
-!    IF (allocated(rolling_precip_10min)) THEN
-!       DO k = sub_limit(3)-1,1,-1
-!          rolling_precip_10min(k+1,:) = rolling_precip_10min(k,:)
-!       END DO
-!       rolling_precip_10min(1,i) = rainnc(i)
-!       ave_prate_10min(i) = max((rolling_precip_10min(1,i) - rolling_precip_10min(sub_limit(3),i))/sub_window_time(3),ave_prate_10min(i))
-!    END IF
+    IF (calc_prate_max) THEN
+     ! update rolling precipitation totals for sub-history-interval average-precipitation-rate calculation
+     ! 1-minute prate
+     IF (allocated(rolling_precip)) THEN
+!     IF (allocated(rolling_precip_1min)) THEN
+        DO k = longest_window_n-1,1,-1
+!           rolling_precip_1min(k+1,:) = rolling_precip_1min(k,:)
+           rolling_precip(k+1,:) = rolling_precip(k,:)
+        END DO
+!        rolling_precip_1min(1,i) = rainnc(i)
+       rolling_precip(1,i) = rainnc(i)
+       ave_prate_1min(i) = max((rolling_precip(1,i) - rolling_precip(sub_limit(1),i))/sub_window_time(1),ave_prate_1min(i))
+       ave_prate_5min(i) = max((rolling_precip(1,i) - rolling_precip(sub_limit(2),i))/sub_window_time(2),ave_prate_5min(i))
+       ave_prate_10min(i) = max((rolling_precip(1,i) - rolling_precip(sub_limit(3),i))/sub_window_time(3),ave_prate_10min(i))
+!        ave_prate_1min(i) = max((rolling_precip_1min(1,i) - rolling_precip_1min(sub_limit(1),i))/sub_window_time(1),ave_prate_1min(i))
+     END IF
+!     ! 5-minute prate
+!     IF (allocated(rolling_precip_5min)) THEN
+!        DO k = sub_limit(2)-1,1,-1
+!           rolling_precip_5min(k+1,:) = rolling_precip_5min(k,:)
+!        END DO
+!        rolling_precip_5min(1,i) = rainnc(i)
+!        ave_prate_5min(i) = max((rolling_precip_5min(1,i) - rolling_precip_5min(sub_limit(2),i))/sub_window_time(2),ave_prate_5min(i))
+!     END IF
+!     ! 10-minute prate
+!     IF (allocated(rolling_precip_10min)) THEN
+!        DO k = sub_limit(3)-1,1,-1
+!           rolling_precip_10min(k+1,:) = rolling_precip_10min(k,:)
+!        END DO
+!        rolling_precip_10min(1,i) = rainnc(i)
+!        ave_prate_10min(i) = max((rolling_precip_10min(1,i) - rolling_precip_10min(sub_limit(3),i))/sub_window_time(3),ave_prate_10min(i))
+!     END IF
+    END IF ! calc_prate_max
 
     if(l_acrain .and. config_bucket_rainnc.gt.0._RKIND .and. &
        rainnc(i).gt.config_bucket_rainnc) then
