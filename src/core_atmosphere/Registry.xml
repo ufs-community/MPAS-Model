@@ -2948,10 +2948,10 @@
                 <!-- ... PARAMETERIZATION OF GRAVITY WAVE DRAG OVER OROGRAPHY:                                          -->
                 <!-- ================================================================================================== -->
 
-		<var name="dusfcg" type="real" dimensions="nCells Time" units="Pa m s^{-1}"
+		<var name="dusfcg" type="real" dimensions="nCells Time" units="Pa"
                      description="vertically-integrated gravity wave drag over orography u-stress"/>
 
-                <var name="dvsfcg" type="real" dimensions="nCells Time" units="Pa m s^{-1}"
+                <var name="dvsfcg" type="real" dimensions="nCells Time" units="Pa"
                      description="vertically-integrated gravity wave drag over orography v-stress"/>
 
                 <var name="dusfc_ls" type="real" dimensions="nCells Time" units="Pa"
@@ -2986,10 +2986,10 @@
                      description="vertically-integrated turb orog form drag v-stress"
                      packages="ugwp_diags_stream"/>
 
-                <var name="dtaux3d" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1}"
+                <var name="dtaux3d" type="real" dimensions="nVertLevels nCells Time" units="m s^{-2}"
                      description="gravity wave drag over orography u-stress"/>
 
-                <var name="dtauy3d" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1}"
+                <var name="dtauy3d" type="real" dimensions="nVertLevels nCells Time" units="m s^{-2}"
                      description="gravity wave drag over orography v-stress"/>
 
                 <var name="dtaux3d_ls" type="real" dimensions="nVertLevels nCells Time" units="m s^{-2}"
