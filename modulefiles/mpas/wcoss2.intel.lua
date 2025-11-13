@@ -1,9 +1,8 @@
 help([[
-This loads libraries for building the RRFS workflow on the 
-NOAA operational machine WCOSS2 (Cactus/Dogwood)
+This loads libraries for MPAS-Model
 ]])
 
-whatis([===[Loads libraries needed for building the RRFS workflow on WCOSS2 ]===])
+whatis([===[Loads libraries for MPAS-Model ]===])
 
 prepend_path("MODULEPATH", "/apps/ops/test/spack-stack-1.6.0-nco/envs/nco-intel-19.1.3.304/install/modulefiles/Core")
 load(pathJoin("envvar", os.getenv("envvar_ver")))
