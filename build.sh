@@ -3,6 +3,7 @@
 HOMEmpas="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 source "${HOMEmpas}/ush/detect_machine.sh"
 
+COMPILER="${COMPILER:-intel}"
 # ==============================================================================
 usage() {
   set +x
@@ -10,7 +11,8 @@ usage() {
   echo "Usage: $0 -j <num> -h"
   echo
   echo "  -j  number of build jobs               DEFAULT: 8"
-  echo "  -f  force a clean build                DEFAULT: NO"
+  echo "  -c  additional CMAKE options"
+  echo "  -f  force a clean build"
   echo "  -h  display this message and quit"
   echo
   exit 1
@@ -37,7 +39,7 @@ cd "${HOMEmpas}" || exit 1
 
 module purge                      
 module use "${HOMEmpas}/modulefiles"
-module load "mpas/${MACHINE}.intel"
+module load "mpas/${MACHINE}.${COMPILER}"
 module list
 
 BUILD_DIR=${BUILD_DIR:-${HOMEmpas}/build}
