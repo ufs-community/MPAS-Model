@@ -81,9 +81,6 @@
         <var_struct name="state" time_levs="1">
                 <var_array name="scalars" type="real" dimensions="nVertLevels nCells Time" packages="met_stage_out">
 
-                      <var name="MASSDEN" array_group="chemistry" units="kg kg^{-1}"
-                           description="fine smoke mixing ratio"/>
-
                       <var name="smoke_fine" array_group="chemistry" units="kg kg^{-1}"
                            description="fine smoke mixing ratio"
                            packages="mpas_smoke_in"/>
@@ -109,16 +106,11 @@
 
                         <var name="lbc_dust_coarse" array_group="chemistry"  packages="mpas_dust_in" units="kg kg^{-1} s^{-1}"
                              description="Lateral boundary tendency of coarse dust mixing ratio"/>
-
-                        <var name="lbc_MASSDEN" array_group="chemistry" units="kg kg^{-1} s^{-1}"
-                             description="Lateral boundary tendency of fine smoke mixing ratio"/>
                 </var_array>
 
         </var_struct>
 
         <var_struct name="fg" time_levs="1">
-                <var name="MASSDEN_fg" name_in_code="MASSDEN" type="real" dimensions="nFGLevels nCells Time" units="kg^{-1}"
-		     description="First guess smoke aerosols"/>
                 <var name="smoke_fine_fg" name_in_code="smoke_fine" type="real" dimensions="nFGLevels nCells Time" units="kg^{-1}"
 		     packages="mpas_smoke_in;mpas_anthro_in" description="First guess fine smoke aerosols"/>
                 <var name="dust_fine_fg" name_in_code="dust_fine" type="real" dimensions="nFGLevels nCells Time" units="kg^{-1}"
