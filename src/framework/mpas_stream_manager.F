@@ -5739,7 +5739,7 @@ module mpas_stream_manager
         integer, intent(out), optional :: precisionProperty                        !< Output: Integer describing the precision of the stream
         character (len=StrKIND), intent(out), optional :: filenameIntervalProperty !< Output: String containing the filename interval for the stream
         integer, intent(out), optional :: clobberProperty                          !< Output: Interger describing the clobber mode of the stream
-        integer, intent(out), optional :: gattrUpdateProperty                      !< Output: Interger describing whether to update global attributes
+        integer, intent(out), optional :: gattrUpdateProperty                      !< Output: Integer describing whether to update global attributes
 
         integer :: threadNum
 
