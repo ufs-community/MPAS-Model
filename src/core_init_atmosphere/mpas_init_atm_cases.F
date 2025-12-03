@@ -4108,7 +4108,7 @@ module init_atm_cases
       integer :: nfglevels_actual
       integer, pointer :: index_qv, index_qc, index_qr, index_qi, index_qs, index_qg, index_ni, index_nc, index_nr, index_ns, index_ng
       integer, pointer :: index_nwfa, index_nifa
-      integer, pointer :: index_smoke_fine, index_dust_fine, index_dust_coarse
+      integer, pointer :: index_smoke_fine => null(), index_dust_fine => null(), index_dust_coarse => null()
 
       integer, dimension(5) :: interp_list
       real (kind=RKIND) :: maskval
@@ -7810,7 +7810,7 @@ call mpas_log_write('Done with soil consistency check')
       integer, pointer :: index_qv, index_qc, index_qr, index_qi, index_qs, index_qg,index_ni, index_nc, index_nr, index_ns, index_ng
       integer, pointer :: index_nwfa, index_nifa
 ! Chemistry
-      integer, pointer :: index_smoke_fine, index_dust_fine, index_dust_coarse
+      integer, pointer :: index_smoke_fine => null(), index_dust_fine => null(), index_dust_coarse => null()
 
 
 
