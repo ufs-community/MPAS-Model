@@ -11,16 +11,14 @@ OBJS = \
 	libmassv.o                     \
 	module_bep_bem_helper.o        \
 	module_bl_gwdo.o               \
-        module_bl_ugwp_gwdo.o          \
-        module_bl_mynn.o               \
+	module_bl_ugwp_gwdo.o          \
+	module_bl_mynn.o               \
 	module_bl_ysu.o                \
 	module_bl_myjpbl.o             \
 	module_cam_error_function.o    \
 	module_cam_shr_kind_mod.o      \
 	module_cam_support.o           \
-        module_cu_gf_mpas.o            \
-        module_cu_gf_deep.o            \
-        module_cu_gf_sh.o              \
+	module_cu_gf.mpas.o            \
 	module_cu_tiedtke.o            \
 	module_cu_ntiedtke.o           \
 	module_cu_kfeta.o              \
@@ -45,9 +43,6 @@ OBJS = \
 	module_sf_mynn.o               \
 	module_sf_noahdrv.o            \
 	module_sf_noahlsm.o            \
-	module_ruc_land.o              \
-	module_ruc_ice.o               \
-	module_sf_sfcdiags_ruclsm.o    \
         module_sf_noahlsm_glacial_only.o \
         module_sf_noah_seaice.o        \
         module_sf_noah_seaice_drv.o    \
@@ -130,13 +125,6 @@ module_sf_noah_seaice_drv.o: \
 module_sf_noah_seaice.o: \
 	module_sf_noahlsm.o
 
-module_cu_gf_mpas.o: \
-        module_cu_gf_deep.o \
-        module_cu_gf_sh.o
-
-module_cu_gf_sh.o: \
-        module_cu_gf_deep.o
-
 clean:
 	$(RM) *.f90 *.o *.mod
 	@# Certain systems with intel compilers generate *.i files
@@ -146,14 +134,14 @@ clean:
 .F.o:
 ifeq "$(GEN_F90)" "true"
 	$(CPP) $(CPPFLAGS) $(COREDEF) $(CPPINCLUDES) $< > $*.f90
-	$(FC) $(FFLAGS) -c $*.f90 $(FCINCLUDES) -I.. -I../physics_mmm -I../UGWP -I../../../framework -I../../../external/esmf_time_f90
+	$(FC) $(FFLAGS) -c $*.f90 $(FCINCLUDES) -I.. -I../physics_mmm -I../physics_noaa/UGWP -I../../../framework -I../../../external/esmf_time_f90
 else
-	$(FC) $(CPPFLAGS) $(COREDEF) $(FFLAGS) -c $*.F $(CPPINCLUDES) $(FCINCLUDES) -I.. -I../physics_mmm -I../UGWP -I../../../framework -I../../../external/esmf_time_f90
+	$(FC) $(CPPFLAGS) $(COREDEF) $(FFLAGS) -c $*.F $(CPPINCLUDES) $(FCINCLUDES) -I.. -I../physics_mmm -I../physics_noaa/UGWP -I../../../framework -I../../../external/esmf_time_f90
 endif
 
 .F90.o:
 ifeq "$(GEN_F90)" "true"
-	$(FC) $(FFLAGS) -c $*.f90 $(FCINCLUDES) -I.. -I../physics_mmm -I../UGWP -I../../../framework -I../../../external/esmf_time_f90
+	$(FC) $(FFLAGS) -c $*.f90 $(FCINCLUDES) -I.. -I../physics_mmm -I../physics_noaa/UGWP -I../../../framework -I../../../external/esmf_time_f90
 else
-	$(FC) $(CPPFLAGS) $(COREDEF) $(FFLAGS) -c $*.F90 $(CPPINCLUDES) $(FCINCLUDES) -I.. -I../physics_mmm -I../UGWP -I../../../framework -I../../../external/esmf_time_f90
+	$(FC) $(CPPFLAGS) $(COREDEF) $(FFLAGS) -c $*.F90 $(CPPINCLUDES) $(FCINCLUDES) -I.. -I../physics_mmm -I../physics_noaa/UGWP -I../../../framework -I../../../external/esmf_time_f90
 endif

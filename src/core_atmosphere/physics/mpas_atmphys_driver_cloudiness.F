@@ -90,7 +90,7 @@
 
  end select cld_fraction_select
 
- if (convection_scheme=="cu_grell_freitas") then
+ if (convection_scheme=="cu_grell_freitas_li") then
     if(.not.allocated(qicu_p)) allocate(qicu_p(ims:ime,kms:kme,jms:jme))
     if(.not.allocated(qccu_p)) allocate(qccu_p(ims:ime,kms:kme,jms:jme))
  endif
@@ -128,7 +128,7 @@
 
  end select cld_fraction_select
 
- if (convection_scheme=="cu_grell_freitas") then
+ if (convection_scheme=="cu_grell_freitas_li") then
     if(allocated(qicu_p)) deallocate(qicu_p)
     if(allocated(qccu_p)) deallocate(qccu_p)
  endif
@@ -239,7 +239,7 @@
 
  end select cld_fraction_select  
  
- if (convection_scheme=="cu_grell_freitas") then
+ if (convection_scheme=="cu_grell_freitas_li") then
     call mpas_pool_get_array(diag_physics,'cldfrac_cu',cldfrac_cu)
     call mpas_pool_get_array(diag_physics,'qi_cu',qi_cu)
     call mpas_pool_get_array(diag_physics,'qc_cu',qc_cu)
@@ -353,12 +353,12 @@
 
  end select cld_fraction_select
 
- if (convection_scheme=="cu_grell_freitas") then
-    call mpas_timer_start('cal_gfcld')
-    call cal_gfcld(cldfrac_p , qcrad_p   , qirad_p    , &
+ if (convection_scheme=="cu_grell_freitas_li") then
+    call mpas_timer_start('cal_gflcld')
+    call cal_gflcld(cldfrac_p , qcrad_p   , qirad_p    , &
                    qccu_p    , qicu_p    ,              &
                    its,  ite , jts , jte , kts , kte  )
-    call mpas_timer_stop('cal_gfcld')
+    call mpas_timer_stop('cal_gflcld')
  endif
 
 !copy local arrays to MPAS grid:
@@ -540,7 +540,7 @@
  end subroutine cal_mynncld
 !=================================================================================================================
 !=================================================================================================================
- subroutine cal_gfcld(cldfrac,qc,qi,qc_cu,qi_cu,its,ite,jts,jte,kts,kte)
+ subroutine cal_gflcld(cldfrac,qc,qi,qc_cu,qi_cu,its,ite,jts,jte,kts,kte)
 !=================================================================================================================
 
 !input arguments:
@@ -572,7 +572,7 @@
  enddo
  enddo
 
- end subroutine cal_gfcld
+ end subroutine cal_gflcld
 !=================================================================================================================
  end module mpas_atmphys_driver_cloudiness
 !=================================================================================================================

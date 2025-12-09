@@ -196,7 +196,9 @@
        if(.not.allocated(maxwidthbl_p)  ) allocate(maxwidthbl_p(ims:ime,jms:jme)        )
        if(.not.allocated(maxmfbl_p)     ) allocate(maxmfbl_p(ims:ime,jms:jme)           )
        if(.not.allocated(zbl_plume_p)   ) allocate(zbl_plume_p(ims:ime,jms:jme)         )
-
+       if(.not.allocated(excessh_p)     ) allocate(excessh_p(ims:ime,jms:jme)           )
+       if(.not.allocated(excessq_p)     ) allocate(excessq_p(ims:ime,jms:jme)           ) 
+       
        if(.not.allocated(cov_p)         ) allocate(cov_p(ims:ime,kms:kme,jms:jme)       )
        if(.not.allocated(qke_p)         ) allocate(qke_p(ims:ime,kms:kme,jms:jme)       )
        if(.not.allocated(qsq_p)         ) allocate(qsq_p(ims:ime,kms:kme,jms:jme)       )
@@ -371,7 +373,9 @@
        if(allocated(maxwidthbl_p)  ) deallocate(maxwidthbl_p  )
        if(allocated(maxmfbl_p)     ) deallocate(maxmfbl_p     )
        if(allocated(zbl_plume_p)   ) deallocate(zbl_plume_p   )
-
+       if(allocated(excessh_p)     ) deallocate(excessh_p     )                                                                                                         
+       if(allocated(excessq_p)     ) deallocate(excessq_p     )
+       
        if(allocated(cov_p)       ) deallocate(cov_p       )
        if(allocated(qke_p)       ) deallocate(qke_p       )
        if(allocated(qsq_p)       ) deallocate(qsq_p       )
@@ -723,6 +727,8 @@
           maxwidthbl_p(i,j) = 0._RKIND
           maxmfbl_p(i,j)    = 0._RKIND
           zbl_plume_p(i,j)  = 0._RKIND
+          excessh_p(i,j)    = 0._RKIND
+          excessq_p(i,j)    = 0._RKIND
        enddo
        enddo
 
@@ -826,7 +832,7 @@
  real(kind=RKIND),dimension(:),pointer  :: delta,wstar
       
 !local pointers for MYNN scheme:
- real(kind=RKIND),dimension(:),pointer  :: maxmf,maxwidth,ztop_plume
+ real(kind=RKIND),dimension(:),pointer  :: maxmf,maxwidth,ztop_plume,excess_h,excess_q
  real(kind=RKIND),dimension(:,:),pointer:: cov,qke,qsq,tsq,sh3d,sm3d,tke_pbl,qke_adv,el_pbl,dqke,qbuoy, &
                                            qdiss,qshear,qwt
  real(kind=RKIND),dimension(:,:),pointer:: cldfrac_bl,qc_bl,qi_bl
@@ -992,6 +998,8 @@
        call mpas_pool_get_array(diag_physics,'maxmf'     ,maxmf     )
        call mpas_pool_get_array(diag_physics,'maxwidth'  ,maxwidth  )
        call mpas_pool_get_array(diag_physics,'ztop_plume',ztop_plume)
+       call mpas_pool_get_array(diag_physics,'excess_h'  ,excess_h  )
+       call mpas_pool_get_array(diag_physics,'excess_q'  ,excess_q  )
        call mpas_pool_get_array(diag_physics,'el_pbl'    ,el_pbl    )
        call mpas_pool_get_array(diag_physics,'cov'       ,cov       )
        call mpas_pool_get_array(diag_physics,'qke'       ,qke       )
@@ -1026,6 +1034,8 @@
           maxmf(i)      = maxmfbl_p(i,j)
           maxwidth(i)   = maxwidthbl_p(i,j)
           ztop_plume(i) = zbl_plume_p(i,j)
+          excess_h(i)   = excessh_p(i,j)
+          excess_q(i)   = excessq_p(i,j)
        enddo
        enddo
 
@@ -1449,8 +1459,9 @@
                   nc         = nc_p         , nifa       = nifa_p      , nwfa        = nwfa_p           , &
                   rthraten   = rthraten_p   , pblh       = hpbl_p      , kpbl        = kpbl_p           , &
                   cldfra_bl  = cldfrabl_p   , qc_bl      = qcbl_p      , qi_bl       = qibl_p           , &
-                  maxwidth   = maxwidthbl_p , maxmf      = maxmfbl_p   ,                                  &
-                  ztop_plume = zbl_plume_p  , dqke       = dqke_p      , qke_adv     = qkeadv_p         , &
+                  maxwidth   = maxwidthbl_p , maxmf      = maxmfbl_p   , ztop_plume  = zbl_plume_p      , &
+                  excess_h   = excessh_p    , excess_q   = excessq_p   ,                                  &
+                  qke        = qke_p        , qke_adv    = qkeadv_p    ,                                  &
                   tsq        = tsq_p        , qsq        = qsq_p       , cov         = cov_p            , &
                   el_pbl     = elpbl_p      , rublten    = rublten_p   , rvblten     = rvblten_p        , &
                   rthblten   = rthblten_p   , rqvblten   = rqvblten_p  , rqcblten    = rqcblten_p       , &
@@ -1460,7 +1471,7 @@
                   edmf_thl   = edmfthl_p    , edmf_ent   = edmfent_p   , edmf_qc     = edmfqc_p         , &
                   sub_thl    = subthl_p     , sub_sqv    = subqv_p     , det_thl     = detthl_p         , &
                   det_sqv    = detqv_p      , exch_h     = kzh_p       , exch_m      = kzm_p            , &
-                  qke        = qke_p        , qwt        = qwt_p       , qshear      = qshear_p         , &
+                  dqke       = dqke_p       , qwt        = qwt_p       , qshear      = qshear_p         , &
                   qbuoy      = qbuoy_p      , qdiss      = qdiss_p     , sh3d        = sh3d_p           , &
                   sm3d       = sm3d_p       , spp_pbl    = spp_pbl     , pattern_spp = pattern_spp_pbl  , &
                   do_restart         = config_do_restart   ,                                              &

@@ -331,8 +331,6 @@
     if(allocated(xice_p)     ) deallocate(xice_p     )
 
     if(allocated(br_sea)     ) deallocate(br_sea     )
-    if(allocated(flhc_sea)   ) deallocate(flhc_sea   )
-    if(allocated(flqc_sea)   ) deallocate(flqc_sea   )
     if(allocated(gz1oz0_sea) ) deallocate(gz1oz0_sea )
     if(allocated(mol_sea)    ) deallocate(mol_sea    )
     if(allocated(psih_sea)   ) deallocate(psih_sea   )
@@ -609,8 +607,9 @@
        v10_sea(i,j)     = 0._RKIND
 
        !overwrite some local variables for sea-ice cells:
-       if(xice_p(i,j).ge.xice_threshold .and. xice_p(i,j).le.1._RKIND) then
+       if(xice_p(i,j).ge.xice_threshold .and. xice_p(i,j).lt.1._RKIND) then
           xland_sea(i,j)  = 2._RKIND
+          xland_p(i,j)    = 1._RKIND
           mavail_sea(i,j) = 1._RKIND
           znt_sea(i,j)    = 0.0001_RKIND
           tsk_sea(i,j)    = max(sst_p(i,j),271.4_RKIND)
@@ -903,10 +902,8 @@
     call mpas_pool_get_array(sfc_input,'xice',xice)
     do j = jts,jte
     do i = its,ite
-       if(xice(i).ge.xice_threshold .and. xice(i).le.1._RKIND) then
+       if(xice(i).ge.xice_threshold .and. xice(i).lt.1._RKIND) then
           br(i)     = br_p(i,j)*xice(i)     + (1._RKIND-xice(i))*br_sea(i,j)
-          flhc(i)   = flhc_p(i,j)*xice(i)   + (1._RKIND-xice(i))*flhc_sea(i,j)
-          flqc(i)   = flqc_p(i,j)*xice(i)   + (1._RKIND-xice(i))*flqc_sea(i,j)
           gz1oz0(i) = gz1oz0_p(i,j)*xice(i) + (1._RKIND-xice(i))*gz1oz0_sea(i,j)
           mol(i)    = mol_p(i,j)*xice(i)    + (1._RKIND-xice(i))*mol_sea(i,j)
           psih(i)   = psih_p(i,j)*xice(i)   + (1._RKIND-xice(i))*psih_sea(i,j)
@@ -949,7 +946,7 @@
           call mpas_pool_get_array(sfc_input,'xice',xice)
           do j = jts,jte
           do i = its,ite
-             if(xice(i).ge.xice_threshold .and. xice(i).le.1._RKIND) then
+             if(xice(i).ge.xice_threshold .and. xice(i).lt.1._RKIND) then
                 fh(i) = fh_p(i,j)*xice(i) + (1._RKIND-xice(i))*fh_sea(i,j)
                 fm(i) = fm_p(i,j)*xice(i) + (1._RKIND-xice(i))*fm_sea(i,j)
              endif
@@ -969,7 +966,7 @@
           call mpas_pool_get_array(sfc_input,'xice',xice)
           do j = jts,jte
           do i = its,ite
-             if(xice(i).ge.xice_threshold .and. xice(i).le.1._RKIND) then
+             if(xice(i).ge.xice_threshold .and. xice(i).lt.1._RKIND) then
                 ch(i) = ch_p(i,j)*xice(i) + (1._RKIND-xice(i))*ch_sea(i,j)
              endif
           enddo
@@ -990,9 +987,8 @@
           call mpas_pool_get_array(sfc_input,'xice',xice)
           do j = jts,jte
           do i = its,ite
-             if(xice(i).ge.xice_threshold .and. xice(i).le.1._RKIND) then
+             if(xice(i).ge.xice_threshold .and. xice(i).lt.1._RKIND) then
                 ch(i)  =  ch_p(i,j)*xice(i) + (1._RKIND-xice(i))*ch_sea(i,j)
-                cqs(i) = cqs_p(i,j)*xice(i) + (1._RKIND-xice(i))*cqs_sea(i,j)
              endif
           enddo
           enddo
@@ -1034,7 +1030,7 @@
           
           do j=jts,jte
           do i=its,ite
-             if(xice(i).ge.xice_threshold .and. xice(i).le.1._RKIND) then
+             if(xice(i).ge.xice_threshold .and. xice(i).lt.1._RKIND) then
                 ct(i)     = ct_p(i,j)*xice(i)     + (1._RKIND-xice(i))*ct_sea(i,j)
                 pshltr(i) = pshltr_p(i,j)*xice(i) + (1._RKIND-xice(i))*pshltr_sea(i,j)
                 qshltr(i) = qshltr_p(i,j)*xice(i) + (1._RKIND-xice(i))*qshltr_sea(i,j)
@@ -1166,6 +1162,7 @@
 
 !local pointers:
  logical,pointer:: config_do_restart,config_frac_seaice
+ logical,pointer:: config_do_DAcycling     
  character(len=StrKIND),pointer:: sfclayer_scheme
  real(kind=RKIND),dimension(:),pointer:: areaCell
 
@@ -1188,7 +1185,8 @@
  call mpas_pool_get_config(configs,'config_do_restart'     ,config_do_restart )
  call mpas_pool_get_config(configs,'config_frac_seaice'    ,config_frac_seaice)
  call mpas_pool_get_config(configs,'config_sfclayer_scheme',sfclayer_scheme   )
-
+ call mpas_pool_get_config(configs,'config_do_DAcycling'   ,config_do_DAcycling) 
+      
  call mpas_pool_get_array(mesh,'areaCell',areaCell)
 
 !copy all MPAS arrays to rectanguler grid:
@@ -1197,7 +1195,7 @@
  dx = sqrt(maxval(areaCell))
 
  initflag = 1
- if(config_do_restart .or. itimestep > 1) initflag = 0
+ if(config_do_restart .or. config_do_DAcycling .or. itimestep > 1) initflag = 0
 
  sfclayer_select: select case (trim(sfclayer_scheme))
 
@@ -1417,7 +1415,10 @@
                    ustm     = ustm_p     , ck        = ck_p     , cka      = cka_p       , &
                    cd       = cd_p       , cda       = cda_p    , ch       = ch_p        , &
                    qcg      = qcg_p      , spp_pbl   = spp_pbl  , isftcflx = isftcflx    , &
-                   iz0tlnd  = iz0tlnd    , itimestep = initflag                          , &
+                   iz0tlnd  = iz0tlnd                                                    , &
+                   itimestep= itimestep  , initflag  = initflag                          , &
+                   restart  = config_do_restart                                          , &
+                   cycling  = config_do_DAcycling                                        , &
                    errmsg   = errmsg     , errflg    = errflg                            , &
                    ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde , &
                    ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme , &
@@ -1449,7 +1450,10 @@
                       ustm     = ustm_sea   , ck        = ck_sea   , cka      = cka_sea     , &
                       cd       = cd_sea     , cda       = cda_sea  , ch       = ch_sea      , &
                       qcg      = qcg_p      , spp_pbl   = spp_pbl  , isftcflx = isftcflx    , &
-                      iz0tlnd  = iz0tlnd    , itimestep = initflag                          , &
+                      iz0tlnd  = iz0tlnd                                                    , &
+                      itimestep= itimestep  , initflag  = initflag                          , &
+                      restart  = config_do_restart                                          , &
+                      cycling  = config_do_DAcycling                                        , &
                       errmsg   = errmsg     , errflg    = errflg                            , &
                       ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde , &
                       ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme , &

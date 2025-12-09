@@ -59,7 +59,7 @@
 !>\section arg_table_sf_mynn_pre_run
 !!\html\include sf_mynn_pre_run.html
 !!
- subroutine mynnsfclay_pre(its,ite,kte,itimestep,dz3d,u3d,v3d,p3d,t3d,rho3d,qv3d,qc3d,f_spp,pattern_spp,   &
+ subroutine mynnsfclay_pre(its,ite,kte,initflag,dz3d,u3d,v3d,p3d,t3d,rho3d,qv3d,qc3d,f_spp,pattern_spp,   &
                            ust,mol,qsfc,qstar,dz8w1d,u1d,v1d,p1d,t1d,rho1d,qv1d,qc1d,rstoch1d,dz2w1d,u1d2, &
                            v1d2,errmsg,errflg)
 !=================================================================================================================
@@ -69,7 +69,7 @@
 
  integer,intent(in):: its,ite
  integer,intent(in):: kte
- integer,intent(in):: itimestep
+ integer,intent(in):: initflag
 
  real(kind=kind_phys),intent(in),dimension(its:ite,1:kte):: &
     dz3d,      &!
@@ -149,7 +149,7 @@
     enddo
  endif
 
- if(itimestep == 1) then
+ if(initflag == 1) then
     do i = its,ite
        if (ust(i) .lt. 1e-4 .or. ust(i) .gt. 3.0) then
           ust(i)   = max(0.04*sqrt(u1d(i)*u1d(i) + v1d(i)*v1d(i)),0.001)

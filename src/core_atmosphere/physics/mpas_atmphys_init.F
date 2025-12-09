@@ -107,6 +107,7 @@ use mpas_stream_manager
 
 !local pointers:
  logical,pointer:: config_do_restart,    &
+                   config_do_DAcycling,  &
                    config_o3climatology, &
                    config_oml1d
 
@@ -139,11 +140,12 @@ use mpas_stream_manager
  real(kind=RKIND),dimension(:),pointer:: t_oml,t_oml_initial,t_oml_200m_initial
  real(kind=RKIND),dimension(:),pointer:: h_oml,h_oml_initial,hu_oml,hv_oml
  real(kind=RKIND),dimension(:),pointer:: rdzw,dzu
- real(kind=RKIND), pointer:: config_dt
+ real(kind=RKIND),pointer:: config_dt
  integer,pointer:: nCells,nVertLevels
  character(len=StrKIND),pointer:: gwdo_scheme
  logical,pointer:: ngw_scheme
  integer,pointer:: ntau_d1y
+ real(kind=RKIND),pointer:: knob_ugwp_tauamp
  real(kind=RKIND),dimension(:),pointer:: ugwp_taulat
  integer,dimension(:),pointer:: jindx1_tau, jindx2_tau
  real(kind=RKIND),dimension(:),pointer:: ddy_j1tau, ddy_j2tau
@@ -161,6 +163,7 @@ use mpas_stream_manager
 !call mpas_log_write('--- enter subroutine physics_init:')
 
  call mpas_pool_get_config(configs,'config_do_restart'       ,config_do_restart       )
+ call mpas_pool_get_config(configs,'config_do_DAcycling'     ,config_do_DAcycling     )
  call mpas_pool_get_config(configs,'config_o3climatology'    ,config_o3climatology    )
  call mpas_pool_get_config(configs,'config_convection_scheme',config_convection_scheme)
  call mpas_pool_get_config(configs,'config_lsm_scheme'       ,config_lsm_scheme       )
@@ -307,7 +310,7 @@ use mpas_stream_manager
  endif
 
 !initialization of xicem:
- if(.not.config_do_restart) then
+ if(.not.config_do_restart .and. .not. config_do_DAcycling) then
 !   call mpas_log_write('--- initialization of xicem:')
     do iCell = 1, nCellsSolve
        xicem(iCell) = xice(iCell)
@@ -317,7 +320,7 @@ use mpas_stream_manager
 !initialization of the local sea-surface temperature when a diurnal cycle of the
 !sea-surface temperature is applied. This avoids having the array sstsk equal to
 !zero over land:
- if(.not. config_do_restart) then
+ if(.not. config_do_restart .and. .not. config_do_DAcycling) then
 !   call mpas_log_write('--- initialization of sstsk:')
     do iCell = 1, nCellsSolve
        sstsk(iCell) = sst(iCell)
@@ -400,7 +403,7 @@ use mpas_stream_manager
     if(config_lsm_scheme .eq. 'sf_noah' .or. config_lsm_scheme .eq. 'sf_ruc') then
        call init_lsm(dminfo,mesh,configs,diag_physics,sfc_input)
     elseif(config_lsm_scheme .eq. 'sf_noahmp') then
-       call init_lsm_noahmp(configs,mesh,diag_physics,diag_physics_noahmp,output_noahmp,sfc_input)
+       call init_lsm_noahmp(configs,mesh,clock,diag_physics,diag_physics_noahmp,output_noahmp,sfc_input)
     endif
  endif
 
@@ -440,6 +443,7 @@ use mpas_stream_manager
        call mpas_log_write('Initializing non-stationary GWD scheme',masterOnly=.true.)
        call MPAS_stream_mgr_read(stream_manager, streamID='ugwp_ngw_in', whence=MPAS_STREAM_NEAREST, ierr=ierr)
        call MPAS_stream_mgr_reset_alarms(stream_manager, streamID='ugwp_ngw_in', direction=MPAS_STREAM_INPUT, ierr=ierr)
+       call mpas_pool_get_config(configs,'config_knob_ugwp_tauamp', knob_ugwp_tauamp)
        call mpas_pool_get_dimension(mesh,'lat',ntau_d1y)
        call mpas_pool_get_array(ngw_input,'LATS',ugwp_taulat)
        call mpas_pool_get_array(ngw_input,'jindx1_tau'  ,jindx1_tau  )
@@ -448,8 +452,8 @@ use mpas_stream_manager
        call mpas_pool_get_array(ngw_input,'ddy_j2tau'   ,ddy_j2tau   )
        call mpas_pool_get_array(mesh,'latCell',latCell)
        call mpas_log_write('--- Initializing UGWP non-stationary GWD parameters ---',masterOnly=.true.)
-       call ugwpv1_ngw_init(latCell,nVertLevels,config_dt,rdzw,dzu,           &
-               ntau_d1y,ugwp_taulat,jindx1_tau,jindx2_tau,ddy_j1tau,ddy_j2tau)
+       call ugwpv1_ngw_init(latCell,nVertLevels,config_dt,rdzw,dzu,ntau_d1y,          &
+               knob_ugwp_tauamp,ugwp_taulat,jindx1_tau,jindx2_tau,ddy_j1tau,ddy_j2tau)
        call mpas_log_write('--- UGWP non-stationary GWD parameters initialized ---',masterOnly=.true.)
     endif
  endif
