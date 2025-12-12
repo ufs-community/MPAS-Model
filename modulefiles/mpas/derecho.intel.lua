@@ -3,7 +3,7 @@ This module loads libraries for MPAS-Model
 ]])
 
 --whatis([===[Loads libraries for MPAS-Model ]===])
-prepend_path("MODULEPATH", '/glade/work/epicufsrt/contrib/spack-stack/derecho/spack-stack-1.9.3/envs/rebuild-ue-oneapi-2024.2.1/install/modulefiles/Core')
+prepend_path("MODULEPATH", '/glade/work/epicufsrt/contrib/spack-stack/derecho/spack-stack-1.9.3/envs/ue-oneapi-2024.2.1/install/modulefiles/Core')
 
 load("stack-oneapi/2024.2.1")
 load("stack-cray-mpich/8.1.29")
