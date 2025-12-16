@@ -1115,8 +1115,8 @@
      IF (allocated(rolling_precip)) THEN
 !     IF (allocated(rolling_precip_1min)) THEN
         DO k = longest_window_n-1,1,-1
-!           rolling_precip_1min(k+1,:) = rolling_precip_1min(k,:)
-           rolling_precip(k+1,:) = rolling_precip(k,:)
+!           rolling_precip_1min(k+1,i) = rolling_precip_1min(k,i)
+           rolling_precip(k+1,i) = rolling_precip(k,i)
         END DO
 !        rolling_precip_1min(1,i) = rainnc(i)
        rolling_precip(1,i) = rainnc(i)
