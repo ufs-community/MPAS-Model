@@ -260,13 +260,17 @@
              do i = its,ite
                 qal_p(i,k,j) = qal(k,i)
                 qai_p(i,k,j) = qai(k,i)
-                cldfrac_p(i,k,j) = max(qal(k,i), qai(k,i))
-
-                if (qirad_p(i,k,j) > 1.e-7) then
-                   qirad_p(i,k,j) = qirad_p(i,k,j) + qsrad_p(i,k,j)
-                   qsrad_p(i,k,j) = 0.
+                cldfrac_p(i,k,j) = max(0., max(qal(k,i), qai(k,i))) ! Avoid cldfrac < 0
+                if (cldfrac_p(i,k,j) > 0.) then
+                   if (qirad_p(i,k,j) > 1.e-7) then
+                      qirad_p(i,k,j) = max(0. , qirad_p(i,k,j) + qsrad_p(i,k,j))
+                      qsrad_p(i,k,j) = 0.
+                   endif
+                else
+                   qcrad_p(i,k,j) = 0. ! No cloud
+                   qirad_p(i,k,j) = 0. ! No cloud
+                   qsrad_p(i,k,j) = 0. ! No cloud
                 endif
-
              enddo
           enddo
        enddo
