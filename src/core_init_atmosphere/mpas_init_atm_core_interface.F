@@ -125,11 +125,28 @@ module init_atm_core_interface
       integer, pointer :: config_init_case
       logical, pointer :: noahmp, config_noahmp_static
 
+      logical, pointer :: mpas_smoke_in, mpas_dust_in, mpas_anthro_in
+      character(len=StrKIND),pointer:: config_smoke_scheme, config_dust_scheme, config_anthro_scheme
+
 
       ierr = init_atm_setup_packages_when(configs, packages)
       if (ierr /= 0) then
          return
       end if
+
+! Chemistry
+      call mpas_pool_get_config(configs,'config_smoke_scheme', config_smoke_scheme)
+      call mpas_pool_get_config(configs,'config_dust_scheme', config_dust_scheme)
+      call mpas_pool_get_config(configs,'config_anthro_scheme', config_anthro_scheme)
+      nullify(mpas_smoke_in)
+      call  mpas_pool_get_package(packages,'mpas_smoke_inActive',mpas_smoke_in)
+      if(config_smoke_scheme.ne.'off')  mpas_smoke_in=.true.
+      nullify(mpas_dust_in)
+      call  mpas_pool_get_package(packages,'mpas_dust_inActive',mpas_dust_in)
+      if(config_dust_scheme.ne.'off')  mpas_dust_in=.true.
+      nullify(mpas_anthro_in)
+      call  mpas_pool_get_package(packages,'mpas_anthro_inActive',mpas_anthro_in)
+      if(config_anthro_scheme.ne.'off')  mpas_anthro_in=.true.
 
       call mpas_pool_get_config(configs, 'config_init_case', config_init_case)
       call mpas_pool_get_config(configs, 'config_static_interp', config_static_interp)
