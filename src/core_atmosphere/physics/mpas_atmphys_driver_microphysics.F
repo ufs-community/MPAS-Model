@@ -21,7 +21,8 @@
 !wrf physics:
  use module_mp_kessler
  use module_mp_thompson
- use module_mp_tempo_driver,only: tempo_driver
+ use module_mp_tempo_cfgs,only: ty_tempo_cfgs
+ use module_mp_tempo_driver,only: tempo_driver, ty_tempo_driver_diags, tempo_aerosol_surface_emissions
  use module_mp_tempo_init,only: tempo_init
  use module_mp_wsm6,only: wsm6
  use mp_wsm6,only: mp_wsm6_init,refl10cm_wsm6
@@ -94,7 +95,7 @@
 
 !--- initialization option for WSM6 from WRF version 3.8.1. this option could also be set as a namelist parameter.
  integer,parameter:: hail_opt = 0
-
+ type(ty_tempo_cfgs) :: tempo_cfgs
 
  contains
 
@@ -486,7 +487,7 @@
 
     case("mp_tempo")
        call tempo_init(aerosolaware_flag=config_tempo_aerosolaware, &
-         hailaware_flag=config_tempo_hailaware)
+         hailaware_flag=config_tempo_hailaware, tempo_cfgs=tempo_cfgs)
 
        if (config_tempo_aerosolaware) then
           call init_tempo_aerosols_forMPAS(do_restart,dminfo,mesh,state,time_lev,diag_physics)
@@ -532,7 +533,6 @@
 
 !local pointers:
  character(len=StrKIND),pointer:: microp_scheme
- logical,pointer:: config_tempo_aerosolaware, config_tempo_hailaware
  character(len=StrKIND),pointer:: nssl_moments
 
 !local variables and arrays:
@@ -544,6 +544,7 @@
  character(len=StrKIND):: errmsg
  integer:: errflg
 
+ type(ty_tempo_driver_diags) :: tempo_driver_diags
 !-----------------------------------------------------------------------------------------------------------------
 !call mpas_log_write('')
 !call mpas_log_write('---enter subroutine driver_microphysics:')
@@ -553,8 +554,6 @@
  errflg = 0
 
  call mpas_pool_get_config(configs,'config_microp_scheme',microp_scheme)
- call mpas_pool_get_config(configs,'config_tempo_hailaware',config_tempo_hailaware)
- call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
  call mpas_pool_get_config(configs,'config_nssl_moments',nssl_moments)
  call mpas_pool_get_array(diag_physics,'do_diag_dbz',do_diag_dbz)
 
@@ -592,33 +591,42 @@
        call mpas_timer_stop('mp_kessler')
 
     case ("mp_tempo")
+
+       if (allocated(nwfa_p) .and. allocated(nwfa2d_p)) then
+         call tempo_aerosol_surface_emissions(dt=dt_microp, nwfa=nwfa_p, nwfa2d=nwfa2d_p, &
+            ims=ims, ime=ime, jms=jms, jme=jme, kms=kms, kme=kme, kts=kts)
+       endif   
+
        call mpas_timer_start('mp_tempo')
 
        istep = 1
        do while (istep .le. n_microp)
-         call tempo_driver( &
-            th        = th_p        , qv         = qv_p         , qc         = qc_p         , &
-            qr        = qr_p        , qi         = qi_p         , qs         = qs_p         , &
-            qg        = qg_p        , ni         = ni_p         , nr         = nr_p         , &
-            ng        = ng_p        , qb         = volg_p                                   , &
-            nc        = nc_p        , nwfa       = nwfa_p       , nifa       = nifa_p       , &
-            nwfa2d    = nwfa2d_p    , nifa2d     = nifa2d_p                                 , &
-            pii       = pi_p        , p          = pres_p       , dz         = dz_p         , &
-            w         = w_p         , dt_in      = dt_microp    , itimestep  = itimestep    , &
-            rainnc    = rainnc_p    , rainncv    = rainncv_p    , snownc     = snownc_p     , &
-            snowncv   = snowncv_p   , graupelnc  = graupelnc_p  , graupelncv = graupelncv_p , &
-            sr        = sr_p        , rainprod   = rainprod_p   , evapprod   = evapprod_p   , &
-            re_cloud  = recloud_p   , re_ice     = reice_p      , re_snow    = resnow_p     , &
-            has_reqc  = has_reqc    , has_reqi   = has_reqi     , has_reqs   = has_reqs     , &
-            !! ntc       = ntc_p       , muc        = muc_p                                    , &
-            refl_10cm  = refl10cm_p , frainnc    = frainnc_p                                , &
-            max_hail_diameter_sfc = max_hail_diameter_sfc_p                                 , &
-            max_hail_diameter_column = max_hail_diameter_column_p                           , &
-            qcbl      = qcbl_p      , cldfrac    = cldfrac_p                                , &
-            ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde           , &
-            ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme           , &
-            its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte             &
-            )
+         call tempo_driver( tempo_cfgs=tempo_cfgs, &
+            dt      = dt_microp  , itimestep  = itimestep , &
+            th      = th_p       , qv         = qv_p      , qc      = qc_p   , &
+            qr      = qr_p       , qi         = qi_p      , qs     = qs_p    , &
+            qg      = qg_p       , ni         = ni_p      , nr     = nr_p    , &
+            ng      = ng_p       , qb         = volg_p    , w      = w_p     , &
+            nc      = nc_p       , nwfa       = nwfa_p    , nifa   = nifa_p  , &
+            pii     = pi_p       , p          = pres_p    , dz     = dz_p    , &
+            ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde , &
+            ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme , &
+            its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte , &
+            tempo_diags = tempo_driver_diags)
+         snownc_p = tempo_driver_diags%snow_liquid_equiv_precip
+         snowncv_p = tempo_driver_diags%snow_liquid_equiv_precip
+         graupelnc_p = tempo_driver_diags%graupel_liquid_equiv_precip
+         graupelncv_p = tempo_driver_diags%graupel_liquid_equiv_precip
+         rainnc_p = tempo_driver_diags%rain_precip+ snownc_p + graupelnc_p + tempo_driver_diags%ice_liquid_equiv_precip
+         rainncv_p = tempo_driver_diags%rain_precip + snownc_p + graupelnc_p + tempo_driver_diags%ice_liquid_equiv_precip
+         frainnc_p = tempo_driver_diags%frz_rain_precip
+         refl10cm_p = tempo_driver_diags%refl10cm
+         recloud_p = tempo_driver_diags%re_cloud
+         reice_p = tempo_driver_diags%re_ice
+         resnow_p = tempo_driver_diags%re_snow
+         sr_p = tempo_driver_diags%frozen_fraction
+         max_hail_diameter_sfc_p = tempo_driver_diags%max_hail_diameter_sfc
+         max_hail_diameter_column_p = tempo_driver_diags%max_hail_diameter_column
        istep = istep + 1
        enddo
        call mpas_timer_stop('mp_tempo')

@@ -15,99 +15,19 @@
  use mpas_pool_routines
 
  use mpas_atmphys_utilities
- use module_mp_tempo_params, only: nc_ml_input, nc_ml_nodes, nc_ml_output, &
-      nr_ml_input, nr_ml_nodes, nr_ml_output, &
-      nc_ml_trans_mean, nc_ml_trans_var, &
-      nc_ml_w00, nc_ml_w01, nc_ml_b00, nc_ml_b01
- use module_mp_tempo_ml, only: MLdata, tempo_save_or_read_ml_data
+ use module_mp_tempo_params, only: nwfa_default, aero_max, &
+      naCCN1,naCCN0,naIN0,naIN1
 
  implicit none
  private
- public:: init_tempo_aerosols_forMPAS, tempo_ml_init
+ public:: init_tempo_aerosols_forMPAS
 
-!MPAS main initialization of the TEMPO parameterization of cloud microphysics with nucleation of cloud
-!droplets based on distributions of CCNs and INs (aerosol-aware parameterization).
+!MPAS initialization of aerosols for TEMPO parameterization.
 
  contains
 
 !=================================================================================================================
- subroutine tempo_ml_init(configs)
-! Called once to initial data for tempo_ml
-!=================================================================================================================
-
-!input arguments:
-type(mpas_pool_type),intent(in):: configs
-
-!local variables and pointers:
- type(MLdata), dimension(2) :: tempo_ml_data
- logical,pointer:: config_tempo_ml_nc_pbl,config_tempo_ml_nc,config_tempo_ml_nr
-
- call mpas_pool_get_config(configs, 'config_tempo_ml_nc_pbl', config_tempo_ml_nc_pbl)
- call mpas_pool_get_config(configs, 'config_tempo_ml_nc', config_tempo_ml_nc)
- call mpas_pool_get_config(configs, 'config_tempo_ml_nr', config_tempo_ml_nr)
-
- if(.not. (config_tempo_ml_nc_pbl .or. config_tempo_ml_nc .or. config_tempo_ml_nr)) then
-    call mpas_log_write('--- All configuration flags for TEMPO ML are false... TEMPO ML will not be used')
-    return
- endif
-
- if(config_tempo_ml_nc .or. config_tempo_ml_nr) then
-    call mpas_log_write('--- TEMPO ML for nc and nr prediction not yet working... These flags will be ignored')
- endif
-
- if(config_tempo_ml_nc_pbl) then
-    call mpas_log_write('--- Using TEMPO ML prediction to give life to the PBL clouds')
- endif
-
- ! Cloud water
- tempo_ml_data(1)%input_size = nc_ml_input
- tempo_ml_data(1)%node_size = nc_ml_nodes
- tempo_ml_data(1)%output_size = nc_ml_output
-
- if (.not.allocated(tempo_ml_data(1)%transform_mean)) allocate(tempo_ml_data(1)%transform_mean(nc_ml_input))
- if (.not.allocated(tempo_ml_data(1)%transform_var)) allocate(tempo_ml_data(1)%transform_var(nc_ml_input))
-
- tempo_ml_data(1)%transform_mean = nc_ml_trans_mean
- tempo_ml_data(1)%transform_var = nc_ml_trans_var
-
- if (.not.allocated(tempo_ml_data(1)%weights00)) allocate(tempo_ml_data(1)%weights00(nc_ml_nodes,nc_ml_input))
- if (.not.allocated(tempo_ml_data(1)%weights01)) allocate(tempo_ml_data(1)%weights01(nc_ml_output,nc_ml_nodes))
- if (.not.allocated(tempo_ml_data(1)%bias00)) allocate(tempo_ml_data(1)%bias00(nc_ml_nodes))
- if (.not.allocated(tempo_ml_data(1)%bias01)) allocate(tempo_ml_data(1)%bias01(nc_ml_output))
-
- tempo_ml_data(1)%weights00 = reshape(nc_ml_w00, (/nc_ml_nodes, nc_ml_input/))
- tempo_ml_data(1)%weights01 = reshape(nc_ml_w01, (/nc_ml_output, nc_ml_nodes/))
- tempo_ml_data(1)%bias00 = nc_ml_b00
- tempo_ml_data(1)%bias01 = nc_ml_b01
-
- ! Rain water
- tempo_ml_data(2)%input_size = nc_ml_input
- tempo_ml_data(2)%node_size = nc_ml_nodes
- tempo_ml_data(2)%output_size = nc_ml_output
-
- if (.not.allocated(tempo_ml_data(2)%transform_mean)) allocate(tempo_ml_data(2)%transform_mean(nc_ml_input))
- if (.not.allocated(tempo_ml_data(2)%transform_var)) allocate(tempo_ml_data(2)%transform_var(nc_ml_input))
-
- tempo_ml_data(2)%transform_mean = nc_ml_trans_mean
- tempo_ml_data(2)%transform_var = nc_ml_trans_var
-
- if (.not.allocated(tempo_ml_data(2)%weights00)) allocate(tempo_ml_data(2)%weights00(nc_ml_nodes,nc_ml_input))
- if (.not.allocated(tempo_ml_data(2)%weights01)) allocate(tempo_ml_data(2)%weights01(nc_ml_output,nc_ml_nodes))
- if (.not.allocated(tempo_ml_data(2)%bias00)) allocate(tempo_ml_data(2)%bias00(nc_ml_nodes))
- if (.not.allocated(tempo_ml_data(2)%bias01)) allocate(tempo_ml_data(2)%bias01(nc_ml_output))
-
- tempo_ml_data(2)%weights00 = reshape(nc_ml_w00, (/nc_ml_nodes, nc_ml_input/))
- tempo_ml_data(2)%weights01 = reshape(nc_ml_w01, (/nc_ml_output, nc_ml_nodes/))
- tempo_ml_data(2)%bias00 = nc_ml_b00
- tempo_ml_data(2)%bias01 = nc_ml_b01
-
- ! Save neural network
- call tempo_save_or_read_ml_data(ml_data_in=tempo_ml_data)
-
- end subroutine tempo_ml_init
-
-!=================================================================================================================
- subroutine init_tempo_aerosols_forMPAS(do_restart,dminfo,mesh,state,time_lev,diag_physics)
+subroutine init_tempo_aerosols_forMPAS(do_restart,dminfo,mesh,state,time_lev,diag_physics)
 !=================================================================================================================
 
 !input variables:
@@ -124,8 +44,10 @@ type(mpas_pool_type),intent(in):: configs
  integer,pointer:: nCellsSolve,nVertLevels
  integer,pointer:: index_nifa,index_nwfa
 
+ real(kind=RKIND),dimension(:),pointer    :: areaCell
  real(kind=RKIND),dimension(:),pointer    :: nifa2d,nwfa2d
- real(kind=RKIND),dimension(:,:),pointer  :: nifa,nwfa
+ real(kind=RKIND),dimension(:,:),pointer  :: zgrid,zz
+ real(kind=RKIND),dimension(:,:),pointer  :: rho_zz,nifa,nwfa
  real(kind=RKIND),dimension(:,:,:),pointer:: scalars
 
  character(len=StrKIND):: mess
@@ -133,16 +55,26 @@ type(mpas_pool_type),intent(in):: configs
  integer:: iCell, k
 
  real(kind=RKIND):: max_test
+ real(kind=RKIND):: airmass, deltaz
+ real(kind=RKIND):: h_01
+ real(kind=RKIND):: niIN3,niCCN3
  real(kind=RKIND):: nifa_max,nifa_min,global_nifa_max,global_nifa_min
  real(kind=RKIND):: nwfa_max,nwfa_min,global_nwfa_max,global_nwfa_min
+ real(kind=RKIND),dimension(:,:),allocatable:: hgt
 
 !-----------------------------------------------------------------------------------------------------------------
+!call mpas_log_write('--- enter subroutine init_tempo_aerosols_forMPAS:')
+
 !... if do_restart is true, then we do not need to check the initialization of nwfa, nifa, and nwfa2d. If false,
 !    then, we proceed with the initialization:
  if(do_restart) return
 
  call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
  call mpas_pool_get_dimension(mesh,'nVertLevels',nVertLevels)
+
+ call mpas_pool_get_array(mesh,'areaCell',areaCell)
+ call mpas_pool_get_array(mesh,'zgrid'   ,zgrid   )
+ call mpas_pool_get_array(mesh,'zz'      ,zz      )
 
  call mpas_pool_get_array(diag_physics,'nifa2d',nifa2d)
  call mpas_pool_get_array(diag_physics,'nwfa2d',nwfa2d)
@@ -153,6 +85,15 @@ type(mpas_pool_type),intent(in):: configs
  call mpas_pool_get_array(state,'scalars',scalars,time_lev)
  nifa   => scalars(index_nifa,:,:)
  nwfa   => scalars(index_nwfa,:,:)
+
+ call mpas_pool_get_array(state,'rho_zz',rho_zz,time_lev)
+
+ if(.not.allocated(hgt)) allocate(hgt(1:nVertLevels,1:nCellsSolve))
+ do iCell = 1, nCellsSolve
+    do k = 1, nVertLevels
+       hgt(k,iCell) = 0.5_RKIND * (zgrid(k,iCell)+zgrid(k+1,iCell))
+    enddo
+ enddo
 
 !... initialize the distribution of hygroscopic ("water friendly") aerosols if not already initialized using
 !    GOCART data:
@@ -165,8 +106,24 @@ type(mpas_pool_type),intent(in):: configs
  call mpas_log_write('--- global_nwfa_min = $r',realArgs=(/global_nwfa_min/))
  call mpas_log_write('--- global_nwfa_max = $r',realArgs=(/global_nwfa_max/))
 
- if(global_nwfa_min /= 0._RKIND .and. global_nwfa_max /= 0._RKIND) then
-   call mpas_log_write('--- tempo() info: initialized nwfa using the climatological GOCART data.')
+ if(global_nwfa_min == 0._RKIND .and. global_nwfa_max == 0._RKIND) then
+    call mpas_log_write('--- initialize nwfa using an exponential distribution of CCN as a function of height.')
+    do iCell = 1, nCellsSolve
+       if(hgt(1,iCell).le.1000.0) then
+          h_01 = 0.8
+       elseif(hgt(1,iCell).ge.2500.0) then
+          h_01 = 0.01
+       else
+          h_01 = 0.8*cos(hgt(1,iCell)*0.001 - 1.0)
+       endif
+       niCCN3 = -1.0*ALOG(naCCN1/naCCN0)/h_01
+       nwfa(1,iCell) = naCCN1+naCCN0*exp(-((hgt(2,iCell)-hgt(1,iCell))/1000.)*niCCN3)
+       do k = 2, nVertLevels
+          nwfa(k,iCell) = naCCN1+naCCN0*exp(-((hgt(k,iCell)-hgt(1,iCell))/1000.)*niCCN3)
+       enddo
+    enddo
+ else
+    call mpas_log_write('--- initialize nwfa using the climatological GOCART data.')
  endif
 
 !... initialize the distribution of nonhygroscopic ("ice friendly") aerosols if not already initialized using
@@ -181,11 +138,55 @@ type(mpas_pool_type),intent(in):: configs
  call mpas_log_write('--- global_nifa_max = $r',realArgs=(/global_nifa_max/))
 
  if(global_nifa_min == 0._RKIND .and. global_nifa_max == 0._RKIND) then
-   call mpas_log_write('--- initialize nifa using the climatological GOCART data.')
+    call mpas_log_write('--- initialize nifa using an exponential distribution of IN as a function of height.')
+    do iCell = 1, nCellsSolve
+       if(hgt(1,iCell).le.1000.0) then
+          h_01 = 0.8
+       elseif(hgt(1,iCell).ge.2500.0) then
+          h_01 = 0.01
+       else
+          h_01 = 0.8*cos(hgt(1,iCell)*0.001 - 1.0)
+       endif
+       niIN3 = -1.0*ALOG(naIN1/naIN0)/h_01
+       nifa(1,iCell) = naIN1+naIN0*exp(-((hgt(2,iCell)-hgt(1,iCell))/1000.)*niIN3)
+       do k = 2, nVertLevels
+          nifa(k,iCell) = naIN1+naIN0*exp(-((hgt(k,iCell)-hgt(1,iCell))/1000.)*niIN3)
+       enddo
+    enddo
+ else
+    call mpas_log_write('--- initialize nifa using the climatological GOCART data.')
  endif
+
+!... scale the lowest level aerosol data into an emissions rate.  This is very far from ideal, but
+!... need higher emissions where larger amount of (climo) existing and lesser emissions where there
+!... exists fewer to begin as a first-order simplistic approach.  Later, proper connection to emission
+!... inventory would be better, but, for now, scale like this:
+!... where: Nwfa=50 per cc, emit 0.875E4 aerosols per second per grid box unit
+!... that was tested as ~(20kmx20kmx50m = 2.E10 m**3).
+
+ k = 1
+ do iCell = 1, nCellsSolve
+    ! airmass = rho_zz(k,iCell)*zz(k,iCell)
+    ! airmass = airmass*(zgrid(k+1,iCell)-zgrid(k,iCell))*areaCell(iCell) ! (in kg)
+    ! nwfa2d(iCell) = nwfa(k,iCell)*0.000196*airmass*0.5e-10
+
+    deltaz = zgrid(k+1,iCell)-zgrid(k,iCell)
+    if (deltaz < 9.0) then
+       deltaz = 9.0
+    endif
+    nwfa2d(iCell) = max(nwfa_default, min(aero_max, nwfa(k,iCell))) * &
+         0.000196 * (5.0 / deltaz) * (areaCell(iCell) / 9.e6)
+    nifa2d(iCell) = 0._RKIND
+!   call mpas_log_write('$i $r $r $r',intArgs=(/iCell/),realArgs=(/airmass,nwfa2d(iCell),nifa2d(iCell)/))
+ enddo
+
+!... deallocate local arrays:
+ if(allocated(hgt)) deallocate(hgt)
+
+!call mpas_log_write('--- end subroutine init_tempo_aerosols_forMPAS.')
 
  end subroutine init_tempo_aerosols_forMPAS
 
-!=================================================================================================================
+ !=================================================================================================================
  end module mpas_atmphys_init_tempo
 !=================================================================================================================
