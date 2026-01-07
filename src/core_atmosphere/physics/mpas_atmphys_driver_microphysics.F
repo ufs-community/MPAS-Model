@@ -111,14 +111,14 @@
  character(len=StrKIND),pointer:: microp_scheme
  character(len=StrKIND),pointer:: nssl_moments
  logical,pointer:: config_tempo_hailaware, config_tempo_aerosolaware
- logical,pointer:: config_tempo_ml_nc_pbl
+ logical,pointer:: config_tempo_ml_for_bl_nc
 !-----------------------------------------------------------------------------------------------------------------
 
  call mpas_pool_get_config(configs,'config_microp_scheme',microp_scheme)
  call mpas_pool_get_config(configs,'config_nssl_moments',nssl_moments)
  call mpas_pool_get_config(configs,'config_tempo_hailaware',config_tempo_hailaware)
  call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
- call mpas_pool_get_config(configs,'config_tempo_ml_nc_pbl',config_tempo_ml_nc_pbl)
+ call mpas_pool_get_config(configs,'config_tempo_ml_for_bl_nc',config_tempo_ml_for_bl_nc)
 
 !sounding variables:
  if(.not.allocated(rho_p) ) allocate(rho_p(ims:ime,kms:kme,jms:jme) )
@@ -224,7 +224,7 @@
              if(.not.allocated(volg_p)) allocate(volg_p(ims:ime,kms:kme,jms:jme))
           endif
 
-          if (config_tempo_ml_nc_pbl) then
+          if (config_tempo_ml_for_bl_nc) then
              if(.not.allocated(cldfrac_p) ) allocate(cldfrac_p(ims:ime,kms:kme,jms:jme))
              if(.not.allocated(qcbl_p) ) allocate(qcbl_p(ims:ime,kms:kme,jms:jme))
           endif
@@ -276,7 +276,7 @@
  character(len=StrKIND),pointer:: microp_scheme
  character(len=StrKIND),pointer:: nssl_moments
  logical,pointer:: config_tempo_hailaware, config_tempo_aerosolaware
- logical,pointer:: config_tempo_ml_nc_pbl
+ logical,pointer:: config_tempo_ml_for_bl_nc
 
 !-----------------------------------------------------------------------------------------------------------------
 
@@ -284,7 +284,7 @@
  call mpas_pool_get_config(configs,'config_nssl_moments',nssl_moments)
  call mpas_pool_get_config(configs,'config_tempo_hailaware',config_tempo_hailaware)
  call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
- call mpas_pool_get_config(configs,'config_tempo_ml_nc_pbl',config_tempo_ml_nc_pbl)
+ call mpas_pool_get_config(configs,'config_tempo_ml_for_bl_nc',config_tempo_ml_for_bl_nc)
 
 !sounding variables:
  if(allocated(rho_p) ) deallocate(rho_p )
@@ -388,7 +388,7 @@
              if(allocated(volg_p) ) deallocate(volg_p )
           endif
 
-          if (config_tempo_ml_nc_pbl) then
+          if (config_tempo_ml_for_bl_nc) then
              if(allocated(cldfrac_p) ) deallocate(cldfrac_p)
              if(allocated(qcbl_p) ) deallocate(qcbl_p)
           endif
@@ -451,6 +451,7 @@
  logical,pointer:: do_restart
  character(len=StrKIND),pointer:: microp_scheme
  logical,pointer:: config_tempo_hailaware, config_tempo_aerosolaware
+ logical,pointer:: config_tempo_ml_for_bl_nc
  character(len=StrKIND),pointer:: nssl_moments
 
  logical :: outputon = .false.
@@ -470,6 +471,7 @@
  call mpas_pool_get_config(configs,'config_microp_scheme',microp_scheme)
  call mpas_pool_get_config(configs,'config_tempo_hailaware',config_tempo_hailaware)
  call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
+ call mpas_pool_get_config(configs,'config_tempo_ml_for_bl_nc',config_tempo_ml_for_bl_nc)
  call mpas_pool_get_config(configs,'config_nssl_moments',nssl_moments)
  call mpas_pool_get_config(configs,'config_do_restart'   ,do_restart   )
 
@@ -487,7 +489,8 @@
 
     case("mp_tempo")
        call tempo_init(aerosolaware_flag=config_tempo_aerosolaware, &
-         hailaware_flag=config_tempo_hailaware, tempo_cfgs=tempo_cfgs)
+         hailaware_flag=config_tempo_hailaware, &
+         ml_for_bl_nc_flag = config_tempo_ml_for_bl_nc, tempo_cfgs=tempo_cfgs)
 
        if (config_tempo_aerosolaware) then
           call init_tempo_aerosols_forMPAS(do_restart,dminfo,mesh,state,time_lev,diag_physics)
@@ -609,17 +612,21 @@
             ng      = ng_p       , qb         = volg_p    , w      = w_p     , &
             nc      = nc_p       , nwfa       = nwfa_p    , nifa   = nifa_p  , &
             pii     = pi_p       , p          = pres_p    , dz     = dz_p    , &
+            qc_bl   = qcbl_p     , qcfrac_bl  = cldfrac_p                    , &          
             ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde , &
             ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme , &
             its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte , &
             tempo_diags = tempo_driver_diags)
-         snownc_p = tempo_driver_diags%snow_liquid_equiv_precip
-         snowncv_p = tempo_driver_diags%snow_liquid_equiv_precip
-         graupelnc_p = tempo_driver_diags%graupel_liquid_equiv_precip
-         graupelncv_p = tempo_driver_diags%graupel_liquid_equiv_precip
-         rainnc_p = tempo_driver_diags%rain_precip+ snownc_p + graupelnc_p + tempo_driver_diags%ice_liquid_equiv_precip
-         rainncv_p = tempo_driver_diags%rain_precip + snownc_p + graupelnc_p + tempo_driver_diags%ice_liquid_equiv_precip
-         frainnc_p = tempo_driver_diags%frz_rain_precip
+         ! precipitation variables are added in case of multiple calls when n_microp > 1
+         snownc_p = snownc_p + tempo_driver_diags%snow_liquid_equiv_precip
+         snowncv_p = snowncv_p + tempo_driver_diags%snow_liquid_equiv_precip
+         graupelnc_p = graupelnc_p + tempo_driver_diags%graupel_liquid_equiv_precip
+         graupelncv_p = graupelncv_p + tempo_driver_diags%graupel_liquid_equiv_precip
+         rainnc_p = rainnc_p + tempo_driver_diags%rain_precip + &
+            snownc_p + graupelnc_p + tempo_driver_diags%ice_liquid_equiv_precip
+         rainncv_p = rainncv_p + tempo_driver_diags%rain_precip + &
+            snownc_p + graupelnc_p + tempo_driver_diags%ice_liquid_equiv_precip
+         frainnc_p = frainnc_p + tempo_driver_diags%frz_rain_precip
          refl10cm_p = tempo_driver_diags%refl10cm
          recloud_p = tempo_driver_diags%re_cloud
          reice_p = tempo_driver_diags%re_ice
