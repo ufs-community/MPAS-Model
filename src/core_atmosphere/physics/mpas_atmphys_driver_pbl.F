@@ -491,6 +491,8 @@
  real(kind=RKIND),dimension(:,:),pointer:: cldfrac_bl,qc_bl,qi_bl
  real(kind=RKIND),dimension(:,:),pointer:: edmf_a,edmf_ent,edmf_qc,edmf_qt,edmf_thl,edmf_w
  real(kind=RKIND),dimension(:,:),pointer:: sub_thl,sub_qv,det_thl,det_qv
+ real(kind=RKIND),dimension(:,:),pointer  :: qal, qai
+ integer,pointer:: index_qal, index_qai
 
 !local pointers for chemistry
  integer,pointer                           :: chemistry_start,chemistry_end
@@ -753,6 +755,13 @@
        call mpas_pool_get_array(diag_physics,'det_thl'   ,det_thl   )
        call mpas_pool_get_array(diag_physics,'det_qv'    ,det_qv    )
 
+       call mpas_pool_get_array(state,'scalars',scalars)
+       call mpas_pool_get_dimension(state,'index_qal' ,index_qal  )
+       call mpas_pool_get_dimension(state,'index_qai' ,index_qai  )
+
+       qal => scalars(index_qal,:,:)
+       qai => scalars(index_qai,:,:)
+
        do j = jts,jte
        do i = its,ite
           dx_p(i,j)   = len_disp / meshDensity(i)**0.25
@@ -773,7 +782,8 @@
           qkeadv_p(i,k,j)   = qke_adv(k,i)
           sh3d_p(i,k,j)     = sh3d(k,i)
           sm3d_p(i,k,j)     = sm3d(k,i)
-          cldfrabl_p(i,k,j) = cldfrac_bl(k,i)
+!          cldfrabl_p(i,k,j) = cldfrac_bl(k,i)
+          cldfrabl_p(i,k,j) = max(qal(k,i), qai(k,i))
           qcbl_p(i,k,j)     = qc_bl(k,i)
           qibl_p(i,k,j)     = qi_bl(k,i)
           edmfa_p(i,k,j)    = edmf_a(k,i)

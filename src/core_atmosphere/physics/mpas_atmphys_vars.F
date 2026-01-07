@@ -300,7 +300,10 @@
     e_ant_in_p, e_bb_in_p, e_bio_in_p, e_vol_in_p
  real(kind=RKIND),dimension(:,:,:,:),allocatable:: &
     e_ant_out_p, e_bb_out_p, e_bio_out_p, e_dust_out_p, e_ss_out_p, e_vol_out_p
-      
+
+ real(kind=RKIND),dimension(:,:,:),allocatable:: &
+      qal_p, qai_p, precipfrac_p
+
 !... arrays located at w (vertical velocity) points, or at interface between layers:
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
     w_p,              &!vertical velocity                                                     [m/s]

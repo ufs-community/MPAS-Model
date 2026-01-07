@@ -86,6 +86,10 @@
     case("cld_fraction_mynn")
        if(.not.allocated(qibl_p)) allocate(qibl_p(ims:ime,kms:kme,jms:jme))
        if(.not.allocated(qcbl_p)) allocate(qcbl_p(ims:ime,kms:kme,jms:jme))
+
+    case("cld_tempo")
+       if(.not.allocated(qal_p)) allocate(qal_p(ims:ime,kms:kme,jms:jme))
+       if(.not.allocated(qai_p)) allocate(qai_p(ims:ime,kms:kme,jms:jme))
     case default
 
  end select cld_fraction_select
@@ -124,6 +128,10 @@
 
        if(allocated(qibl_p)) deallocate(qibl_p)
        if(allocated(qcbl_p)) deallocate(qcbl_p)
+
+    case("cld_tempo")
+       if(allocated(qal_p)) deallocate(qal_p)
+       if(allocated(qai_p)) deallocate(qai_p)
     case default
 
  end select cld_fraction_select
@@ -137,7 +145,7 @@
  end subroutine deallocate_cloudiness
 
 !=================================================================================================================
- subroutine cloudiness_from_MPAS(itimestep,configs,mesh,diag_physics,sfc_input,its,ite)
+ subroutine cloudiness_from_MPAS(itimestep,configs,mesh,state,diag_physics,sfc_input,its,ite)
 !=================================================================================================================
 
 !input arguments:
@@ -147,6 +155,7 @@
 !input and inout arguments:
  type(mpas_pool_type),intent(in)   :: configs
  type(mpas_pool_type),intent(in)   :: mesh
+ type(mpas_pool_type),intent(in)   :: state
  type(mpas_pool_type),intent(in)   :: sfc_input
 
 !inout arguments:
@@ -163,6 +172,10 @@
 
  character(len=StrKIND),pointer:: radt_cld_scheme
  character(len=StrKIND),pointer:: convection_scheme
+
+ integer,pointer:: index_qal, index_qai
+ real(kind=RKIND),dimension(:,:,:),pointer:: scalars
+ real(kind=RKIND),dimension(:,:),pointer:: qal, qai
 
 !-----------------------------------------------------------------------------------------------------------------
 
@@ -235,6 +248,32 @@
        enddo
        enddo
 
+    case("cld_tempo")
+       call mpas_pool_get_array(state,'scalars',scalars)
+       call mpas_pool_get_dimension(state,'index_qal',index_qal)
+       call mpas_pool_get_dimension(state,'index_qai',index_qai)
+
+       qal   => scalars(index_qal,:,:)
+       qai   => scalars(index_qai,:,:)
+       do j = jts,jte
+          do k = kts,kte
+             do i = its,ite
+                qal_p(i,k,j) = qal(k,i)
+                qai_p(i,k,j) = qai(k,i)
+                cldfrac_p(i,k,j) = max(0., max(qal(k,i), qai(k,i))) ! Avoid cldfrac < 0
+                if (cldfrac_p(i,k,j) > 0.) then
+                   if (qirad_p(i,k,j) > 1.e-7) then
+                      qirad_p(i,k,j) = max(0. , qirad_p(i,k,j) + qsrad_p(i,k,j))
+                      qsrad_p(i,k,j) = 0.
+                   endif
+                else
+                   qcrad_p(i,k,j) = 0. ! No cloud
+                   qirad_p(i,k,j) = 0. ! No cloud
+                   qsrad_p(i,k,j) = 0. ! No cloud
+                endif
+             enddo
+          enddo
+       enddo
     case default
 
  end select cld_fraction_select  
@@ -288,12 +327,13 @@
  end subroutine cloudiness_to_MPAS
 
 !=================================================================================================================
- subroutine driver_cloudiness(itimestep,configs,mesh,diag_physics,sfc_input,its,ite)
+ subroutine driver_cloudiness(itimestep,configs,mesh,state,diag_physics,sfc_input,its,ite)
 !=================================================================================================================
 
 !input arguments:
  type(mpas_pool_type),intent(in)   :: configs
  type(mpas_pool_type),intent(in)   :: mesh
+ type(mpas_pool_type),intent(in)   :: state
  type(mpas_pool_type),intent(in)   :: sfc_input
 
  integer,intent(in):: its,ite
@@ -316,7 +356,7 @@
  call mpas_pool_get_config(configs,'config_convection_scheme',convection_scheme)
 
 !copy MPAS arrays to local arrays:
- call cloudiness_from_MPAS(itimestep,configs,mesh,diag_physics,sfc_input,its,ite)
+ call cloudiness_from_MPAS(itimestep,configs,mesh,state,diag_physics,sfc_input,its,ite)
 
  cld_fraction_select: select case (trim(radt_cld_scheme))
     case("cld_incidence")

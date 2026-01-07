@@ -112,6 +112,7 @@
  character(len=StrKIND),pointer:: nssl_moments
  logical,pointer:: config_tempo_hailaware, config_tempo_aerosolaware
  logical,pointer:: config_tempo_ml_for_bl_nc
+ logical,pointer:: config_tempo_cldfra
 !-----------------------------------------------------------------------------------------------------------------
 
  call mpas_pool_get_config(configs,'config_microp_scheme',microp_scheme)
@@ -119,6 +120,7 @@
  call mpas_pool_get_config(configs,'config_tempo_hailaware',config_tempo_hailaware)
  call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
  call mpas_pool_get_config(configs,'config_tempo_ml_for_bl_nc',config_tempo_ml_for_bl_nc)
+ call mpas_pool_get_config(configs,'config_tempo_cldfra',config_tempo_cldfra)
 
 !sounding variables:
  if(.not.allocated(rho_p) ) allocate(rho_p(ims:ime,kms:kme,jms:jme) )
@@ -224,6 +226,36 @@
              if(.not.allocated(volg_p)) allocate(volg_p(ims:ime,kms:kme,jms:jme))
           endif
 
+          if (config_tempo_cldfra) then
+             if(.not.allocated(qal_p)) allocate(qal_p(ims:ime,kms:kme,jms:jme))
+             if(.not.allocated(qai_p)) allocate(qai_p(ims:ime,kms:kme,jms:jme))
+             if(.not.allocated(precipfrac_p)) allocate(precipfrac_p(ims:ime,kms:kme,jms:jme))
+
+             if(.not.allocated(rthblten_p)) allocate(rthblten_p(ims:ime,kms:kme,jms:jme))
+             if(.not.allocated(rqvblten_p)) allocate(rqvblten_p(ims:ime,kms:kme,jms:jme))
+             if(.not.allocated(rqcblten_p)) allocate(rqcblten_p(ims:ime,kms:kme,jms:jme))
+             if(.not.allocated(rqiblten_p)) allocate(rqiblten_p(ims:ime,kms:kme,jms:jme))
+             if(.not.allocated(rthratenlw_p)) allocate(rthratenlw_p(ims:ime,kms:kme,jms:jme))
+             if(.not.allocated(rthratensw_p)) allocate(rthratensw_p(ims:ime,kms:kme,jms:jme))
+!             if(.not.allocated(cldfrac_p) ) allocate(cldfrac_p(ims:ime,kms:kme,jms:jme))
+!             if(.not.allocated(qcbl_p) ) allocate(qcbl_p(ims:ime,kms:kme,jms:jme))
+          endif
+
+          if (config_tempo_cldfra) then
+             if(.not.allocated(qal_p)) allocate(qal_p(ims:ime,kms:kme,jms:jme))
+             if(.not.allocated(qai_p)) allocate(qai_p(ims:ime,kms:kme,jms:jme))
+             if(.not.allocated(precipfrac_p)) allocate(precipfrac_p(ims:ime,kms:kme,jms:jme))
+
+             if(.not.allocated(rthblten_p)) allocate(rthblten_p(ims:ime,kms:kme,jms:jme))
+             if(.not.allocated(rqvblten_p)) allocate(rqvblten_p(ims:ime,kms:kme,jms:jme))
+             if(.not.allocated(rqcblten_p)) allocate(rqcblten_p(ims:ime,kms:kme,jms:jme))
+             if(.not.allocated(rqiblten_p)) allocate(rqiblten_p(ims:ime,kms:kme,jms:jme))
+             if(.not.allocated(rthratenlw_p)) allocate(rthratenlw_p(ims:ime,kms:kme,jms:jme))
+             if(.not.allocated(rthratensw_p)) allocate(rthratensw_p(ims:ime,kms:kme,jms:jme))
+!             if(.not.allocated(cldfrac_p) ) allocate(cldfrac_p(ims:ime,kms:kme,jms:jme))
+!             if(.not.allocated(qcbl_p) ) allocate(qcbl_p(ims:ime,kms:kme,jms:jme))
+          endif
+
           if (config_tempo_ml_for_bl_nc) then
              if(.not.allocated(cldfrac_p) ) allocate(cldfrac_p(ims:ime,kms:kme,jms:jme))
              if(.not.allocated(qcbl_p) ) allocate(qcbl_p(ims:ime,kms:kme,jms:jme))
@@ -276,7 +308,7 @@
  character(len=StrKIND),pointer:: microp_scheme
  character(len=StrKIND),pointer:: nssl_moments
  logical,pointer:: config_tempo_hailaware, config_tempo_aerosolaware
- logical,pointer:: config_tempo_ml_for_bl_nc
+ logical,pointer:: config_tempo_ml_for_bl_nc, config_tempo_cldfra
 
 !-----------------------------------------------------------------------------------------------------------------
 
@@ -285,6 +317,7 @@
  call mpas_pool_get_config(configs,'config_tempo_hailaware',config_tempo_hailaware)
  call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
  call mpas_pool_get_config(configs,'config_tempo_ml_for_bl_nc',config_tempo_ml_for_bl_nc)
+ call mpas_pool_get_config(configs,'config_tempo_cldfra',config_tempo_cldfra)
 
 !sounding variables:
  if(allocated(rho_p) ) deallocate(rho_p )
@@ -388,6 +421,36 @@
              if(allocated(volg_p) ) deallocate(volg_p )
           endif
 
+          if (config_tempo_cldfra) then
+             if(allocated(qal_p)) deallocate(qal_p)
+             if(allocated(qai_p)) deallocate(qai_p)
+             if(allocated(precipfrac_p)) deallocate(precipfrac_p)
+
+             if(allocated(rthblten_p)) deallocate(rthblten_p)
+             if(allocated(rqvblten_p)) deallocate(rqvblten_p)
+             if(allocated(rqcblten_p)) deallocate(rqcblten_p)
+             if(allocated(rqiblten_p)) deallocate(rqiblten_p)
+             if(allocated(rthratenlw_p)) deallocate(rthratenlw_p)
+             if(allocated(rthratensw_p)) deallocate(rthratensw_p)
+!             if(allocated(cldfrac_p) ) deallocate(cldfrac_p)
+!             if(allocated(qcbl_p) ) deallocate(qcbl_p)
+          endif
+
+          if (config_tempo_cldfra) then
+             if(allocated(qal_p)) deallocate(qal_p)
+             if(allocated(qai_p)) deallocate(qai_p)
+             if(allocated(precipfrac_p)) deallocate(precipfrac_p)
+
+             if(allocated(rthblten_p)) deallocate(rthblten_p)
+             if(allocated(rqvblten_p)) deallocate(rqvblten_p)
+             if(allocated(rqcblten_p)) deallocate(rqcblten_p)
+             if(allocated(rqiblten_p)) deallocate(rqiblten_p)
+             if(allocated(rthratenlw_p)) deallocate(rthratenlw_p)
+             if(allocated(rthratensw_p)) deallocate(rthratensw_p)
+!             if(allocated(cldfrac_p) ) deallocate(cldfrac_p)
+!             if(allocated(qcbl_p) ) deallocate(qcbl_p)
+          endif
+
           if (config_tempo_ml_for_bl_nc) then
              if(allocated(cldfrac_p) ) deallocate(cldfrac_p)
              if(allocated(qcbl_p) ) deallocate(qcbl_p)
@@ -451,7 +514,7 @@
  logical,pointer:: do_restart
  character(len=StrKIND),pointer:: microp_scheme
  logical,pointer:: config_tempo_hailaware, config_tempo_aerosolaware
- logical,pointer:: config_tempo_ml_for_bl_nc
+ logical,pointer:: config_tempo_ml_for_bl_nc, config_tempo_cldfra
  character(len=StrKIND),pointer:: nssl_moments
 
  logical :: outputon = .false.
@@ -471,6 +534,7 @@
  call mpas_pool_get_config(configs,'config_microp_scheme',microp_scheme)
  call mpas_pool_get_config(configs,'config_tempo_hailaware',config_tempo_hailaware)
  call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
+ call mpas_pool_get_config(configs,'config_tempo_cldfra',config_tempo_cldfra)
  call mpas_pool_get_config(configs,'config_tempo_ml_for_bl_nc',config_tempo_ml_for_bl_nc)
  call mpas_pool_get_config(configs,'config_nssl_moments',nssl_moments)
  call mpas_pool_get_config(configs,'config_do_restart'   ,do_restart   )
@@ -489,7 +553,7 @@
 
     case("mp_tempo")
        call tempo_init(aerosolaware_flag=config_tempo_aerosolaware, &
-         hailaware_flag=config_tempo_hailaware, &
+         hailaware_flag=config_tempo_hailaware, cldfra_flag=config_tempo_cldfra, &
          ml_for_bl_nc_flag = config_tempo_ml_for_bl_nc, tempo_cfgs=tempo_cfgs)
 
        if (config_tempo_aerosolaware) then
@@ -612,7 +676,8 @@
             ng      = ng_p       , qb         = volg_p    , w      = w_p     , &
             nc      = nc_p       , nwfa       = nwfa_p    , nifa   = nifa_p  , &
             pii     = pi_p       , p          = pres_p    , dz     = dz_p    , &
-            qc_bl   = qcbl_p     , qcfrac_bl  = cldfrac_p                    , &          
+            qc_bl   = qcbl_p     , qcfrac_bl  = cldfrac_p                    , &
+            qcfrac  = qal_p      , qifrac     = qai_p                        , &         
             ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde , &
             ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme , &
             its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte , &
