@@ -10201,6 +10201,7 @@ CONTAINS
        !    above or below the horizon (xt24 is the fractional part of simulation days plus half of radt in 
        !    units of minutes, julian is in days, and radt is in minutes). eot (equation of time) is a correction
        !    of mean solar time due to the difference between that time and the apparent solar time. 
+       !    eot is based on the second equation at https://gml.noaa.gov/grad/solcalc/solareqns.PDF
        !    do not call rrtmg_sw is night-time:
        dorrsw = .true.
        da=6.2831853071795862*(julian-1.)/365.
