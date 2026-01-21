@@ -36,7 +36,7 @@ jobs:
         echo "ls -l src/core_atmosphere/physics/physics_mmm"
 
     - name: "Install Intel compilers & MPI"
-      uses: dustinswales/ci-install-intel-toolkit@ubuntu20p04
+      uses: NOAA-EMC/ci-install-intel-toolkit@ufs-community-mpas-ci-v1.0
       with:
         install-mpi: true
 
