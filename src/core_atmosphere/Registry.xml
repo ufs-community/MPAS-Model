@@ -32,6 +32,12 @@
                      description="The number of atmospheric layers"/>
                 <dim name="nVertLevelsP1"      definition="nVertLevels+1"
                      description="The number of atmospheric levels, always one more than the number of layers"/>
+#ifndef MPAS_UFS_DYCORE
+		<dim name="nSoilLevels"        definition="namelist:num_soil_layers"
+                     description="The number of soil layers used by the land-surface scheme"/>
+		<dim name="nMonths"            definition="namelist:months"
+                     description="The number of months in a year"/>
+#endif
 
 #ifdef DO_PHYSICS
                 <dim name="nMonths"            definition="namelist:months"
@@ -2120,6 +2126,19 @@
 <!--  hydrostatic and non-hydrostatic dynamical cores):                                                 -->
 <!-- ================================================================================================== -->
 
+#ifndef MPAS_UFS_DYCORE
+<nml_record name="physics" in_defaults="true">
+  <nml_option name="num_soil_layers" type="integer" default_value="4" in_defaults="false"
+              units="-"
+              description="number of soil layers in Noah land surface scheme"
+              possible_values="Positive integers. For Noah LSM, must be set to 4."/>
+
+  <nml_option name="months" type="integer" default_value="12" in_defaults="false"
+              units="-"
+              description="number of months per year"
+              possible_values="Positive integer values. DO NOT CHANGE."/>
+</nml_record>
+#endif
 
 #ifdef DO_PHYSICS
         <nml_record name="physics" in_defaults="true">
@@ -3612,6 +3631,93 @@
 #endif
         </var_struct>
 
+#ifndef MPAS_UFS_DYCORE
+        <var_struct name="sfc_input" time_levs="1">
+               <!-- ================================================================================================== -->
+               <!-- ... SURFACE CHARACTERISTICS THAT NEED TO BE READ FROM GRID.NC:                                     -->
+               <!-- ================================================================================================== -->
+               <var name="dzs" type="real" dimensions="nSoilLevels nCells Time" units="m"
+                    description="soil layer thickness"/>
+
+	       <var name="isltyp" type="integer" dimensions="nCells" units="unitless"
+                    description="dominant soil category"/>
+
+               <var name="ivgtyp" type="integer" dimensions="nCells" units="unitless"
+                    description="dominant vegetation category"/>
+
+               <var name="mminlu" type="text" dimensions="" units="unitless"
+                    description="land use classification"/>
+
+	       <var name="isice_lu" name_in_code="isice" type="integer" dimensions="" units="unitless" default_value="24"
+                    description="Index category for snow/ice"/>
+
+	       <var name="iswater_lu" name_in_code="iswater" type="integer" dimensions="" units="unitless" default_value="16"
+                    description="Index category for water"/>
+
+	       <var name="landmask" type="integer"  dimensions="nCells" units="unitless"
+                    description="land-ocean mask (1=land ; 0=ocean)"/>
+
+	       <var name="sfc_albbck" type="real" dimensions="nCells Time" units="unitless"
+                    description="background surface albedo"/>
+
+	       <var name="sh2o" type="real" dimensions="nSoilLevels nCells Time" units="m3 m^{-3}"
+                    description="soil equivalent liquid water "/>
+
+               <var name="smois" type="real" dimensions="nSoilLevels nCells Time" units="m3 m^{-3}"
+                    description="soil moisture"/>
+
+               <var name="skintemp" type="real" dimensions="nCells Time" units="K"
+                    description="ground or water surface temperature"/>
+
+               <var name="snow" type="real" dimensions="nCells Time" units="kg m^{-2}"
+                    description="snow water equivalent"/>
+
+               <var name="snowc" type="real" dimensions="nCells Time" units="unitless"
+                    description="flag for snow on ground (=0 no snow; =1,otherwise"/>
+
+               <var name="snowh" type="real" dimensions="nCells Time" units="m"
+                    description="physical snow depth"/>
+
+               <var name="sst" type="real" dimensions="nCells Time" units="K"
+                    description="sea-surface temperature"/>
+
+	       <var name="ter" type="real" dimensions="nCells" units="m"
+                    description="terrain height"/>
+
+	       <var name="tmn" type="real" dimensions="nCells Time" units="K"
+                    description="deep soil temperature"/>
+
+	       <var name="tslb" type="real" dimensions="nSoilLevels nCells Time" units="K"
+                     description="soil layer temperature"/>
+
+               <var name="vegfra" type="real" dimensions="nCells Time" units="percent"
+		    description="vegetation fraction"/>
+
+               <var name="seaice" type="real" dimensions="nCells Time" units="unitless"
+		    description="sea-ice flag (0=no seaice; =1 otherwise)"/>
+
+               <var name="xice" type="real" dimensions="nCells Time" units="unitless"
+		    description="fractional area coverage of sea-ice"/>
+
+               <var name="xland" type="real" dimensions="nCells Time" units="unitless"
+		    description="land-ocean mask (1=land including sea-ice ; 2=ocean)"/>
+
+	       <var name="shdmin" type="real" dimensions="nCells" units="percent"
+                    description="minimum fractional coverage of annual green vegetation fraction"/>
+
+               <var name="shdmax" type="real" dimensions="nCells" units="percent"
+                    description="maximum fractional coverage of annual green vegetation fraction"/>
+
+               <var name="snoalb" type="real"  dimensions="nCells" units="unitless"
+                    description="annual maximum snow albedo"/>
+
+	       <var name="greenfrac" type="real" dimensions="nMonths nCells" units="percent"
+                    description="monthly-mean climatological greenness fraction"/>
+
+	       <var name="albedo12m" type="real" dimensions="nMonths nCells" units="percent"
+                    description="monthly-mean climatological surface albedo"/>
+	     </var_struct>
+#endif
 
 #ifdef DO_PHYSICS
         <var_struct name="atm_input" time_levs="1">
