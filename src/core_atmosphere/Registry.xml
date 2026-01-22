@@ -2059,7 +2059,7 @@
 
                 <var name="lbc_rtheta_m" type="real" dimensions="nVertLevels nCells Time" units="kg K m^{-3} s^{-2}"
                      description="Lateral boundary tendency of rho_zz-coupled theta_m"/>
-
+#ifndef MPAS_CAM_DYCORE 
                 <var_array name="lbc_scalars" type="real" dimensions="nVertLevels nCells Time">
                         <var name="lbc_qv" name_in_code="qv" array_group="moist"
                              units="kg kg^{-1} s^{-1}"
@@ -2105,6 +2105,7 @@
                              units="m^{-3} s^{-1}"
                              description="Lateral boundary tendency of water-friendly aerosol number concentration"/>
                 </var_array>
+#endif
         </var_struct>
 
         <var_struct name="halo_scratch" time_levs="1">
