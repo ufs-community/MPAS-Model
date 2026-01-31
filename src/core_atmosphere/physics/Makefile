@@ -73,7 +73,7 @@ core_SMOKE: core_physics_init
 core_mynnedmf: core_physics_init core_physics_mmm
 	(cd physics_noaa/MYNN-EDMF; cp ./MPAS/Makefile .; cp ./MPAS/module_bl_mynnedmf_driver.F90 .; cp ./MPAS/module_bl_mynnedmf_common.F90 .; $(MAKE) all)
 
-core_mynnedmf:
+core_mynnsfc:
         (cd physics_noaa/MYNN-SFC; cp ./MPAS/Makefile .; cp ./MPAS/module_bl_mynnsfc_driver.F90 .; cp ./MPAS/module_bl_mynnsfc_common.F90 .; $(MAKE) all)
 
 core_RUCLSM: core_physics_init core_physics_mmm
