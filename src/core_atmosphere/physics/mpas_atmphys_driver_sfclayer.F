@@ -1389,8 +1389,8 @@
     case("sf_mynnsfclay")
        call mpas_timer_start('sf_mynnsfclay')
        call mpas_log_write('--- enter subroutine mynnsfc_driver:')
-       call mpas_pool_get_config(configs,'sf_mynn_sfcflux_land' ,sf_mynn_sfcflux_land)
-       call mpas_pool_get_config(configs,'sf_mynn_sfcflux_water',sf_mynn_sfcflux_water)
+       call mpas_pool_get_config(configs,'config_mynn_sfcflux_land' ,sf_mynn_sfcflux_land)
+       call mpas_pool_get_config(configs,'config_mynn_sfcflux_water',sf_mynn_sfcflux_water)
        call mynnsfc_driver( &
                    p3d      = pres_hyd_p , pi3d      = pi_p     , psfcpa   = psfc_p      , &
                    th3d     = th_p       , t3d       = t_p      , u3d      = u_p         , &
