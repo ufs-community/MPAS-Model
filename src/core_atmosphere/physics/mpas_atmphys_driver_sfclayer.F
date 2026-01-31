@@ -1162,6 +1162,7 @@
  logical,pointer:: config_do_restart,config_frac_seaice
  logical,pointer:: config_do_DAcycling     
  character(len=StrKIND),pointer:: sfclayer_scheme
+ integer,pointer:: sf_mynn_sfcflux_land,sf_mynn_sfcflux_water
  real(kind=RKIND),dimension(:),pointer:: areaCell
 
 !local variables:
@@ -1392,11 +1393,10 @@
        call mpas_pool_get_config(configs,'config_mynn_sfcflux_land' ,sf_mynn_sfcflux_land)
        call mpas_pool_get_config(configs,'config_mynn_sfcflux_water',sf_mynn_sfcflux_water)
        call mynnsfc_driver( &
-                   p3d      = pres_hyd_p , pi3d      = pi_p     , psfcpa   = psfc_p      , &
-                   th3d     = th_p       , t3d       = t_p      , u3d      = u_p         , &
-                   v3d      = v_p        , qv3d      = qv_p     , qc3d     = qc_p        , &
+                   p3d      = pres_hyd_p , th3d      = th_p     , t3d      = t_p         , &
+                   u3d      = u_p        , v3d       = v_p      , qv3d     = qv_p        , &
                    rho3d    = rho_p      , dz8w      = dz_p     ,                          &
-                   chs      = chs_p      , chs2      = chs2_p   , &
+                   chs      = chs_p      , chs2      = chs2_p   , psfcpa   = psfc_p      , &
                    cqs      = cqs_p      , cqs2      = cqs2_p   , cpm      = cpm_p       , &
                    znt      = znt_p                                                      , &
                    ust      = ust_p      , pblh      = hpbl_p   , mavail   = mavail_p    , &
@@ -1425,11 +1425,10 @@
 
        if(config_frac_seaice) then
           call mynnsfc_driver( &
-                      p3d      = pres_hyd_p , pi3d      = pi_p     , psfcpa   = psfc_p      , &
-                      th3d     = th_p       , t3d       = t_p      , u3d      = u_p         , &
-                      v3d      = v_p        , qv3d      = qv_p     , qc3d     = qc_p        , &
-                      rho3d    = rho_p      , dz8w      = dz_p     , &
-                      chs      = chs_sea    , chs2      = chs2_sea , &
+                      p3d      = pres_hyd_p , th3d      = th_p     , t3d      = t_p         , &
+                      u3d      = u_p        , v3d       = v_p      , qv3d     = qv_p        , &
+                      rho3d    = rho_p      , dz8w      = dz_p     ,                          &
+                      chs      = chs_sea    , chs2      = chs2_sea , psfcpa   = psfc_p      , &
                       cqs      = cqs_sea    , cqs2      = cqs2_sea , cpm      = cpm_sea     , &
                       znt      = znt_sea                                                    , &
                       ust      = ust_sea    , pblh      = hpbl_p   , mavail   = mavail_sea  , &

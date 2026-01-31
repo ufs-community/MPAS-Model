@@ -74,7 +74,7 @@ core_mynnedmf: core_physics_init core_physics_mmm
 	(cd physics_noaa/MYNN-EDMF; cp ./MPAS/Makefile .; cp ./MPAS/module_bl_mynnedmf_driver.F90 .; cp ./MPAS/module_bl_mynnedmf_common.F90 .; $(MAKE) all)
 
 core_mynnsfc:
-        (cd physics_noaa/MYNN-SFC; cp ./MPAS/Makefile .; cp ./MPAS/module_bl_mynnsfc_driver.F90 .; cp ./MPAS/module_bl_mynnsfc_common.F90 .; $(MAKE) all)
+	(cd physics_noaa/MYNN-SFC; cp ./MPAS/Makefile .; cp ./MPAS/module_sf_mynnsfc_driver.F90 .; cp ./MPAS/module_sf_mynnsfc_common.F90 .; $(MAKE) all)
 
 core_RUCLSM: core_physics_init core_physics_mmm
 	(cd physics_noaa/RUCLSM; cp ./MPAS/Makefile .; cp ./MPAS/module_ruc_land.F90 .; cp ./MPAS/module_ruc_ice.F90 .; cp ./MPAS/module_sf_sfcdiags_ruclsm.F .; $(MAKE) all COREDEF="$(COREDEF)")
