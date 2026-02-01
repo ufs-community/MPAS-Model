@@ -99,9 +99,6 @@ set(ATMOSPHERE_CORE_PHYSICS_WRF_SOURCES
     module_sf_mynn.F
     sf_mynn_pre.F
     sf_sfclayrev_pre.F
-    module_mynnsfclay_driver.F90
-    module_mynnsfclay.F90
-    module_mynnsfclay_pre.F90
 )
 
 list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_WRF_SOURCES PREPEND physics/physics_wrf/)
@@ -247,6 +244,31 @@ set(ATMOSPHERE_CORE_PHYSICS_MYNN-EDMF_SOURCES
     MPAS/module_bl_mynnedmf_driver.F90
 )
 list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_MYNN-EDMF_SOURCES PREPEND physics/physics_noaa/MYNN-EDMF/)
+
+set(ATMOSPHERE_CORE_PHYSICS_MYNN-SFC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/physics/physics_noaa/MYNN-SFC)
+
+if(NOT EXISTS ${ATMOSPHERE_CORE_PHYSICS_MYNN-SFC_DIR})
+    set(PHYSICS_MYNN-SFC_REPO_URL "https://github.com/NCAR/MYNN-SFC.git")
+    execute_process(COMMAND git clone ${PHYSICS_MYNN-SFC_REPO_URL} ${ATMOSPHERE_CORE_PHYSICS_MYNN-SFC_DIR}
+                    RESULT_VARIABLE GIT_CLONE_RESULT
+                    OUTPUT_VARIABLE GIT_CLONE_OUTPUT
+                    ERROR_VARIABLE GIT_CLONE_ERROR)
+    if(NOT GIT_CLONE_RESULT EQUAL 0)
+        message(FATAL_ERROR "Git clone failed with error: ${GIT_CLONE_ERROR}")
+    endif()
+
+else()
+    message(STATUS "Directory ${DIR_TO_CHECK} already exists, skipping clone")
+endif()
+
+set(ATMOSPHERE_CORE_PHYSICS_MYNN-SFC_SOURCES
+    module_sf_mynnsfc_land.F90
+    module_sf_mynnsfc_water.F90
+    module_sf_mynnsfc_ice.F90
+    MPAS/module_sf_mynnsfc_common.F90
+    MPAS/module_sf_mynnsfc_driver.F90
+)
+list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_MYNN-SFC_SOURCES PREPEND physics/physics_noaa/MYNN-SFC/)
 
 set(ATMOSPHERE_CORE_PHYSICS_RUCLSM_DIR ${CMAKE_CURRENT_SOURCE_DIR}/physics/physics_noaa/RUCLSM)
 
@@ -489,6 +511,7 @@ add_library(core_atmosphere ${ATMOSPHERE_CORE_SOURCES}
             ${ATMOSPHERE_CORE_PHYSICS_UGWP_SOURCES}
             ${ATMOSPHERE_CORE_PHYSICS_TEMPO_SOURCES}
             ${ATMOSPHERE_CORE_PHYSICS_MYNN-EDMF_SOURCES}
+	    ${ATMOSPHERE_CORE_PHYSICS_MYNN-SFC_SOURCES}
             ${ATMOSPHERE_CORE_PHYSICS_RUCLSM_SOURCES}
 	    ${ATMOSPHERE_CORE_PHYSICS_GFL_SOURCES}
 	    ${ATMOSPHERE_CORE_PHYSICS_SMOKE_SOURCES}
