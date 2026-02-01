@@ -1162,6 +1162,7 @@
  logical,pointer:: config_do_restart,config_frac_seaice
  logical,pointer:: config_do_DAcycling     
  character(len=StrKIND),pointer:: sfclayer_scheme
+ character(len=StrKIND),pointer:: lsm_scheme
  integer,pointer:: sf_mynn_sfcflux_land,sf_mynn_sfcflux_water
  real(kind=RKIND),dimension(:),pointer:: areaCell
 
@@ -1390,8 +1391,9 @@
     case("sf_mynnsfclay")
        call mpas_timer_start('sf_mynnsfclay')
        call mpas_log_write('--- enter subroutine mynnsfc_driver:')
-       call mpas_pool_get_config(configs,'config_mynn_sfcflux_land' ,sf_mynn_sfcflux_land)
+       call mpas_pool_get_config(configs,'config_mynn_sfcflux_land' ,sf_mynn_sfcflux_land )
        call mpas_pool_get_config(configs,'config_mynn_sfcflux_water',sf_mynn_sfcflux_water)
+       call mpas_pool_get_config(configs,'config_lsm_scheme'        ,lsm_scheme           )
        call mynnsfc_driver( &
                    p3d      = pres_hyd_p , th3d      = th_p     , t3d      = t_p         , &
                    u3d      = u_p        , v3d       = v_p      , qv3d     = qv_p        , &
@@ -1411,9 +1413,10 @@
                    isfflx   = isfflx     , dx        = dx_p     , &
                    ustm     = ustm_p     , ck        = ck_p     , cka      = cka_p       , &
                    cd       = cd_p       , cda       = cda_p    , ch       = ch_p        , &
-                   spp_pbl  = spp_pbl                                                    , &
+                   spp_pbl               = spp_pbl                                       , &
                    sf_mynn_sfcflux_land  = sf_mynn_sfcflux_land                          , &
                    sf_mynn_sfcflux_water = sf_mynn_sfcflux_water                         , &
+                   flagc_lsm             = lsm_scheme                                    , &
                    itimestep= itimestep  , initflag  = initflag                          , &
                    restart  = config_do_restart                                          , &
                    cycling  = config_do_DAcycling                                        , &
@@ -1443,9 +1446,10 @@
                       isfflx   = isfflx     , dx        = dx_p     , &
                       ustm     = ustm_sea   , ck        = ck_sea   , cka      = cka_sea     , &
                       cd       = cd_sea     , cda       = cda_sea  , ch       = ch_sea      , &
-                      spp_pbl  = spp_pbl                                                    , &
+                      spp_pbl               = spp_pbl                                       , &
                       sf_mynn_sfcflux_land  = sf_mynn_sfcflux_land                          , &
                       sf_mynn_sfcflux_water = sf_mynn_sfcflux_water     	            , &
+                      flagc_lsm    	    = lsm_scheme 	      	      	            , &
                       itimestep= itimestep  , initflag  = initflag                          , &
                       restart  = config_do_restart                                          , &
                       cycling  = config_do_DAcycling                                        , &
