@@ -158,8 +158,8 @@
                      possible_values="Positive real values. A zero value implies that the length scale is prescribed by the nominalMinDc value in the input file."/>
 
                 <nml_option name="config_visc4_2dsmag" type="real" default_value="0.05"
-                     units="-"
-                     description="Scaling coefficient of $\delta x^3$ to obtain $\nabla^4$ diffusion coefficient"
+                     units="m s^{-1}"
+                     description="Coefficient multiplied by $\delta x^3$ to obtain $\nabla^4$ physical hyperviscosity"
                      possible_values="Non-negative real values"/>
 
                 <nml_option name="config_del4u_div_factor" type="real" default_value="10.0" in_defaults="false"
@@ -270,7 +270,7 @@
                      possible_values="Positive real values"/>
 
                 <nml_option name="config_xnutr" type="real" default_value="0.2"
-                     units="-"
+                     units="s^{-1}"
                      description="Maximum w-damping coefficient at model top"
                      possible_values="0 $\leq$ config_xnutr $\leq$ 1"/>
 

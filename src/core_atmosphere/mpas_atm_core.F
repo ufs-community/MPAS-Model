@@ -13,21 +13,8 @@ module atm_core
    use mpas_log, only : mpas_log_write, mpas_log_info
    use mpas_io_units, only : mpas_new_unit, mpas_release_unit
 
-   !
-   ! Abstract interface for routine used to communicate halos of fields
-   ! in a named group
-   !
-   abstract interface
-      subroutine halo_exchange_routine(domain, halo_group, ierr)
-
-         use mpas_derived_types, only : domain_type
-
-         type (domain_type), intent(inout) :: domain
-         character(len=*), intent(in) :: halo_group
-         integer, intent(out), optional :: ierr
-
-      end subroutine halo_exchange_routine
-   end interface
+   ! Provides definition of halo_exchange_routine
+#include "mpas_halo_interface.inc"
 
    type (MPAS_Clock_type), pointer :: clock
 
@@ -48,6 +35,9 @@ module atm_core
       use mpas_attlist, only : mpas_modify_att
       use mpas_string_utils, only : mpas_string_replace
       use mpas_atm_halos, only: atm_build_halo_groups, exchange_halo_group
+#ifdef DO_CHEMISTRY
+      use mpas_atm_chemistry, only: chemistry_init
+#endif
 
       implicit none
 
@@ -294,6 +284,13 @@ module atm_core
       ! Prepare the dynamics for integration
       !
       call mpas_atm_dynamics_init(domain)
+
+      !
+      ! Initialize the chemistry package
+      !
+#ifdef DO_CHEMISTRY
+      call chemistry_init(domain % blocklist % configs, domain % blocklist % dimensions)
+#endif
 
    end function atm_core_init
 
@@ -986,8 +983,11 @@ module atm_core
       use mpas_atmphys_manager
       use mpas_atmphys_update
 #endif
+#ifdef DO_CHEMISTRY
+      use mpas_atm_chemistry, only: chemistry_step
+#endif
       use mpas_atm_halos, only: exchange_halo_group
-   
+
       implicit none
    
       type (domain_type), intent(inout) :: domain 
@@ -1019,6 +1019,10 @@ module atm_core
       endif
 #endif
 
+#ifdef DO_CHEMISTRY
+      call chemistry_step()
+#endif
+
       call atm_timestep(domain, dt, currTime, itimestep, exchange_halo_group)
 
    end subroutine atm_do_timestep
@@ -1037,6 +1041,10 @@ module atm_core
       use mpas_atmphys_finalize
 #endif
 
+#ifdef DO_CHEMISTRY
+      use mpas_atm_chemistry, only: chemistry_finalize
+#endif
+
       implicit none
    
       type (domain_type), intent(inout) :: domain
@@ -1052,6 +1060,13 @@ module atm_core
       ! Finalize the dynamics
       !
       call mpas_atm_dynamics_finalize(domain)
+
+      !
+      ! Finalize chemistry
+      !
+#ifdef DO_CHEMISTRY
+      call chemistry_finalize()
+#endif
 
       call mpas_atm_diag_cleanup()
 
@@ -1250,8 +1265,6 @@ module atm_core
       real (kind=RKIND), pointer :: config_xnutr, config_zd
       real (kind=RKIND) :: z, zt, m1, pii
       real (kind=RKIND), dimension(:,:), pointer :: dss, zgrid
-      real (kind=RKIND), dimension(:), pointer :: meshDensity
-      real (kind=RKIND) :: dx_scale_power
 
       m1 = -1.0
       pii = acos(m1)
@@ -1259,14 +1272,12 @@ module atm_core
       call mpas_pool_get_dimension(mesh, 'nCells', nCells)
       call mpas_pool_get_dimension(mesh, 'nVertLevels', nVertLevels)
 
-      call mpas_pool_get_array(mesh, 'meshDensity', meshDensity)
       call mpas_pool_get_array(mesh, 'dss', dss)
       call mpas_pool_get_array(mesh, 'zgrid', zgrid)
 
       call mpas_pool_get_config(configs, 'config_zd', config_zd)
       call mpas_pool_get_config(configs, 'config_xnutr', config_xnutr)
 
-      dx_scale_power = 1.0
       dss(:,:) = 0.0
       do iCell=1,nCells
          zt = zgrid(nVertLevels+1,iCell)
@@ -1274,7 +1285,6 @@ module atm_core
             z = 0.5*(zgrid(k,iCell) + zgrid(k+1,iCell))
             if (z > config_zd) then
                dss(k,iCell) = config_xnutr*sin(0.5*pii*(z-config_zd)/(zt-config_zd))**2.0
-               dss(k,iCell) = dss(k,iCell) / meshDensity(iCell)**(0.25*dx_scale_power)
             end if
          end do
       end do
