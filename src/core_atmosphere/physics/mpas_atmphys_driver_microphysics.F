@@ -22,8 +22,7 @@
  use module_mp_kessler
  use module_mp_thompson
  use module_mp_tempo_cfgs,only: ty_tempo_cfgs
- use module_mp_tempo_driver,only: tempo_driver, ty_tempo_driver_diags, tempo_aerosol_surface_emissions
- use module_mp_tempo_init,only: tempo_init
+ use module_mp_tempo_driver,only: tempo_init, tempo_driver, ty_tempo_driver_diags, tempo_aerosol_surface_emissions
  use module_mp_wsm6,only: wsm6
  use mp_wsm6,only: mp_wsm6_init,refl10cm_wsm6
  use module_mp_nssl_2mom
@@ -233,7 +232,7 @@
 
              if(.not.allocated(rthblten_p)) allocate(rthblten_p(ims:ime,kms:kme,jms:jme))
              if(.not.allocated(rqvblten_p)) allocate(rqvblten_p(ims:ime,kms:kme,jms:jme))
-             if(.not.allocated(rqcblten_p)) allocate(rqcblten_p(ims:ime,kms:kme,jms:jme))
+             if(.not.allocated(rqcblten_p)) allocate(rqcblten_p(ims:ime,kms:kme,jms:jme))         
              if(.not.allocated(rqiblten_p)) allocate(rqiblten_p(ims:ime,kms:kme,jms:jme))
              if(.not.allocated(rthratenlw_p)) allocate(rthratenlw_p(ims:ime,kms:kme,jms:jme))
              if(.not.allocated(rthratensw_p)) allocate(rthratensw_p(ims:ime,kms:kme,jms:jme))

@@ -2620,6 +2620,15 @@
                         <var name="lbc_nwfa" name_in_code="nwfa" array_group="number" packages="mp_thompson_aers_in;tempo_aerosolaware_in"
                              units="m^{-3} s^{-1}"
                              description="Lateral boundary tendency of water-friendly aerosol number concentration"/>
+
+			          <var name="lbc_qal" name_in_code="qal" array_group="passive" packages="tempo_cldfra_in"
+                             units=""
+                             description="Lateral boundary tendency of prognostic cloud liquid fraction"/>
+
+                        <var name="lbc_qai" name_in_code="qai" array_group="passive" packages="tempo_cldfra_in"
+                             units=""
+                             description="Lateral boundary tendency of prognostic cloud ice fraction"/>
+			
                 </var_array>
         </var_struct>
 
