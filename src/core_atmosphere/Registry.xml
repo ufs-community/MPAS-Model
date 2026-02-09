@@ -3631,91 +3631,212 @@
 #endif
         </var_struct>
 
+	<!-- ================================================================================================== -->
+	<!-- ... WHEN USING MPAS AS A DYCORE IN THE UWM, WE STILL HAVE PHYSICS INPUTS DEFINED ON THE MPAS GRID, -->
+	<!-- ... ALTHOUGH WE DON'T USE MPAS PHYS. THESE INPUTS ARE CREATED OFFLINE USING CORE_INIT_ATMOSPHERE   -->
+	<!-- ... THIS <SFC_INPUT> STREAM CONTAINS A SUBSET OF THE <SFC_INPUT> UNDER THE "DO_PHYSICS"            -->
+	<!-- ================================================================================================== -->
 #ifndef MPAS_UFS_DYCORE
         <var_struct name="sfc_input" time_levs="1">
-               <!-- ================================================================================================== -->
-               <!-- ... SURFACE CHARACTERISTICS THAT NEED TO BE READ FROM GRID.NC:                                     -->
-               <!-- ================================================================================================== -->
-               <var name="dzs" type="real" dimensions="nSoilLevels nCells Time" units="m"
+                <!-- ================================================================================================== -->
+                <!-- ... SURFACE CHARACTERISTICS THAT NEED TO BE READ FROM GRID.NC:                                     -->
+                <!-- ================================================================================================== -->
+		<var name="dzs" type="real" dimensions="nSoilLevels nCells Time" units="m"
                     description="soil layer thickness"/>
 
-	       <var name="isltyp" type="integer" dimensions="nCells" units="unitless"
-                    description="dominant soil category"/>
+		<var name="isltyp" type="integer" dimensions="nCells" units="unitless"
+                     description="dominant soil category"/>
 
-               <var name="ivgtyp" type="integer" dimensions="nCells" units="unitless"
-                    description="dominant vegetation category"/>
+		<var name="ivgtyp" type="integer" dimensions="nCells" units="unitless"
+                     description="dominant vegetation category"/>
 
-               <var name="mminlu" type="text" dimensions="" units="unitless"
-                    description="land use classification"/>
+		<var name="isice_lu" name_in_code="isice" type="integer" dimensions="" units="unitless" default_value="24"
+                     description="Index category for snow/ice"/>
 
-	       <var name="isice_lu" name_in_code="isice" type="integer" dimensions="" units="unitless" default_value="24"
-                    description="Index category for snow/ice"/>
+		<var name="iswater_lu" name_in_code="iswater" type="integer" dimensions="" units="unitless" default_value="16"
+                     description="Index category for water"/>
 
-	       <var name="iswater_lu" name_in_code="iswater" type="integer" dimensions="" units="unitless" default_value="16"
-                    description="Index category for water"/>
+		<var name="landmask" type="integer"  dimensions="nCells" units="unitless"
+                     description="land-ocean mask (1=land ; 0=ocean)"/>
 
-	       <var name="landmask" type="integer"  dimensions="nCells" units="unitless"
-                    description="land-ocean mask (1=land ; 0=ocean)"/>
+		<var name="mminlu" type="text" dimensions="" units="unitless"
+                     description="land use classification"/>
 
-	       <var name="sfc_albbck" type="real" dimensions="nCells Time" units="unitless"
-                    description="background surface albedo"/>
+		<var name="sfc_albbck" type="real" dimensions="nCells Time" units="unitless"
+                     description="background surface albedo"/>
 
-	       <var name="sh2o" type="real" dimensions="nSoilLevels nCells Time" units="m3 m^{-3}"
-                    description="soil equivalent liquid water "/>
+		<var name="sh2o" type="real" dimensions="nSoilLevels nCells Time" units="m3 m^{-3}"
+                     description="soil equivalent liquid water "/>
 
-               <var name="smois" type="real" dimensions="nSoilLevels nCells Time" units="m3 m^{-3}"
-                    description="soil moisture"/>
+		<var name="smois" type="real" dimensions="nSoilLevels nCells Time" units="m3 m^{-3}"
+                     description="soil moisture"/>
 
-               <var name="skintemp" type="real" dimensions="nCells Time" units="K"
-                    description="ground or water surface temperature"/>
+		<var name="skintemp" type="real" dimensions="nCells Time" units="K"
+                     description="ground or water surface temperature"/>
 
-               <var name="snow" type="real" dimensions="nCells Time" units="kg m^{-2}"
-                    description="snow water equivalent"/>
+		<var name="snow" type="real" dimensions="nCells Time" units="kg m^{-2}"
+                     description="snow water equivalent"/>
 
-               <var name="snowc" type="real" dimensions="nCells Time" units="unitless"
-                    description="flag for snow on ground (=0 no snow; =1,otherwise"/>
+		<var name="snowc" type="real" dimensions="nCells Time" units="unitless"
+                     description="flag for snow on ground (=0 no snow; =1,otherwise"/>
 
-               <var name="snowh" type="real" dimensions="nCells Time" units="m"
-                    description="physical snow depth"/>
+		<var name="snowh" type="real" dimensions="nCells Time" units="m"
+                     description="physical snow depth"/>
 
-               <var name="sst" type="real" dimensions="nCells Time" units="K"
-                    description="sea-surface temperature"/>
+		<var name="sst" type="real" dimensions="nCells Time" units="K"
+                     description="sea-surface temperature"/>
 
-	       <var name="ter" type="real" dimensions="nCells" units="m"
-                    description="terrain height"/>
+		<var name="ter" type="real" dimensions="nCells" units="m"
+                     description="terrain height"/>
 
-	       <var name="tmn" type="real" dimensions="nCells Time" units="K"
-                    description="deep soil temperature"/>
+		<var name="tmn" type="real" dimensions="nCells Time" units="K"
+                     description="deep soil temperature"/>
 
-	       <var name="tslb" type="real" dimensions="nSoilLevels nCells Time" units="K"
+		<var name="tslb" type="real" dimensions="nSoilLevels nCells Time" units="K"
                      description="soil layer temperature"/>
 
-               <var name="vegfra" type="real" dimensions="nCells Time" units="percent"
-		    description="vegetation fraction"/>
+		<var name="vegfra" type="real" dimensions="nCells Time" units="percent"
+		     description="vegetation fraction"/>
 
-               <var name="seaice" type="real" dimensions="nCells Time" units="unitless"
-		    description="sea-ice flag (0=no seaice; =1 otherwise)"/>
+		<var name="seaice" type="real" dimensions="nCells Time" units="unitless"
+		     description="sea-ice flag (0=no seaice; =1 otherwise)"/>
 
-               <var name="xice" type="real" dimensions="nCells Time" units="unitless"
-		    description="fractional area coverage of sea-ice"/>
+		<var name="xice" type="real" dimensions="nCells Time" units="unitless"
+		     description="fractional area coverage of sea-ice"/>
 
-               <var name="xland" type="real" dimensions="nCells Time" units="unitless"
-		    description="land-ocean mask (1=land including sea-ice ; 2=ocean)"/>
+		<var name="xland" type="real" dimensions="nCells Time" units="unitless"
+		     description="land-ocean mask (1=land including sea-ice ; 2=ocean)"/>
 
-	       <var name="shdmin" type="real" dimensions="nCells" units="percent"
-                    description="minimum fractional coverage of annual green vegetation fraction"/>
+		<var name="shdmin" type="real" dimensions="nCells" units="percent"
+                     description="minimum fractional coverage of annual green vegetation fraction"/>
 
-               <var name="shdmax" type="real" dimensions="nCells" units="percent"
-                    description="maximum fractional coverage of annual green vegetation fraction"/>
+		<var name="shdmax" type="real" dimensions="nCells" units="percent"
+                     description="maximum fractional coverage of annual green vegetation fraction"/>
 
-               <var name="snoalb" type="real"  dimensions="nCells" units="unitless"
-                    description="annual maximum snow albedo"/>
+		<var name="snoalb" type="real"  dimensions="nCells" units="unitless"
+                     description="annual maximum snow albedo"/>
 
-	       <var name="greenfrac" type="real" dimensions="nMonths nCells" units="percent"
-                    description="monthly-mean climatological greenness fraction"/>
+		<var name="greenfrac" type="real" dimensions="nMonths nCells" units="percent"
+                     description="monthly-mean climatological greenness fraction"/>
 
-	       <var name="albedo12m" type="real" dimensions="nMonths nCells" units="percent"
-                    description="monthly-mean climatological surface albedo"/>
+		<var name="albedo12m" type="real" dimensions="nMonths nCells" units="percent"
+                     description="monthly-mean climatological surface albedo"/>
+
+                <!-- ================================================================================================== -->
+                <!-- ... PARAMETERIZATION OF GRAVITY WAVE DRAG OVER OROGRAPHY:                                          -->
+                <!-- ================================================================================================== -->
+
+                <var name="var2d" type="real" dimensions="nCells" units="m"
+                     description="standard deviation of subgrid-scale orography"/>
+
+                <var name="con" type="real" dimensions="nCells" units="unitless"
+                     description="orographic convexity"/>
+
+                <var name="oa1" type="real" dimensions="nCells" units="unitless"
+                     description="asymmetry of subgrid-scale orography for westerly flow"/>
+
+                <var name="oa2" type="real" dimensions="nCells" units="unitless"
+                     description="asymmetry of subgrid-scale orography for southerly flow"/>
+
+                <var name="oa3" type="real" dimensions="nCells" units="unitless"
+                     description="asymmetry of subgrid-scale orography for south-westerly flow"/>
+
+                <var name="oa4" type="real" dimensions="nCells" units="unitless"
+                     description="asymmetry of subgrid-scale orography for north-westerly flow"/>
+
+                <var name="ol1" type="real" dimensions="nCells" units="unitless"
+                     description="effective orographic length for westerly flow"/>
+
+                <var name="ol2" type="real" dimensions="nCells" units="unitless"
+                     description="effective orographic length for southerly flow"/>
+
+                <var name="ol3" type="real" dimensions="nCells" units="unitless"
+                     description="effective orographic length for south-westerly flow"/>
+
+                <var name="ol4" type="real" dimensions="nCells" units="unitless"
+                     description="effective orographic length for north-westerly flow"/>
+                <!-- GSL GWDO fields - meso-scale -->
+                <var name="var2dls" type="real" dimensions="nCells" units="m"
+                     description="standard deviation of subgrid-scale orography (meso-scale GWD)"
+                     packages="ugwp_orog_stream"/>
+
+                <var name="conls" type="real" dimensions="nCells" units="unitless"
+                     description="orographic convexity (meso-scale GWD)"
+                     packages="ugwp_orog_stream"/>
+
+                <var name="oa1ls" type="real" dimensions="nCells" units="unitless"
+                     description="asymmetry of subgrid-scale orography for westerly flow (meso-scale GWD)"
+                     packages="ugwp_orog_stream"/>
+
+                <var name="oa2ls" type="real" dimensions="nCells" units="unitless"
+                     description="asymmetry of subgrid-scale orography for southerly flow (meso-scale GWD)"
+                     packages="ugwp_orog_stream"/>
+
+                <var name="oa3ls" type="real" dimensions="nCells" units="unitless"
+                     description="asymmetry of subgrid-scale orography for south-westerly flow (meso-scale GWD)"
+                     packages="ugwp_orog_stream"/>
+
+                <var name="oa4ls" type="real" dimensions="nCells" units="unitless"
+                     description="asymmetry of subgrid-scale orography for north-westerly flow (meso-scale GWD)"
+                     packages="ugwp_orog_stream"/>
+
+                <var name="ol1ls" type="real" dimensions="nCells" units="unitless"
+                     description="effective orographic length for westerly flow (meso-scale GWD)"
+                     packages="ugwp_orog_stream"/>
+
+                <var name="ol2ls" type="real" dimensions="nCells" units="unitless"
+                     description="effective orographic length for southerly flow (meso-scale GWD)"
+                     packages="ugwp_orog_stream"/>
+
+                <var name="ol3ls" type="real" dimensions="nCells" units="unitless"
+                     description="effective orographic length for south-westerly flow (meso-scale GWD)"
+                     packages="ugwp_orog_stream"/>
+
+                <var name="ol4ls" type="real" dimensions="nCells" units="unitless"
+                     description="effective orographic length for north-westerly flow (meso-scale GWD)"
+                     packages="ugwp_orog_stream"/>
+
+                <!-- GSL GWDO fields - small-scale -->
+		<var name="var2dss" type="real" dimensions="nCells" units="m"
+                     description="standard deviation of subgrid-scale orography (small-scale GWD)"
+                     packages="ugwp_orog_stream"/>
+
+                <var name="conss" type="real" dimensions="nCells" units="unitless"
+                     description="orographic convexity (small-scale GWD)"
+                     packages="ugwp_orog_stream"/>
+
+                <var name="oa1ss" type="real" dimensions="nCells" units="unitless"
+                     description="asymmetry of subgrid-scale orography for westerly flow (small-scale GWD)"
+                     packages="ugwp_orog_stream"/>
+
+                <var name="oa2ss" type="real" dimensions="nCells" units="unitless"
+                     description="asymmetry of subgrid-scale orography for southerly flow (small-scale GWD)"
+                     packages="ugwp_orog_stream"/>
+
+                <var name="oa3ss" type="real" dimensions="nCells" units="unitless"
+                     description="asymmetry of subgrid-scale orography for south-westerly flow (small-scale GWD)"
+                     packages="ugwp_orog_stream"/>
+
+                <var name="oa4ss" type="real" dimensions="nCells" units="unitless"
+                     description="asymmetry of subgrid-scale orography for north-westerly flow (small-scale GWD)"
+                     packages="ugwp_orog_stream"/>
+
+                <var name="ol1ss" type="real" dimensions="nCells" units="unitless"
+                     description="effective orographic length for westerly flow (small-scale GWD)"
+                     packages="ugwp_orog_stream"/>
+
+                <var name="ol2ss" type="real" dimensions="nCells" units="unitless"
+                     description="effective orographic length for southerly flow (small-scale GWD)"
+                     packages="ugwp_orog_stream"/>
+
+                <var name="ol3ss" type="real" dimensions="nCells" units="unitless"
+                     description="effective orographic length for south-westerly flow (small-scale GWD)"
+                     packages="ugwp_orog_stream"/>
+
+                <var name="ol4ss" type="real" dimensions="nCells" units="unitless"
+                     description="effective orographic length for north-westerly flow (small-scale GWD)"
+                     packages="ugwp_orog_stream"/>
+
 	     </var_struct>
 #endif
 
@@ -4026,4 +4147,9 @@
 #ifdef DO_PHYSICS
 #include "physics/Registry_noahmp.xml"
 #endif
+
+#ifndef MPAS_UFS_DYCORE
+#include "physics/Registry_noahmp.xml"
+#endif
+
 </registry>
