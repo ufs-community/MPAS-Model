@@ -2,6 +2,7 @@ name: MPAS-A Base Images Build
 run-name: CI Image Build for MPAS-A
 
 on:
+  push:
   pull_request:
   workflow_dispatch:
 #  push:
