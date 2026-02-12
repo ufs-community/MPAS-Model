@@ -222,7 +222,7 @@ set(ATMOSPHERE_CORE_PHYSICS_TEMPO_SOURCES
     src/module_mp_tempo_ml.F90
     src/module_mp_tempo_utils.F90
     src/module_mp_tempo_diags.F90
-    src/module_mp_tempo_aerosols.F99
+    src/module_mp_tempo_aerosols.F90
     src/module_mp_tempo_main.F90
     src/module_mp_tempo_driver.F90
 )
