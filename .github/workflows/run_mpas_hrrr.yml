@@ -290,13 +290,6 @@ jobs:
         cd ${mpas_run_ROOT}
         git clone --recursive --branch main https://github.com/barlage/mpas_testcase.git
 
-    - name: Cache TEMPO MP tables
-      id: cache-tempo-data
-      uses: actions/cache@v4
-      with:
-        path: /home/runner/tempo
-        key: cache-tempo-data-key
-
     - name: Download TEMPO MP tables
       run: |
         cd ${runner_ROOT} && mkdir tempo && cd tempo
