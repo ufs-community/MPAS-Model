@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false  # Disable fail-fast
       matrix:
-        toolchain:  [oneapi,gnu,nvhpc]
+        toolchain:  [gnu]#,oneapi,nvhpc]
         include:
           # Set toolchain configuration(s)
           - toolchain: oneapi

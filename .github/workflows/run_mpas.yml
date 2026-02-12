@@ -72,9 +72,7 @@ jobs:
       py-version:        3.11
       runner_ROOT:       /__w/
       MPAS_ROOT:         /__w/MPAS-Model/MPAS-Model
-      mpas_rt_ROOT:      /__w/work/MPAS-Model
       mpas_bl_ROOT:      /__w/MPAS-Model-BL
-      mpas_run_ROOT:     /__w/work
       AUTOCONF_VERSION:  2.71
       AUTOMAKE_VERSION:  1.17
       M4_VERSION:        1.4.19
@@ -117,7 +115,7 @@ jobs:
 
     - name: Display 2
       run: |
-        ls -l /opt/pnetcdf
+        ls -l /__w/MPAS-Model
 
     - name: Setup PnetCDF
       run: |
@@ -187,13 +185,13 @@ jobs:
     - name: Build MPAS standalone for testing (Debug)
       if: contains(matrix.build-type, 'Debug')
       run: |
-        cd ${mpas_rt_ROOT}/MPAS-Model
+        cd ${MPAS_ROOT}
         make gfortran CORE=atmosphere DEBUG=true
 
     - name: Build MPAS standalone for testing (Release)
       if: contains(matrix.build-type, 'Release')
       run: |
-        cd ${mpas_rt_ROOT}/MPAS-Model
+        cd ${MPAS_ROOT}
         make gfortran CORE=atmosphere
 
     ##########################################################################################
@@ -201,7 +199,7 @@ jobs:
     ##########################################################################################
     - name: Download MPAS data (grid info, IC and LBC files)
       run: |
-        cd ${mpas_run_ROOT} && mkdir run_data && cd run_data
+        cd ${runner_ROOT} && mkdir run_data && cd run_data
         wget -q https://gsl.noaa.gov/${grid_dir}/${domain}.${res}.graph.info.part.${nproc}
         wget -q -e robots=off -nH --cut-dirs N -nc -r -lX -A '*' -R 'catalog*' -I /thredds/fileServer/,/thredds/catalog/ \
         https://gsl.noaa.gov/thredds/catalog/${case_dir}/${case_base}/${nml}.${code_base}.${domain}.${res}.${ic_source}.${yyyy}${mm}${dd}${hh}/case_files/catalog.html
@@ -210,7 +208,7 @@ jobs:
 
     - name: Download MPAS testing repository with runtime configurations.
       run: |
-        cd ${mpas_run_ROOT}
+        cd ${runner_ROOT}
         git clone --recursive --branch main https://github.com/barlage/mpas_testcase.git
 
     - name: Cache Thompson MP tables
@@ -250,28 +248,28 @@ jobs:
     ##########################################################################################
     - name: Create and populate run directory (baselines)
       run: |
-        cd ${mpas_run_ROOT} && mkdir run_bl && cd run_bl
-        cp ${mpas_run_ROOT}/mpas_testcase/run_case/case_files/${nml_version}/${domain}/${ic_source}.${yyyy}${mm}${dd}${hh}/${{matrix.physics}}/* .
+        cd ${runner_ROOT} && mkdir run_bl && cd run_bl
+        cp ${runner_ROOT}/mpas_testcase/run_case/case_files/${nml_version}/${domain}/${ic_source}.${yyyy}${mm}${dd}${hh}/${{matrix.physics}}/* .
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.TBL .
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.DBL .
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*DATA .
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_noahmp/parameters/NoahmpTable.TBL .
-        ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.init_file}} mpas.init.nc
-        ln -sf ${mpas_run_ROOT}/run_data/${domain}.${res}.graph.info.part.${nproc} graph.info.part.${nproc}
+        ln -sf ${runner_ROOT}/run_data/${{steps.set_vars.outputs.init_file}} mpas.init.nc
+        ln -sf ${runner_ROOT}/run_data/${domain}.${res}.graph.info.part.${nproc} graph.info.part.${nproc}
         ln -sf /__w/MPAS-Model-BL/atmosphere_model .
-        ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.sst_file}} mpas.sfc_update.nc
+        ln -sf ${runner_ROOT}/run_data/${{steps.set_vars.outputs.sst_file}} mpas.sfc_update.nc
         ln -sf namelist.atmosphere.${{env.nml_suffix}} namelist.atmosphere
 
     - name: Link lateral boundary condition file for regional MPAS.
       if: env.domain == 'conus'
       run: |
-        cd ${mpas_run_ROOT}/run_bl
-        ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.lbc_file}} mpas.lbc.nc
+        cd ${runner_ROOT}/run_bl
+        ln -sf ${runner_ROOT}/run_data/${{steps.set_vars.outputs.lbc_file}} mpas.lbc.nc
 
     - name: Link Thompson MP data tables to run directory
       if: contains(matrix.physics, 'convection_permitting')
       run: |
-        cd ${mpas_run_ROOT}/run_bl
+        cd ${runner_ROOT}/run_bl
         cp ${runner_ROOT}/thompson/* .
 
     ##########################################################################################
@@ -279,28 +277,28 @@ jobs:
     ##########################################################################################
     - name: Create and populate run directory (feature test)
       run: |
-        cd ${mpas_run_ROOT} && mkdir run_rt && cd run_rt
-        cp ${mpas_run_ROOT}/mpas_testcase/run_case/case_files/${nml_version}/${domain}/${ic_source}.${yyyy}${mm}${dd}${hh}/${{matrix.physics}}/* .
-        ln -sf ${mpas_rt_ROOT}/MPAS-Model/src/core_atmosphere/physics/physics_wrf/files/*.TBL .
-        ln -sf ${mpas_rt_ROOT}/MPAS-Model/src/core_atmosphere/physics/physics_wrf/files/*.DBL .
-        ln -sf ${mpas_rt_ROOT}/MPAS-Model/src/core_atmosphere/physics/physics_wrf/files/*DATA .
-        ln -sf ${mpas_rt_ROOT}/MPAS-Model/src/core_atmosphere/physics/physics_noahmp/parameters/NoahmpTable.TBL .
-        ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.init_file}} mpas.init.nc
-        ln -sf ${mpas_run_ROOT}/run_data/${domain}.${res}.graph.info.part.${nproc} graph.info.part.${nproc}
-        ln -sf ${mpas_rt_ROOT}/MPAS-Model/atmosphere_model .
-        ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.sst_file}} mpas.sfc_update.nc
+        cd ${runner_ROOT} && mkdir run_rt && cd run_rt
+        cp ${runner_ROOT}/mpas_testcase/run_case/case_files/${nml_version}/${domain}/${ic_source}.${yyyy}${mm}${dd}${hh}/${{matrix.physics}}/* .
+        ln -sf ${MPAS_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.TBL .
+        ln -sf ${MPAS_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.DBL .
+        ln -sf ${MPAS_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*DATA .
+        ln -sf ${MPAS_ROOT}/src/core_atmosphere/physics/physics_noahmp/parameters/NoahmpTable.TBL .
+        ln -sf ${runner_ROOT}/run_data/${{steps.set_vars.outputs.init_file}} mpas.init.nc
+        ln -sf ${runner_ROOT}/run_data/${domain}.${res}.graph.info.part.${nproc} graph.info.part.${nproc}
+        ln -sf ${MPAS_ROOT}/atmosphere_model .
+        ln -sf ${runner_ROOT}/run_data/${{steps.set_vars.outputs.sst_file}} mpas.sfc_update.nc
         ln -sf namelist.atmosphere.gsl namelist.atmosphere
 
     - name: Link lateral boundary condition file for regional MPAS.
       if: env.domain == 'conus'
       run: |
-        cd ${mpas_run_ROOT}/run_rt
-        ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.lbc_file}} mpas.lbc.nc
+        cd ${runner_ROOT}/run_rt
+        ln -sf ${runner_ROOT}/run_data/${{steps.set_vars.outputs.lbc_file}} mpas.lbc.nc
 
     - name: Link Thompson MP data tables to run directory
       if: contains(matrix.physics, 'convection_permitting')
       run: |
-        cd ${mpas_run_ROOT}/run_rt
+        cd ${runner_ROOT}/run_rt
         cp ${runner_ROOT}/thompson/* .
 
     ##########################################################################################
@@ -308,14 +306,14 @@ jobs:
     ##########################################################################################
     - name: Run MPAS (baselines)
       run: |
-        cd ${mpas_run_ROOT}/run_bl
+        cd ${runner_ROOT}/run_bl
         pwd && ls -l
         mpiexec -np 1 ./atmosphere_model
         pwd && ls -l
 
     - name: Run MPAS (feature branch)
       run: |
-        cd ${mpas_run_ROOT}/run_rt
+        cd ${runner_ROOT}/run_rt
         pwd && ls -l
         mpiexec -np 1 ./atmosphere_model
         pwd && ls -l
@@ -335,8 +333,8 @@ jobs:
     - name: Run comparison script
       id: cmp
       run: |
-        cd ${mpas_rt_ROOT}/MPAS-Model/testing_and_setup/ufs-community
-        ./cmp_rt2bl.py --dir_rt ${mpas_run_ROOT}/run_rt --dir_bl ${mpas_run_ROOT}/run_bl
+        cd ${MPAS_ROOT}/testing_and_setup/ufs-community
+        ./cmp_rt2bl.py --dir_rt ${runner_ROOT}/run_rt --dir_bl ${runner_ROOT}/run_bl
 
     ##########################################################################################
     # Step 7: Save MPAS output and log files as GitHub Artifact.
@@ -347,14 +345,14 @@ jobs:
         mkdir artifact-${{env.fortran-compiler}}-${{matrix.build-type}}-${{matrix.repo}}-${{matrix.physics}}
         cd artifact-${{env.fortran-compiler}}-${{matrix.build-type}}-${{matrix.repo}}-${{matrix.physics}}
         mkdir data_bl && cd data_bl
-        cp ${mpas_run_ROOT}/run_bl/log.atmosphere.*.out log.atmosphere.BL.out
-        cp ${mpas_run_ROOT}/run_bl/history.*.nc .
-        cp ${mpas_run_ROOT}/run_bl/diag.*.nc .
+        cp ${runner_ROOT}/run_bl/log.atmosphere.*.out log.atmosphere.BL.out
+        cp ${runner_ROOT}/run_bl/history.*.nc .
+        cp ${runner_ROOT}/run_bl/diag.*.nc .
         cd ..
         mkdir data_rt && cd data_rt
-        cp ${mpas_run_ROOT}/run_rt/log.atmosphere.*.out log.atmosphere.RT.out
-        cp ${mpas_run_ROOT}/run_rt/history.*.nc .
-        cp ${mpas_run_ROOT}/run_rt/diag.*.nc .
+        cp ${runner_ROOT}/run_rt/log.atmosphere.*.out log.atmosphere.RT.out
+        cp ${runner_ROOT}/run_rt/history.*.nc .
+        cp ${runner_ROOT}/run_rt/diag.*.nc .
 
     - name: Upload log files as GitHub Artifact
       uses: actions/upload-artifact@v4
