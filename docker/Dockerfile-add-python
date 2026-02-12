@@ -15,7 +15,6 @@ RUN apt-get update \
 
 # Install essential packages
 RUN pip3 install  --break-system-packages \
-      nccmp \
       h5py \
       netCDF4 \
       numpy \
