@@ -55,9 +55,9 @@ jobs:
             branch: v8.3.0
         include:
         # Set container images for each compiler
-        - fortran-compiler: gfortran
+        - f-compiler: gfortran
           image: dustinswales/ufs-community-mpas-ci:gnu
-#        - fortran-compiler: ifx
+#        - f-compiler: ifx
 #          image: dustinswales/ufs-community-mpas-ci:oneapi
     container:
       image: ${{ matrix.image }}
@@ -68,18 +68,11 @@ jobs:
 
     # Environmental variables
     env:
-      fortran-compiler:  gfortran-12
       py-version:        3.11
       runner_ROOT:       /__w/
       MPAS_ROOT:         /__w/MPAS-Model/MPAS-Model
       mpas_bl_ROOT:      /__w/MPAS-Model-BL
-      AUTOCONF_VERSION:  2.71
-      AUTOMAKE_VERSION:  1.17
-      M4_VERSION:        1.4.19
-      LIBTOOL_VERSION:   2.5.4
-      PNETCDF:           /__w/PnetCDF
-      AUTOTOOLS:         /__w/AUTOTOOLS
-      OMPI:              /__w/ompi-4.1.6
+      PNETCDF:           /opt/pnetcdf
       grid_dir:          thredds/catalog/retro/mpas_ci/mpas_test_data/grid
       case_dir:          retro/mpas_ci/mpas_test_data/run_case_input/create_case_output
       mpdata_dir:        retro/mpas_ci/mpas_test_data/run_case_input/tables
@@ -103,19 +96,11 @@ jobs:
     # Step 0: Setup
     ##########################################################################################
     - name: Setup MPI (GNU)
-      if: matrix.fortran-compiler == 'gfortran'
+      if: matrix.f-compiler == 'gfortran'
       run: |
         echo "CC=mpicc"   >> $GITHUB_ENV
         echo "CXX=mpicxx" >> $GITHUB_ENV
         echo "FC=mpif90"  >> $GITHUB_ENV
-
-    - name: Display 1
-      run: |
-        ls -l /__w/
-
-    - name: Display 2
-      run: |
-        ls -l /__w/MPAS-Model
 
     - name: Setup PnetCDF
       run: |
@@ -308,14 +293,14 @@ jobs:
       run: |
         cd ${runner_ROOT}/run_bl
         pwd && ls -l
-        mpiexec -np 1 ./atmosphere_model
+        mpiexec --allow-run-as-root -np 1 ./atmosphere_model
         pwd && ls -l
 
     - name: Run MPAS (feature branch)
       run: |
         cd ${runner_ROOT}/run_rt
         pwd && ls -l
-        mpiexec -np 1 ./atmosphere_model
+        mpiexec --allow-run-as-root -np 1 ./atmosphere_model
         pwd && ls -l
 
     ##########################################################################################
@@ -342,8 +327,8 @@ jobs:
     - name: Create GitHub artifact
       run: |
         cd ${runner_ROOT}
-        mkdir artifact-${{env.fortran-compiler}}-${{matrix.build-type}}-${{matrix.repo}}-${{matrix.physics}}
-        cd artifact-${{env.fortran-compiler}}-${{matrix.build-type}}-${{matrix.repo}}-${{matrix.physics}}
+        mkdir artifact-${{matrix.f-compiler}}-${{matrix.build-type}}-${{matrix.repo}}-${{matrix.physics}}
+        cd artifact-${{matrix.f-compiler}}-${{matrix.build-type}}-${{matrix.repo}}-${{matrix.physics}}
         mkdir data_bl && cd data_bl
         cp ${runner_ROOT}/run_bl/log.atmosphere.*.out log.atmosphere.BL.out
         cp ${runner_ROOT}/run_bl/history.*.nc .
@@ -357,5 +342,5 @@ jobs:
     - name: Upload log files as GitHub Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: mpas-baselines-${{env.fortran-compiler}}-${{matrix.build-type}}-${{matrix.repo}}-${{matrix.physics}}
-        path: /__w/artifact-${{env.fortran-compiler}}-${{matrix.build-type}}-${{matrix.repo}}-${{matrix.physics}}
+        name: mpas-baselines-${{matrix.f-compiler}}-${{matrix.build-type}}-${{matrix.repo}}-${{matrix.physics}}
+        path: /__w/artifact-${{matrix.f-compiler}}-${{matrix.build-type}}-${{matrix.repo}}-${{matrix.physics}}
