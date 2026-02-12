@@ -71,6 +71,7 @@ jobs:
       fortran-compiler:  gfortran-12
       py-version:        3.11
       runner_ROOT:       /__w/
+      MPAS_ROOT:         /__w/MPAS-Model/MPAS-Model
       mpas_rt_ROOT:      /__w/work/MPAS-Model
       mpas_bl_ROOT:      /__w/MPAS-Model-BL
       mpas_run_ROOT:     /__w/work
@@ -179,6 +180,8 @@ jobs:
 
     - name: Initialize any submodules from testing codebase.
       run: |
+        git config --global --add safe.directory ${MPAS_ROOT}
+        cd ${MPAS_ROOT}
         git submodule update --init --recursive
 
     - name: Build MPAS standalone for testing (Debug)
