@@ -19,15 +19,15 @@ jobs:
         toolchain:  [gnu]#,oneapi,nvhpc]
         include:
           # Set toolchain configuration(s)
-          - toolchain: oneapi
-            nfversion: 4.5.4
-            pnfversion: 1.12.3
           - toolchain: gnu
             nfversion: 4.6.2
             pnfversion: 1.14.1
-          - toolchain: nvhpc
-            nfversion: 4.5.4
-            pnfversion: 1.12.3
+#          - toolchain: oneapi
+#            nfversion: 4.5.4
+#            pnfversion: 1.12.3
+#          - toolchain: nvhpc
+#            nfversion: 4.5.4
+#            pnfversion: 1.12.3
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
