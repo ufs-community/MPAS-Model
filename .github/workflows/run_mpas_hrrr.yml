@@ -293,7 +293,7 @@ jobs:
     - name: Download TEMPO MP tables
       run: |
         cd ${runner_ROOT} && mkdir tempo && cd tempo
-        wget -q -e robots=off -nH --cut-dirs N -nc -r -lX --accept-regex='_tempo_v3' -A '*' -R 'catalog*' -I /thredds/fileServer/,/thredds/catalog/ \
+        wget -q -e robots=off -nH --cut-dirs N -nc -r -lX -A '*' -R 'catalog*' -I /thredds/fileServer/,/thredds/catalog/ \
         https://gsl.noaa.gov/thredds/catalog/${mpdata_dir}/catalog.html
         mv thredds/fileServer/${mpdata_dir}/* .
         rm -rf thredds
