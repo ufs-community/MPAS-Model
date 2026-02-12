@@ -110,6 +110,18 @@ jobs:
         echo "CXX=mpicxx" >> $GITHUB_ENV
         echo "FC=mpif90"  >> $GITHUB_ENV
 
+    - name: Display 1
+      run: |
+        ls -l /__w/
+
+    - name: Display 2
+      run: |
+        ls -l /opt/pnetcdf
+
+    - name: Setup PnetCDF
+      run: |
+        echo "PNETCDF=/opt/pnetcdf"   >> $GITHUB_ENV
+
     ##########################################################################################
     # Step 1: Setup configuration for current test
     ##########################################################################################
