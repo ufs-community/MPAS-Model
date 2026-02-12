@@ -67,7 +67,7 @@ jobs:
       branch:            gsl/develop
       fortran-compiler:  gfortran-12
       py-version:        3.11
-      runner_ROOT:       /home/runner
+      runner_ROOT:       /__w/
       MPAS_ROOT:         /__w/MPAS-Model/MPAS-Model
       mpas_bl_ROOT:      /__w/MPAS-Model-BL
       PNETCDF:           /opt/pnetcdf
@@ -202,7 +202,7 @@ jobs:
       id: cache-tempo-data
       uses: actions/cache@v4
       with:
-        path: /home/runner/tempo
+        path: /__w/tempo
         key: cache-tempo-data-key
 
     - name: Download TEMPO MP tables
@@ -218,7 +218,7 @@ jobs:
       id: cache-ugw-data
       uses: actions/cache@v4
       with:
-        path: /home/runner/ugw
+        path: /__w/ugw
         key: cache-ugw-data-key
 
     - name: Download GWD data
@@ -346,4 +346,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: mpas-baselines-${{env.fortran-compiler}}-${{matrix.build-type}}-${{matrix.ic_source}}-${{matrix.season}}-${{env.physics}}
-        path: /home/runner/artifact-${{env.fortran-compiler}}-${{matrix.build-type}}-${{matrix.ic_source}}-${{matrix.season}}-${{env.physics}}
+        path: /__w/artifact-${{env.fortran-compiler}}-${{matrix.build-type}}-${{matrix.ic_source}}-${{matrix.season}}-${{env.physics}}
