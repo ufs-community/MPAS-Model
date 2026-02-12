@@ -167,6 +167,8 @@ jobs:
 
     - name: Initialize any submodules from testing codebase.
       run: |
+        git config --global --add safe.directory ${MPAS_ROOT}
+        cd ${MPAS_ROOT}
         git submodule update --init --recursive
 
     - name: Build MPAS standalone for testing (Debug)
