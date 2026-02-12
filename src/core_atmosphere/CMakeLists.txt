@@ -227,6 +227,7 @@ set(ATMOSPHERE_CORE_PHYSICS_TEMPO_SOURCES
     src/module_mp_tempo_driver.F90
 )
 list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_TEMPO_SOURCES PREPEND physics/physics_noaa/TEMPO/)
+set_source_files_properties(physics/physics_noaa/TEMPO/src/module_mp_tempo_params.F90 PROPERTIES COMPILE_OPTIONS "-Dtempo_mpas")
 
 set(ATMOSPHERE_CORE_PHYSICS_MYNN-EDMF_DIR ${CMAKE_CURRENT_SOURCE_DIR}/physics/physics_noaa/MYNN-EDMF)
 
