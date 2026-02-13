@@ -22,7 +22,7 @@
  use module_mp_kessler
  use module_mp_thompson
  use module_mp_tempo_cfgs,only: ty_tempo_cfgs
- use module_mp_tempo_driver,only: tempo_init, tempo_run, ty_tempo_driver_diags, tempo_aerosol_surface_emissions
+ use module_mp_tempo_driver,only: tempo_init,tempo_run,ty_tempo_driver_diags,tempo_aerosol_surface_emissions
  use module_mp_wsm6,only: wsm6
  use mp_wsm6,only: mp_wsm6_init,refl10cm_wsm6
  use module_mp_nssl_2mom
@@ -109,7 +109,7 @@
 !local pointers:
  character(len=StrKIND),pointer:: microp_scheme
  character(len=StrKIND),pointer:: nssl_moments
- logical,pointer:: config_tempo_hailaware, config_tempo_aerosolaware
+ logical,pointer:: config_tempo_aerosolaware,config_tempo_hailaware
  logical,pointer:: config_tempo_ml_for_bl_nc
  logical,pointer:: config_tempo_cldfra
 !-----------------------------------------------------------------------------------------------------------------
@@ -208,8 +208,6 @@
 
        microp2a_select: select case(trim(microp_scheme))
         case("mp_tempo")
-!          if(.not.allocated(ntc_p)) allocate(ntc_p(ims:ime,jms:jme))
-!          if(.not.allocated(muc_p)) allocate(muc_p(ims:ime,jms:jme))
           if(.not.allocated(ni_p) ) allocate(ni_p(ims:ime,kms:kme,jms:jme))
           if(.not.allocated(nr_p) ) allocate(nr_p(ims:ime,kms:kme,jms:jme))
           if(.not.allocated(refl10cm_p)  ) allocate(refl10cm_p(ims:ime,kms:kme,jms:jme) )
@@ -218,8 +216,14 @@
           if(.not.allocated(max_hail_diameter_sfc_p) ) allocate(max_hail_diameter_sfc_p(ims:ime,jms:jme) )
           if(.not.allocated(max_hail_diameter_column_p) ) allocate(max_hail_diameter_column_p(ims:ime,jms:jme) )
 
-          ! Allocate TEMPO options based on config flags insead of adding more nested select cases
-          ! These flags are associated with appropriate packages in mpas_atmphys_packages.F
+          if (config_tempo_aerosolaware) then
+             if(.not.allocated(nifa2d_p)) allocate(nifa2d_p(ims:ime,jms:jme))
+             if(.not.allocated(nwfa2d_p)) allocate(nwfa2d_p(ims:ime,jms:jme))
+             if(.not.allocated(nc_p)    ) allocate(nc_p(ims:ime,kms:kme,jms:jme)  )
+             if(.not.allocated(nifa_p)  ) allocate(nifa_p(ims:ime,kms:kme,jms:jme))
+             if(.not.allocated(nwfa_p)  ) allocate(nwfa_p(ims:ime,kms:kme,jms:jme))
+          endif
+
           if (config_tempo_hailaware) then
              if(.not.allocated(ng_p) ) allocate(ng_p(ims:ime,kms:kme,jms:jme))
              if(.not.allocated(volg_p)) allocate(volg_p(ims:ime,kms:kme,jms:jme))
@@ -243,14 +247,6 @@
           if (config_tempo_ml_for_bl_nc) then
              if(.not.allocated(cldfrac_p) ) allocate(cldfrac_p(ims:ime,kms:kme,jms:jme))
              if(.not.allocated(qcbl_p) ) allocate(qcbl_p(ims:ime,kms:kme,jms:jme))
-          endif
-
-          if (config_tempo_aerosolaware) then
-             if(.not.allocated(nifa2d_p)) allocate(nifa2d_p(ims:ime,jms:jme))
-             if(.not.allocated(nwfa2d_p)) allocate(nwfa2d_p(ims:ime,jms:jme))
-             if(.not.allocated(nc_p)    ) allocate(nc_p(ims:ime,kms:kme,jms:jme)  )
-             if(.not.allocated(nifa_p)  ) allocate(nifa_p(ims:ime,kms:kme,jms:jme))
-             if(.not.allocated(nwfa_p)  ) allocate(nwfa_p(ims:ime,kms:kme,jms:jme))
           endif
 
         case("mp_nssl2m")
@@ -390,8 +386,6 @@
 
        microp2a_select: select case(trim(microp_scheme))
         case("mp_tempo")
-!          if(allocated(ntc_p)) deallocate(ntc_p)
-!          if(allocated(muc_p)) deallocate(muc_p)
           if(allocated(ni_p) ) deallocate(ni_p )
           if(allocated(nr_p) ) deallocate(nr_p )
           if(allocated(refl10cm_p)  ) deallocate(refl10cm_p  )
@@ -399,6 +393,14 @@
           if(allocated(frainnc_p) ) deallocate(frainnc_p)
           if(allocated(max_hail_diameter_sfc_p) ) deallocate(max_hail_diameter_sfc_p)
           if(allocated(max_hail_diameter_column_p) ) deallocate(max_hail_diameter_column_p)
+
+          if (config_tempo_aerosolaware) then
+             if(allocated(nifa2d_p)) deallocate(nifa2d_p)
+             if(allocated(nwfa2d_p)) deallocate(nwfa2d_p)
+             if(allocated(nc_p)    ) deallocate(nc_p    )
+             if(allocated(nifa_p)  ) deallocate(nifa_p  )
+             if(allocated(nwfa_p)  ) deallocate(nwfa_p  )
+          endif
 
           if (config_tempo_hailaware) then
              if(allocated(ng_p) ) deallocate(ng_p )
@@ -423,14 +425,6 @@
           if (config_tempo_ml_for_bl_nc) then
              if(allocated(cldfrac_p) ) deallocate(cldfrac_p)
              if(allocated(qcbl_p) ) deallocate(qcbl_p)
-          endif
-
-          if (config_tempo_aerosolaware) then
-             if(allocated(nifa2d_p)) deallocate(nifa2d_p)
-             if(allocated(nwfa2d_p)) deallocate(nwfa2d_p)
-             if(allocated(nc_p)    ) deallocate(nc_p    )
-             if(allocated(nifa_p)  ) deallocate(nifa_p  )
-             if(allocated(nwfa_p)  ) deallocate(nwfa_p  )
           endif
 
         case("mp_nssl2m")
@@ -523,7 +517,7 @@
     case("mp_tempo")
        call tempo_init(aerosolaware_flag=config_tempo_aerosolaware, &
          hailaware_flag=config_tempo_hailaware, cldfra_flag=config_tempo_cldfra, &
-         ml_for_bl_nc_flag = config_tempo_ml_for_bl_nc, tempo_cfgs=tempo_cfgs)
+         ml_for_bl_nc_flag=config_tempo_ml_for_bl_nc, tempo_cfgs=tempo_cfgs)
 
        if (config_tempo_aerosolaware) then
           call init_tempo_aerosols_forMPAS(do_restart,dminfo,mesh,state,time_lev,diag_physics)
@@ -574,6 +568,7 @@
 
 !local variables and arrays:
  integer:: istep
+ integer:: i,j,k
  integer, pointer :: do_diag_dbz
  logical :: do_diag_dbz_flag
 
@@ -628,7 +623,6 @@
        call mpas_timer_stop('mp_kessler')
 
     case ("mp_tempo")
-
        if (allocated(nwfa_p) .and. allocated(nwfa2d_p)) then
          call tempo_aerosol_surface_emissions(dt=dt_microp, nwfa=nwfa_p, nwfa2d=nwfa2d_p, &
             ims=ims, ime=ime, jms=jms, jme=jme, kms=kms, kme=kme, kts=kts)
@@ -638,7 +632,7 @@
 
        istep = 1
        do while (istep .le. n_microp)
-         call tempo_run( tempo_cfgs=tempo_cfgs, &
+         call tempo_run(tempo_cfgs=tempo_cfgs, &
             dt      = dt_microp  , itimestep  = itimestep , &
             th      = th_p       , qv         = qv_p      , qc      = qc_p   , &
             qr      = qr_p       , qi         = qi_p      , qs     = qs_p    , &
@@ -656,23 +650,35 @@
             ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme , &
             its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte , &
             tempo_diags = tempo_driver_diags)
-         ! precipitation variables are added in case of multiple calls when n_microp > 1
-         snownc_p = snownc_p + tempo_driver_diags%snow_liquid_equiv_precip
-         snowncv_p = snowncv_p + tempo_driver_diags%snow_liquid_equiv_precip
-         graupelnc_p = graupelnc_p + tempo_driver_diags%graupel_liquid_equiv_precip
-         graupelncv_p = graupelncv_p + tempo_driver_diags%graupel_liquid_equiv_precip
-         rainnc_p = rainnc_p + tempo_driver_diags%rain_precip + &
-            snownc_p + graupelnc_p + tempo_driver_diags%ice_liquid_equiv_precip
-         rainncv_p = rainncv_p + tempo_driver_diags%rain_precip + &
-            snownc_p + graupelnc_p + tempo_driver_diags%ice_liquid_equiv_precip
-         frainnc_p = frainnc_p + tempo_driver_diags%frz_rain_precip
-         refl10cm_p = tempo_driver_diags%refl10cm
-         recloud_p = tempo_driver_diags%re_cloud
-         reice_p = tempo_driver_diags%re_ice
-         resnow_p = tempo_driver_diags%re_snow
-         sr_p = tempo_driver_diags%frozen_fraction
-         max_hail_diameter_sfc_p = tempo_driver_diags%max_hail_diameter_sfc
-         max_hail_diameter_column_p = tempo_driver_diags%max_hail_diameter_column
+         do j = jts, jte
+         do i = its, ite
+            ! precipitation variables are added in case of multiple calls when n_microp > 1
+            snowncv_p(i,j) = snowncv_p(i,j) + tempo_driver_diags%ice_liquid_equiv_precip(i,j) + &
+               tempo_driver_diags%snow_liquid_equiv_precip(i,j)
+            snownc_p(i,j) = snownc_p(i,j) + tempo_driver_diags%ice_liquid_equiv_precip(i,j) + &
+               tempo_driver_diags%snow_liquid_equiv_precip(i,j)
+            graupelncv_p(i,j) = graupelncv_p(i,j) + tempo_driver_diags%graupel_liquid_equiv_precip(i,j)
+            graupelnc_p(i,j) = graupelnc_p(i,j) + tempo_driver_diags%graupel_liquid_equiv_precip(i,j)
+            rainncv_p(i,j) = rainncv_p(i,j) + tempo_driver_diags%rain_precip(i,j) + &
+               tempo_driver_diags%ice_liquid_equiv_precip(i,j) + &
+               tempo_driver_diags%snow_liquid_equiv_precip(i,j) + &
+               tempo_driver_diags%graupel_liquid_equiv_precip(i,j)
+            rainnc_p(i,j) = rainnc_p(i,j) + tempo_driver_diags%rain_precip(i,j) + &
+               tempo_driver_diags%ice_liquid_equiv_precip(i,j) + &
+               tempo_driver_diags%snow_liquid_equiv_precip(i,j) + &
+               tempo_driver_diags%graupel_liquid_equiv_precip(i,j)
+            sr_p(i,j) = tempo_driver_diags%frozen_fraction(i,j)
+            frainnc_p(i,j) = frainnc_p(i,j) + tempo_driver_diags%frz_rain_precip(i,j)
+            max_hail_diameter_sfc_p(i,j) = tempo_driver_diags%max_hail_diameter_sfc(i,j)
+            max_hail_diameter_column_p(i,j) = tempo_driver_diags%max_hail_diameter_column(i,j)
+            do k = kts, kte
+               refl10cm_p(i,k,j) = tempo_driver_diags%refl10cm(i,k,j)
+               recloud_p(i,k,j) = tempo_driver_diags%re_cloud(i,k,j)
+               reice_p(i,k,j) = tempo_driver_diags%re_ice(i,k,j)
+               resnow_p(i,k,j) = tempo_driver_diags%re_snow(i,k,j)
+            enddo
+         enddo
+         enddo
        istep = istep + 1
        enddo
        call mpas_timer_stop('mp_tempo')
