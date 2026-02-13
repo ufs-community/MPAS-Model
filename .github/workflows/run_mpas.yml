@@ -42,7 +42,7 @@ jobs:
     strategy:
       fail-fast: false  # Disable fail-fast
       matrix:
-        f-compiler: [gfortran,ifx]
+        f-compiler: [gfortran,ifx]#, nvfortran]
         physics:    [mesoscale_reference]#, convection_permitting, mesoscale_reference_noahmp]
         repo:       [ufs-community]#, MPAS-Dev]
         branch:     [gsl/develop]#, v8.3.0]
@@ -58,6 +58,8 @@ jobs:
           image: dustinswales/ufs-community-mpas-ci:gnu
         - f-compiler: ifx
           image: dustinswales/ufs-community-mpas-ci:oneapi
+#        - fortran-compiler: nvfortran
+#          image: dustinswales/ccpp-scm-ci:nvhpc
     container:
       image: ${{ matrix.image }}
     # 
