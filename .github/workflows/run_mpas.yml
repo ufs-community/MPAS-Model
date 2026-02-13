@@ -59,7 +59,7 @@ jobs:
           image: dustinswales/ufs-community-mpas-ci:gnu
         - f-compiler: ifx
           image: dustinswales/ufs-community-mpas-ci:oneapi
-	  bld_target: intel
+          bld_target: intel
 #        - f-compiler: nvfortran
 #          image: dustinswales/ccpp-scm-ci:nvhpc
     container:
