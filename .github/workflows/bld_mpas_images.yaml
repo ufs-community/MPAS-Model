@@ -44,6 +44,14 @@ jobs:
           file: docker/Dockerfile-${{ matrix.toolchain }}-minimal
           tags: minimal-toolchain:${{ matrix.toolchain }}
 
+      - name: Display 1
+        run: |
+          ls /opt/intel/oneapi/mpi/
+
+      - name: Display 2
+        run: |
+          ls /opt/intel/oneapi/mpi/latest
+
       - name: Build add-netcdf:${{ matrix.toolchain }}
         uses: docker/build-push-action@v6
         with:

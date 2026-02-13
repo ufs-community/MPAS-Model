@@ -13,7 +13,6 @@ ENV PNETCDF_PREFIX=/opt/pnetcdf
 ENV PATH="${PNETCDF_PREFIX}/bin:${PATH}"
 ENV LD_LIBRARY_PATH="${PNETCDF_PREFIX}/lib:{$LD_LIBRARY_PATH}"
 ENV PKG_CONFIG_PATH="${PNETCDF_PREFIX}/lib/pkgconfig:${PKG_CONFIG_PATH}"
-ENV FC=mpiifx CC=mpiicx CXX=mpiicpx
 
 # Update and install necessary build tools
 RUN apt-get update && apt-get install -y --no-install-recommends \
