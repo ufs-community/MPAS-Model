@@ -271,7 +271,7 @@ jobs:
       if: contains(matrix.build-type, 'Release')
       run: |
         cd ${mpas_rt_ROOT}/MPAS-Model
-        make gfortran CORE=atmosphere DEBUG=true
+        make gfortran CORE=atmosphere
 
     ##########################################################################################
     # Step 3: Fetch any data/files needed for MPAS runs.
