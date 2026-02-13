@@ -22,7 +22,7 @@ ENV PKG_CONFIG_PATH="${PNETCDF_PREFIX}/lib/pkgconfig:${PKG_CONFIG_PATH}"
 RUN apt-get update && apt-get install -y --no-install-recommends \
     automake \
     libtool \
-    openmpi-bin \
+#    openmpi-bin \
     && rm -rf /var/lib/apt/lists/*
 
 # Download, compile, and install PnetCDF
