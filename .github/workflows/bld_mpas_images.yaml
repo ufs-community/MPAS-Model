@@ -46,11 +46,11 @@ jobs:
 
       - name: Display 1
         run: |
-          ls /opt/intel/oneapi/mpi/
+          ls /opt/intel/oneapi/
 
       - name: Display 2
         run: |
-          ls /opt/intel/oneapi/mpi/latest
+          ls /opt/intel/oneapi/latest
 
       - name: Build add-netcdf:${{ matrix.toolchain }}
         uses: docker/build-push-action@v6
