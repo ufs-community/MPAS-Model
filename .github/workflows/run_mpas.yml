@@ -38,7 +38,6 @@ on: [push, pull_request, workflow_dispatch]
 #############################################################################################
 jobs:
   run_mpas:
-    #
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false  # Disable fail-fast
