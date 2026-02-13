@@ -58,7 +58,7 @@ jobs:
           image: dustinswales/ufs-community-mpas-ci:gnu
         - f-compiler: ifx
           image: dustinswales/ufs-community-mpas-ci:oneapi
-#        - fortran-compiler: nvfortran
+#        - f-compiler: nvfortran
 #          image: dustinswales/ccpp-scm-ci:nvhpc
     container:
       image: ${{ matrix.image }}
@@ -104,7 +104,7 @@ jobs:
         echo "FC=mpif90"  >> $GITHUB_ENV
 
      - name: Setup MPI (Intel OneAPI)
-       if: matrix.fortran-compiler == 'ifx'
+       if: matrix.f-compiler == 'ifx'
        run: |
          echo "PATH=/opt/intel/oneapi/mpi/latest/bin:${PATH}" >> $GITHUB_ENV
          echo "LD_LIBRARY_PATH=/opt/intel/oneapi/mpi/latest/lib:${LD_LIBRARY_PATH}" >> $GITHUB_ENV
