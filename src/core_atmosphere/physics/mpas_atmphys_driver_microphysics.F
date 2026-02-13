@@ -236,6 +236,8 @@
              if(.not.allocated(rqiblten_p)) allocate(rqiblten_p(ims:ime,kms:kme,jms:jme))
              if(.not.allocated(rthratenlw_p)) allocate(rthratenlw_p(ims:ime,kms:kme,jms:jme))
              if(.not.allocated(rthratensw_p)) allocate(rthratensw_p(ims:ime,kms:kme,jms:jme))
+             if(.not.allocated(hpbl_p)) allocate(hpbl_p(ims:ime,jms:jme))
+             if(.not.allocated(xland_p)) allocate(xland_p(ims:ime,jms:jme))
           endif
 
           if (config_tempo_ml_for_bl_nc) then
@@ -414,6 +416,8 @@
              if(allocated(rqiblten_p)) deallocate(rqiblten_p)
              if(allocated(rthratenlw_p)) deallocate(rthratenlw_p)
              if(allocated(rthratensw_p)) deallocate(rthratensw_p)
+             if(allocated(hpbl_p)) deallocate(hpbl_p)
+             if(allocated(xland_p)) deallocate(xland_p)
           endif
 
           if (config_tempo_ml_for_bl_nc) then
@@ -544,7 +548,7 @@
  end subroutine init_microphysics
 
 !=================================================================================================================
- subroutine driver_microphysics(configs,mesh,state,time_lev,diag,diag_physics,tend_physics,tend,itimestep,its,ite)
+ subroutine driver_microphysics(configs,mesh,state,time_lev,sfc_input,diag,diag_physics,tend_physics,tend,itimestep,its,ite)
 !=================================================================================================================
 
  use mpas_constants, only : rvord
@@ -558,6 +562,7 @@
  integer,intent(in):: its,ite
 !inout arguments:
  type(mpas_pool_type),intent(inout):: state
+ type(mpas_pool_type),intent(inout):: sfc_input
  type(mpas_pool_type),intent(inout):: diag
  type(mpas_pool_type),intent(inout):: diag_physics
  type(mpas_pool_type),intent(inout):: tend_physics
@@ -602,7 +607,7 @@
  call precip_from_MPAS(configs,diag_physics,its,ite)
 
 !... initialization of soundings for non-hydrostatic dynamical cores.
- call microphysics_from_MPAS(configs,mesh,state,time_lev,diag,diag_physics,tend_physics,its,ite)
+ call microphysics_from_MPAS(configs,mesh,state,time_lev,sfc_input,diag,diag_physics,tend_physics,its,ite)
 
 !... call to different cloud microphysics schemes:
  microp_select: select case(trim(microp_scheme))
@@ -646,6 +651,7 @@
             thten_bl=rthblten_p  , qvten_bl   = rqvblten_p                   , &
             qcten_bl=rqcblten_p  , qiten_bl   = rqiblten_p                   , &
             thten_lwrad=rthratenlw_p, thten_swrad=rthratensw_p               , &
+            hpbl    = hpbl_p     , xland = xland_p                           , &
             ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde , &
             ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme , &
             its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte , &

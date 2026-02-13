@@ -640,13 +640,14 @@
  end subroutine MPAS_to_physics
 
 !=================================================================================================================
- subroutine microphysics_from_MPAS(configs,mesh,state,time_lev,diag,diag_physics,tend_physics,its,ite)
+ subroutine microphysics_from_MPAS(configs,mesh,state,time_lev,sfc_input,diag,diag_physics,tend_physics,its,ite)
 !=================================================================================================================
 
 !input variables:
  type(mpas_pool_type),intent(in):: configs
  type(mpas_pool_type),intent(in):: mesh
  type(mpas_pool_type),intent(in):: state
+ type(mpas_pool_type),intent(in):: sfc_input
  type(mpas_pool_type),intent(in):: diag
  type(mpas_pool_type),intent(in):: diag_physics
 
@@ -684,6 +685,7 @@
  real(kind=RKIND),dimension(:,:),pointer  :: rainprod,evapprod
  real(kind=RKIND),dimension(:,:),pointer  :: refl10cm
  real(kind=RKIND),dimension(:)  ,pointer  :: max_hail_diameter_sfc, max_hail_diameter_column
+ real(kind=RKIND),dimension(:)  ,pointer  :: hpbl,xland
  real(kind=RKIND),dimension(:,:),pointer  :: re_cloud,re_ice,re_snow
  real(kind=RKIND),dimension(:,:),pointer  :: qc_bl, cldfrac_bl
  real(kind=RKIND),dimension(:,:),pointer  :: rthmpten,rqvmpten,rqcmpten,rqrmpten,rqimpten,rqsmpten,rqgmpten
@@ -958,7 +960,8 @@
                 call mpas_pool_get_array(tend_physics,'rqiblten',rqiblten)
                 call mpas_pool_get_array(tend_physics,'rthratenlw',rthratenlw)
                 call mpas_pool_get_array(tend_physics,'rthratensw',rthratensw)
-
+                call mpas_pool_get_array(diag_physics,'hpbl', hpbl)
+                call mpas_pool_get_array(sfc_input,'xland', xland)
 !                call mpas_pool_get_array(diag_physics,'qc_bl',qc_bl)
 !                call mpas_pool_get_array(diag_physics,'cldfrac_bl',cldfrac_bl)
 
@@ -981,6 +984,13 @@
 !                   qcbl_p(i,k,j) = qc_bl(k,i)
 !                   cldfrac_p(i,k,j) = cldfrac_bl(k,i)
                 enddo
+                enddo
+                enddo
+
+                do j = jts, jte
+                do i = its, ite
+                   hpbl_p(i,j) = hpbl(i)
+                   xland_p(i,j) = xland(i)
                 enddo
                 enddo
              endif
