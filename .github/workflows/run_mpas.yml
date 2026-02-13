@@ -55,9 +55,11 @@ jobs:
         include:
         # Set container images for each compiler
         - f-compiler: gfortran
+          bld_target: gfortran
           image: dustinswales/ufs-community-mpas-ci:gnu
         - f-compiler: ifx
           image: dustinswales/ufs-community-mpas-ci:oneapi
+	  bld_target: intel
 #        - f-compiler: nvfortran
 #          image: dustinswales/ccpp-scm-ci:nvhpc
     container:
@@ -158,7 +160,7 @@ jobs:
         cd ${runner_ROOT}
         git clone --recursive --branch ${{matrix.branch}} https://github.com/${{matrix.repo}}/MPAS-Model.git MPAS-Model-BL
         cd ${mpas_bl_ROOT}
-        make ${{matrix.f-compiler}} CORE=atmosphere DEBUG=true
+        make ${{matrix.bld_target}} CORE=atmosphere DEBUG=true
 
     - name: Checkout and build MPAS standalone for baseline generation (Release)
       if: contains(matrix.build-type, 'Release')
@@ -166,7 +168,7 @@ jobs:
         cd ${runner_ROOT}
         git clone --recursive --branch ${{matrix.branch}} https://github.com/${{matrix.repo}}/MPAS-Model.git MPAS-Model-BL
         cd ${mpas_bl_ROOT}
-        make ${{matrix.f-compiler}} CORE=atmosphere
+        make ${{matrix.bld_target}} CORE=atmosphere
 
     - name: Checkout MPAS codebase for testing.
       uses: actions/checkout@v3
@@ -181,13 +183,13 @@ jobs:
       if: contains(matrix.build-type, 'Debug')
       run: |
         cd ${MPAS_ROOT}
-        make ${{matrix.f-compiler}} CORE=atmosphere DEBUG=true
+        make ${{matrix.bld_target}} CORE=atmosphere DEBUG=true
 
     - name: Build MPAS standalone for testing (Release)
       if: contains(matrix.build-type, 'Release')
       run: |
         cd ${MPAS_ROOT}
-        make ${{matrix.f-compiler}} CORE=atmosphere
+        make ${{matrix.bld_target}} CORE=atmosphere
 
     ##########################################################################################
     # Step 3: Fetch any data/files needed for MPAS runs.
