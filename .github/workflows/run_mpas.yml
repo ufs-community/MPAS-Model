@@ -113,6 +113,7 @@ jobs:
         echo "CC=mpiicx"   >> $GITHUB_ENV
         echo "CXX=mpiicpx" >> $GITHUB_ENV
         echo "FC=mpiifx"   >> $GITHUB_ENV
+        echo "MPICC=/opt/intel/oneapi/mpi/latest/bin/mpiicx"   >> $GITHUB_ENV
 
     - name: Setup PnetCDF
       run: |
