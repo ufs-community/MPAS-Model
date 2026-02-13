@@ -7,10 +7,6 @@ FROM add-netcdf:$TOOLCHAIN
 
 ARG PNFVERSION
 ENV PNFVERSION=$PNFVERSION
-ARG FC
-ENV FC=$FC
-ARG CC
-ENV CC=$CC
 
 # Set environment variables for PnetCDF installation
 ENV PNETCDF_PREFIX=/opt/pnetcdf
@@ -22,7 +18,6 @@ ENV PKG_CONFIG_PATH="${PNETCDF_PREFIX}/lib/pkgconfig:${PKG_CONFIG_PATH}"
 RUN apt-get update && apt-get install -y --no-install-recommends \
     automake \
     libtool \
-#    openmpi-bin \
     && rm -rf /var/lib/apt/lists/*
 
 # Download, compile, and install PnetCDF
