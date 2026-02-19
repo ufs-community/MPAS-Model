@@ -443,7 +443,7 @@
 !local pointer:
  logical,pointer:: do_restart
  character(len=StrKIND),pointer:: microp_scheme
- logical,pointer:: config_tempo_hailaware, config_tempo_aerosolaware
+ logical,pointer:: config_tempo_hailaware, config_tempo_aerosolaware, config_tempo_refl10cm_from_melting
  logical,pointer:: config_tempo_ml_for_bl_nc
  character(len=StrKIND),pointer:: nssl_moments
 
@@ -465,6 +465,7 @@
  call mpas_pool_get_config(configs,'config_tempo_hailaware',config_tempo_hailaware)
  call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
  call mpas_pool_get_config(configs,'config_tempo_ml_for_bl_nc',config_tempo_ml_for_bl_nc)
+ call mpas_pool_get_config(configs,'config_tempo_refl10cm_from_melting',config_tempo_refl10cm_from_melting)
  call mpas_pool_get_config(configs,'config_nssl_moments',nssl_moments)
  call mpas_pool_get_config(configs,'config_do_restart'   ,do_restart   )
 
@@ -483,6 +484,7 @@
     case("mp_tempo")
        call tempo_init(aerosolaware_flag=config_tempo_aerosolaware, &
          hailaware_flag=config_tempo_hailaware, &
+         refl10cm_from_melting_flag=config_tempo_refl10cm_from_melting, &
          ml_for_bl_nc_flag=config_tempo_ml_for_bl_nc, tempo_cfgs=tempo_cfgs)
 
        if (config_tempo_aerosolaware) then
