@@ -22,7 +22,7 @@ on: [push, pull_request, workflow_dispatch]
 # - The test build/run configurations matrix is described below.
 # - This script uses a matrix run configuration with exclusions to achieve the desired "run list"
 #
-# <physics> - List of physics configuration to test. See https://github.com/barlage/mpas_testcase.git
+# <physics> - List of physics configuration to test. See https://github.com/AndersJensen-NOAA/mpas_testcase.git
 # <repo>    - Baseline codebase repository.
 # <branch>  - Baseline codebase repository branch.
 #
@@ -288,20 +288,17 @@ jobs:
     - name: Download MPAS testing repository with runtime configurations.
       run: |
         cd ${mpas_run_ROOT}
-        git clone --recursive --branch main https://github.com/barlage/mpas_testcase.git
+        git clone --recursive --branch main https://github.com/AndersJensen-NOAA/mpas_testcase.git
 
-    - name: Cache TEMPO MP tables
-      id: cache-tempo-data
-      uses: actions/cache@v4
-      with:
-        path: /home/runner/tempo
-        key: cache-tempo-data-key
+    - name: Download MPAS testing repository with runtime configurations for baselines.
+      run: |
+        cd ${mpas_run_ROOT}
+        git clone --recursive --branch main https://github.com/barlage/mpas_testcase.git mpas_testcase_bl
 
     - name: Download TEMPO MP tables
-      if: steps.cache-tempo-data.outputs.cache-hit != 'true'
       run: |
         cd ${runner_ROOT} && mkdir tempo && cd tempo
-        wget -q -e robots=off -nH --cut-dirs N -nc -r -lX --accept-regex='_tempo_v3' -A '*' -R 'catalog*' -I /thredds/fileServer/,/thredds/catalog/ \
+        wget -q -e robots=off -nH --cut-dirs N -nc -r -lX -A '*' -R 'catalog*' -I /thredds/fileServer/,/thredds/catalog/ \
         https://gsl.noaa.gov/thredds/catalog/${mpdata_dir}/catalog.html
         mv thredds/fileServer/${mpdata_dir}/* .
         rm -rf thredds
@@ -328,7 +325,7 @@ jobs:
     - name: Create and populate run directory (baselines)
       run: |
         cd ${mpas_run_ROOT} && mkdir run_bl && cd run_bl
-        cp ${mpas_run_ROOT}/mpas_testcase/run_case/case_files/${nml_version}/${domain}/${{matrix.ic_source}}.${yyyy}${mm}${dd}${hh}/${{env.physics}}/* .
+        cp ${mpas_run_ROOT}/mpas_testcase_bl/run_case/case_files/${nml_version}/${domain}/${{matrix.ic_source}}.${yyyy}${mm}${dd}${hh}/${{env.physics}}/* .
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.TBL .
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.DBL .
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*DATA .
@@ -368,6 +365,7 @@ jobs:
         ln -sf ${mpas_rt_ROOT}/MPAS-Model/atmosphere_model atmosphere_model
         ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.ugwp_file}} mpas.ugwp_oro_data.nc
         ln -sf ${runner_ROOT}/tempo/* .
+        ln -sf ${mpas_rt_ROOT}/MPAS-Model/src/core_atmosphere/physics/physics_noaa/TEMPO/tables/ccn_activate.bin .
         ln -sf ${runner_ROOT}/ugw/ugwp_limb_tau.nc .
 
     - name: Link lateral boundary condition file for regional MPAS (feature)
