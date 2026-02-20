@@ -28,7 +28,7 @@
 
    <packages>
          <package name="mpas_smoke_fine"
-                 active_when="config_smoke_scheme .ne. 'off' .or. config_rwc_emis .ne. 0"
+                 active_when="config_smoke_scheme .ne. 'off' .or. config_rwc_scheme .ne. 'off'"
 		 description="parameterization of fine smoke"/>
 	 <package name="mpas_smoke_in"
                  active_when="config_smoke_scheme .ne. 'off'"
@@ -37,14 +37,14 @@
                  active_when="config_dust_scheme .ne. 'off'"
                  description="parameterization of fine and coarse dust"/>
          <package name="mpas_anthro_in"
-                 active_when="config_anthro_scheme .ne. 'off' .or. config_rwc_emis .ne. 0"
+                 active_when="config_anthro_scheme .ne. 'off' .or. config_rwc_scheme .ne. 'off'"
                  description="parameterization of anthropogenic emissions"/>
          <package name="mpas_anthro_aero_in"
                  active_when="( ANY( [ CHARACTER(len=20) :: 'simple_aero', 'simple_gasaero', 'acomp_gasaero' ] == TRIM(config_anthro_scheme) ))"
 		 description="parameterization of emisssions of anthropogenic aerosols"/>
          <package name="mpas_rwc_in"
-                 active_when="config_rwc_emis .ne. 0"
-		 description="parameterization of residential wood combustion"/>
+                 active_when="config_rwc_scheme .ne. 'off'"
+                 description="parameterization of residential wood combustion"/>
    </packages>
 
 
@@ -64,10 +64,10 @@
            units="-"
            description="configuration for mpas anthropogenic emissions model"
 	   possible_values="`on',`off',`simple_aero'"/>
-      <nml_option name="config_rwc_emis" type="integer" default_value="0"
+      <nml_option name="config_rwc_scheme" type="character" default_value="off" in_defaults="false"
            units="-"
            description="Option for online residential wood burning emissions"
-	   possible_values="0,1"/>
+           possible_values="`on',`off'"/>
       <nml_option name="rwc_emis_scale_factor" type="real" default_value="1.0"
            units="-"
            description="Scale factor applied to residnetial wood fire emissions"
@@ -204,6 +204,7 @@
               filename_template="history.$Y-$M-$D_$h.$m.$s.nc"
               output_interval="6:00:00"
               runtime_format="separate_file">
+	      <var name="aero_emis_for_enhmix"/>
 	      <var name="swdnb"/>
               <var name="swdnbc"/>
               <var name="aod3d_smoke"/>
@@ -415,6 +416,8 @@
       <var name="fre_out" type="real" dimensions="nCells Time" units="MJs"
            description="Output fire radiative energy"
            packages="mpas_smoke_in"/>
+      <var name="aero_emis_for_enhmix" type="real" dimensions="nCells Time" units="ug m^{-2} s^{-1}"
+           description="total output aerosol emissions for use in enhancxed mixing"/>
       <var name="hwp" type="real" dimensions="nCells Time" units="-"
            description="Hourly Wildfire Potential"
            packages="mpas_smoke_in"/>
