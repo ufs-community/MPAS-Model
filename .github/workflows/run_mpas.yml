@@ -222,7 +222,7 @@ jobs:
       if: contains(matrix.physics, 'convection_permitting')
       run: |
         cd ${runner_ROOT}/run_bl
-        cp ${MPAS_ROOT}/testing_and_setup/ufs-community/tables/thompson/* .
+        cp ${MPAS_ROOT}/testing_and_setup/ufs-community/data/tables/thompson/* .
 
     ##########################################################################################
     # Step 4b: Configure MPAS feature runs
@@ -250,7 +250,7 @@ jobs:
       if: contains(matrix.physics, 'convection_permitting')
       run: |
         cd ${runner_ROOT}/run_rt
-        cp ${MPAS_ROOT}/testing_and_setup/ufs-community/tables/thompson/* .
+        cp ${MPAS_ROOT}/testing_and_setup/ufs-community/data/tables/thompson/* .
 
     ##########################################################################################
     # Step 5: Run MPAS
