@@ -20,8 +20,6 @@ on: [push, pull_request, workflow_dispatch]
 # - The test build/run configurations matrix is described below.
 # - This script uses a matrix run configuration with exclusions to achieve the desired "run list"
 #
-# <physics> - List of physics configuration to test. See https://github.com/barlage/mpas_testcase.git
-#
 # Tests:
 #        Baseline Codebase Repository:Branch  Physics   IC source   season   build-type
 # 1/4)   ufs-community:gsl/develop            hrrrv5    gfs         winter   Release/Debug
@@ -59,19 +57,20 @@ jobs:
 
     # Environmental variables
     env:
-      physics:           hrrrv5
-      py-version:        3.11
-      runner_ROOT:       /__w/
-      MPAS_ROOT:         /__w/MPAS-Model/MPAS-Model
-      mpas_bl_ROOT:      /__w/MPAS-Model-BL
-      PNETCDF:           /opt/pnetcdf
-      mpas_ics:          testing_and_setup/ufs-community/data/ics/ufscommunity
-      physics_tables:    testing_and_setup/ufs-community/data/tables
+      physics:        hrrrv5
+      py-version:     3.11
+      runner_ROOT:    /__w/
+      MPAS_ROOT:      /__w/MPAS-Model/MPAS-Model
+      mpas_bl_ROOT:   /__w/MPAS-Model-BL
+      PNETCDF:        /opt/pnetcdf
+      mpas_ics:       testing_and_setup/ufs-community/data/ics/ufscommunity
+      physics_tables: testing_and_setup/ufs-community/data/tables
+
     # Workflow steps
     steps:
 
     ##########################################################################################
-    # Step 0: Setup
+    # Step 1: Setup
     ##########################################################################################
     - name: Setup MPI (GNU)
       if: matrix.f-compiler == 'gfortran'
@@ -141,23 +140,18 @@ jobs:
     - name: Create and populate run directory (baselines)
       run: |
         cd ${runner_ROOT} && mkdir run_bl && cd run_bl
-        cp ${MPAS_ROOT}/testing_and_setup/ufs-community/cases/ufscommunity.hrrrv5.${{matrix.ic_source}}.${{matrix.season}}/* .
+        cp ${MPAS_ROOT}/testing_and_setup/ufs-community/cases/ufscommunity.${{env.physics}}.${{matrix.ic_source}}.${{matrix.season}}/* .
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.TBL .
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.DBL .
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*DATA .
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_noahmp/parameters/NoahmpTable.TBL .
         ln -sf ${mpas_bl_ROOT}/atmosphere_model .
-        ln -sf ${MPAS_ROOT}/${mpas_ics}.${{matrix.ic_source}}.${{matrix.season}}/mpas.init.nc mpas.init.nc
-        ln -sf ${MPAS_ROOT}/${mpas_ics}.${{matrix.ic_source}}.${{matrix.season}}/mpas.ugwp_oro_data.nc mpas.ugwp_oro_data.nc
-        ln -sf ${MPAS_ROOT}/${mpas_ics}.${{matrix.ic_source}}.${{matrix.season}}/graph.info.part.2 graph.info.part.2
+        ln -sf ${MPAS_ROOT}/${mpas_ics}.${{matrix.ic_source}}.${{matrix.season}}/mpas.init.nc .
+        ln -sf ${MPAS_ROOT}/${mpas_ics}.${{matrix.ic_source}}.${{matrix.season}}/mpas.ugwp_oro_data.nc .
+        ln -sf ${MPAS_ROOT}/${mpas_ics}.${{matrix.ic_source}}.${{matrix.season}}/mpas.lbc.nc .
+        ln -sf ${MPAS_ROOT}/${mpas_ics}.${{matrix.ic_source}}.${{matrix.season}}/graph.info.part.2 .
         ln -sf ${MPAS_ROOT}/${physics_tables}/tempo/* .
         ln -sf ${MPAS_ROOT}/${physics_tables}/ugw/* .
-
-    - name: Link lateral boundary condition file for regional MPAS (baselines).
-      if: env.domain == 'conus'
-      run: |
-        cd ${runner_ROOT}/run_bl
-        ln -sf ${MPAS_ROOT}/${mpas_ics}.${{matrix.ic_source}}.${{matrix.season}}/mpas.lbc.nc .
 
     - name: Link surface files to run directory (baselines)
       if: ${{matrix.ic_source}} == 'gfs'
@@ -171,7 +165,7 @@ jobs:
     - name: Create and populate run directory (feature test)
       run: |
         cd ${runner_ROOT} && mkdir run_rt && cd run_rt
-        cp ${MPAS_ROOT}/testing_and_setup/ufs-community/cases/ufscommunity.hrrrv5.${{matrix.ic_source}}.${{matrix.season}}/* .
+        cp ${MPAS_ROOT}/testing_and_setup/ufs-community/cases/ufscommunity.${{env.physics}}.${{matrix.ic_source}}.${{matrix.season}}/* .
         ln -sf ${MPAS_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.TBL .
         ln -sf ${MPAS_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.DBL .
         ln -sf ${MPAS_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*DATA .
@@ -179,15 +173,10 @@ jobs:
         ln -sf ${MPAS_ROOT}/atmosphere_model .
         ln -sf ${MPAS_ROOT}/${mpas_ics}.${{matrix.ic_source}}.${{matrix.season}}/mpas.init.nc .
         ln -sf ${MPAS_ROOT}/${mpas_ics}.${{matrix.ic_source}}.${{matrix.season}}/mpas.ugwp_oro_data.nc .
+        ln -sf ${MPAS_ROOT}/${mpas_ics}.${{matrix.ic_source}}.${{matrix.season}}/mpas.lbc.nc .
         ln -sf ${MPAS_ROOT}/${mpas_ics}.${{matrix.ic_source}}.${{matrix.season}}/graph.info.part.2 .
         ln -sf ${MPAS_ROOT}/${physics_tables}/tempo/* .
         ln -sf ${MPAS_ROOT}/${physics_tables}/ugw/* .
-
-    - name: Link lateral boundary condition file for regional MPAS (feature)
-      if: env.domain == 'conus'
-      run: |
-        cd ${runner_ROOT}/run_rt
-        ln -sf ${MPAS_ROOT}/${mpas_ics}.${{matrix.ic_source}}.${{matrix.season}}/mpas.lbc.nc .
 
     - name: Link surface files to run directory (feature)
       if: ${{matrix.ic_source}} == 'gfs'
