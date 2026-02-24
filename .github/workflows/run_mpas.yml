@@ -206,11 +206,13 @@ jobs:
       if: contains(matrix.repo, 'MPAS-Dev')
       run: |
         echo "nml_suffix=ncar" >> $GITHUB_ENV
+        echo "repo_name=mpasdev" >> $GITHUB_ENV
 
     - name: Configuration for ufs-community (baseline) tests.
       if: contains(matrix.repo, 'ufs-community')
       run: |
         echo "nml_suffix=gsl" >> $GITHUB_ENV
+        echo "repo_name=ufscommunity" >> $GITHUB_ENV
 
     - name: Set test variables.
       id: set_vars
@@ -325,7 +327,6 @@ jobs:
     - name: Create and populate run directory (baselines)
       run: |
         cd ${mpas_run_ROOT} && mkdir run_bl && cd run_bl
-        cp ${mpas_run_ROOT}/mpas_testcase/run_case/case_files/${nml_version}/${domain}/${ic_source}.${yyyy}${mm}${dd}${hh}/${{matrix.physics}}/* .
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.TBL .
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.DBL .
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*DATA .
@@ -334,6 +335,7 @@ jobs:
         ln -sf ${mpas_run_ROOT}/run_data/${domain}.${res}.graph.info.part.${nproc} graph.info.part.${nproc}
         ln -sf /home/runner/MPAS-Model-BL/atmosphere_model .
         ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.sst_file}} mpas.sfc_update.nc
+        cp ${mpas_rt_ROOT}/testing_and_setup/ufs-community/cases/${{env.repo_name}}.${{matrix.physics}}.${ic_source}.winter/* .
         ln -sf namelist.atmosphere.${{env.nml_suffix}} namelist.atmosphere
 
     - name: Link lateral boundary condition file for regional MPAS.
@@ -354,7 +356,6 @@ jobs:
     - name: Create and populate run directory (feature test)
       run: |
         cd ${mpas_run_ROOT} && mkdir run_rt && cd run_rt
-        cp ${mpas_run_ROOT}/mpas_testcase/run_case/case_files/${nml_version}/${domain}/${ic_source}.${yyyy}${mm}${dd}${hh}/${{matrix.physics}}/* .
         ln -sf ${mpas_rt_ROOT}/MPAS-Model/src/core_atmosphere/physics/physics_wrf/files/*.TBL .
         ln -sf ${mpas_rt_ROOT}/MPAS-Model/src/core_atmosphere/physics/physics_wrf/files/*.DBL .
         ln -sf ${mpas_rt_ROOT}/MPAS-Model/src/core_atmosphere/physics/physics_wrf/files/*DATA .
@@ -363,6 +364,7 @@ jobs:
         ln -sf ${mpas_run_ROOT}/run_data/${domain}.${res}.graph.info.part.${nproc} graph.info.part.${nproc}
         ln -sf ${mpas_rt_ROOT}/MPAS-Model/atmosphere_model .
         ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.sst_file}} mpas.sfc_update.nc
+        cp ${mpas_rt_ROOT}/testing_and_setup/ufs-community/cases/${{env.repo_name}}.${{matrix.physics}}.${ic_source}.winter/* .
         ln -sf namelist.atmosphere.gsl namelist.atmosphere
 
     - name: Link lateral boundary condition file for regional MPAS.
