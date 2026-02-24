@@ -1,6 +1,6 @@
 name: Run MPAS Standalone (NOAA GSL tests)
 
-on: [push, pull_request, workflow_dispatch]
+on: [pull_request, workflow_dispatch]
 
 #############################################################################################
 # Testing script/workflow for ufs-community fork of MPAS-Dev/MPAS-A.
