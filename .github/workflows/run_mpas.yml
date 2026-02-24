@@ -204,7 +204,7 @@ jobs:
     ##########################################################################################
     - name: Create and populate run directory (baselines)
       run: |
-        cd ${mpas_run_ROOT} && mkdir run_bl && cd run_bl
+        cd ${runner_ROOT} && mkdir run_bl && cd run_bl
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.TBL .
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.DBL .
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*DATA .
