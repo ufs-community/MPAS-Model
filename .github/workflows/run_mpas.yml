@@ -136,7 +136,7 @@ jobs:
         cd ${runner_ROOT}
         git clone --recursive --branch ${{matrix.branch}} https://github.com/${{matrix.repo}}/MPAS-Model.git MPAS-Model-BL
         cd ${mpas_bl_ROOT}
-#        make ${{matrix.bld_target}} CORE=atmosphere DEBUG=true
+        make ${{matrix.bld_target}} CORE=atmosphere DEBUG=true
 
     - name: Cache MPAS build (RELEASE; baselines)
       id: cache-mpas-bl-release
@@ -151,10 +151,10 @@ jobs:
         cd ${runner_ROOT}
         git clone --recursive --branch ${{matrix.branch}} https://github.com/${{matrix.repo}}/MPAS-Model.git MPAS-Model-BL
         cd ${mpas_bl_ROOT}
-#        make ${{matrix.bld_target}} CORE=atmosphere
+        make ${{matrix.bld_target}} CORE=atmosphere
 
     ##########################################################################################
-    # Step 2b: Clone MPAS and build (feature)
+    # Step 2b: Clone MPAS and build (feature branch)
     ##########################################################################################
     - name: Checkout MPAS codebase for testing.
       uses: actions/checkout@v3
@@ -176,7 +176,7 @@ jobs:
       if: contains(matrix.build-type, 'Debug') && steps.cache-mpas-rt-debug.outputs.cache-hit != 'true'
       run: |
         cd ${MPAS_ROOT}
-#        make ${{matrix.bld_target}} CORE=atmosphere DEBUG=true
+        make ${{matrix.bld_target}} CORE=atmosphere DEBUG=true
 
     - name: Cache MPAS build (RELEASE; feature)
       id: cache-mpas-rt-release
@@ -189,7 +189,7 @@ jobs:
       if: contains(matrix.build-type, 'Release') && steps.cache-mpas-rt-release.outputs.cache-hit != 'true'
       run: |
         cd ${MPAS_ROOT}
-#        make ${{matrix.bld_target}} CORE=atmosphere
+        make ${{matrix.bld_target}} CORE=atmosphere
 
     ##########################################################################################
     # Step 3: Fetch any data/files needed for MPAS runs.
