@@ -3030,6 +3030,10 @@
                      units="s"
                      description="Relaxation time to initial values in 1-d OML"
                      possible_values="Non-negative real values"/>
+
+                <nml_option name="calc_prate_max" type="logical" default_value="false" in_defaults="false" units="-"
+                     description="switch for calculating time-maximum precipitation rate for instantaneous, 1-minute, 5-minute, and 10-minute periods"
+                     possible_values=".true. or .false."/>
         </nml_record>
 
         <var_struct name="diag_physics" time_levs="1">

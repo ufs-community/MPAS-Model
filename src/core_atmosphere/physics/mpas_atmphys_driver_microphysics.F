@@ -136,7 +136,6 @@
  !surface precipitation:
  if(.not.allocated(rainnc_p) ) allocate(rainnc_p(ims:ime,jms:jme) )
  if(.not.allocated(rainncv_p)) allocate(rainncv_p(ims:ime,jms:jme))
- if(.not.allocated(prate_p) ) allocate(prate_p(ims:ime,jms:jme) )
 
  microp_select: select case(trim(microp_scheme))
     case ("mp_thompson","mp_thompson_aerosols","mp_wsm6")
@@ -213,7 +212,6 @@
           if(.not.allocated(nr_p) ) allocate(nr_p(ims:ime,kms:kme,jms:jme))
           if(.not.allocated(refl10cm_p)  ) allocate(refl10cm_p(ims:ime,kms:kme,jms:jme) )
           if(.not.allocated(refl10cm_1km_p)  ) allocate(refl10cm_1km_p(ims:ime,jms:jme) )
-          if(.not.allocated(refl10cm_max_p)) allocate(refl10cm_max_p(ims:ime,jms:jme) )
           if(.not.allocated(frainnc_p) ) allocate(frainnc_p(ims:ime,jms:jme) )
           if(.not.allocated(max_hail_diameter_sfc_p) ) allocate(max_hail_diameter_sfc_p(ims:ime,jms:jme) )
           if(.not.allocated(max_hail_diameter_column_p) ) allocate(max_hail_diameter_column_p(ims:ime,jms:jme) )
@@ -304,7 +302,6 @@
  !surface precipitation:
  if(allocated(rainnc_p) ) deallocate(rainnc_p )
  if(allocated(rainncv_p)) deallocate(rainncv_p)
- if(allocated(prate_p)) deallocate(prate_p)
 
  microp_select: select case(trim(microp_scheme))
     case ("mp_thompson","mp_thompson_aerosols","mp_wsm6")
@@ -381,7 +378,6 @@
           if(allocated(nr_p) ) deallocate(nr_p )
           if(allocated(refl10cm_p)  ) deallocate(refl10cm_p  )
           if(allocated(refl10cm_1km_p)) deallocate(refl10cm_1km_p)
-          if(allocated(refl10cm_max_p)) deallocate(refl10cm_max_p)
           if(allocated(frainnc_p) ) deallocate(frainnc_p)
           if(allocated(max_hail_diameter_sfc_p) ) deallocate(max_hail_diameter_sfc_p)
           if(allocated(max_hail_diameter_column_p) ) deallocate(max_hail_diameter_column_p)
@@ -844,7 +840,7 @@
  !the computation of simulated radar reflectivity:
  !Compute reflectivity at all time steps for supported MP schemes rather than just at history intervals
  !Only computing reflectivity occasionally leads to bad looking time-maximum reflectivity values
-! if (l_diags) then 
+ if (l_diags) then 
     if(trim(microp_scheme) == "mp_wsm6"     .or. &
        trim(microp_scheme) == "mp_thompson" .or. &
        trim(microp_scheme) == "mp_thompson_aerosols" .or. &
@@ -861,12 +857,11 @@
     !over ice otherwise.
     call compute_relhum(diag,its,ite)
 
-! end if
+ end if
 
  if (do_diag_dbz_flag) then
     if(trim(microp_scheme) == "mp_tempo"    .or. &
        trim(microp_scheme) == "mp_nssl2m"   ) then
-!       call mpas_log_write('Computing hourly max reflectivity')
        call compute_hourly_max_radar_reflectivity(configs,diag_physics,its,ite)
     else
        call mpas_log_write('*** NOTICE: NOT computing hourly max simulated radar reflectivity')
@@ -932,7 +927,6 @@
  do i = its, ite
     rainncv_p(i,j) = 0._RKIND
     rainnc_p(i,j)  = 0._RKIND
-    prate_p(i,j)  = 0._RKIND
  enddo
  enddo
 
@@ -1022,18 +1016,17 @@
  real(kind=RKIND),dimension(:),pointer:: graupelncv,rainncv,snowncv,sr
  real(kind=RKIND),dimension(:),pointer:: frainnc
  real(kind=RKIND),dimension(:),pointer:: ave_prate_1min,ave_prate_5min,ave_prate_10min
-! real(kind=RKIND),dimension(:,:),allocatable,save:: rolling_precip_1min,rolling_precip_5min,rolling_precip_10min
  real(kind=RKIND),dimension(:,:),allocatable,save:: rolling_precip
 
 !local variables and arrays:
  character(len=16) :: desc
  integer:: i,j,k,z
- integer :: n_sub_windows, longest_window_n
- integer, dimension(5) :: sub_limit, sub_window_len
-! logical, dimension(5), save :: init_rolling_precip_array = .false.
+ integer, parameter :: n_sub_windows = 3
+ integer :: longest_window_n
+ integer, dimension(n_sub_windows) :: sub_limit, sub_window_len
  logical, save :: alloc_rolling_precip_array = .false.
- logical :: calc_prate_max
- real(kind=RKIND), dimension(5) :: n_dt_sub, sub_window_time
+ logical, pointer :: calc_prate_max
+ real(kind=RKIND), dimension(n_sub_windows) :: n_dt_sub, sub_window_time
  real(kind=RKIND):: rho_a
 
 !-----------------------------------------------------------------------------------------------------------------
@@ -1041,6 +1034,7 @@
  call mpas_pool_get_config(configs,'config_microp_scheme',microp_scheme       )
  call mpas_pool_get_config(configs,'config_nssl_moments',nssl_moments)
  call mpas_pool_get_config(configs,'config_bucket_rainnc',config_bucket_rainnc)
+ call mpas_pool_get_config(configs,'calc_prate_max',calc_prate_max)
 
  call mpas_pool_get_array(diag_physics,'i_rainnc'  ,i_rainnc  )
  call mpas_pool_get_array(diag_physics,'precipw'   ,precipw   )
@@ -1056,11 +1050,7 @@
  call mpas_pool_get_array(diag_physics,'ave_prate_5min',ave_prate_5min)
  call mpas_pool_get_array(diag_physics,'ave_prate_10min',ave_prate_10min)
 
- calc_prate_max = .false.
- if (microp_scheme == "mp_thompson" .or. microp_scheme == "mp_tempo" .or. microp_scheme == "mp_thompson_aerosols" .or. microp_scheme == "mp_nssl2m" .or. microp_scheme == "mp_wsm6") calc_prate_max = .true.
-
  if (calc_prate_max) THEN
-  n_sub_windows = 3
   sub_window_len(:n_sub_windows) = 60*(/1,5,10/) ! min -> sec
   sub_limit = -1
   do z = 1,n_sub_windows
@@ -1109,45 +1099,25 @@
     !accumulated precipitation:
     rainnc(i) = rainnc(i) + rainncv(i)
 
-    IF (calc_prate_max) THEN
-     ! update rolling precipitation totals for sub-history-interval average-precipitation-rate calculation
-     ! 1-minute prate
-     IF (allocated(rolling_precip)) THEN
-!     IF (allocated(rolling_precip_1min)) THEN
-        DO k = longest_window_n-1,1,-1
-!           rolling_precip_1min(k+1,i) = rolling_precip_1min(k,i)
-           rolling_precip(k+1,i) = rolling_precip(k,i)
-        END DO
-!        rolling_precip_1min(1,i) = rainnc(i)
-       rolling_precip(1,i) = rainnc(i)
-       ave_prate_1min(i) = max((rolling_precip(1,i) - rolling_precip(sub_limit(1),i))/sub_window_time(1),ave_prate_1min(i))
-       ave_prate_5min(i) = max((rolling_precip(1,i) - rolling_precip(sub_limit(2),i))/sub_window_time(2),ave_prate_5min(i))
-       ave_prate_10min(i) = max((rolling_precip(1,i) - rolling_precip(sub_limit(3),i))/sub_window_time(3),ave_prate_10min(i))
-!        ave_prate_1min(i) = max((rolling_precip_1min(1,i) - rolling_precip_1min(sub_limit(1),i))/sub_window_time(1),ave_prate_1min(i))
-     END IF
-!     ! 5-minute prate
-!     IF (allocated(rolling_precip_5min)) THEN
-!        DO k = sub_limit(2)-1,1,-1
-!           rolling_precip_5min(k+1,:) = rolling_precip_5min(k,:)
-!        END DO
-!        rolling_precip_5min(1,i) = rainnc(i)
-!        ave_prate_5min(i) = max((rolling_precip_5min(1,i) - rolling_precip_5min(sub_limit(2),i))/sub_window_time(2),ave_prate_5min(i))
-!     END IF
-!     ! 10-minute prate
-!     IF (allocated(rolling_precip_10min)) THEN
-!        DO k = sub_limit(3)-1,1,-1
-!           rolling_precip_10min(k+1,:) = rolling_precip_10min(k,:)
-!        END DO
-!        rolling_precip_10min(1,i) = rainnc(i)
-!        ave_prate_10min(i) = max((rolling_precip_10min(1,i) - rolling_precip_10min(sub_limit(3),i))/sub_window_time(3),ave_prate_10min(i))
-!     END IF
-    END IF ! calc_prate_max
-
     if(l_acrain .and. config_bucket_rainnc.gt.0._RKIND .and. &
        rainnc(i).gt.config_bucket_rainnc) then
        i_rainnc(i) = i_rainnc(i) + 1
        rainnc(i)   = rainnc(i) - config_bucket_rainnc
     endif
+
+    IF (calc_prate_max) THEN
+     ! update rolling precipitation totals for sub-history-interval average-precipitation-rate calculation
+     ! 1-minute prate
+     IF (allocated(rolling_precip)) THEN
+        DO k = longest_window_n-1,1,-1
+           rolling_precip(k+1,i) = rolling_precip(k,i)
+        END DO
+       rolling_precip(1,i) = rainnc(i)
+       ave_prate_1min(i) = max((rolling_precip(1,i) - rolling_precip(sub_limit(1),i))/sub_window_time(1),ave_prate_1min(i))
+       ave_prate_5min(i) = max((rolling_precip(1,i) - rolling_precip(sub_limit(2),i))/sub_window_time(2),ave_prate_5min(i))
+       ave_prate_10min(i) = max((rolling_precip(1,i) - rolling_precip(sub_limit(3),i))/sub_window_time(3),ave_prate_10min(i))
+     END IF
+    END IF ! calc_prate_max
 
  enddo
  enddo
@@ -1263,7 +1233,6 @@
           enddo
 
           refl10cm_max(i) = maxval(dBZ1d(:))
-          refl10cm_max_p(i,j) = refl10cm_max(i)
           w1 = (zp(kp+1)-1000.)/(zp(kp+1)-zp(kp))
           w2 = 1.0 - w1
           refl10cm_1km(i) = w1*dBZ1d(kp) + w2*dBZ1d(kp+1)
@@ -1297,7 +1266,6 @@
           enddo
 
           refl10cm_max(i) = maxval(dBZ1d(:))
-          refl10cm_max_p(i,j) = refl10cm_max(i)
           w1 = (zp(kp+1)-1000.)/(zp(kp+1)-zp(kp))
           w2 = 1.0 - w1
           refl10cm_1km(i) = w1*dBZ1d(kp) + w2*dBZ1d(kp+1)
@@ -1431,7 +1399,7 @@ subroutine compute_hourly_max_radar_reflectivity(configs,diag_physics,its,ite)
 !local pointers:
  character(len=StrKIND),pointer:: microp_scheme
  character(len=StrKIND),pointer:: nssl_moments
- real(kind=RKIND),dimension(:),pointer:: refl10cm_1km_max, refl10cm_1km, refl10cm_max
+ real(kind=RKIND),dimension(:),pointer:: refl10cm_1km_max, refl10cm_1km
 
 !local variables and arrays:
  integer:: i,j,k,kp
@@ -1443,7 +1411,7 @@ subroutine compute_hourly_max_radar_reflectivity(configs,diag_physics,its,ite)
  call mpas_pool_get_config(configs,'config_microp_scheme',microp_scheme)
  call mpas_pool_get_config(configs,'config_nssl_moments',nssl_moments) ! not needed?
 
-  call mpas_pool_get_array(diag_physics,'refl10cm_max',refl10cm_max)
+  !call mpas_pool_get_array(diag_physics,'refl10cm_max',refl10cm_max)
   call mpas_pool_get_array(diag_physics,'refl10cm_1km',refl10cm_1km)
   call mpas_pool_get_array(diag_physics,'refl10cm_1km_max',refl10cm_1km_max)
 
@@ -1489,6 +1457,7 @@ subroutine compute_hourly_max_radar_reflectivity(configs,diag_physics,its,ite)
        do i = its,ite
           refl10cm_1km_max(i) = max(refl10cm_1km_max(i),refl10cm_1km(i))
        enddo
+
     case default
 
  end select microp_select
