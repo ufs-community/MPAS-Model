@@ -10,11 +10,6 @@
 #    PHYSICS = -DDO_PHYSICS
 #endif
 
-ifdef PHYSICS
-    PHYSCORE = physcore
-    PHYS_OBJS = libphys/*.o
-endif
-
 OBJS = mpas_atm_core.o \
        mpas_atm_core_interface.o \
        mpas_atm_dimensions.o \
