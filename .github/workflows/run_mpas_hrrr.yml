@@ -181,7 +181,7 @@ jobs:
         ln -sf ${MPAS_ROOT}/${mpas_ics}.${{matrix.ic_source}}.${{matrix.season}}/mpas.ugwp_oro_data.nc .
         ln -sf ${MPAS_ROOT}/${mpas_ics}.${{matrix.ic_source}}.${{matrix.season}}/graph.info.part.2 .
         ln -sf ${MPAS_ROOT}/${physics_tables}/tempo/* .
-      	ln -sf ${MPAS_ROOT}/${physics_tables}/ugw/* .
+        ln -sf ${MPAS_ROOT}/${physics_tables}/ugw/* .
 
     - name: Link lateral boundary condition file for regional MPAS (feature)
       if: env.domain == 'conus'
