@@ -6,9 +6,14 @@
 #
 # If MPAS_CAM_DYCORE is found in CPPFLAGS, PHYSICS will become undefined automatically
 #
-#ifeq ($(findstring MPAS_CAM_DYCORE,$(CPPFLAGS)),)
-#    PHYSICS = -DDO_PHYSICS
-#endif
+ifeq ($(findstring MPAS_CAM_DYCORE,$(CPPFLAGS)),)
+    PHYSICS = -DDO_PHYSICS
+endif
+
+ifdef PHYSICS
+    PHYSCORE = physcore
+    PHYS_OBJS = libphys/*.o
+endif
 
 OBJS = mpas_atm_core.o \
        mpas_atm_core_interface.o \

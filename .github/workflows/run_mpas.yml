@@ -57,9 +57,9 @@ jobs:
         - f-compiler: gfortran
           bld_target: gfortran
           image: dustinswales/ufs-community-mpas-ci:gnu
-        - f-compiler: ifx
-          image: dustinswales/ufs-community-mpas-ci:oneapi
-          bld_target: intel
+#        - f-compiler: ifx
+#          image: dustinswales/ufs-community-mpas-ci:oneapi
+#          bld_target: intel
 #        - f-compiler: nvfortran
 #          image: dustinswales/ccpp-scm-ci:nvhpc
     container:
@@ -199,49 +199,8 @@ jobs:
     ##########################################################################################
     - name: Download MPAS data (grid info, IC and LBC files)
       run: |
-        cd ${runner_ROOT} && mkdir run_data && cd run_data
-        wget -q https://gsl.noaa.gov/${grid_dir}/${domain}.${res}.graph.info.part.${nproc}
-        wget -q -e robots=off -nH --cut-dirs N -nc -r -lX -A '*' -R 'catalog*' -I /thredds/fileServer/,/thredds/catalog/ \
-        https://gsl.noaa.gov/thredds/catalog/${case_dir}/${case_base}/${nml}.${code_base}.${domain}.${res}.${ic_source}.${yyyy}${mm}${dd}${hh}/case_files/catalog.html
-        mv thredds/fileServer/${case_dir}/${case_base}/${nml}.${code_base}.${domain}.${res}.${ic_source}.${yyyy}${mm}${dd}${hh}/case_files/* .
-        rm -rf thredds
-
-    - name: Download MPAS testing repository with runtime configurations.
-      run: |
-        cd ${runner_ROOT}
-        git clone --recursive --branch main https://github.com/barlage/mpas_testcase.git
-
-    - name: Cache Thompson MP tables
-      id: cache-thompson-data
-      uses: actions/cache@v4
-      with:
-        path: /__w/thompson
-        key: cache-thompson-data-key
-
-    - name: Download Thompson MP tables
-      if: steps.cache-thompson-data.outputs.cache-hit != 'true'
-      run: |
-        cd ${runner_ROOT} && mkdir thompson && cd thompson
-        wget -q -e robots=off -nH --cut-dirs N -nc -r -lX -A '*' -R 'catalog*' -I /thredds/fileServer/,/thredds/catalog/ \
-        https://gsl.noaa.gov/thredds/catalog/${mpdata_dir}/thompson/catalog.html
-        mv thredds/fileServer/${mpdata_dir}/thompson/* .
-        rm -rf thredds
-
-    - name: Cache UGWD data
-      id: cache-ugw-data
-      uses: actions/cache@v4
-      with:
-        path: /__w/ugw
-        key: cache-ugw-data-key
-
-    - name: Download GWD data
-      if: steps.cache-ugw-data.outputs.cache-hit != 'true'
-      run: |
-        cd ${runner_ROOT} && mkdir ugw && cd ugw
-        wget -q -e robots=off -nH --cut-dirs N -nc -r -lX -A '*' -R 'catalog*' -I /thredds/fileServer/,/thredds/catalog/ \
-        https://gsl.noaa.gov/thredds/catalog/${mpdata_dir}/ugw/catalog.html
-        mv thredds/fileServer/${mpdata_dir}/ugw/* .
-        rm -rf thredds
+        cd ${mpas_ROOT}
+        ./testing_and_setup/ufs-community/data/get_data.sh
 
     ##########################################################################################
     # Step 4a: Configure MPAS baseline runs
