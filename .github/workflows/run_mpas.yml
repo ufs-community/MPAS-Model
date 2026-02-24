@@ -212,7 +212,7 @@ jobs:
         ln -sf ${mpas_bl_ROOT}/atmosphere_model .
         ln -sf ${mpas_ics}/mpas.init.nc mpas.init.nc
         ln -sf ${mpas_ics}/mpas.sfc_update.nc mpas.sfc_update.nc
-        ln -sf ${mpas_ics}/graph.info.part.${nproc} graph.info.part.${nproc}
+        ln -sf ${mpas_ics}/graph.info.part.2 graph.info.part.2
         cp ${MPAS_ROOT}/testing_and_setup/ufs-community/cases/${{env.repo_name}}.${{matrix.physics}}.${ic_source}.winter/* . 
         ln -sf namelist.atmosphere.${{env.nml_suffix}} namelist.atmosphere
 
@@ -240,7 +240,7 @@ jobs:
         ln -sf ${MPAS_ROOT}/atmosphere_model .
         ln -sf ${mpas_ics}/mpas.init.nc mpas.init.nc
         ln -sf ${mpas_ics}/mpas.sfc_update.nc mpas.sfc_update.nc
-        ln -sf ${mpas_ics}/graph.info.part.${nproc} graph.info.part.${nproc}
+        ln -sf ${mpas_ics}/graph.info.part.2 graph.info.part.2
         cp ${MPAS_ROOT}/testing_and_setup/ufs-community/cases/${{env.repo_name}}.${{matrix.physics}}.${ic_source}.winter/* . 
         ln -sf namelist.atmosphere.gsl namelist.atmosphere
 
