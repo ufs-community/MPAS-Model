@@ -196,7 +196,7 @@ jobs:
     ##########################################################################################
     - name: Download MPAS data (grid info, IC and LBC files)
       run: |
-        cd ${mpas_ROOT}
+        cd ${MPAS_ROOT}
         ./testing_and_setup/ufs-community/data/get_data.sh
 
     ##########################################################################################
