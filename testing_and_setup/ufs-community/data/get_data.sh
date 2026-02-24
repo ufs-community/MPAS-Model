@@ -41,10 +41,11 @@ if [[ $(uname -s) == Darwin ]]; then
 else
   MYDIR=$(cd "$(dirname "$(readlink -f -n "${BASH_SOURCE[0]}" )" )" && pwd -P)
 fi
-BASEDIR=$MYDIR/..
+BASEDIR=$MYDIR/../../..
+
 
 # Change to directory containing theinput data, download and extract archive
-cd $MYDIR
+cd $BASEDIR/testing_and_setup/ufs-community/data/
 
 # Get TEMPO data
 wget ${verbose} https://github.com/dustinswales/MPAS-Model/releases/download/MPAS-v8.3.1-2.14/tempo_data.tar

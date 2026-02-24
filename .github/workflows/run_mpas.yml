@@ -146,16 +146,30 @@ jobs:
      # Step 2: Clone MPAS and build.
      ##########################################################################################
 
+    - name: Cache MPAS build (DEBUG; baselines)
+      id: cache-mpas-bl-debug
+      uses: actions/cache@v4
+      with:
+        path: /__w/tempo
+        key: cache-mpas-bl-debug-key
+
     - name: Checkout and build MPAS standalone for baseline generation (Debug)
-      if: contains(matrix.build-type, 'Debug')
+      if: contains(matrix.build-type, 'Debug') && steps.cache-mpas-bl-debug.outputs.cache-hit != 'true'
       run: |
         cd ${runner_ROOT}
         git clone --recursive --branch ${{matrix.branch}} https://github.com/${{matrix.repo}}/MPAS-Model.git MPAS-Model-BL
         cd ${mpas_bl_ROOT}
         make ${{matrix.bld_target}} CORE=atmosphere DEBUG=true
 
+    - name: Cache MPAS build (RELEASEbaselines)
+      id: cache-mpas-bl-release
+      uses: actions/cache@v4
+      with:
+        path: /__w/tempo
+        key: cache-mpas-bl-release-debug-key
+
     - name: Checkout and build MPAS standalone for baseline generation (Release)
-      if: contains(matrix.build-type, 'Release')
+      if: contains(matrix.build-type, 'Release') && steps.cache-mpas-bl-release.outputs.cache-hit != 'true'
       run: |
         cd ${runner_ROOT}
         git clone --recursive --branch ${{matrix.branch}} https://github.com/${{matrix.repo}}/MPAS-Model.git MPAS-Model-BL
