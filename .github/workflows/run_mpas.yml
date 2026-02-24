@@ -120,30 +120,30 @@ jobs:
      ##########################################################################################
      # Step 2a: Clone MPAS and build. (baselines)
      ##########################################################################################
-    - name: Cache MPAS build (DEBUG; baselines)
-      id: cache-mpas-bl-debug
-      uses: actions/cache@v4
-      with:
-        path: /__w/MPAS-Model-BL
-        key: cache-mpas-bl-debug-key
+#    - name: Cache MPAS build (DEBUG; baselines)
+#      id: cache-mpas-bl-debug
+#      uses: actions/cache@v4
+#      with:
+#        path: /__w/MPAS-Model-BL
+#        key: cache-mpas-bl-debug-key
 
     - name: Checkout and build MPAS standalone for baseline generation (Debug)
-      if: contains(matrix.build-type, 'Debug') && steps.cache-mpas-bl-debug.outputs.cache-hit != 'true'
+      if: contains(matrix.build-type, 'Debug')
       run: |
         cd ${runner_ROOT}
         git clone --recursive --branch ${{matrix.branch}} https://github.com/${{matrix.repo}}/MPAS-Model.git MPAS-Model-BL
         cd ${mpas_bl_ROOT}
         make ${{matrix.bld_target}} CORE=atmosphere DEBUG=true
 
-    - name: Cache MPAS build (RELEASE; baselines)
-      id: cache-mpas-bl-release
-      uses: actions/cache@v4
-      with:
-        path: /__w/MPAS-Model-BL
-        key: cache-mpas-bl-release-debug-key
+#    - name: Cache MPAS build (RELEASE; baselines)
+#      id: cache-mpas-bl-release
+#      uses: actions/cache@v4
+#      with:
+#        path: /__w/MPAS-Model-BL
+#        key: cache-mpas-bl-release-debug-key
 
     - name: Checkout and build MPAS standalone for baseline generation (Release)
-      if: contains(matrix.build-type, 'Release') && steps.cache-mpas-bl-release.outputs.cache-hit != 'true'
+      if: contains(matrix.build-type, 'Release')
       run: |
         cd ${runner_ROOT}
         git clone --recursive --branch ${{matrix.branch}} https://github.com/${{matrix.repo}}/MPAS-Model.git MPAS-Model-BL
@@ -162,28 +162,28 @@ jobs:
         cd ${MPAS_ROOT}
         git submodule update --init --recursive
 
-    - name: Cache MPAS build (DEBUG; feature)
-      id: cache-mpas-rt-debug
-      uses: actions/cache@v4
-      with:
-        path: /__w/MPAS-Model/MPAS-Model
-        key: cache-mpas-rt-debug-key
+#    - name: Cache MPAS build (DEBUG; feature)
+#      id: cache-mpas-rt-debug
+#      uses: actions/cache@v4
+#      with:
+#        path: /__w/MPAS-Model/MPAS-Model
+#        key: cache-mpas-rt-debug-key
 
     - name: Build MPAS standalone for testing (Debug)
-      if: contains(matrix.build-type, 'Debug') && steps.cache-mpas-rt-debug.outputs.cache-hit != 'true'
+      if: contains(matrix.build-type, 'Debug')
       run: |
         cd ${MPAS_ROOT}
         make ${{matrix.bld_target}} CORE=atmosphere DEBUG=true
 
-    - name: Cache MPAS build (RELEASE; feature)
-      id: cache-mpas-rt-release
-      uses: actions/cache@v4
-      with:
-        path: /__w/MPAS-Model/MPAS-Model
-        key: cache-mpas-rt-release-key
+#    - name: Cache MPAS build (RELEASE; feature)
+#      id: cache-mpas-rt-release
+#      uses: actions/cache@v4
+#      with:
+#        path: /__w/MPAS-Model/MPAS-Model
+#        key: cache-mpas-rt-release-key
 
     - name: Build MPAS standalone for testing (Release)
-      if: contains(matrix.build-type, 'Release') && steps.cache-mpas-rt-release.outputs.cache-hit != 'true'
+      if: contains(matrix.build-type, 'Release')
       run: |
         cd ${MPAS_ROOT}
         make ${{matrix.bld_target}} CORE=atmosphere
