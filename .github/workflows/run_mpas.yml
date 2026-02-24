@@ -76,6 +76,7 @@ jobs:
       MPAS_ROOT:         /__w/MPAS-Model/MPAS-Model
       mpas_bl_ROOT:      /__w/MPAS-Model-BL
       PNETCDF:           /opt/pnetcdf
+      mpas_ics:          testing_and_setup/ufs-community/data/ics/mpasdev.gfs.winter
       grid_dir:          thredds/catalog/retro/mpas_ci/mpas_test_data/grid
       case_dir:          retro/mpas_ci/mpas_test_data/run_case_input/create_case_output
       mpdata_dir:        retro/mpas_ci/mpas_test_data/run_case_input/tables
@@ -212,10 +213,10 @@ jobs:
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.DBL .
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*DATA .
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_noahmp/parameters/NoahmpTable.TBL .
-        ln -sf ${runner_ROOT}/run_data/${{steps.set_vars.outputs.init_file}} mpas.init.nc
-        ln -sf ${runner_ROOT}/run_data/${domain}.${res}.graph.info.part.${nproc} graph.info.part.${nproc}
         ln -sf /__w/MPAS-Model-BL/atmosphere_model .
-        ln -sf ${runner_ROOT}/run_data/${{steps.set_vars.outputs.sst_file}} mpas.sfc_update.nc
+        ln -sf ${mpas_ics}/mpas.init.nc mpas.init.nc
+        ln -sf ${mpas_ics}/mpas.sfc_update.nc mpas.sfc_update.nc
+        ln -sf ${mpas_ics}/graph.info.part.${nproc} graph.info.part.${nproc}
         cp ${mpas_ROOT}/testing_and_setup/ufs-community/cases/${{env.repo_name}}.${{matrix.physics}}.${ic_source}.winter/* . 
         ln -sf namelist.atmosphere.${{env.nml_suffix}} namelist.atmosphere
 
@@ -223,13 +224,13 @@ jobs:
       if: env.domain == 'conus'
       run: |
         cd ${runner_ROOT}/run_bl
-        ln -sf ${runner_ROOT}/run_data/${{steps.set_vars.outputs.lbc_file}} mpas.lbc.nc
+        ln -sf ${mpas_ics}/mpas.lbc.nc mpas.lbc.nc
 
     - name: Link Thompson MP data tables to run directory
       if: contains(matrix.physics, 'convection_permitting')
       run: |
         cd ${runner_ROOT}/run_bl
-        cp ${runner_ROOT}/thompson/* .
+        cp ${mpas_ROOT}/testing_and_setup/ufs-community/tables/thompson/* .
 
     ##########################################################################################
     # Step 4b: Configure MPAS feature runs
@@ -242,10 +243,10 @@ jobs:
         ln -sf ${MPAS_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.DBL .
         ln -sf ${MPAS_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*DATA .
         ln -sf ${MPAS_ROOT}/src/core_atmosphere/physics/physics_noahmp/parameters/NoahmpTable.TBL .
-        ln -sf ${runner_ROOT}/run_data/${{steps.set_vars.outputs.init_file}} mpas.init.nc
-        ln -sf ${runner_ROOT}/run_data/${domain}.${res}.graph.info.part.${nproc} graph.info.part.${nproc}
         ln -sf ${MPAS_ROOT}/atmosphere_model .
-        ln -sf ${runner_ROOT}/run_data/${{steps.set_vars.outputs.sst_file}} mpas.sfc_update.nc
+        ln -sf ${mpas_ics}/mpas.init.nc mpas.init.nc
+        ln -sf ${mpas_ics}/mpas.sfc_update.nc mpas.sfc_update.nc
+        ln -sf ${mpas_ics}/graph.info.part.${nproc} graph.info.part.${nproc}
         cp ${mpas_ROOT}/testing_and_setup/ufs-community/cases/${{env.repo_name}}.${{matrix.physics}}.${ic_source}.winter/* . 
         ln -sf namelist.atmosphere.gsl namelist.atmosphere
 
@@ -253,13 +254,13 @@ jobs:
       if: env.domain == 'conus'
       run: |
         cd ${runner_ROOT}/run_rt
-        ln -sf ${runner_ROOT}/run_data/${{steps.set_vars.outputs.lbc_file}} mpas.lbc.nc
+        ln -sf ${mpas_ics}/mpas.lbc.nc mpas.lbc.nc
 
     - name: Link Thompson MP data tables to run directory
       if: contains(matrix.physics, 'convection_permitting')
       run: |
         cd ${runner_ROOT}/run_rt
-        cp ${runner_ROOT}/thompson/* .
+        cp ${mpas_ROOT}/testing_and_setup/ufs-community/tables/thompson/* .
 
     ##########################################################################################
     # Step 5: Run MPAS
