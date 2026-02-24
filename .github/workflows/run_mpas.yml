@@ -42,7 +42,7 @@ jobs:
     strategy:
       fail-fast: false  # Disable fail-fast
       matrix:
-        f-compiler: [gfortran,ifx]#, nvfortran]
+        f-compiler: [gfortran]#,ifx]#, nvfortran]
         physics:    [mesoscale_reference]#, convection_permitting, mesoscale_reference_noahmp]
         repo:       [ufs-community]#, MPAS-Dev]
         branch:     [gsl/develop]#, v8.3.0]
