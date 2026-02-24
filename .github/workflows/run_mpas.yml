@@ -213,7 +213,7 @@ jobs:
         ln -sf ${mpas_ics}/mpas.init.nc mpas.init.nc
         ln -sf ${mpas_ics}/mpas.sfc_update.nc mpas.sfc_update.nc
         ln -sf ${mpas_ics}/graph.info.part.${nproc} graph.info.part.${nproc}
-        cp ${mpas_ROOT}/testing_and_setup/ufs-community/cases/${{env.repo_name}}.${{matrix.physics}}.${ic_source}.winter/* . 
+        cp ${MPAS_ROOT}/testing_and_setup/ufs-community/cases/${{env.repo_name}}.${{matrix.physics}}.${ic_source}.winter/* . 
         ln -sf namelist.atmosphere.${{env.nml_suffix}} namelist.atmosphere
 
     - name: Link lateral boundary condition file for regional MPAS.
@@ -225,7 +225,7 @@ jobs:
       if: contains(matrix.physics, 'convection_permitting')
       run: |
         cd ${runner_ROOT}/run_bl
-        cp ${mpas_ROOT}/testing_and_setup/ufs-community/tables/thompson/* .
+        cp ${MPAS_ROOT}/testing_and_setup/ufs-community/tables/thompson/* .
 
     ##########################################################################################
     # Step 4b: Configure MPAS feature runs
@@ -241,7 +241,7 @@ jobs:
         ln -sf ${mpas_ics}/mpas.init.nc mpas.init.nc
         ln -sf ${mpas_ics}/mpas.sfc_update.nc mpas.sfc_update.nc
         ln -sf ${mpas_ics}/graph.info.part.${nproc} graph.info.part.${nproc}
-        cp ${mpas_ROOT}/testing_and_setup/ufs-community/cases/${{env.repo_name}}.${{matrix.physics}}.${ic_source}.winter/* . 
+        cp ${MPAS_ROOT}/testing_and_setup/ufs-community/cases/${{env.repo_name}}.${{matrix.physics}}.${ic_source}.winter/* . 
         ln -sf namelist.atmosphere.gsl namelist.atmosphere
 
     - name: Link lateral boundary condition file for regional MPAS.
@@ -253,7 +253,7 @@ jobs:
       if: contains(matrix.physics, 'convection_permitting')
       run: |
         cd ${runner_ROOT}/run_rt
-        cp ${mpas_ROOT}/testing_and_setup/ufs-community/tables/thompson/* .
+        cp ${MPAS_ROOT}/testing_and_setup/ufs-community/tables/thompson/* .
 
     ##########################################################################################
     # Step 5: Run MPAS
