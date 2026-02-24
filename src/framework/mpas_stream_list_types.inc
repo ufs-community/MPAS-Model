@@ -17,6 +17,7 @@
         character(len=StrKIND) :: filename
         character(len=StrKIND) :: filename_template
         character(len=StrKIND) :: filename_interval
+        character(len=StrKIND) :: output_timelevels = ''
         type (MPAS_Stream_type), pointer :: stream => null()
         integer :: timeLevel = 0
         integer :: nRecords
