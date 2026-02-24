@@ -77,21 +77,7 @@ jobs:
       mpas_bl_ROOT:      /__w/MPAS-Model-BL
       PNETCDF:           /opt/pnetcdf
       mpas_ics:          testing_and_setup/ufs-community/data/ics/mpasdev.gfs.winter
-      grid_dir:          thredds/catalog/retro/mpas_ci/mpas_test_data/grid
-      case_dir:          retro/mpas_ci/mpas_test_data/run_case_input/create_case_output
-      mpdata_dir:        retro/mpas_ci/mpas_test_data/run_case_input/tables
       ic_source:         gfs
-      domain:            conus
-      res:               120km
-      nproc:             2
-      yyyy:              "2023"
-      mm:                "03"
-      dd:                "10"
-      hh:                "15"
-      nml:               ncar
-      case_base:         ncar-v8.3.0-intelmpi
-      code_base:         ncar
-      nml_version:       ncar
 
     # Workflow steps
     steps:
@@ -126,13 +112,13 @@ jobs:
     - name: Configuration for MPAS-Dev (baseline) tests.
       if: contains(matrix.repo, 'MPAS-Dev')
       run: |
-        echo "nml_suffix=ncar" >> $GITHUB_ENV
+        echo "nml_suffix=ncar"   >> $GITHUB_ENV
         echo "repo_name=mpasdev" >> $GITHUB_ENV
 
     - name: Configuration for ufs-community (baseline) tests.
       if: contains(matrix.repo, 'ufs-community')
       run: |
-        echo "nml_suffix=gsl" >> $GITHUB_ENV
+        echo "nml_suffix=gsl"         >> $GITHUB_ENV
         echo "repo_name=ufscommunity" >> $GITHUB_ENV
 
     - name: Display configuration
@@ -214,3 +200,125 @@ jobs:
         cd ${MPAS_ROOT}
         make ${{matrix.bld_target}} CORE=atmosphere
 
+    ##########################################################################################
+    # Step 3: Fetch any data/files needed for MPAS runs.
+    ##########################################################################################
+    - name: Download MPAS data (grid info, IC and LBC files)
+      run: |
+        cd ${mpas_ROOT}
+        ./testing_and_setup/ufs-community/data/get_data.sh
+
+    ##########################################################################################
+    # Step 4a: Configure MPAS baseline runs
+    ##########################################################################################
+    - name: Create and populate run directory (baselines)
+      run: |
+        cd ${mpas_run_ROOT} && mkdir run_bl && cd run_bl
+        ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.TBL .
+        ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.DBL .
+        ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*DATA .
+        ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_noahmp/parameters/NoahmpTable.TBL .
+        ln -sf /__w/MPAS-Model-BL/atmosphere_model .
+        ln -sf ${mpas_ics}/mpas.init.nc mpas.init.nc
+        ln -sf ${mpas_ics}/mpas.sfc_update.nc mpas.sfc_update.nc
+        ln -sf ${mpas_ics}/graph.info.part.${nproc} graph.info.part.${nproc}
+        cp ${mpas_ROOT}/testing_and_setup/ufs-community/cases/${{env.repo_name}}.${{matrix.physics}}.${ic_source}.winter/* . 
+        ln -sf namelist.atmosphere.${{env.nml_suffix}} namelist.atmosphere
+
+    - name: Link lateral boundary condition file for regional MPAS.
+      run: |
+        cd ${runner_ROOT}/run_bl
+        ln -sf ${mpas_ics}/mpas.lbc.nc mpas.lbc.nc
+
+    - name: Link Thompson MP data tables to run directory
+      if: contains(matrix.physics, 'convection_permitting')
+      run: |
+        cd ${runner_ROOT}/run_bl
+        cp ${mpas_ROOT}/testing_and_setup/ufs-community/tables/thompson/* .
+
+    ##########################################################################################
+    # Step 4b: Configure MPAS feature runs
+    ##########################################################################################
+    - name: Create and populate run directory (feature test)
+      run: |
+        cd ${runner_ROOT} && mkdir run_rt && cd run_rt
+        ln -sf ${MPAS_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.TBL .
+        ln -sf ${MPAS_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.DBL .
+        ln -sf ${MPAS_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*DATA .
+        ln -sf ${MPAS_ROOT}/src/core_atmosphere/physics/physics_noahmp/parameters/NoahmpTable.TBL .
+        ln -sf ${MPAS_ROOT}/atmosphere_model .
+        ln -sf ${mpas_ics}/mpas.init.nc mpas.init.nc
+        ln -sf ${mpas_ics}/mpas.sfc_update.nc mpas.sfc_update.nc
+        ln -sf ${mpas_ics}/graph.info.part.${nproc} graph.info.part.${nproc}
+        cp ${mpas_ROOT}/testing_and_setup/ufs-community/cases/${{env.repo_name}}.${{matrix.physics}}.${ic_source}.winter/* . 
+        ln -sf namelist.atmosphere.gsl namelist.atmosphere
+
+    - name: Link lateral boundary condition file for regional MPAS.
+      run: |
+        cd ${runner_ROOT}/run_rt
+        ln -sf ${mpas_ics}/mpas.lbc.nc mpas.lbc.nc
+
+    - name: Link Thompson MP data tables to run directory
+      if: contains(matrix.physics, 'convection_permitting')
+      run: |
+        cd ${runner_ROOT}/run_rt
+        cp ${mpas_ROOT}/testing_and_setup/ufs-community/tables/thompson/* .
+
+    ##########################################################################################
+    # Step 5: Run MPAS
+    ##########################################################################################
+    - name: Run MPAS (baselines)
+      run: |
+        cd ${runner_ROOT}/run_bl
+        pwd && ls -l
+        mpiexec --allow-run-as-root -np 1 ./atmosphere_model
+        pwd && ls -l
+
+    - name: Run MPAS (feature branch)
+      run: |
+        cd ${runner_ROOT}/run_rt
+        pwd && ls -l
+        mpiexec --allow-run-as-root -np 1 ./atmosphere_model
+        pwd && ls -l
+
+    ##########################################################################################
+    # Step 6: Compare feature branch to baseline branch.
+    ##########################################################################################
+    - name: Setup Miniconda
+      uses: conda-incubator/setup-miniconda@v3.2.0
+      with:
+        python-version: ${{env.py-version}}
+        auto-update-conda: true
+        auto-activate-base: false
+        environment-file: testing_and_setup/ufs-community/environment.yml
+        activate-environment: mpas-ci-env
+
+    - name: Run comparison script
+      id: cmp
+      run: |
+        cd ${MPAS_ROOT}/testing_and_setup/ufs-community
+        ./cmp_rt2bl.py --dir_rt ${runner_ROOT}/run_rt --dir_bl ${runner_ROOT}/run_bl
+
+    ##########################################################################################
+    # Step 7: Save MPAS output and log files as GitHub Artifact.
+    ##########################################################################################
+    - name: Create GitHub artifact
+      run: |
+        cd ${runner_ROOT}
+        mkdir artifact-${{matrix.f-compiler}}-${{matrix.build-type}}-${{matrix.repo}}-${{matrix.physics}}
+        cd artifact-${{matrix.f-compiler}}-${{matrix.build-type}}-${{matrix.repo}}-${{matrix.physics}}
+        mkdir data_bl && cd data_bl
+        cp ${runner_ROOT}/run_bl/log.atmosphere.*.out log.atmosphere.BL.out
+        cp ${runner_ROOT}/run_bl/history.*.nc .
+        cp ${runner_ROOT}/run_bl/diag.*.nc .
+        cd ..
+        mkdir data_rt && cd data_rt
+        cp ${runner_ROOT}/run_rt/log.atmosphere.*.out log.atmosphere.RT.out
+        cp ${runner_ROOT}/run_rt/history.*.nc .
+        cp ${runner_ROOT}/run_rt/diag.*.nc .
+
+    - name: Upload log files as GitHub Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: mpas-baselines-${{matrix.f-compiler}}-${{matrix.build-type}}-${{matrix.repo}}-${{matrix.physics}}
+        path: /__w/artifact-${{matrix.f-compiler}}-${{matrix.build-type}}-${{matrix.repo}}-${{matrix.physics}}
