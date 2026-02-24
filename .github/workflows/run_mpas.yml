@@ -135,20 +135,8 @@ jobs:
         echo "nml_suffix=gsl" >> $GITHUB_ENV
         echo "repo_name=ufscommunity" >> $GITHUB_ENV
 
-    - name: Set test variables.
-      id: set_vars
-      run: |
-        echo "init_file=mpas.${code_base}.${nml}.${domain}.${res}.${ic_source}.init.${yyyy}'-'${mm}'-'${dd}'_'${hh}'.00.00'.nc" >> $GITHUB_OUTPUT
-        echo "lbc_file=mpas.${code_base}.${nml}.${domain}.${res}.${ic_source}.lbc.${yyyy}'-'${mm}'-'${dd}'_'${hh}'.00.00'.nc" >> $GITHUB_OUTPUT
-        echo "sst_file=mpas.${code_base}.${nml}.${domain}.${res}.${ic_source}.sfc_update.${yyyy}'-'${mm}'-'${dd}'_'${hh}'.00.00'.nc" >> $GITHUB_OUTPUT
-        echo "ugwp_file=mpas.${code_base}.${nml}.${domain}.${res}.ugwp_oro_data.nc" >> $GITHUB_OUTPUT
-
     - name: Display configuration
       run: |
-        echo ${{steps.set_vars.outputs.init_file}}
-        echo ${{steps.set_vars.outputs.lbc_file}}
-        echo ${{steps.set_vars.outputs.sst_file}}
-        echo ${{steps.set_vars.outputs.ugwp_file}}
         echo ${nml}
         echo ${nml_version}
         echo ${code_base}
