@@ -48,7 +48,7 @@ BASEDIR=$MYDIR/../../..
 cd $BASEDIR/testing_and_setup/ufs-community/data/
 
 # Get TEMPO data
-wget ${verbose} https://github.com/dustinswales/MPAS-Model/releases/download/MPAS-v8.3.1-2.14/tempo_data.tar
+wget ${verbose} https://github.com/ufs-community/MPAS-Model/releases/download/MPAS-v8.3.1-2.13/tempo_data.tar
 mkdir -p tables/tempo/
 mv tempo_data.tar tables/tempo/
 cd tables/tempo
@@ -57,7 +57,7 @@ rm tempo_data.tar
 cd ../../
 
 # Get Thompson data
-wget ${verbose} https://github.com/dustinswales/MPAS-Model/releases/download/MPAS-v8.3.1-2.14/thompson_data.tar
+wget ${verbose} https://github.com/ufs-community/MPAS-Model/releases/download/MPAS-v8.3.1-2.13/thompson_data.tar
 mkdir -p tables/thompson/
 mv thompson_data.tar tables/thompson/
 cd tables/thompson
@@ -66,7 +66,7 @@ rm thompson_data.tar
 cd ../../
 
 # Get UGW data
-wget ${verbose} https://github.com/dustinswales/MPAS-Model/releases/download/MPAS-v8.3.1-2.14/ugw_data.tar
+wget ${verbose} https://github.com/ufs-community/MPAS-Model/releases/download/MPAS-v8.3.1-2.13/ugw_data.tar
 mkdir -p tables/ugw/
 mv ugw_data.tar tables/ugw/
 cd tables/ugw
@@ -75,7 +75,7 @@ rm ugw_data.tar
 cd ../../
 
 # Get MPAS case data
-wget ${verbose} https://github.com/dustinswales/MPAS-Model/releases/download/MPAS-v8.3.1-2.14/mpas_data.tar
+wget ${verbose} https://github.com/ufs-community/MPAS-Model/releases/download/MPAS-v8.3.1-2.13/mpas_data.tar
 mkdir -p ics
 mv mpas_data.tar ics/
 cd ics
