@@ -71,7 +71,8 @@ jobs:
       OMPI:              /home/runner/ompi-4.1.6
       grid_dir:          thredds/catalog/retro/mpas_ci/mpas_test_data/grid
       case_dir:          retro/mpas_ci/mpas_test_data/run_case_input/create_case_output
-      mpdata_dir:        retro/mpas_ci/mpas_test_data/run_case_input/tables
+      gwddata_dir:       retro/mpas_ci/mpas_test_data/run_case_input/tables
+      mpdata_dir:        retro/jensen
       domain:            conus
       res:               120km
       nproc:             2
@@ -300,9 +301,9 @@ jobs:
       if: steps.cache-tempo-data.outputs.cache-hit != 'true'
       run: |
         cd ${runner_ROOT} && mkdir tempo && cd tempo
-        wget -q -e robots=off -nH --cut-dirs N -nc -r -lX -A '*' -R 'catalog*' -I /thredds/fileServer/,/thredds/catalog/ \
-        https://gsl.noaa.gov/thredds/catalog/${mpdata_dir}/tempo/catalog.html
-        mv thredds/fileServer/${mpdata_dir}/tempo/* .
+        wget -q -e robots=off -nH --cut-dirs N -nc -r -lX --accept-regex='_tempo_v3' -A '*' -R 'catalog*' -I /thredds/fileServer/,/thredds/catalog/ \
+        https://gsl.noaa.gov/thredds/catalog/${mpdata_dir}/catalog.html
+        mv thredds/fileServer/${mpdata_dir}/* .
         rm -rf thredds
 
     - name: Cache UGWD data
@@ -317,8 +318,8 @@ jobs:
       run: |
         cd ${runner_ROOT} && mkdir ugw && cd ugw
         wget -q -e robots=off -nH --cut-dirs N -nc -r -lX -A '*' -R 'catalog*' -I /thredds/fileServer/,/thredds/catalog/ \
-        https://gsl.noaa.gov/thredds/catalog/${mpdata_dir}/ugw/catalog.html
-        mv thredds/fileServer/${mpdata_dir}/ugw/* .
+        https://gsl.noaa.gov/thredds/catalog/${gwddata_dir}/ugw/catalog.html
+        mv thredds/fileServer/${gwddata_dir}/ugw/* .
         rm -rf thredds
 
     ##########################################################################################

@@ -6,7 +6,7 @@ jobs:
   build_mpas_intel:
 
     # The type of runner that the job will run on
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false  # Disable fail-fast
       matrix:
@@ -36,9 +36,11 @@ jobs:
         echo "ls -l src/core_atmosphere/physics/physics_mmm"
 
     - name: "Install Intel compilers & MPI"
-      uses: NOAA-EMC/ci-install-intel-toolkit@develop
+      uses: NOAA-EMC/ci-install-intel-toolkit@ufs-community-mpas-ci-v2.0
       with:
         install-mpi: true
+        install-oneapi: false
+        mpi-wrapper-setup: classic
 
     - name: Cache Intel
       id: cache-INTEL
