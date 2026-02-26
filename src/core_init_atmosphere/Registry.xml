@@ -325,11 +325,6 @@
                      description="Whether to interpolate first-guess fields from intermediate file"
                      possible_values="true or false"/>
 
-		<nml_option name="config_aerosol_climo"            type="logical"       default_value="false"
-                     units="-"
-                     description="Whether to use monthly climatology for water- and ice-friendly aerosols"
-                     possible_values="true or false"/>
-
 		<nml_option name="config_tempo_rap"            type="logical"       default_value="false"
                      units="-"
                      description="Whether to use aerosols from RAP for TEMPO microphysics instead of the monthly climatology"
@@ -412,9 +407,8 @@
                 <package name="nssl3m_in" description="variables for NSSL 3-moment microphysics."/>
                 <package name="first_guess_field" description="3-d atmospheric or land-surface fields on first-guess levels"/>
                 <package name="mp_thompson_aers_in" description="initialization of GOCART-based Thompson water- and ice-friendly aerosols"/>
-		<package name="mp_tempo_in" description="parameterization of TEMPO cloud microphysics."/>
-		<package name="tempo_aerosolaware_in" description="variables for TEMPO aerosol-aware microphysics."/>
-		<package name="tempo_hailaware_in" description="variables for TEMPO hail-aware microphysics."/>
+                <package name="mp_tempo_in" description="parameterization of TEMPO cloud microphysics."/>
+                <package name="tempo_aerosolaware_in" description="variables for TEMPO aerosol-aware microphysics."/>
                 <package name="noahmp" description="Whether to process, read, and write static fields only required by Noah-MP"/>
         </packages>
 
@@ -1233,7 +1227,7 @@
                              description="Graupel mixing ratio"/>
 
                         <var name="qh" array_group="moist" units="kg kg^{-1}"
-                             description="hail mixing ratio"/>
+                             description="Hail mixing ratio"/>
 
                         <var name="ni" array_group="number" units="nb kg^{-1}"
                              description="Cloud ice number concentration"/>
@@ -1249,6 +1243,9 @@
 
                         <var name="ng" array_group="number" units="nb kg^{-1}"
                              description="Graupel number concentration"/>
+
+                        <var name="volg" array_group="volume" units="m^3 kg^{-1}"
+                             description="Graupel volume"/>
 
                         <var name="nifa" array_group="number" units="nb kg^{-1}"
                              description="Gocart ice-friendly aerosol number concentration"
@@ -1301,7 +1298,7 @@
                         <var name="lbc_qg" array_group="moist" units="kg kg^{-1}"
                              description="Lateral boundary tendency of graupel mixing ratio"/>
 
-                       <var name="lbc_qh" array_group="moist"  units="kg kg^{-1} s^{-1}"
+                        <var name="lbc_qh" array_group="moist"  units="kg kg^{-1} s^{-1}"
                              description="Lateral boundary tendency of hail mixing ratio"/>
 
                         <var name="lbc_nr" array_group="number" units="kg^{-1}"
@@ -1373,11 +1370,11 @@
                      description="First guess specific humidity"
                      packages="first_guess_field"/>
 
-	        <var name="qnwfa_fg" name_in_code="qnwfa" type="real" dimensions="nFGLevels nCells Time" units="kg^{-1}"
-		     description="First guess water-friendly aerosols"/>
+	           <var name="qnwfa_fg" name_in_code="qnwfa" type="real" dimensions="nFGLevels nCells Time" units="kg^{-1}"
+		           description="First guess water-friendly aerosols"/>
 
-		<var name="qnifa_fg" name_in_code="qnifa" type="real" dimensions="nFGLevels nCells Time" units="kg^{-1}"
-		     description="First guess ice-friendly aerosols"/>
+		      <var name="qnifa_fg" name_in_code="qnifa" type="real" dimensions="nFGLevels nCells Time" units="kg^{-1}"
+		           description="First guess ice-friendly aerosols"/>
 
                 <var name="qc_fg" name_in_code="qc" type="real" dimensions="nFGLevels nCells Time" units="kg kg^{-1}"
                      description="First guess cloud mixing ratio"/>

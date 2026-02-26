@@ -421,9 +421,9 @@
                 <package name="mp_kessler_in" description="parameterization of kessler microphysics."/>
                 <package name="mp_thompson_in" description="parameterization of Thompson cloud microphysics."/>
                 <package name="mp_thompson_aers_in" description="parameterization of aerosol-aware Thompson cloud microphysics."/>
-		<package name="mp_tempo_in" description="parameterization of TEMPO cloud microphysics."/>
-		<package name="tempo_aerosolaware_in" description="variables for TEMPO with aerosol-aware microphysics."/>
-		<package name="tempo_hailaware_in" description="variables for TEMPO hail-aware microphysics."/>
+                <package name="mp_tempo_in" description="parameterization of TEMPO cloud microphysics."/>
+                <package name="tempo_aerosolaware_in" description="variables for TEMPO with aerosol-aware microphysics."/>
+                <package name="tempo_hailaware_in" description="variables for TEMPO hail-aware microphysics."/>
                 <package name="mp_wsm6_in" description="parameterization of WSM6 cloud microphysics."/>
                 <package name="mp_nssl2m_in" description="parameterization of NSSL 2-moment microphysics."/>
                 <package name="nssl3m_in" description="variables for NSSL 3-moment microphysics."/>
@@ -2725,28 +2725,18 @@
                      description="configuration for cloud microphysics schemes"
                      possible_values="`suite',`mp_wsm6',`mp_tempo',`mp_thompson',`mp_thompson_aerosols', `mp_kessler',`mp_nssl2m',`off'"/>
 
-		<nml_option name="config_tempo_hailaware" type="logical" default_value="false" in_defaults="false"
-		     units="-"
-                     description="Logical flag to turn on/off prognostic graupel number concentration and rime density"
-                     possible_values=".true. or .false."/>
-
-		<nml_option name="config_tempo_cldfra" type="logical" default_value="false" in_defaults="false"
-		     units="-"
+               <nml_option name="config_tempo_cldfra" type="logical" default_value="false" in_defaults="false"
+		           units="-"
                      description="Logical flag to turn on/off prognostic cloud fraction"
                      possible_values=".true. or .false."/>
 
-		<nml_option name="config_tempo_ml_nc_pbl" type="logical" default_value="false" in_defaults="false"
-		     units="-"
-                     description="Logical flag to turn on/off ML prediction of boundary layer cloud number concentrations"
-                     possible_values=".true. or .false."/>
-
-		<nml_option name="config_tempo_ml_nc" type="logical" default_value="false" in_defaults="false"
-		     units="-"
+               <nml_option name="config_tempo_ml_nc" type="logical" default_value="false" in_defaults="false"
+		           units="-"
                      description="Logical flag to turn on/off ML prediction of microphysics cloud number concentrations"
                      possible_values=".true. or .false."/>
 
-		<nml_option name="config_tempo_ml_nr" type="logical" default_value="false" in_defaults="false"
-		     units="-"
+               <nml_option name="config_tempo_ml_nr" type="logical" default_value="false" in_defaults="false"
+		           units="-"
                      description="Logical flag to turn on/off ML prediction of microphysics rain number concentrations"
                      possible_values=".true. or .false."/>
 
@@ -2947,11 +2937,6 @@
                      description="configuration for spp boundary layer"
                      possible_values="`0: off',`1: activated'"/>
 
-		<nml_option name="config_tempo_aerosolaware" type="logical" default_value="true" in_defaults="false"
-                     units="-"
-                     description="Logical flag to turn on/off prognostic cloud droplet and aerosol number concentrations"
-                     possible_values=".true. or .false."/>
-
                 <nml_option name="config_bucket_radt" type="real" default_value="1.0e9" in_defaults="false"
                      units="-"
                      description="threshold above which accumulated radiation diagnostics are reset"
@@ -3018,20 +3003,20 @@
                 <!-- ... PARAMETERIZATION OF CLOUD MICROPHYSICS:                                                        -->
                 <!-- ================================================================================================== -->
 
-		<var name="max_hail_diameter_sfc" type="real" dimensions="nCells Time" units="mm"
-                     description="Maximum hail diameter at the surface"
+          <var name="max_hail_diameter_sfc" type="real" dimensions="nCells Time" units="mm"
+                     description="Instantaneous maximum hail diameter at the surface"
                      packages="mp_tempo_in"/>
 
-		<var name="max_hail_diameter_column" type="real" dimensions="nCells Time" units="mm"
-                     description="Maximum hail diameter in the vertical column"
+          <var name="max_hail_diameter_column" type="real" dimensions="nCells Time" units="mm"
+                     description="Instantaneous maximum hail diameter in the vertical column"
                      packages="mp_tempo_in"/>
 
-		<var name="max_hail_diameter_column_acc" type="real" dimensions="nCells Time" units="mm"
-                     description="Maximum hail diameter in the vertical column accumulated over diagnostic output"
+          <var name="max_hail_diameter_sfc_acc" type="real" dimensions="nCells Time" units="mm"
+                     description="Maximum hail diameter at the surface during the diagnostic output time window"
                      packages="mp_tempo_in"/>
-
-		<var name="max_hail_diameter_sfc_acc" type="real" dimensions="nCells Time" units="mm"
-                     description="Maximum hail diameter at the surface accumulated over diagnostic output"
+          
+          <var name="max_hail_diameter_column_acc" type="real" dimensions="nCells Time" units="mm"
+                     description="Maximum hail diameter in the vertical column during the diagnostic output time window"
                      packages="mp_tempo_in"/>
 
 		<var name="do_diag_dbz" type="integer" dimensions="" units = ""
@@ -4675,6 +4660,7 @@
 
 #ifdef DO_PHYSICS
 #include "physics/Registry_noahmp.xml"
+#include "physics/Registry_tempo.xml"
 #include "physics/registry.chemistry.xml"
 #endif
 </registry>

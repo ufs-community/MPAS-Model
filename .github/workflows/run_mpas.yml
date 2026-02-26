@@ -22,7 +22,7 @@ on: [push, pull_request, workflow_dispatch]
 # - The test build/run configurations matrix is described below.
 # - This script uses a matrix run configuration with exclusions to achieve the desired "run list"
 #
-# <physics> - List of physics configuration to test. See https://github.com/barlage/mpas_testcase.git
+# <physics> - List of physics configuration to test. See https://github.com/AndersJensen-NOAA/mpas_testcase.git
 # <repo>    - Baseline codebase repository.
 # <branch>  - Baseline codebase repository branch.
 #
@@ -285,7 +285,7 @@ jobs:
     - name: Download MPAS testing repository with runtime configurations.
       run: |
         cd ${mpas_run_ROOT}
-        git clone --recursive --branch main https://github.com/barlage/mpas_testcase.git
+        git clone --recursive --branch main https://github.com/AndersJensen-NOAA/mpas_testcase.git
 
     - name: Cache Thompson MP tables
       id: cache-thompson-data
