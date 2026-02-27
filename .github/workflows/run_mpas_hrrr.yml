@@ -290,11 +290,6 @@ jobs:
         cd ${mpas_run_ROOT}
         git clone --recursive --branch main https://github.com/AndersJensen-NOAA/mpas_testcase.git
 
-    - name: Download MPAS testing repository with runtime configurations for baselines.
-      run: |
-        cd ${mpas_run_ROOT}
-        git clone --recursive --branch main https://github.com/barlage/mpas_testcase.git mpas_testcase_bl
-
     - name: Download TEMPO MP tables
       run: |
         cd ${runner_ROOT} && mkdir tempo && cd tempo
