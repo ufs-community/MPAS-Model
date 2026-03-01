@@ -15,11 +15,10 @@
  use mpas_atmphys_vars
 
  use module_sf_mynn,only: sfclay_mynn
- use module_sf_mynnsfc_driver,only: mynnsfc_driver
+ use module_sf_mynnsfc_driver,only: mynnsfc_driver,mynnsfc_init
  use module_sf_sfclay
  use module_sf_sfclayrev,only: sfclayrev
  use sf_mynn,only: sf_mynn_init
- use module_sf_mynnsfc_driver,only: mynnsfc_init
  use sf_sfclayrev,only: sf_sfclayrev_init
  use module_sf_myjsfc
 
@@ -1400,7 +1399,7 @@
                    rho3d    = rho_p      , dz8w      = dz_p     ,                          &
                    chs      = chs_p      , chs2      = chs2_p   , psfcpa   = psfc_p      , &
                    cqs      = cqs_p      , cqs2      = cqs2_p   , cpm      = cpm_p       , &
-                   znt      = znt_p                                                      , &
+                   znt      = znt_p      , qgh       = qgh_p                             , &
                    ust      = ust_p      , pblh      = hpbl_p   , mavail   = mavail_p    , &
                    zol      = zol_p      , mol       = mol_p    , &
                    psim     = psim_p     , psih      = psih_p   , xland    = xland_p     , &
@@ -1433,7 +1432,7 @@
                       rho3d    = rho_p      , dz8w      = dz_p     ,                          &
                       chs      = chs_sea    , chs2      = chs2_sea , psfcpa   = psfc_p      , &
                       cqs      = cqs_sea    , cqs2      = cqs2_sea , cpm      = cpm_sea     , &
-                      znt      = znt_sea                                                    , &
+                      znt      = znt_sea    , qgh       = qgh_sea                           , &
                       ust      = ust_sea    , pblh      = hpbl_p   , mavail   = mavail_sea  , &
                       zol      = zol_sea    , mol       = mol_sea  , &
                       psim     = psim_sea   , psih      = psih_sea , xland    = xland_sea   , &
