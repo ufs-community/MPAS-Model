@@ -134,6 +134,14 @@ jobs:
         cd ${MPAS_ROOT}
         ./testing_and_setup/ufs-community/data/get_data.sh
 
+    - name: Download TEMPO MP tables
+      run: |
+        cd ${runner_ROOT} && mkdir tempo && cd tempo
+        wget -q -e robots=off -nH --cut-dirs N -nc -r -lX -A '*' -R 'catalog*' -I /thredds/fileServer/,/thredds/catalog/ \
+        https://gsl.noaa.gov/thredds/catalog/${mpdata_dir}/catalog.html
+        mv thredds/fileServer/${mpdata_dir}/* .
+        rm -rf thredds
+
     ##########################################################################################
     # Step 4a: Configure MPAS baseline runs
     ##########################################################################################
