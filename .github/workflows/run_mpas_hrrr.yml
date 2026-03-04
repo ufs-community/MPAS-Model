@@ -134,14 +134,6 @@ jobs:
         cd ${MPAS_ROOT}
         ./testing_and_setup/ufs-community/data/get_data.sh
 
-    - name: Download TEMPO MP tables
-      run: |
-        cd ${runner_ROOT} && mkdir tempo && cd tempo
-        wget -q -e robots=off -nH --cut-dirs N -nc -r -lX -A '*' -R 'catalog*' -I /thredds/fileServer/,/thredds/catalog/ \
-        https://gsl.noaa.gov/thredds/catalog/retro/jensen/catalog.html
-        mv thredds/fileServer/retro/jensen/* .
-        rm -rf thredds
-
     ##########################################################################################
     # Step 4a: Configure MPAS baseline runs
     ##########################################################################################
@@ -153,14 +145,14 @@ jobs:
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.DBL .
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*DATA .
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_noahmp/parameters/NoahmpTable.TBL .
-        ln -sf ${mpas_bl_ROOT}/atmosphere_model .
+        ln -sf ${MPAS_ROOT}/src/core_atmosphere/physics/physics_noaa/TEMPO/tables/ccn_activate.bin .
         ln -sf ${MPAS_ROOT}/${mpas_ics}.${{matrix.ic_source}}.${{matrix.season}}/mpas.init.nc .
         ln -sf ${MPAS_ROOT}/${mpas_ics}.${{matrix.ic_source}}.${{matrix.season}}/mpas.ugwp_oro_data.nc .
         ln -sf ${MPAS_ROOT}/${mpas_ics}.${{matrix.ic_source}}.${{matrix.season}}/mpas.lbc.nc .
         ln -sf ${MPAS_ROOT}/${mpas_ics}.${{matrix.ic_source}}.${{matrix.season}}/graph.info.part.2 .
-        ln -sf ${MPAS_ROOT}/src/core_atmosphere/physics/physics_noaa/TEMPO/tables/ccn_activate.bin .
         ln -sf ${MPAS_ROOT}/${physics_tables}/tempo/* .
         ln -sf ${MPAS_ROOT}/${physics_tables}/ugw/* .
+        ln -sf ${mpas_bl_ROOT}/atmosphere_model .
 
     - name: Link surface files to run directory (baselines)
       if: ${{matrix.ic_source}} == 'gfs'
@@ -179,14 +171,14 @@ jobs:
         ln -sf ${MPAS_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.DBL .
         ln -sf ${MPAS_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*DATA .
         ln -sf ${MPAS_ROOT}/src/core_atmosphere/physics/physics_noahmp/parameters/NoahmpTable.TBL .
-        ln -sf ${MPAS_ROOT}/atmosphere_model .
+        ln -sf ${MPAS_ROOT}/src/core_atmosphere/physics/physics_noaa/TEMPO/tables/ccn_activate.bin .
         ln -sf ${MPAS_ROOT}/${mpas_ics}.${{matrix.ic_source}}.${{matrix.season}}/mpas.init.nc .
         ln -sf ${MPAS_ROOT}/${mpas_ics}.${{matrix.ic_source}}.${{matrix.season}}/mpas.ugwp_oro_data.nc .
         ln -sf ${MPAS_ROOT}/${mpas_ics}.${{matrix.ic_source}}.${{matrix.season}}/mpas.lbc.nc .
         ln -sf ${MPAS_ROOT}/${mpas_ics}.${{matrix.ic_source}}.${{matrix.season}}/graph.info.part.2 .
-        ln -sf ${MPAS_ROOT}/src/core_atmosphere/physics/physics_noaa/TEMPO/tables/ccn_activate.bin .
         ln -sf ${MPAS_ROOT}/${physics_tables}/tempo/* .
         ln -sf ${MPAS_ROOT}/${physics_tables}/ugw/* .
+        ln -sf ${MPAS_ROOT}/atmosphere_model .
 
     - name: Link surface files to run directory (feature)
       if: ${{matrix.ic_source}} == 'gfs'
