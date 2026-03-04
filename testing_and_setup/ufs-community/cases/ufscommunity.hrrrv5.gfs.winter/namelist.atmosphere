@@ -51,9 +51,11 @@
     config_radtsw_interval = '00:15:00'
     config_bucket_update = 'none'
     config_physics_suite = 'hrrrv5'
+    num_soil_layers      = 9
+/
+&physics_mp_tempo
     config_tempo_aerosolaware = .true.
     config_tempo_hailaware = .true.
-    num_soil_layers      = 9
 /
 &soundings
     config_sounding_interval = 'none'
