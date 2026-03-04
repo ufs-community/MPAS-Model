@@ -138,8 +138,8 @@ jobs:
       run: |
         cd ${runner_ROOT} && mkdir tempo && cd tempo
         wget -q -e robots=off -nH --cut-dirs N -nc -r -lX -A '*' -R 'catalog*' -I /thredds/fileServer/,/thredds/catalog/ \
-        https://gsl.noaa.gov/thredds/catalog/${mpdata_dir}/catalog.html
-        mv thredds/fileServer/${mpdata_dir}/* .
+        https://gsl.noaa.gov/thredds/catalog/retro/jensen/catalog.html
+        mv thredds/fileServer/retro/jensen/* .
         rm -rf thredds
 
     ##########################################################################################
