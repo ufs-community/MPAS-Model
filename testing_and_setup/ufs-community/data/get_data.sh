@@ -48,7 +48,7 @@ BASEDIR=$MYDIR/../../..
 cd $BASEDIR/testing_and_setup/ufs-community/data/
 
 # Get TEMPO data
-wget ${verbose} https://github.com/ufs-community/MPAS-Model/releases/download/MPAS-v8.3.1-2.13/tempo_data.tar
+wget ${verbose} https://github.com/ufs-community/MPAS-Model/releases/download/MPAS-v8.3.1-2.14/tempo_data.tar
 mkdir -p tables/tempo/
 mv tempo_data.tar tables/tempo/
 cd tables/tempo
