@@ -217,13 +217,17 @@ else()
 endif()
 
 set(ATMOSPHERE_CORE_PHYSICS_TEMPO_SOURCES
-    module_mp_tempo_main.F90
-    module_mp_tempo_params.F90
-    module_mp_tempo_utils.F90
-    module_mp_tempo_ml.F90
-    drivers/mpas/module_mp_tempo.F90
+    src/module_mp_tempo_cfgs.F90
+    src/module_mp_tempo_params.F90
+    src/module_mp_tempo_ml.F90
+    src/module_mp_tempo_utils.F90
+    src/module_mp_tempo_diags.F90
+    src/module_mp_tempo_aerosols.F90
+    src/module_mp_tempo_main.F90
+    src/module_mp_tempo_driver.F90
 )
 list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_TEMPO_SOURCES PREPEND physics/physics_noaa/TEMPO/)
+set_source_files_properties(physics/physics_noaa/TEMPO/src/module_mp_tempo_params.F90 PROPERTIES COMPILE_OPTIONS "-Dtempo_mpas")
 
 set(ATMOSPHERE_CORE_PHYSICS_MYNN-EDMF_DIR ${CMAKE_CURRENT_SOURCE_DIR}/physics/physics_noaa/MYNN-EDMF)
 
