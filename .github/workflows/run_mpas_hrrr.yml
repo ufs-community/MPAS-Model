@@ -330,7 +330,7 @@ jobs:
         ln -sf ${mpas_bl_ROOT}/atmosphere_model atmosphere_model
         ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.ugwp_file}} mpas.ugwp_oro_data.nc
         ln -sf ${runner_ROOT}/tempo/* .
-	ln -sf ${mpas_rt_ROOT}/MPAS-Model/src/core_atmosphere/physics/physics_noaa/TEMPO/tables/ccn_activate.bin .
+        ln -sf ${mpas_rt_ROOT}/MPAS-Model/src/core_atmosphere/physics/physics_noaa/TEMPO/tables/ccn_activate.bin .
         ln -sf ${runner_ROOT}/ugw/ugwp_limb_tau.nc .
 
     - name: Link lateral boundary condition file for regional MPAS (baselines).
