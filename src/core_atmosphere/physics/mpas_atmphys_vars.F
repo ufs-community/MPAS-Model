@@ -758,7 +758,7 @@
     lakedepth_p,      &!depth of lakes needed to run the lake model physics.
     lakemask_p         !mask needed to detect the location of lakes to run the lake model physics.
 
-!... arrays only in mynn surface layer scheme (module_sf_mynn.F):
+!... arrays only in mynn surface layer scheme (module_sf_mynn.F): (note qcg is not needed for mynn sfclayer submodule)
  real(kind=RKIND),dimension(:,:),allocatable:: &
     ch_p,             &!surface exchange coeff for heat                                                      [m/s]
     qcg_p              !cloud water mixing ratio at the ground surface                                     [kg/kg]
