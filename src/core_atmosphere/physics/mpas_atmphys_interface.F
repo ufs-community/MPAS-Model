@@ -663,7 +663,7 @@
  real(kind=RKIND),dimension(:),pointer    :: nifa2d,nwfa2d,nt_c,mu_c
 !TEMPO/NSSL
  character(len=StrKIND),pointer:: nssl_moments
- logical,pointer:: config_tempo_aerosolaware,config_tempo_hailaware
+ logical,pointer:: config_tempo_aerosolaware,config_tempo_hailaware,config_tempo_hailcat
  logical,pointer:: config_tempo_ml_for_bl_nc
  integer,pointer:: index_qh
  integer,pointer:: index_zrw,index_zgw,index_zhw
@@ -696,6 +696,7 @@
  call mpas_pool_get_config(configs,'config_nssl_moments',nssl_moments)
  call mpas_pool_get_config(configs,'config_tempo_hailaware',config_tempo_hailaware)
  call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
+ call mpas_pool_get_config(configs,'config_tempo_hailcat',config_tempo_hailcat)
  call mpas_pool_get_config(configs,'config_tempo_ml_for_bl_nc',config_tempo_ml_for_bl_nc)
 
  call mpas_pool_get_array(mesh,'zgrid',zgrid)
@@ -943,6 +944,20 @@
                 enddo
              endif
 
+             if (config_tempo_hailcat) then
+                call mpas_pool_get_dimension(state,'index_qh'  ,index_qh  )
+
+                qh   => scalars(index_qh,:,:)
+
+                do j = jts, jte
+                do k = kts, kte
+                do i = its, ite
+                   qh_p(i,k,j) = qh(k,i)
+                enddo
+                enddo
+                enddo
+             endif
+
           case("mp_nssl2m")
              call mpas_pool_get_dimension(state,'index_ni',index_ni)
              call mpas_pool_get_dimension(state,'index_nr',index_nr)
@@ -1150,7 +1165,7 @@
 !local pointers:
  character(len=StrKIND),pointer:: mp_scheme
  character(len=StrKIND),pointer:: nssl_moments
- logical,pointer:: config_tempo_hailaware, config_tempo_aerosolaware
+ logical,pointer:: config_tempo_hailaware, config_tempo_aerosolaware, config_tempo_hailcat
  integer,pointer:: index_qv,index_qc,index_qr,index_qi,index_qs,index_qg
  integer,pointer:: index_nc,index_ni,index_nr,index_nifa,index_nwfa
 !TEMPO/NSSL
@@ -1189,6 +1204,7 @@
  call mpas_pool_get_config(configs,'config_nssl_moments',nssl_moments)
  call mpas_pool_get_config(configs,'config_tempo_hailaware',config_tempo_hailaware)
  call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
+ call mpas_pool_get_config(configs,'config_tempo_hailcat',config_tempo_hailcat)
 
  call mpas_pool_get_array(mesh,'zz'   ,zz   )
  call mpas_pool_get_array(mesh,'zgrid',zgrid)
@@ -1444,6 +1460,20 @@
                 do i = its, ite
                    ng(k,i) = ng_p(i,k,j)
                    volg(k,i) = volg_p(i,k,j)
+                enddo
+                enddo
+                enddo
+             endif
+
+             if (config_tempo_hailcat) then
+                call mpas_pool_get_dimension(state,'index_qh'  ,index_qh  )
+
+                qh   => scalars(index_qh,:,:)
+
+                do j = jts, jte
+                do k = kts, kte
+                do i = its, ite
+                   qh(k,i) = qh_p(i,k,j)
                 enddo
                 enddo
                 enddo

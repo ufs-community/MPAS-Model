@@ -109,7 +109,7 @@
 !local pointers:
  character(len=StrKIND),pointer:: microp_scheme
  character(len=StrKIND),pointer:: nssl_moments
- logical,pointer:: config_tempo_aerosolaware,config_tempo_hailaware
+ logical,pointer:: config_tempo_aerosolaware,config_tempo_hailaware,config_tempo_hailcat
  logical,pointer:: config_tempo_ml_for_bl_nc
 !-----------------------------------------------------------------------------------------------------------------
 
@@ -117,6 +117,7 @@
  call mpas_pool_get_config(configs,'config_nssl_moments',nssl_moments)
  call mpas_pool_get_config(configs,'config_tempo_hailaware',config_tempo_hailaware)
  call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
+ call mpas_pool_get_config(configs,'config_tempo_hailcat',config_tempo_hailcat)
  call mpas_pool_get_config(configs,'config_tempo_ml_for_bl_nc',config_tempo_ml_for_bl_nc)
 
 !sounding variables:
@@ -227,6 +228,10 @@
              if(.not.allocated(volg_p)) allocate(volg_p(ims:ime,kms:kme,jms:jme))
           endif
 
+          if (config_tempo_hailcat) then
+             if(.not.allocated(qh_p) ) allocate(qh_p(ims:ime,kms:kme,jms:jme))
+          endif
+
           if (config_tempo_ml_for_bl_nc) then
              if(.not.allocated(cldfrac_p) ) allocate(cldfrac_p(ims:ime,kms:kme,jms:jme))
              if(.not.allocated(qcbl_p) ) allocate(qcbl_p(ims:ime,kms:kme,jms:jme))
@@ -270,7 +275,7 @@
 !local pointers:
  character(len=StrKIND),pointer:: microp_scheme
  character(len=StrKIND),pointer:: nssl_moments
- logical,pointer:: config_tempo_hailaware, config_tempo_aerosolaware
+ logical,pointer:: config_tempo_hailaware, config_tempo_aerosolaware, config_tempo_hailcat
  logical,pointer:: config_tempo_ml_for_bl_nc
 
 !-----------------------------------------------------------------------------------------------------------------
@@ -279,6 +284,7 @@
  call mpas_pool_get_config(configs,'config_nssl_moments',nssl_moments)
  call mpas_pool_get_config(configs,'config_tempo_hailaware',config_tempo_hailaware)
  call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
+ call mpas_pool_get_config(configs,'config_tempo_hailcat',config_tempo_hailcat)
  call mpas_pool_get_config(configs,'config_tempo_ml_for_bl_nc',config_tempo_ml_for_bl_nc)
 
 !sounding variables:
@@ -387,6 +393,10 @@
           if (config_tempo_hailaware) then
              if(allocated(ng_p) ) deallocate(ng_p )
              if(allocated(volg_p) ) deallocate(volg_p )
+          endif
+
+          if (config_tempo_hailcat) then
+             if(allocated(qh_p) ) deallocate(qh_p )
           endif
 
           if (config_tempo_ml_for_bl_nc) then
