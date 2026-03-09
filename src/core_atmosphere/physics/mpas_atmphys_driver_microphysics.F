@@ -617,7 +617,7 @@
             ng      = ng_p       , qb         = volg_p    , w      = w_p     , &
             nc      = nc_p       , nwfa       = nwfa_p    , nifa   = nifa_p  , &
             pii     = pi_p       , p          = pres_p    , dz     = dz_p    , &
-            qc_bl   = qcbl_p     , qcfrac_bl  = cldfrac_p                    , &          
+            qc_bl   = qcbl_p     , qcfrac_bl  = cldfrac_p , qh     = qh_p    , &
             ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde , &
             ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme , &
             its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte , &
