@@ -106,9 +106,10 @@ list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_WRF_SOURCES PREPEND physics/physics_wrf/)
 
 # physics/physics_noaa/GFL/
 set(ATMOSPHERE_CORE_PHYSICS_GFL_SOURCES
-    MPAS/module_cu_gfl_mpas.F
-    module_cu_gfl_deep.F
-    module_cu_gfl_sh.F
+    MPAS/module_cu_gfl_common.F90
+    MPAS/module_cu_gfl_mpas.F90
+    module_cu_gfl_deep.F90
+    module_cu_gfl_sh.F90
 )
 list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_GFL_SOURCES PREPEND physics/physics_noaa/GFL/)
 
