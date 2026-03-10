@@ -2810,6 +2810,16 @@
                      description="configuration for surface layer-scheme"
                      possible_values="`suite',`sf_monin_obukhov','sf_monin_obukhov_rev',`sf_mynn',`sf_mynnsfclay',`sf_myj', `off'"/>
 
+		<nml_option name="config_mynn_sfcflux_land" type="integer" default_value="1" in_defaults="false"
+                     units="-"
+                     description="=configuration option for the calculation of zt and zq over land"
+                     possible_values="0:constant Czil, 1:variable Czil, 2:Yang"/>
+
+		<nml_option name="config_mynn_sfcflux_water" type="integer" default_value="0" in_defaults="false"
+                     units="-"
+                     description="=configuration option for the calculation of z0, zt and zq over water"
+                     possible_values="0:COARE3.0, 1:COARE3.5, 2:Davis/COARE3.5 ,3:Davis/Garratt, 4:Taylor-Yelland"/>
+		
                 <nml_option name="config_radt_cld_overlap" type="character" default_value="maximum_random" in_defaults="false"
                      description="cloud overlapping option in the RRTMG lw and sw radiation schemes"
                      possible_values="`none',`random',`maximum_random',`maximum',`exponential',`'exponential_random'"/>
