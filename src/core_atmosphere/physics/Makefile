@@ -73,14 +73,14 @@ core_SMOKE: core_physics_init
 core_mynnedmf: core_physics_init core_physics_mmm
 	(cd physics_noaa/MYNN-EDMF; cp ./MPAS/Makefile .; cp ./MPAS/module_bl_mynnedmf_driver.F90 .; cp ./MPAS/module_bl_mynnedmf_common.F90 .; $(MAKE) all)
 
-core_mynnsfc:
+core_mynnsfc: core_physics_init
 	(cd physics_noaa/MYNN-SFC; cp ./MPAS/Makefile .; cp ./MPAS/module_sf_mynnsfc_driver.F90 .; cp ./MPAS/module_sf_mynnsfc_common.F90 .; $(MAKE) all)
 
 core_RUCLSM: core_physics_init core_physics_mmm
 	(cd physics_noaa/RUCLSM; cp ./MPAS/Makefile .; cp ./MPAS/module_ruc_land.F90 .; cp ./MPAS/module_ruc_ice.F90 .; cp ./MPAS/module_sf_sfcdiags_ruclsm.F .; $(MAKE) all COREDEF="$(COREDEF)")
 
 core_GFL: core_physics_init core_physics_mmm
-	(cd physics_noaa/GFL; cp ./MPAS/Makefile .; cp ./MPAS/module_cu_gfl_mpas.F .; $(MAKE) all)
+	(cd physics_noaa/GFL; cp ./MPAS/Makefile .; cp ./MPAS/module_cu_gfl_mpas.F90 .; cp ./MPAS/module_cu_gfl_common.F90 .; $(MAKE) all)
 
 core_UGWP: core_physics_init
 	(cd physics_noaa/UGWP; $(MAKE) all)
@@ -88,7 +88,7 @@ core_UGWP: core_physics_init
 core_physics_wrf: core_physics_init core_physics_mmm core_UGWP
 	(cd physics_wrf; $(MAKE) all COREDEF="$(COREDEF)")
 
-core_physics_noahmp:
+core_physics_noahmp: core_physics_init
 	(cd physics_noahmp/utility; $(MAKE) all COREDEF="$(COREDEF)")
 	(cd physics_noahmp/src; $(MAKE) all COREDEF="$(COREDEF)")
 	(cd physics_noahmp/drivers/mpas; $(MAKE) all COREDEF="$(COREDEF)")
