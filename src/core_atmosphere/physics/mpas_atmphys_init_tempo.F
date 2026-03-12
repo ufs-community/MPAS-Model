@@ -15,102 +15,19 @@
  use mpas_pool_routines
 
  use mpas_atmphys_utilities
- use module_mp_tempo_params, only: ntb_arc,ntb_arw,ntb_art,ntb_arr,ntb_ark,tnccn_act, &
-      naCCN1,naCCN0,naIN0,naIN1,nwfa_default,aero_max, &
-      nc_ml_input, nc_ml_nodes, nc_ml_output, &
-      nr_ml_input, nr_ml_nodes, nr_ml_output, &
-      nc_ml_trans_mean, nc_ml_trans_var, &
-      nc_ml_w00, nc_ml_w01, nc_ml_b00, nc_ml_b01
- use module_mp_tempo_ml, only: MLdata, tempo_save_or_read_ml_data
+ use module_mp_tempo_params, only: nwfa_default, aero_max, &
+      naCCN1,naCCN0,naIN0,naIN1
 
  implicit none
  private
- public:: init_tempo_aerosols_forMPAS, tempo_ml_init
+ public:: init_tempo_aerosols_forMPAS
 
-!MPAS main initialization of the TEMPO parameterization of cloud microphysics with nucleation of cloud
-!droplets based on distributions of CCNs and INs (aerosol-aware parameterization).
+!MPAS initialization of aerosols for TEMPO parameterization.
 
- 
  contains
 
 !=================================================================================================================
- subroutine tempo_ml_init(configs)
-! Called once to initial data for tempo_ml
-!=================================================================================================================
-
-!input arguments:
-type(mpas_pool_type),intent(in):: configs
-
-!local variables and pointers:
- type(MLdata), dimension(2) :: tempo_ml_data
- logical,pointer:: config_tempo_ml_nc_pbl,config_tempo_ml_nc,config_tempo_ml_nr
-
- call mpas_pool_get_config(configs, 'config_tempo_ml_nc_pbl', config_tempo_ml_nc_pbl)
- call mpas_pool_get_config(configs, 'config_tempo_ml_nc', config_tempo_ml_nc)
- call mpas_pool_get_config(configs, 'config_tempo_ml_nr', config_tempo_ml_nr)
-
- if(.not. (config_tempo_ml_nc_pbl .or. config_tempo_ml_nc .or. config_tempo_ml_nr)) then
-    call mpas_log_write('--- All configuration flags for TEMPO ML are false... TEMPO ML will not be used')
-    return
- endif
-
- if(config_tempo_ml_nc .or. config_tempo_ml_nr) then
-    call mpas_log_write('--- TEMPO ML for nc and nr prediction not yet working... These flags will be ignored')
- endif
-
- if(config_tempo_ml_nc_pbl) then
-    call mpas_log_write('--- Using TEMPO ML prediction to give life to the PBL clouds')
- endif
-
- ! Cloud water
- tempo_ml_data(1)%input_size = nc_ml_input
- tempo_ml_data(1)%node_size = nc_ml_nodes
- tempo_ml_data(1)%output_size = nc_ml_output
-
- if (.not.allocated(tempo_ml_data(1)%transform_mean)) allocate(tempo_ml_data(1)%transform_mean(nc_ml_input))
- if (.not.allocated(tempo_ml_data(1)%transform_var)) allocate(tempo_ml_data(1)%transform_var(nc_ml_input))
-
- tempo_ml_data(1)%transform_mean = nc_ml_trans_mean
- tempo_ml_data(1)%transform_var = nc_ml_trans_var
-
- if (.not.allocated(tempo_ml_data(1)%weights00)) allocate(tempo_ml_data(1)%weights00(nc_ml_nodes,nc_ml_input))
- if (.not.allocated(tempo_ml_data(1)%weights01)) allocate(tempo_ml_data(1)%weights01(nc_ml_output,nc_ml_nodes))
- if (.not.allocated(tempo_ml_data(1)%bias00)) allocate(tempo_ml_data(1)%bias00(nc_ml_nodes))
- if (.not.allocated(tempo_ml_data(1)%bias01)) allocate(tempo_ml_data(1)%bias01(nc_ml_output))
-
- tempo_ml_data(1)%weights00 = reshape(nc_ml_w00, (/nc_ml_nodes, nc_ml_input/))
- tempo_ml_data(1)%weights01 = reshape(nc_ml_w01, (/nc_ml_output, nc_ml_nodes/))
- tempo_ml_data(1)%bias00 = nc_ml_b00
- tempo_ml_data(1)%bias01 = nc_ml_b01
-
- ! Rain water
- tempo_ml_data(2)%input_size = nc_ml_input
- tempo_ml_data(2)%node_size = nc_ml_nodes
- tempo_ml_data(2)%output_size = nc_ml_output
-
- if (.not.allocated(tempo_ml_data(2)%transform_mean)) allocate(tempo_ml_data(2)%transform_mean(nc_ml_input))
- if (.not.allocated(tempo_ml_data(2)%transform_var)) allocate(tempo_ml_data(2)%transform_var(nc_ml_input))
-
- tempo_ml_data(2)%transform_mean = nc_ml_trans_mean
- tempo_ml_data(2)%transform_var = nc_ml_trans_var
-
- if (.not.allocated(tempo_ml_data(2)%weights00)) allocate(tempo_ml_data(2)%weights00(nc_ml_nodes,nc_ml_input))
- if (.not.allocated(tempo_ml_data(2)%weights01)) allocate(tempo_ml_data(2)%weights01(nc_ml_output,nc_ml_nodes))
- if (.not.allocated(tempo_ml_data(2)%bias00)) allocate(tempo_ml_data(2)%bias00(nc_ml_nodes))
- if (.not.allocated(tempo_ml_data(2)%bias01)) allocate(tempo_ml_data(2)%bias01(nc_ml_output))
-
- tempo_ml_data(2)%weights00 = reshape(nc_ml_w00, (/nc_ml_nodes, nc_ml_input/))
- tempo_ml_data(2)%weights01 = reshape(nc_ml_w01, (/nc_ml_output, nc_ml_nodes/))
- tempo_ml_data(2)%bias00 = nc_ml_b00
- tempo_ml_data(2)%bias01 = nc_ml_b01
-
- ! Save neural network
- call tempo_save_or_read_ml_data(ml_data_in=tempo_ml_data)
-
- end subroutine tempo_ml_init
-
-!=================================================================================================================
- subroutine init_tempo_aerosols_forMPAS(do_restart,dminfo,mesh,state,time_lev,diag_physics)
+subroutine init_tempo_aerosols_forMPAS(do_restart,dminfo,mesh,state,time_lev,diag_physics)
 !=================================================================================================================
 
 !input variables:
@@ -147,11 +64,6 @@ type(mpas_pool_type),intent(in):: configs
 
 !-----------------------------------------------------------------------------------------------------------------
 !call mpas_log_write('--- enter subroutine init_tempo_aerosols_forMPAS:')
-
-!... read a static file containing CCN activation of aerosols. The data were created from a parcel model by
-!... Feingold & Heymsfield with further changes by Eidhammer and Kriedenweis.
- call table_ccnAct(dminfo)
- call mpas_log_write('--- end read table_ccnAct:')
 
 !... if do_restart is true, then we do not need to check the initialization of nwfa, nifa, and nwfa2d. If false,
 !    then, we proceed with the initialization:
@@ -275,65 +187,6 @@ type(mpas_pool_type),intent(in):: configs
 
  end subroutine init_tempo_aerosols_forMPAS
 
-!=================================================================================================================
- subroutine table_ccnAct(dminfo)
-!=================================================================================================================
-
-!input variables:
- type(dm_info),intent(in):: dminfo
-
-!local variables:
- logical:: opened
- integer:: ccn_unit,i,istat
- character(len=StrKIND):: errmess
-!-----------------------------------------------------------------------------------------------------------------
-
- if(.not.allocated(tnccn_act)) allocate(tnccn_act(ntb_arc,ntb_arw,ntb_art,ntb_arr,ntb_ark))
-
-!get a unit to open binary file:
- istat = -999
- if(dminfo % my_proc_id == IO_NODE) then
-    do i = 10,99
-       inquire(i,opened = opened,iostat=istat)
-       if(.not. opened ) then
-          ccn_unit = i
-          exit
-       endif
-    enddo
-    if(istat /= 0) &
-       call physics_error_fatal('mpas_atmphys_init_microphysics table_ccnAct: Can not '// &
-                                'find unused fortran unit to read in lookup table.' )
- endif
-
-!distribute unit to other processors:
- call mpas_dmpar_bcast_int(dminfo,ccn_unit)
-
-!open binary file:
- istat = -999
- if(dminfo % my_proc_id == IO_NODE) then
-    open(ccn_unit,file='CCN_ACTIVATE_DATA',form='UNFORMATTED',status='OLD',iostat=istat)
-    if(istat /= 0) then
-       write(errmess,'(A,I4)') 'mpas_atmphys_init_microphysics table_ccnAct:: '// &
-                               'error opening CCN_ACTIVATE_DATA on unit', ccn_unit
-       call physics_error_fatal(errmess)
-    endif
- endif
-
-!read and broadcast data to all nodes:
- istat = -999
- if(dminfo % my_proc_id == IO_NODE) then
-    read(ccn_unit,iostat=istat) tnccn_act
-    if(istat /= 0) then
-       write(errmess,'(A,I4)') 'mpas_atmphys_init_microphysics table_ccnAct:: '// &
-                               'error reading tnccn_act on unit', ccn_unit
-       call physics_error_fatal(errmess)
-    endif
- endif
-
- DM_BCAST_MACRO(tnccn_act)
-
- end subroutine table_ccnAct
-
-!=================================================================================================================
+ !=================================================================================================================
  end module mpas_atmphys_init_tempo
 !=================================================================================================================
