@@ -34,7 +34,7 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{ github.actor }}
+          username: ufs-community
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build minimal-toolchain:${{ matrix.toolchain }}
