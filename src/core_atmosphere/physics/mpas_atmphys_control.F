@@ -106,9 +106,9 @@
                                   config_radt_lw_scheme,    &
                                   config_radt_sw_scheme,    &
                                   config_sfclayer_scheme
-
- logical,pointer:: config_tempo_cldfra
  integer,pointer:: config_mynn_cloudpdf
+ logical,pointer:: config_tempo_cldfra
+
 !-----------------------------------------------------------------------------------------------------------------
 !call mpas_log_write('')
 !call mpas_log_write('--- enter subroutine physics_namelist_check:')
@@ -123,8 +123,8 @@
  call mpas_pool_get_config(configs,'config_radt_lw_scheme'   ,config_radt_lw_scheme   )
  call mpas_pool_get_config(configs,'config_radt_sw_scheme'   ,config_radt_sw_scheme   )
  call mpas_pool_get_config(configs,'config_sfclayer_scheme'  ,config_sfclayer_scheme  )
- call mpas_pool_get_config(configs,'config_tempo_cldfra'  ,config_tempo_cldfra  )
- call mpas_pool_get_config(configs,'config_mynn_cloudpdf'  ,config_mynn_cloudpdf  )
+ call mpas_pool_get_config(configs,'config_tempo_cldfra'     ,config_tempo_cldfra     )
+ call mpas_pool_get_config(configs,'config_mynn_cloudpdf'    ,config_mynn_cloudpdf    )
 
  call mpas_log_write('')
  call mpas_log_write('----- Setting up physics suite '''//trim(config_physics_suite)//''' -----')
@@ -306,7 +306,7 @@
     config_radt_cld_scheme = "cld_tempo"
     if ((config_pbl_scheme == 'bl_mynn') .and. (config_mynn_cloudpdf .ge. 0)) then
        write(mpas_err_message,'(A,A20)') &
-         '     setting config_mynn_cloudpdf to -2 when using tempo prognostic clouds'
+      '     setting config_mynn_cloudpdf to -2 when using tempo prognostic clouds'
        call physics_message(mpas_err_message)
        config_mynn_cloudpdf = -2
     endif
