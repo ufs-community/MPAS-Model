@@ -290,11 +290,6 @@ jobs:
         cd ${mpas_run_ROOT}
         git clone --recursive --branch main https://github.com/AndersJensen-NOAA/mpas_testcase.git
 
-    - name: Download MPAS testing repository with runtime configurations for baselines.
-      run: |
-        cd ${mpas_run_ROOT}
-        git clone --recursive --branch main https://github.com/barlage/mpas_testcase.git mpas_testcase_bl
-
     - name: Download TEMPO MP tables
       run: |
         cd ${runner_ROOT} && mkdir tempo && cd tempo
@@ -335,6 +330,7 @@ jobs:
         ln -sf ${mpas_bl_ROOT}/atmosphere_model atmosphere_model
         ln -sf ${mpas_run_ROOT}/run_data/${{steps.set_vars.outputs.ugwp_file}} mpas.ugwp_oro_data.nc
         ln -sf ${runner_ROOT}/tempo/* .
+        ln -sf ${mpas_rt_ROOT}/MPAS-Model/src/core_atmosphere/physics/physics_noaa/TEMPO/tables/ccn_activate.bin .
         ln -sf ${runner_ROOT}/ugw/ugwp_limb_tau.nc .
 
     - name: Link lateral boundary condition file for regional MPAS (baselines).
