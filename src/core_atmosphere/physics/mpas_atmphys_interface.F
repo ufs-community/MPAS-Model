@@ -962,8 +962,8 @@
                 call mpas_pool_get_array(tend_physics,'rthratensw',rthratensw)
                 call mpas_pool_get_array(diag_physics,'hpbl', hpbl)
                 call mpas_pool_get_array(sfc_input,'xland', xland)
-!                call mpas_pool_get_array(diag_physics,'qc_bl',qc_bl)
-!                call mpas_pool_get_array(diag_physics,'cldfrac_bl',cldfrac_bl)
+                call mpas_pool_get_array(diag_physics,'qc_bl',qc_bl)
+                call mpas_pool_get_array(diag_physics,'cldfrac_bl',cldfrac_bl)
 
                 qal => scalars(index_qal,:,:)
                 qai => scalars(index_qai,:,:)
@@ -981,8 +981,8 @@
                    rqiblten_p(i,k,j) = rqiblten(k,i)
                    rthratenlw_p(i,k,j) = rthratenlw(k,i)
                    rthratensw_p(i,k,j) = rthratensw(k,i)
-!                   qcbl_p(i,k,j) = qc_bl(k,i)
-!                   cldfrac_p(i,k,j) = cldfrac_bl(k,i)
+                   qcbl_p(i,k,j) = qc_bl(k,i)
+                   cldfrac_p(i,k,j) = cldfrac_bl(k,i)
                 enddo
                 enddo
                 enddo

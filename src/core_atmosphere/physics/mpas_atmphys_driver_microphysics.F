@@ -242,6 +242,8 @@
              if(.not.allocated(rthratensw_p)) allocate(rthratensw_p(ims:ime,kms:kme,jms:jme))
              if(.not.allocated(hpbl_p)) allocate(hpbl_p(ims:ime,jms:jme))
              if(.not.allocated(xland_p)) allocate(xland_p(ims:ime,jms:jme))
+             if(.not.allocated(cldfrac_p) ) allocate(cldfrac_p(ims:ime,kms:kme,jms:jme))
+             if(.not.allocated(qcbl_p) ) allocate(qcbl_p(ims:ime,kms:kme,jms:jme))
           endif
 
           if (config_tempo_ml_for_bl_nc) then
@@ -420,6 +422,8 @@
              if(allocated(rthratensw_p)) deallocate(rthratensw_p)
              if(allocated(hpbl_p)) deallocate(hpbl_p)
              if(allocated(xland_p)) deallocate(xland_p)
+             if(allocated(cldfrac_p) ) deallocate(cldfrac_p)
+             if(allocated(qcbl_p) ) deallocate(qcbl_p)             
           endif
 
           if (config_tempo_ml_for_bl_nc) then
