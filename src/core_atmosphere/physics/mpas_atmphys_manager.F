@@ -723,8 +723,8 @@
  num_e_dust_out= n_e_dust_out
  num_e_ant_out = n_e_ant_out
 
- if(config_smoke_scheme .ne. 'off' .or. config_dust_scheme  .ne. 'off' &
-    .or. config_anthro_scheme .ne. 'off') then
+ if(trim(config_smoke_scheme) .eq. 'on' .or. trim(config_dust_scheme) .eq. 'on' &
+    .or. trim(config_anthro_scheme) .ne. 'off') then
     do_chemistry = .true.
  else
     do_chemistry = .false.

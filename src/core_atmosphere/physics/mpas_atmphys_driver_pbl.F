@@ -564,7 +564,7 @@
 
     if (enh_mix) then
        call mpas_pool_get_config(configs,'config_smoke_scheme',config_smoke_scheme)
-       if ( config_smoke_scheme .ne. 'off' ) then
+       if ( trim(config_smoke_scheme) .eq. 'on' ) then
           call mpas_pool_get_array(diag_physics,'frp_out',frp_out)
           do j = jts,jte
           do i = its,ite

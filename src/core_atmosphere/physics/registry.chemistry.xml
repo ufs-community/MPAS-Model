@@ -17,7 +17,7 @@
       <dim name="nkvolcanic"             definition="namelist:kvolcanic"
           description="Number of vertical levels in volcanic emission file"/>
       <dim name="TWENTYFOUR"          definition="24"
-	   description="A constant value of 24"/>
+          description="A constant value of 24"/>
       <dim name="nkreswoodcomb"             definition="namelist:kreswoodcomb"
           description="Number of vertical levels in residential wood combustion emission file"/>
    </dims>
@@ -30,7 +30,7 @@
          <package name="mpas_smoke_fine"
                  active_when="config_smoke_scheme .ne. 'off' .or. config_rwc_scheme .ne. 'off'"
 		 description="parameterization of fine smoke"/>
-	 <package name="mpas_smoke_in"
+         <package name="mpas_smoke_in"
                  active_when="config_smoke_scheme .ne. 'off'"
                  description="parameterization of basic wildfire simulation"/>
          <package name="mpas_dust_in"
@@ -41,7 +41,7 @@
                  description="parameterization of anthropogenic emissions"/>
          <package name="mpas_anthro_aero_in"
                  active_when="( ANY( [ CHARACTER(len=20) :: 'simple_aero', 'simple_gasaero', 'acomp_gasaero' ] == TRIM(config_anthro_scheme) ))"
-		 description="parameterization of emisssions of anthropogenic aerosols"/>
+                 description="parameterization of emisssions of anthropogenic aerosols"/>
          <package name="mpas_rwc_in"
                  active_when="config_rwc_scheme .ne. 'off'"
                  description="parameterization of residential wood combustion"/>
@@ -63,7 +63,7 @@
       <nml_option name="config_anthro_scheme" type="character" default_value="off" in_defaults="false"
            units="-"
            description="configuration for mpas anthropogenic emissions model"
-	   possible_values="`on',`off',`simple_aero'"/>
+           possible_values="`on',`off',`simple_aero'"/>
       <nml_option name="config_rwc_scheme" type="character" default_value="off" in_defaults="false"
            units="-"
            description="Option for online residential wood burning emissions"
@@ -91,7 +91,7 @@
       <nml_option name="kvolcanic" type="integer" default_value="1"
            units="-"
            description="Number of vertical levels in volcanic emission input"
-	   possible_values="Positive integer values"/>
+           possible_values="Positive integer values"/>
       <nml_option name="kreswoodcomb" type="integer" default_value="1"
            units="-"
            description="Number of vertical levels in volcanic emission input"
@@ -355,7 +355,7 @@
       </var_array>
 
       <var_array name="e_ant_out" type="real" dimensions="nVertLevels nCells Time" packages="mpas_anthro_in">
-	 <var name="e_ant_out_unspc_fine" name_in_code="e_ant_out_unspc_fine" array_group="ant_out_aerosols" units="ug m^{-2} s^{-1}"
+         <var name="e_ant_out_unspc_fine" name_in_code="e_ant_out_unspc_fine" array_group="ant_out_aerosols" units="ug m^{-2} s^{-1}"
               description="output anthropogenic fine unspc emissions"
               packages="mpas_anthro_aero_in"/>
          <var name="e_ant_out_unspc_coarse" name_in_code="e_ant_out_unspc_coarse" array_group="ant_out_aerosols" units="ug m^{-2} s^{-1}"
@@ -518,7 +518,7 @@
          <var name="tend_dust_coarse" name_in_code="dust_coarse" array_group="chemistry" units="kg m^{-3} s^{-1}"
               description="Tendency of fine dust mass per unit volume divided by d(zeta)/dz"
               packages="mpas_dust_in"/>
-	 <var name="tend_unspc_fine" name_in_code="unspc_fine" array_group="chemistry" units="kg m^{-3} s^{-1}"
+         <var name="tend_unspc_fine" name_in_code="unspc_fine" array_group="chemistry" units="kg m^{-3} s^{-1}"
               description="Tendency of fine unspeciated aerosol mass per unit volume divided by d(zeta)/dz"
               packages="mpas_anthro_aero_in"/>
 
@@ -536,7 +536,7 @@
          <var name="lbc_dust_fine" name_in_code="dust_fine" array_group="chemistry"  packages="mpas_dust_in" units="kg kg^{-1} s^{-1}"
               description="Lateral boundary tendency of fine dust mixing ratio"/>
          <var name="lbc_dust_coarse" name_in_code="dust_coarse" array_group="chemistry"  packages="mpas_dust_in" units="kg kg^{-1} s^{-1}"
-		 description="Lateral boundary tendency of coarse dust mixing ratio"/>
+              description="Lateral boundary tendency of coarse dust mixing ratio"/>
          <var name="lbc_unspc_fine" name_in_code="unspc_fine" array_group="chemistry"  packages="mpas_anthro_aero_in" units="kg kg^{-1} s^{-1}"
               description="Lateral boundary tendency of fine primary aerosol mixing ratio"/>
       </var_array>
