@@ -15,6 +15,7 @@ module mpas_stream_manager
     use mpas_stream_list
     use mpas_sort
     use mpas_threading
+    use mpas_string_utils, only : mpas_split_string
 
 
     public :: MPAS_stream_mgr_init, &
@@ -1870,6 +1871,18 @@ module mpas_stream_manager
 
                    case (MPAS_STREAM_PROPERTY_OUTPUT_TIMELEVELS)
                        stream_cursor % output_timelevels = propertyValue
+                       ! Parse the timelevels string and store it
+                       if (len_trim(propertyValue) > 0) then
+                           call parse_all_timelevels(propertyValue, stream_cursor % timelevel_spec, &
+                                                     stream_cursor % name, err_local)
+                           if (err_local /= 0) then
+                               if (present(ierr)) ierr = MPAS_STREAM_MGR_ERROR
+                           end if
+                       else
+                           ! Saft guard: reset timelevel_spec if output_timelevels is somehow cleared
+                           stream_cursor % timelevel_spec % n_segments = 0
+                           stream_cursor % timelevel_spec % is_parsed = .false.
+                       end if
 
                    case (MPAS_STREAM_PROPERTY_REF_TIME)
                        call mpas_set_time(stream_cursor % referenceTime, dateTimeString=propertyValue)
@@ -3112,7 +3125,7 @@ module mpas_stream_manager
         type (MPAS_TimeInterval_type) :: filename_interval
         character (len=StrKIND) :: now_string, time_string
         character (len=StrKIND) :: temp_filename, actualWhen
-        character (len=StrKIND) :: err_string, timelevels_str
+        character (len=StrKIND) :: err_string
         logical :: ringing_alarm, recordSeek, swapRecords
         logical :: clobberRecords, clobberFiles, truncateFiles
         integer :: maxRecords, tempRecord
@@ -3165,11 +3178,7 @@ module mpas_stream_manager
            ! If stream uses output_timelevels, check if current forecast hour is within defined range
            ! This prevents output when the alarm rings but we're past the timelevels range
            !
-           timelevels_str = ''
-           call MPAS_stream_mgr_get_property(manager, trim(stream % name), &
-                                             MPAS_STREAM_PROPERTY_OUTPUT_TIMELEVELS, &
-                                             timelevels_str, ierr=local_ierr)
-           if (len_trim(timelevels_str) > 0) then
+           if (stream % timelevel_spec % is_parsed) then
                ! Calculate current forecast hour
                start_time = mpas_get_clock_time(manager % streamClock, MPAS_START_TIME, ierr=local_ierr)
                current_time = mpas_get_clock_time(manager % streamClock, MPAS_NOW, ierr=local_ierr)
@@ -3178,10 +3187,10 @@ module mpas_stream_manager
                forecast_hour = real(seconds_diff, RKIND) / 3600.0_RKIND
 
                ! Check if forecast hour is within any defined timelevel range
-               call get_output_interval_from_timelevels(timelevels_str, forecast_hour, interval_minutes, local_ierr)
+               call get_output_interval_from_timelevels(stream % timelevel_spec, forecast_hour, interval_minutes, local_ierr)
                if (local_ierr /= MPAS_STREAM_MGR_NOERR) then
                    ! Outside defined timelevels range - check if there's a future range to schedule
-                   call get_next_timelevel_start(timelevels_str, forecast_hour, next_start_hour, next_interval_minutes, local_ierr)
+                   call get_next_timelevel_start(stream % timelevel_spec, forecast_hour, next_start_hour, next_interval_minutes, local_ierr)
                    
                    alarm_cursor => stream % alarmList_out % head
                    do while (associated(alarm_cursor))
@@ -6011,6 +6020,95 @@ module mpas_stream_manager
 
     !|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
     !
+    !  parse_all_timelevels
+    !
+    !> \brief Parse the entire output_timelevels string into a timelevel_spec structure
+    !> \author Guoqing Ge
+    !> \date March 2026
+    !> \details
+    !>  Parses the complete output_timelevels string (e.g., "0-3-15m 4-72 75-168-3")
+    !>  into a pre-parsed structure for efficient runtime lookup. Uses mpas_split_string
+    !>  to tokenize the string by spaces. Reports parse errors via mpas_log_write.
+    !
+    !-----------------------------------------------------------------------
+    subroutine parse_all_timelevels(timelevels_str, timelevel_spec, stream_name, ierr)!{{{
+
+        implicit none
+
+        character(len=*), intent(in) :: timelevels_str
+        type(MPAS_timelevel_spec_type), intent(out) :: timelevel_spec
+        character(len=*), intent(in) :: stream_name
+        integer, intent(out) :: ierr
+
+        character(len=StrKIND), pointer, dimension(:) :: segments
+        character(len=StrKIND) :: segment
+        integer :: i, n_segments, local_ierr
+        real(kind=RKIND) :: start_hour, end_hour, interval_mins
+
+        ierr = 0
+        timelevel_spec % n_segments = 0
+        timelevel_spec % is_parsed = .false.
+
+        ! Guard against empty string
+        if (len_trim(timelevels_str) == 0) then
+            call mpas_log_write('Stream '''//trim(stream_name)//''': output_timelevels string is empty', MPAS_LOG_ERR)
+            ierr = 1
+            return
+        end if
+
+        ! Split the string by spaces
+        nullify(segments)
+        call mpas_split_string(timelevels_str, ' ', segments)
+        n_segments = size(segments)
+
+        ! Check for too many segments
+        if (n_segments > MAX_TIMELEVEL_SEGMENTS) then
+            call mpas_log_write('Stream '''//trim(stream_name)//''': too many timelevel segments (max $i)', &
+                               MPAS_LOG_ERR, intArgs=(/MAX_TIMELEVEL_SEGMENTS/))
+            deallocate(segments)
+            ierr = 1
+            return
+        end if
+
+        ! Parse each segment
+        do i = 1, n_segments
+            segment = trim(adjustl(segments(i)))
+
+            ! Skip empty segments (from consecutive spaces)
+            if (len_trim(segment) == 0) cycle
+
+            call parse_output_timelevel_spec(segment, start_hour, end_hour, interval_mins, local_ierr)
+
+            if (local_ierr /= 0) then
+                call mpas_log_write('Stream '''//trim(stream_name)//''': Invalid timelevel format. ' // &
+                                   'Expected ''start-end-interval'' but got '''//trim(segment)//'''', MPAS_LOG_ERR)
+                deallocate(segments)
+                ierr = 1
+                return
+            end if
+
+            ! Store parsed values
+            timelevel_spec % n_segments = timelevel_spec % n_segments + 1
+            timelevel_spec % start_hour(timelevel_spec % n_segments) = start_hour
+            timelevel_spec % end_hour(timelevel_spec % n_segments) = end_hour
+            timelevel_spec % interval_minutes(timelevel_spec % n_segments) = interval_mins
+        end do
+
+        deallocate(segments)
+
+        ! Mark as successfully parsed if we have at least one segment
+        if (timelevel_spec % n_segments > 0) then
+            timelevel_spec % is_parsed = .true.
+        else
+            call mpas_log_write('Stream '''//trim(stream_name)//''': no valid timelevel segments found', MPAS_LOG_ERR)
+            ierr = 1
+        end if
+
+    end subroutine parse_all_timelevels!}}}
+
+
+    !|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+    !
     !  parse_time_string
     !
     !> \brief Parse a time string into total minutes ( allow 0.5 minutes, i.e. 30 seconds)
@@ -6227,28 +6325,26 @@ module mpas_stream_manager
     !
     !  get_output_interval_from_timelevels
     !
-    !> \brief Calculate output interval based on current forecast hour and timelevels
+    !> \brief Calculate output interval based on current forecast hour and pre-parsed timelevels
     !> \author Guoqing Ge
-    !> \date February 2026
+    !> \date March 2026
     !> \details
-    !>  Given a time levels string and current forecast hour, determines the appropriate
-    !>  output interval in minutes
+    !>  Given a pre-parsed timelevel_spec and current forecast hour, determines the
+    !>  appropriate output interval in minutes.
     !
     !-----------------------------------------------------------------------
-    subroutine get_output_interval_from_timelevels(timelevels_str, forecast_hour, interval_minutes, ierr)!{{{
+    subroutine get_output_interval_from_timelevels(timelevel_spec, forecast_hour, interval_minutes, ierr)!{{{
 
         implicit none
 
-        character(len=*), intent(in) :: timelevels_str
+        type(MPAS_timelevel_spec_type), intent(in) :: timelevel_spec
         real(kind=RKIND), intent(in) :: forecast_hour
         real(kind=RKIND), intent(out) :: interval_minutes
         integer, intent(out) :: ierr
 
-        character(len=StrKIND) :: work_str, segment
-        integer :: seg_start, seg_end, i, local_ierr, work_len
-        real(kind=RKIND) :: start_hour, end_hour
-        real(kind=RKIND) :: seg_interval_minutes
-        real(kind=RKIND) :: next_time, min_next_time
+        integer :: i
+        real(kind=RKIND) :: start_hour, end_hour, seg_interval
+        real(kind=RKIND) :: min_next_time
         logical :: found, is_single_time
 
         ierr = 0
@@ -6256,97 +6352,57 @@ module mpas_stream_manager
         found = .false.
         is_single_time = .false.
         min_next_time = huge(1.0_RKIND)
-        work_str = trim(adjustl(timelevels_str))
-        work_len = len_trim(work_str)
-        
-        ! Guard against empty string
-        if (work_len == 0) then
+
+        ! Guard against unparsed spec
+        if (.not. timelevel_spec % is_parsed .or. timelevel_spec % n_segments == 0) then
             ierr = 1
             return
         end if
 
         ! First pass: find if current forecast hour matches any segment
-        seg_start = 1
-        do while (seg_start <= work_len)
-            ! Find end of current segment (next space or end of string)
-            seg_end = seg_start
-            do while (seg_end <= work_len .and. work_str(seg_end:seg_end) /= ' ')
-                seg_end = seg_end + 1
-            end do
-            seg_end = seg_end - 1
+        do i = 1, timelevel_spec % n_segments
+            start_hour = timelevel_spec % start_hour(i)
+            end_hour = timelevel_spec % end_hour(i)
+            seg_interval = timelevel_spec % interval_minutes(i)
 
-            if (seg_end >= seg_start) then
-                segment = work_str(seg_start:seg_end)
-                call parse_output_timelevel_spec(segment, start_hour, end_hour, seg_interval_minutes, local_ierr)
-
-                if (local_ierr == 0) then
-                    ! Check if current forecast hour falls in this range
-                    if (forecast_hour >= start_hour .and. forecast_hour <= end_hour) then
-                        found = .true.
-                        ! Check if this is a single time point (not a range)
-                        if (abs(start_hour - end_hour) < 1.0e-6_RKIND) then
-                            is_single_time = .true.
-                        else
-                            ! It's a range - use the segment's interval
-                            interval_minutes = seg_interval_minutes
-                            return
-                        end if
-                    end if
+            ! Check if current forecast hour falls in this range
+            if (forecast_hour >= start_hour .and. forecast_hour <= end_hour) then
+                found = .true.
+                ! Check if this is a single time point (not a range)
+                if (abs(start_hour - end_hour) < 1.0e-6_RKIND) then
+                    is_single_time = .true.
                 else
-                    ierr = 1
+                    ! It's a range - use the segment's interval
+                    interval_minutes = seg_interval
                     return
                 end if
             end if
-
-            ! Move to next segment
-            seg_start = seg_end + 1
-            do while (seg_start <= work_len .and. work_str(seg_start:seg_start) == ' ')
-                seg_start = seg_start + 1
-            end do
         end do
 
         ! If we matched a single time, find the next output time
         if (found .and. is_single_time) then
-            ! Second pass: find the minimum time > forecast_hour
-            seg_start = 1
-            do while (seg_start <= work_len)
-                seg_end = seg_start
-                do while (seg_end <= work_len .and. work_str(seg_end:seg_end) /= ' ')
-                    seg_end = seg_end + 1
-                end do
-                seg_end = seg_end - 1
+            do i = 1, timelevel_spec % n_segments
+                start_hour = timelevel_spec % start_hour(i)
+                end_hour = timelevel_spec % end_hour(i)
 
-                if (seg_end >= seg_start) then
-                    segment = work_str(seg_start:seg_end)
-                    call parse_output_timelevel_spec(segment, start_hour, end_hour, seg_interval_minutes, local_ierr)
-
-                    if (local_ierr == 0) then
-                        ! For single times, check if > current
-                        if (abs(start_hour - end_hour) < 1.0e-6_RKIND) then
-                            if (start_hour > forecast_hour + 1.0e-6_RKIND .and. start_hour < min_next_time) then
-                                min_next_time = start_hour
-                            end if
-                        else
-                            ! For ranges, check if start is after current
-                            if (start_hour > forecast_hour + 1.0e-6_RKIND .and. start_hour < min_next_time) then
-                                min_next_time = start_hour
-                            end if
-                        end if
+                ! For single times, check if > current
+                if (abs(start_hour - end_hour) < 1.0e-6_RKIND) then
+                    if (start_hour > forecast_hour + 1.0e-6_RKIND .and. start_hour < min_next_time) then
+                        min_next_time = start_hour
+                    end if
+                else
+                    ! For ranges, check if start is after current
+                    if (start_hour > forecast_hour + 1.0e-6_RKIND .and. start_hour < min_next_time) then
+                        min_next_time = start_hour
                     end if
                 end if
-
-                seg_start = seg_end + 1
-                do while (seg_start <= work_len .and. work_str(seg_start:seg_start) == ' ')
-                    seg_start = seg_start + 1
-                end do
             end do
 
             ! Calculate interval to next time
             if (min_next_time < huge(1.0_RKIND)) then
                 interval_minutes = (min_next_time - forecast_hour) * 60.0_RKIND
             else
-                ! No more times after this - but we DID match, so ierr stays 0
-                ! interval_minutes = 0 signals this is the last output
+                ! No more times after this - interval_minutes = 0 signals last output
                 interval_minutes = 0.0_RKIND
             end if
             return
@@ -6373,20 +6429,18 @@ module mpas_stream_manager
     !>  of the next timelevel range (if any). Returns -1 if no future ranges exist.
     !
     !-----------------------------------------------------------------------
-    subroutine get_next_timelevel_start(timelevels_str, forecast_hour, next_start_hour, next_interval_minutes, ierr)!{{{
+    subroutine get_next_timelevel_start(timelevel_spec, forecast_hour, next_start_hour, next_interval_minutes, ierr)!{{{
 
         implicit none
 
-        character(len=*), intent(in) :: timelevels_str
+        type(MPAS_timelevel_spec_type), intent(in) :: timelevel_spec
         real(kind=RKIND), intent(in) :: forecast_hour
         real(kind=RKIND), intent(out) :: next_start_hour
         real(kind=RKIND), intent(out) :: next_interval_minutes
         integer, intent(out) :: ierr
 
-        character(len=StrKIND) :: work_str, segment
-        integer :: seg_start, seg_end, local_ierr, work_len
-        real(kind=RKIND) :: start_hour, end_hour, best_start
-        real(kind=RKIND) :: seg_interval_minutes, best_interval
+        integer :: i
+        real(kind=RKIND) :: start_hour, best_start, best_interval
         logical :: found
 
         ierr = 0
@@ -6395,41 +6449,23 @@ module mpas_stream_manager
         best_start = huge(1.0_RKIND)
         best_interval = 60.0_RKIND
         found = .false.
-        work_str = trim(adjustl(timelevels_str))
-        work_len = len_trim(work_str)
 
-        if (work_len == 0) then
+        ! Guard against unparsed spec
+        if (.not. timelevel_spec % is_parsed .or. timelevel_spec % n_segments == 0) then
             ierr = 1
             return
         end if
 
-        ! Parse each space-separated segment
-        seg_start = 1
-        do while (seg_start <= work_len)
-            seg_end = seg_start
-            do while (seg_end <= work_len .and. work_str(seg_end:seg_end) /= ' ')
-                seg_end = seg_end + 1
-            end do
-            seg_end = seg_end - 1
+        ! Find the segment with smallest start_hour > forecast_hour
+        do i = 1, timelevel_spec % n_segments
+            start_hour = timelevel_spec % start_hour(i)
 
-            if (seg_end >= seg_start) then
-                segment = work_str(seg_start:seg_end)
-                call parse_output_timelevel_spec(segment, start_hour, end_hour, seg_interval_minutes, local_ierr)
-
-                if (local_ierr == 0) then
-                    ! Check if this range starts after current forecast hour
-                    if (start_hour > forecast_hour .and. start_hour < best_start) then
-                        best_start = start_hour
-                        best_interval = seg_interval_minutes
-                        found = .true.
-                    end if
-                end if
+            ! Check if this range starts after current forecast hour
+            if (start_hour > forecast_hour .and. start_hour < best_start) then
+                best_start = start_hour
+                best_interval = timelevel_spec % interval_minutes(i)
+                found = .true.
             end if
-
-            seg_start = seg_end + 1
-            do while (seg_start <= work_len .and. work_str(seg_start:seg_start) == ' ')
-                seg_start = seg_start + 1
-            end do
         end do
 
         if (found) then
@@ -6448,10 +6484,10 @@ module mpas_stream_manager
     !
     !> \brief Update variable output alarm with new interval based on forecast hour
     !> \author Guoqing Ge
-    !> \date February 2026
+    !> \date March 2026
     !> \details
     !>  This routine updates a variable output alarm after it has rung by:
-    !>  1. Checking if the stream uses output_timelevels
+    !>  1. Checking if the stream uses output_timelevels (via timelevel_spec)
     !>  2. Calculating current forecast hour (current time - start time)
     !>  3. Getting the next interval from get_output_interval_from_timelevels
     !>  4. Removing the old alarm and creating a new one with the updated interval
@@ -6472,17 +6508,11 @@ module mpas_stream_manager
         real (kind=RKIND) :: interval_minutes, next_interval_minutes
         integer :: local_ierr, ierr_tmp
         integer (kind=I8KIND) :: seconds_diff
-        character(len=StrKIND) :: timelevels_str
 
         local_ierr = MPAS_STREAM_MGR_NOERR
 
-        ! Check if stream uses output_timelevels
-        timelevels_str = ''
-        call MPAS_stream_mgr_get_property(manager, trim(stream % name), &
-                                          MPAS_STREAM_PROPERTY_OUTPUT_TIMELEVELS, &
-                                          timelevels_str, ierr=ierr_tmp)
-
-        if (len_trim(timelevels_str) == 0) then
+        ! Check if stream uses output_timelevels (via pre-parsed timelevel_spec)
+        if (.not. stream % timelevel_spec % is_parsed) then
             ! Not a variable output stream, nothing to do
             if (present(ierr)) ierr = MPAS_STREAM_MGR_NOERR
             return
@@ -6495,11 +6525,11 @@ module mpas_stream_manager
         call mpas_get_timeInterval(time_diff, S_i8=seconds_diff, ierr=ierr_tmp)
         forecast_hour = real(seconds_diff, RKIND) / 3600.0_RKIND
 
-        ! Get next interval
-        call get_output_interval_from_timelevels(timelevels_str, forecast_hour, interval_minutes, ierr_tmp)
+        ! Get next interval using pre-parsed timelevel_spec
+        call get_output_interval_from_timelevels(stream % timelevel_spec, forecast_hour, interval_minutes, ierr_tmp)
         if (ierr_tmp /= MPAS_STREAM_MGR_NOERR .or. interval_minutes <= 0.0_RKIND) then
             ! Current hour not in any range - check for future range
-            call get_next_timelevel_start(timelevels_str, forecast_hour, next_start_hour, next_interval_minutes, ierr_tmp)
+            call get_next_timelevel_start(stream % timelevel_spec, forecast_hour, next_start_hour, next_interval_minutes, ierr_tmp)
             call mpas_remove_clock_alarm(manager % streamClock, alarm_name, ierr=ierr_tmp)
             
             if (next_start_hour > 0.0_RKIND) then
@@ -7005,10 +7035,11 @@ subroutine stream_mgr_add_variable_output_alarm_c(manager_c, streamID_c, ierr_c)
     use iso_c_binding, only : c_char, c_int, c_ptr, c_f_pointer
     use mpas_derived_types, only : MPAS_streamManager_type, MPAS_Clock_type, MPAS_Time_type, MPAS_TimeInterval_type, &
                                    MPAS_STREAM_MGR_NOERR, MPAS_STREAM_OUTPUT, MPAS_START_TIME, &
-                                   MPAS_STREAM_PROPERTY_OUTPUT_TIMELEVELS, MPAS_STREAM_PROPERTY_REF_TIME
+                                   MPAS_STREAM_PROPERTY_REF_TIME, MPAS_stream_list_type
     use mpas_stream_manager, only : MPAS_stream_mgr_get_clock, MPAS_stream_mgr_add_alarm, &
                                     MPAS_stream_mgr_get_property, get_output_interval_from_timelevels, &
                                     get_next_timelevel_start
+    use mpas_stream_list, only : MPAS_stream_list_query
     use mpas_kind_types, only : StrKIND, RKIND
     use mpas_timekeeping, only : mpas_add_clock_alarm, mpas_get_clock_time, mpas_set_time, mpas_set_timeInterval, &
                                  mpas_get_timeInterval, operator(-), operator(+)
@@ -7020,11 +7051,12 @@ subroutine stream_mgr_add_variable_output_alarm_c(manager_c, streamID_c, ierr_c)
     integer(kind=c_int) :: ierr_c
 
     type (MPAS_streamManager_type), pointer :: manager
+    type (MPAS_stream_list_type), pointer :: stream
     type (MPAS_Clock_type), pointer :: clock
-    character(len=StrKIND) :: streamID, alarmID, timelevels_str, ref_time_str
+    character(len=StrKIND) :: streamID, alarmID, ref_time_str
     type (MPAS_Time_type) :: alarmTime_local, ref_time, current_time, start_time
     type (MPAS_TimeInterval_type) :: alarmInterval_local, time_since_ref, time_offset
-    integer :: ierr, ierr_tmp
+    integer :: ierr, ierr_tmp, err_local
     real(kind=RKIND) :: forecast_hour, next_start_hour
     real(kind=RKIND) :: interval_minutes, next_interval_minutes
 
@@ -7036,11 +7068,15 @@ subroutine stream_mgr_add_variable_output_alarm_c(manager_c, streamID_c, ierr_c)
     call mpas_c_to_f_string(streamID_c, streamID)
     write(alarmID, '(a)') trim(streamID)//'_output'
 
-    ! Get the output_timelevels property
-    call MPAS_stream_mgr_get_property(manager, streamID, MPAS_STREAM_PROPERTY_OUTPUT_TIMELEVELS, timelevels_str, ierr=ierr_tmp)
-    ierr = ior(ierr, ierr_tmp)
+    ! Look up the stream to get its pre-parsed timelevel_spec
+    nullify(stream)
+    if (.not. MPAS_stream_list_query(manager % streams, streamID, stream, ierr=err_local)) then
+        ierr_c = 1
+        return
+    end if
 
-    if (ierr /= 0 .or. trim(timelevels_str) == '') then
+    ! Check if timelevel_spec is parsed
+    if (.not. stream % timelevel_spec % is_parsed) then
         ierr_c = 1
         return
     end if
@@ -7057,13 +7093,13 @@ subroutine stream_mgr_add_variable_output_alarm_c(manager_c, streamID_c, ierr_c)
     start_time = mpas_get_clock_time(clock, MPAS_START_TIME, ierr=ierr_tmp)
     ierr = ior(ierr, ierr_tmp)
 
-    ! Get interval for first output (at forecast hour 0)
+    ! Get interval for first output (at forecast hour 0) using pre-parsed timelevel_spec
     forecast_hour = 0.0_RKIND
-    call get_output_interval_from_timelevels(timelevels_str, forecast_hour, interval_minutes, ierr_tmp)
+    call get_output_interval_from_timelevels(stream % timelevel_spec, forecast_hour, interval_minutes, ierr_tmp)
     
     if (ierr_tmp /= MPAS_STREAM_MGR_NOERR .or. interval_minutes <= 0.0_RKIND) then
         ! Hour 0 not in any range - find the first range's start time
-        call get_next_timelevel_start(timelevels_str, forecast_hour, next_start_hour, next_interval_minutes, ierr_tmp)
+        call get_next_timelevel_start(stream % timelevel_spec, forecast_hour, next_start_hour, next_interval_minutes, ierr_tmp)
         if (ierr_tmp /= MPAS_STREAM_MGR_NOERR .or. next_start_hour < 0.0_RKIND) then
             ! No valid ranges at all
             ierr_c = 1
