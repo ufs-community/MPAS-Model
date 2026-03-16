@@ -640,13 +640,14 @@
  end subroutine MPAS_to_physics
 
 !=================================================================================================================
- subroutine microphysics_from_MPAS(configs,mesh,state,time_lev,diag,diag_physics,tend_physics,its,ite)
+ subroutine microphysics_from_MPAS(configs,mesh,state,time_lev,sfc_input,diag,diag_physics,tend_physics,its,ite)
 !=================================================================================================================
 
 !input variables:
  type(mpas_pool_type),intent(in):: configs
  type(mpas_pool_type),intent(in):: mesh
  type(mpas_pool_type),intent(in):: state
+ type(mpas_pool_type),intent(in):: sfc_input
  type(mpas_pool_type),intent(in):: diag
  type(mpas_pool_type),intent(in):: diag_physics
 
@@ -665,26 +666,31 @@
  character(len=StrKIND),pointer:: nssl_moments
  logical,pointer:: config_tempo_aerosolaware,config_tempo_hailaware
  logical,pointer:: config_tempo_ml_for_bl_nc
+ logical,pointer:: config_tempo_cldfra
  integer,pointer:: index_qh
  integer,pointer:: index_zrw,index_zgw,index_zhw
  integer,pointer:: index_ns,index_ng,index_nh,index_nccn
  integer,pointer:: index_volg,index_volh
- 
+ integer,pointer:: index_qal, index_qai
+
  real(kind=RKIND),dimension(:,:),pointer  :: zgrid,w
  real(kind=RKIND),dimension(:,:),pointer  :: zz,exner,pressure_b
  real(kind=RKIND),dimension(:,:),pointer  :: rho_zz,theta_m,pressure_p
  real(kind=RKIND),dimension(:,:),pointer  :: qv,qc,qr,qi,qs,qg
  real(kind=RKIND),dimension(:,:),pointer  :: qh
  real(kind=RKIND),dimension(:,:),pointer  :: nc,ni,nr,nifa,nwfa
+ real(kind=RKIND),dimension(:,:),pointer  :: qal, qai, precipfrac
  real(kind=RKIND),dimension(:,:),pointer  :: ns,ng,nh,nccn
  real(kind=RKIND),dimension(:,:),pointer  :: volg,volh,zrw,zgw,zhw
  real(kind=RKIND),dimension(:,:),pointer  :: rainprod,evapprod
  real(kind=RKIND),dimension(:,:),pointer  :: refl10cm
  real(kind=RKIND),dimension(:)  ,pointer  :: max_hail_diameter_sfc, max_hail_diameter_column
+ real(kind=RKIND),dimension(:)  ,pointer  :: hpbl,xland
  real(kind=RKIND),dimension(:,:),pointer  :: re_cloud,re_ice,re_snow
  real(kind=RKIND),dimension(:,:),pointer  :: qc_bl, cldfrac_bl
  real(kind=RKIND),dimension(:,:),pointer  :: rthmpten,rqvmpten,rqcmpten,rqrmpten,rqimpten,rqsmpten,rqgmpten
  real(kind=RKIND),dimension(:,:),pointer  :: rncmpten,rnimpten,rnrmpten,rnifampten,rnwfampten
+ real(kind=RKIND),dimension(:,:),pointer  :: rthblten, rqvblten, rqcblten, rqiblten, rthratenlw, rthratensw
  real(kind=RKIND),dimension(:,:,:),pointer:: scalars
 
 !local variables:
@@ -697,6 +703,7 @@
  call mpas_pool_get_config(configs,'config_tempo_hailaware',config_tempo_hailaware)
  call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
  call mpas_pool_get_config(configs,'config_tempo_ml_for_bl_nc',config_tempo_ml_for_bl_nc)
+ call mpas_pool_get_config(configs,'config_tempo_cldfra',config_tempo_cldfra)
 
  call mpas_pool_get_array(mesh,'zgrid',zgrid)
  call mpas_pool_get_array(mesh,'zz'   ,zz   )
@@ -943,6 +950,51 @@
                 enddo
              endif
 
+             if (config_tempo_cldfra) then
+                call mpas_pool_get_dimension(state,'index_qal' ,index_qal  )
+                call mpas_pool_get_dimension(state,'index_qai' ,index_qai  )
+                call mpas_pool_get_array(diag_physics,'precipfrac', precipfrac)
+                call mpas_pool_get_array(tend_physics,'rthblten',rthblten)
+                call mpas_pool_get_array(tend_physics,'rqvblten',rqvblten)
+                call mpas_pool_get_array(tend_physics,'rqcblten',rqcblten)
+                call mpas_pool_get_array(tend_physics,'rqiblten',rqiblten)
+                call mpas_pool_get_array(tend_physics,'rthratenlw',rthratenlw)
+                call mpas_pool_get_array(tend_physics,'rthratensw',rthratensw)
+                call mpas_pool_get_array(diag_physics,'hpbl', hpbl)
+                call mpas_pool_get_array(sfc_input,'xland', xland)
+                call mpas_pool_get_array(diag_physics,'qc_bl',qc_bl)
+                call mpas_pool_get_array(diag_physics,'cldfrac_bl',cldfrac_bl)
+
+                qal => scalars(index_qal,:,:)
+                qai => scalars(index_qai,:,:)
+
+                do j = jts, jte
+                do k = kts, kte
+                do i = its, ite
+                   qal_p(i,k,j) = qal(k,i)
+                   qai_p(i,k,j) = qai(k,i)
+
+                   precipfrac_p(i,k,j) = precipfrac(k,i)
+                   rthblten_p(i,k,j) = rthblten(k,i)
+                   rqvblten_p(i,k,j) = rqvblten(k,i)
+                   rqcblten_p(i,k,j) = rqcblten(k,i)
+                   rqiblten_p(i,k,j) = rqiblten(k,i)
+                   rthratenlw_p(i,k,j) = rthratenlw(k,i)
+                   rthratensw_p(i,k,j) = rthratensw(k,i)
+                   qcbl_p(i,k,j) = qc_bl(k,i)
+                   cldfrac_p(i,k,j) = cldfrac_bl(k,i)
+                enddo
+                enddo
+                enddo
+
+                do j = jts, jte
+                do i = its, ite
+                   hpbl_p(i,j) = hpbl(i)
+                   xland_p(i,j) = xland(i)
+                enddo
+                enddo
+             endif
+
           case("mp_nssl2m")
              call mpas_pool_get_dimension(state,'index_ni',index_ni)
              call mpas_pool_get_dimension(state,'index_nr',index_nr)
@@ -1151,8 +1203,10 @@
  character(len=StrKIND),pointer:: mp_scheme
  character(len=StrKIND),pointer:: nssl_moments
  logical,pointer:: config_tempo_hailaware, config_tempo_aerosolaware
+ logical,pointer:: config_tempo_cldfra
  integer,pointer:: index_qv,index_qc,index_qr,index_qi,index_qs,index_qg
  integer,pointer:: index_nc,index_ni,index_nr,index_nifa,index_nwfa
+ integer,pointer:: index_qal, index_qai
 !TEMPO/NSSL
  integer,pointer:: index_qh
  integer,pointer:: index_zrw,index_zgw,index_zhw
@@ -1169,6 +1223,7 @@
  real(kind=RKIND),dimension(:,:),pointer  :: qv,qc,qr,qi,qs,qg
  real(kind=RKIND),dimension(:,:),pointer  :: qh
  real(kind=RKIND),dimension(:,:),pointer  :: nc,ni,nr,nifa,nwfa
+ real(kind=RKIND),dimension(:,:),pointer  :: qal, qai, precipfrac
  real(kind=RKIND),dimension(:,:),pointer  :: ns,ng,nh,nccn
  real(kind=RKIND),dimension(:,:),pointer  :: volg,volh,zrw,zgw,zhw
  real(kind=RKIND),dimension(:)  ,pointer  :: max_hail_diameter_sfc, max_hail_diameter_column
@@ -1189,6 +1244,7 @@
  call mpas_pool_get_config(configs,'config_nssl_moments',nssl_moments)
  call mpas_pool_get_config(configs,'config_tempo_hailaware',config_tempo_hailaware)
  call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
+ call mpas_pool_get_config(configs,'config_tempo_cldfra',config_tempo_cldfra)
 
  call mpas_pool_get_array(mesh,'zz'   ,zz   )
  call mpas_pool_get_array(mesh,'zgrid',zgrid)
@@ -1444,6 +1500,25 @@
                 do i = its, ite
                    ng(k,i) = ng_p(i,k,j)
                    volg(k,i) = volg_p(i,k,j)
+                enddo
+                enddo
+                enddo
+             endif
+
+             if (config_tempo_cldfra) then
+                call mpas_pool_get_dimension(state,'index_qal' ,index_qal  )
+                call mpas_pool_get_dimension(state,'index_qai' ,index_qai  )
+                call mpas_pool_get_array(diag_physics,'precipfrac' ,precipfrac )
+
+                qal => scalars(index_qal,:,:)
+                qai => scalars(index_qai,:,:)
+
+                do j = jts, jte
+                do k = kts, kte
+                do i = its, ite
+                   qal(k,i) = qal_p(i,k,j)
+                   qai(k,i) = qai_p(i,k,j)
+                   precipfrac(k,i) = precipfrac_p(i,k,j)
                 enddo
                 enddo
                 enddo

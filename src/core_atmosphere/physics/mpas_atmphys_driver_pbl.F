@@ -474,7 +474,7 @@
 
 !local pointers:
  character(len=StrKIND),pointer:: pbl_scheme
-
+ logical,pointer:: config_tempo_cldfra
  real(kind=RKIND),dimension(:),pointer:: hfx,hpbl,qfx,ust,wspd,xland,znt
  real(kind=RKIND),dimension(:),pointer:: delta,wstar
 
@@ -491,6 +491,8 @@
  real(kind=RKIND),dimension(:,:),pointer:: cldfrac_bl,qc_bl,qi_bl
  real(kind=RKIND),dimension(:,:),pointer:: edmf_a,edmf_ent,edmf_qc,edmf_qt,edmf_thl,edmf_w
  real(kind=RKIND),dimension(:,:),pointer:: sub_thl,sub_qv,det_thl,det_qv
+ real(kind=RKIND),dimension(:,:),pointer  :: qal, qai
+ integer,pointer:: index_qal, index_qai
 
 !local pointers for chemistry
  integer,pointer                           :: chemistry_start,chemistry_end
@@ -509,7 +511,8 @@
 !-----------------------------------------------------------------------------------------------------------------
 
  call mpas_pool_get_config(configs,'config_pbl_scheme',pbl_scheme)
-
+ call mpas_pool_get_config(configs,'config_tempo_cldfra',config_tempo_cldfra)
+ 
  call mpas_pool_get_array(diag_physics,'hfx' ,hfx )
  call mpas_pool_get_array(diag_physics,'hpbl',hpbl)
  call mpas_pool_get_array(diag_physics,'qfx' ,qfx )
@@ -753,6 +756,15 @@
        call mpas_pool_get_array(diag_physics,'det_thl'   ,det_thl   )
        call mpas_pool_get_array(diag_physics,'det_qv'    ,det_qv    )
 
+       call mpas_pool_get_array(state,'scalars',scalars)
+       if (config_tempo_cldfra) then
+          call mpas_pool_get_dimension(state,'index_qal' ,index_qal  )
+          call mpas_pool_get_dimension(state,'index_qai' ,index_qai  )
+
+          qal => scalars(index_qal,:,:)
+          qai => scalars(index_qai,:,:)
+       endif
+       
        do j = jts,jte
        do i = its,ite
           dx_p(i,j)   = len_disp / meshDensity(i)**0.25
@@ -804,6 +816,16 @@
        enddo
        enddo
 
+       if (config_tempo_cldfra) then
+          do j = jts,jte
+          do k = kts,kte
+          do i = its,ite
+             cldfrabl_p(i,k,j) = max(qal(k,i), qai(k,i))
+          enddo
+          enddo
+          enddo
+       endif
+       
        do j = jts,jte
        do i = its,ite
           maxwidthbl_p(i,j) = 0._RKIND
