@@ -321,6 +321,9 @@
  !case('ruc')
  !  if(config_nsoillevels .ne. 9) &
  !     call physics_error_fatal('RUC lsm uses only 9 soil layers currently. Correct config_nsoillevels.')
+ !case('noahmp')
+ !  if(config_nsoillevels .ne. 10) &
+ !     call physics_error_fatal('This version of Noah-MP lsm uses 10 soil layers. Correct config_nsoillevels.')
  !end select
 
  selectcase (config_nsoillevels)
@@ -376,6 +379,38 @@
      dzs(nSoilLevels,iCell) = zs2(nSoilLevels) - zs2(nSoilLevels-1) 
    enddo
    deallocate(zs2)
+
+ case( 10 )
+ do iCell = 1, nCellsSolve
+    iSoil = 1
+    zs_fg(iSoil,iCell) = 0.5_RKIND * dzs_fg(iSoil,iCell)
+    do iSoil = 2, nFGSoilLevels
+       zs_fg(iSoil,iCell) = zs_fg(iSoil-1,iCell)        &
+                          + 0.5_RKIND * dzs_fg(iSoil-1,iCell) &
+                          + 0.5_RKIND * dzs_fg(iSoil,iCell)
+    enddo
+ enddo
+
+ do iCell = 1, nCellsSolve
+    dzs(1,iCell)  = 0.05_RKIND
+    dzs(2,iCell)  = 0.10_RKIND
+    dzs(3,iCell)  = 0.10_RKIND
+    dzs(4,iCell)  = 0.10_RKIND
+    dzs(5,iCell)  = 0.30_RKIND
+    dzs(6,iCell)  = 0.35_RKIND
+    dzs(7,iCell)  = 0.50_RKIND
+    dzs(8,iCell)  = 1.00_RKIND
+    dzs(9,iCell)  = 1.00_RKIND
+    dzs(10,iCell) = 1.50_RKIND
+
+    iSoil = 1
+    zs(iSoil,iCell) = 0.5_RKIND * dzs(iSoil,iCell)
+    do iSoil = 2, nSoilLevels
+       zs(iSoil,iCell) = zs(iSoil-1,iCell) &
+                       + 0.5_RKIND * dzs(iSoil-1,iCell) &
+                       + 0.5_RKIND * dzs(iSoil,iCell)
+    enddo
+ enddo
  end select
 
  end subroutine init_soil_layers_depth
@@ -447,6 +482,8 @@
  num_st = 0
  do iCell = 1, nCellsSolve
     do ifgSoil = 1, nFGSoilLevels
+       if(st_fg(ifgSoil,iCell) .le. 0._RKIND) st_fg(ifgSoil,iCell) = tmn(iCell)
+       if(sm_fg(ifgSoil,iCell) .le. 0._RKIND) sm_fg(ifgSoil,iCell) = 0.20
        if(st_fg(ifgSoil,iCell) .le. 0._RKIND) num_st = num_st + 1
        if(sm_fg(ifgSoil,iCell) .lt. 0._RKIND) num_sm = num_sm + 1
     enddo
@@ -467,6 +504,11 @@
    !if(config_nsoillevels .ne. 9) &
    !   call physics_error_fatal('RUC lsm uses 9 soil layers. Correct config_nsoillevels.')
    call init_soil_properties_ruc(mesh, fg, dminfo, dims, configs)
+
+ case ( 10 )
+  ! if(config_nsoillevels .ne. 10) &
+  !    call physics_error_fatal('This version of Noah-MP lsm uses 10 soil layers. Correct config_nsoillevels.')
+   call init_soil_properties_noah(mesh, fg, dminfo, dims, configs)
 
  end select
 end subroutine init_soil_layers_properties
@@ -536,7 +578,16 @@ end subroutine init_soil_layers_properties
        sm_input(ifgSoil+1,iCell) = sm_fg(ifgSoil,iCell)
     enddo
 
-    zhave(nFGSoilLevels+2,iCell) = 300._RKIND/100._RKIND
+!... block to determine max depth (based on 2-m for Noah and 5-m for NoahMP)
+!    can get away without an else block because this subroutine is only
+!    called if nSoilLevels is either 4 or 10
+    if(nSoilLevels .eq. 4) then
+       zhave(nFGSoilLevels+2,iCell) = 300._RKIND/100._RKIND
+    elseif(nSoilLevels .eq. 10) then
+       zhave(nFGSoilLevels+2,iCell) = 600._RKIND/100._RKIND
+    else
+
+    endif
     st_input(nFGSoilLevels+2,iCell) = tmn(iCell)
     sm_input(nFGSoilLevels+2,iCell) = sm_input(nFGSoilLevels,iCell)
 
