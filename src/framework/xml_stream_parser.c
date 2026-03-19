@@ -1111,6 +1111,7 @@ void xml_stream_parser(char *fname, void *manager, int *mpi_comm, int *status)
 	/* First, handle changes to immutable stream filename templates, intervals, etc. */
 	immutable = 1;
 	for (stream_xml = ezxml_child(streams, "immutable_stream"); stream_xml; stream_xml = ezxml_next(stream_xml)) {
+		const char *output_timelevels;
 		streamID = ezxml_attr(stream_xml, "name");
 		direction = ezxml_attr(stream_xml, "type");
 		filename_template = ezxml_attr(stream_xml, "filename_template");
@@ -1119,6 +1120,7 @@ void xml_stream_parser(char *fname, void *manager, int *mpi_comm, int *status)
 		interval_in2 = ezxml_attr(stream_xml, "input_interval");
 		interval_out = ezxml_attr(stream_xml, "output_interval");
 		interval_out2 = ezxml_attr(stream_xml, "output_interval");
+		output_timelevels = ezxml_attr(stream_xml, "output_timelevels");
 		reference_time = ezxml_attr(stream_xml, "reference_time");
 		record_interval = ezxml_attr(stream_xml, "record_interval");
 		precision = ezxml_attr(stream_xml, "precision");
@@ -1159,21 +1161,27 @@ void xml_stream_parser(char *fname, void *manager, int *mpi_comm, int *status)
 			if ( strstr(direction, "input") != NULL && strstr(direction, "output") != NULL ) {
 
 				/* If input interval is an interval (i.e. not initial_only/final_only or none) set filename_interval to the interval. */
-				if ( strstr(interval_in, "initial_only") == NULL && strstr(interval_in, "final_only") == NULL && strstr(interval_in, "none") == NULL ){
+				if ( interval_in != NULL && strstr(interval_in, "initial_only") == NULL && strstr(interval_in, "final_only") == NULL && strstr(interval_in, "none") == NULL ){
 					filename_interval = interval_in2;
 				/* If output interval is an interval (i.e. not initial_only/final_only or none) set filename_interval to the interval. */
-				} else if ( strstr(interval_out, "initial_only") == NULL && strstr(interval_out, "final_only") == NULL && strstr(interval_out, "none") == NULL ){
+				} else if ( interval_out != NULL && strstr(interval_out, "initial_only") == NULL && strstr(interval_out, "final_only") == NULL && strstr(interval_out, "none") == NULL ){
 					filename_interval = interval_out2;
+				/* If output_timelevels is set, use 'output' to get unique filename for each write */
+				} else if ( output_timelevels != NULL ) {
+					filename_interval = "output";
 				}
 			/* Check for an input stream. */
 			} else if ( strstr(direction, "input") != NULL ) {
-				if ( strstr(interval_in, "initial_only") == NULL && strstr(interval_in, "final_only") == NULL && strstr(interval_in, "none") == NULL ){
+				if ( interval_in != NULL && strstr(interval_in, "initial_only") == NULL && strstr(interval_in, "final_only") == NULL && strstr(interval_in, "none") == NULL ){
 					filename_interval = interval_in2;
 				}
 			/* Check for an output stream. */
 			} else if ( strstr(direction, "output") != NULL ) {
-				if ( strstr(interval_out, "initial_only") == NULL && strstr(interval_out, "final_only") == NULL && strstr(interval_out, "none") == NULL ){
+				if ( interval_out != NULL && strstr(interval_out, "initial_only") == NULL && strstr(interval_out, "final_only") == NULL && strstr(interval_out, "none") == NULL ){
 					filename_interval = interval_out2;
+				/* If output_timelevels is set, use 'output' to get unique filename for each write */
+				} else if ( output_timelevels != NULL ) {
+					filename_interval = "output";
 				}
 			}
 		} else {
@@ -1185,13 +1193,13 @@ void xml_stream_parser(char *fname, void *manager, int *mpi_comm, int *status)
 			 * to force it's value to be none as well.
 			 */
 			if ( strstr(filename_interval, "input_interval") != NULL ) {
-				if ( strstr(interval_in, "initial_only") == NULL && strstr(interval_in, "final_only") == NULL && strstr(interval_in, "none") == NULL ) {
+				if ( interval_in != NULL && strstr(interval_in, "initial_only") == NULL && strstr(interval_in, "final_only") == NULL && strstr(interval_in, "none") == NULL ) {
 					filename_interval = interval_in2;
 				} else {
 					filename_interval = NULL;
 				}
 			} else if ( strstr(filename_interval, "output_interval") != NULL ) {
-				if ( strstr(interval_out, "initial_only") == NULL && strstr(interval_out, "final_only") == NULL && strstr(interval_out, "none") == NULL ) {
+				if ( interval_out != NULL && strstr(interval_out, "initial_only") == NULL && strstr(interval_out, "final_only") == NULL && strstr(interval_out, "none") == NULL ) {
 					filename_interval = interval_out2;
 				} else {
 					filename_interval = NULL;
@@ -1374,6 +1382,15 @@ void xml_stream_parser(char *fname, void *manager, int *mpi_comm, int *status)
 			return;
 		}
 
+		/* If output_timelevels is specified, set it as a property */
+		if (output_timelevels != NULL) {
+			stream_mgr_set_property_c(manager, streamID, "output_timelevels", output_timelevels, &err);
+			if (err != 0) {
+				*status = 1;
+				return;
+			}
+		}
+
 		/* Possibly add an input alarm for this stream */
 		if (itype == 3 || itype == 1) {
 			stream_mgr_add_alarm_c(manager, streamID, "input", "start", interval_in2, &err);
@@ -1392,16 +1409,28 @@ void xml_stream_parser(char *fname, void *manager, int *mpi_comm, int *status)
 
 		/* Possibly add an output alarm for this stream */
 		if (itype == 3 || itype == 2) {
-			stream_mgr_add_alarm_c(manager, streamID, "output", "start", interval_out2, &err);
-			if (err != 0) {
-				*status = 1;
-				return;
-			}
-			if ( strcmp(interval_out, interval_out2) != 0 ) {
-				snprintf(msgbuf, MSGSIZE, "        %-20s%s (%s)", "output alarm:", interval_out, interval_out2);
-				mpas_log_write_c(msgbuf, "MPAS_LOG_OUT");
+			/* If output_timelevels is specified, use variable alarm; otherwise use fixed interval */
+			if (output_timelevels == NULL) {
+				stream_mgr_add_alarm_c(manager, streamID, "output", "start", interval_out2, &err);
+				if (err != 0) {
+					*status = 1;
+					return;
+				}
+				if ( strcmp(interval_out, interval_out2) != 0 ) {
+					snprintf(msgbuf, MSGSIZE, "        %-20s%s (%s)", "output alarm:", interval_out, interval_out2);
+					mpas_log_write_c(msgbuf, "MPAS_LOG_OUT");
+				} else {
+					snprintf(msgbuf, MSGSIZE, "        %-20s%s", "output alarm:", interval_out);
+					mpas_log_write_c(msgbuf, "MPAS_LOG_OUT");
+				}
 			} else {
-				snprintf(msgbuf, MSGSIZE, "        %-20s%s", "output alarm:", interval_out);
+				/* Use variable output alarm based on timelevels */
+				stream_mgr_add_variable_output_alarm_c(manager, streamID, &err);
+				if (err != 0) {
+					*status = 1;
+					return;
+				}
+				snprintf(msgbuf, MSGSIZE, "        %-20s%s", "output alarm:", "variable (from output_timelevels)");
 				mpas_log_write_c(msgbuf, "MPAS_LOG_OUT");
 			}
 		}
