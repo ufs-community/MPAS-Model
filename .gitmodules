@@ -22,4 +22,3 @@
 [submodule "src/core_atmosphere/physics/physics_mmm"]
 	path = src/core_atmosphere/physics/physics_mmm
 	url = https://github.com/NCAR/MMM-physics.git
-	tag = 20250616-MPASv8.3
