@@ -8,8 +8,16 @@ See the below examples for more information.
 https://github.com/MPAS-Dev/MPAS/pull/930
 https://github.com/MPAS-Dev/MPAS/pull/931
 
+### Mandatory Questions
+
+* Does this PR include any additions or changes to external inputs (e.g., microphysics lookup tables, static data for gravity-wave drag -- things like that)?
+  - yes or no
+* Does this PR require updating one or more baselines for the CI tests? If so, what?
+  - yes or no; if yes, provide more details
+
 ### Priority Reviewers
 
 * Please list the developers/collaborators you'd like to prioritize for review
 * Example:
-  - @clark-evans
+  - @person1
+  - @person2

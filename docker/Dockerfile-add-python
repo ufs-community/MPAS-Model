@@ -1,0 +1,26 @@
+#
+# Install Python3 and a small set of packages
+#
+
+ARG TOOLCHAIN
+FROM add-pnetcdf:$TOOLCHAIN
+
+# Install Python
+RUN apt-get update \
+ && DEBIAN_FRONTEND=noninteractive apt-get --yes install --no-install-recommends \
+      python-is-python3 \
+      python3 \
+      python3-pip \
+ && rm -rf /var/lib/apt/lists/*
+
+# Install essential packages
+RUN pip3 install  --break-system-packages \
+      h5py \
+      netCDF4 \
+      numpy \
+      xarray
+
+# Install packages for the validation plot generation
+RUN pip3 install  --break-system-packages \
+      matplotlib
+
