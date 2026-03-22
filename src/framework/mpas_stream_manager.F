@@ -6148,7 +6148,6 @@ module mpas_stream_manager
         integer :: i, len_str, num_start, read_err
         real(kind=RKIND) :: value
         character :: ch
-        logical :: found_unit
 
         ierr = 0
         total_minutes = 0.0_RKIND
