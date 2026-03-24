@@ -1583,10 +1583,6 @@ IO_MESSAGE = "Using the SMIOL library."
 override CPPFLAGS += "-DMPAS_SMIOL_SUPPORT"
 endif
 
-## Add flag to CPPFLAGS that will let the stochastic_physics code know that
-## the dycore being used is MPAS.
-#override CPPFLAGS += "-DMPAS_STOCH"
-
 mpas_main: $(MAIN_DEPS)
 	cd src; $(MAKE) FC="$(FC)" \
                  CC="$(CC)" \
