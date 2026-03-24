@@ -984,6 +984,24 @@
 			<var name="smois"/>
 			<var name="tslb"/>
 #endif
+#ifndef MPAS_UFS_DYCORE
+                        <var name="swdnb"/>
+			<var name="swdnbc"/>
+			<var name="swdnt"/>
+			<var name="swdntc"/>
+			<var name="swupb"/>
+			<var name="swupbc"/>
+			<var name="swupt"/>
+			<var name="swuptc"/>
+			<var name="lwdnb"/>
+			<var name="lwdnbc"/>
+			<var name="lwdnt"/>
+			<var name="lwdntc"/>
+			<var name="lwupb"/>
+			<var name="lwupbc"/>
+			<var name="lwupt"/>
+			<var name="lwuptc"/>
+#endif			
 		</stream>
 
 		<stream name="diagnostics" 
@@ -3438,7 +3456,57 @@
 
         </var_struct>
 #endif
+#ifndef MPAS_UFS_DYCORE
+        <var_struct name="diag_physics" time_levs="1">
+                <var name="swdnb" type="real" dimensions="nCells Time" units="W m^{-2}"
+                     description="all-sky downward surface shortwave radiation flux"/>
 
+                <var name="swdnbc" type="real" dimensions="nCells Time" units="W m^{-2}"
+                     description="clear-sky downward surface shortwave radiation flux"/>
+
+                <var name="swdnt" type="real" dimensions="nCells Time" units="W m^{-2}"
+                     description="all-sky downward top-of-atmosphere shortwave radiation flux"/>
+
+                <var name="swdntc" type="real" dimensions="nCells Time" units="W m^{-2}"
+                     description="clear-sky downward top-of-atmosphere shortwave radiation flux"/>
+
+                <var name="swupb" type="real" dimensions="nCells Time" units="W m^{-2}"
+                     description="all-sky upward surface shortwave radiation flux"/>
+
+                <var name="swupbc" type="real" dimensions="nCells Time" units="W m^{-2}"
+                     description="clear-sky upward surface shortwave radiation flux"/>
+
+                <var name="swupt" type="real" dimensions="nCells Time" units="W m^{-2}"
+                     description="all-sky upward top-of-atmosphere shortwave radiation flux"/>
+
+                <var name="swuptc" type="real" dimensions="nCells Time" units="W m^{-2}"
+                     description="clear-sky upward top-of-atmosphere shortwave radiation flux"/>
+
+                <var name="lwdnb" type="real" dimensions="nCells Time" units="W m^{-2}"
+                     description="all-sky downward surface longwave radiation flux"/>
+
+                <var name="lwdnbc" type="real" dimensions="nCells Time" units="W m^{-2}"
+                     description="clear-sky downward surface longwave radiation flux"/>
+
+                <var name="lwdnt" type="real" dimensions="nCells Time" units="W m^{-2}"
+                     description="all-sky downward top-of-the-atmosphere longwave radiation flux"/>
+
+                <var name="lwdntc" type="real" dimensions="nCells Time" units="W m^{-2}"
+                     description="clear-sky downward top-of-the-atmosphere longwave radiation flux"/>
+
+                <var name="lwupb" type="real" dimensions="nCells Time" units="W m^{-2}"
+                     description="all-sky upward surface longwave radiation flux"/>
+
+                <var name="lwupbc" type="real" dimensions="nCells Time" units="W m^{-2}"
+                     description="clear-sky upward surface longwave radiation flux"/>
+
+		<var name="lwupt" type="real" dimensions="nCells Time" units="W m^{-2}"
+                     description="all-sky upward top-of-the-atmosphere longwave radiation flux"/>
+
+		<var name="lwuptc" type="real" dimensions="nCells Time" units="W m^{-2}"
+		     description="clear-sky upward top-of-the-atmosphere longwave radiation flux"/>
+	</var_struct>
+#endif
         <var_struct name="tend_physics" time_levs="1">
 
                 <var name="tend_ru_physics" type="real" dimensions="nVertLevels nEdges Time" units="kg m^{-2} s^{-1}"
