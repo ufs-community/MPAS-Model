@@ -1,0 +1,53 @@
+<streams>
+<immutable_stream name="input"
+                  type="input"
+                  filename_template="mpas.init.nc"
+                  input_interval="initial_only" />
+
+<immutable_stream name="restart"
+                  type="input;output"
+                  filename_template="restart.$Y-$M-$D_$h.$m.$s.nc"
+                  input_interval="initial_only"
+                  output_interval="1_00:00:00" />
+
+<stream name="output"
+        type="output"
+        filename_template="history.$Y-$M-$D_$h.$m.$s.nc"
+        output_interval="0:12:00" >
+
+	<file name="stream_list.atmosphere.output"/>
+</stream>
+
+<stream name="diagnostics"
+        type="output"
+        filename_template="diag.$Y-$M-$D_$h.$m.$s.nc"
+        output_interval="0:12:00" >
+
+	<file name="stream_list.atmosphere.diagnostics"/>
+</stream>
+
+<stream name="surface"
+        type="input"
+        filename_template="mpas.sfc_update.nc"
+        filename_interval="none"
+        input_interval="none" >
+
+	<file name="stream_list.atmosphere.surface"/>
+</stream>
+
+<immutable_stream name="iau"
+                  type="input"
+                  filename_template="notusing.AmB.$Y-$M-$D_$h.$m.$s.nc"
+                  filename_interval="none"
+                  packages="iau"
+                  input_interval="initial_only" />
+
+<immutable_stream name="lbc_in"
+                  type="input"
+                  filename_template="mpas.lbc.nc"
+                  filename_interval="input_interval"
+                  packages="limited_area"
+                  filename_interval="none"
+                  input_interval="3:00:00" />
+
+</streams>

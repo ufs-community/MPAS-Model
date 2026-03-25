@@ -1,0 +1,76 @@
+name: MPAS-A Base Images Build
+run-name: CI Image Build for MPAS-A
+
+on:
+  push:
+    branches:
+      # Only build containers when pushing to gsl/develop
+      - "gsl/develop"
+
+jobs:
+  docker:
+    #if: github.repository == 'ufs-community/MPAS-Model'
+    strategy:
+      fail-fast: false  # Disable fail-fast
+      matrix:
+        toolchain:  [gnu,oneapi]#,nvhpc]
+        include:
+          # Set toolchain configuration(s)
+          - toolchain: gnu
+            nfversion: 4.6.2
+            pnfversion: 1.14.1
+          - toolchain: oneapi
+            nfversion: 4.5.4
+            pnfversion: 1.12.3
+#          - toolchain: nvhpc
+#            nfversion: 4.5.4
+#            pnfversion: 1.12.3
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Log in to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: Build minimal-toolchain:${{ matrix.toolchain }}
+        uses: docker/build-push-action@v6
+        with:
+          file: docker/Dockerfile-${{ matrix.toolchain }}-minimal
+          tags: minimal-toolchain:${{ matrix.toolchain }}
+
+      - name: Build add-netcdf:${{ matrix.toolchain }}
+        uses: docker/build-push-action@v6
+        with:
+          file: docker/Dockerfile-add-netcdf
+          tags: add-netcdf:${{ matrix.toolchain }}
+          build-args: |
+            TOOLCHAIN=${{ matrix.toolchain }}
+            NFVERSION=${{ matrix.nfversion }}
+
+      - name: Build add-pnetcdf:${{ matrix.toolchain }}
+        uses: docker/build-push-action@v6
+        with:
+          file: docker/Dockerfile-add-pnetcdf
+          tags: add-pnetcdf:${{ matrix.toolchain }}
+          build-args: |
+            TOOLCHAIN=${{ matrix.toolchain }}
+            PNFVERSION=${{ matrix.pnfversion }}
+
+      - name: Build add-python:${{ matrix.toolchain }}
+        uses: docker/build-push-action@v6
+        with:
+          file: docker/Dockerfile-add-python
+          build-args: TOOLCHAIN=${{ matrix.toolchain }}
+          tags: add-python:${{ matrix.toolchain }}
+
+      - name: Build and push dustinswales/ufs-community-mpas-ci:${{ matrix.toolchain }}
+        uses: docker/build-push-action@v6
+        with:
+          file: docker/Dockerfile-finalize
+          build-args: TOOLCHAIN=${{ matrix.toolchain }}
+          push: True
+          tags: |
+            dustinswales/ufs-community-mpas-ci:${{ matrix.toolchain }}
