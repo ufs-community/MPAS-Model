@@ -349,9 +349,9 @@
 
         <nml_record name="lbcs" in_defaults="true">
 
-                <nml_option name="config_lbc_hydrometeors_tempoall" type="logical" default_value="true"
+                <nml_option name="config_lbc_hydrometeors_rrfs" type="logical" default_value="true"
                      units="-"
-                     description="Whether to include hydrometeors qc, qr, etc. in LBC files for all tempo needed varaibles"
+			description="Whether to include hydrometeors qc, qr, etc. in LBC files available from RRFS/HRRR/RAP"
                      possible_values="Logical values"/>
 
                 <nml_option name="config_lbc_hydrometeors_gfs" type="logical" default_value="false"
@@ -425,7 +425,7 @@
                 <package name="tempo_aerosolaware_in" description="variables for TEMPO aerosol-aware microphysics."/>
                 <package name="noahmp" description="Whether to process, read, and write static fields only required by Noah-MP"/>
                 <package name="lbc_hydrometeors_gfs" active_when="config_lbc_hydrometeors_gfs" description="When active, hydrometeors are to be included in LBC files available only from GFS"/>
-                <package name="lbc_hydrometeors_tempoall" active_when="config_lbc_hydrometeors_tempoall" description="When active, hydrometeors are to be included in LBC files for tempo needed varaibles"/>
+		<package name="lbc_hydrometeors_rrfs" active_when="config_lbc_hydrometeors_rrfs" description="When active, hydrometeors are to be included in LBC files available from RRFS/HRRR/RAP"/>
         </packages>
 
 
@@ -1301,71 +1301,71 @@
 
                         <var name="lbc_qc" array_group="moist" units="kg kg^{-1}"
                              description="Cloud water mixing ratio on lateral boundary cells"
-                             packages="lbc_hydrometeors_tempoall;lbc_hydrometeors_gfs"/>
+                             packages="lbc_hydrometeors_rrfs;lbc_hydrometeors_gfs"/>
 
                         <var name="lbc_qr" array_group="moist" units="kg kg^{-1}"
                              description="Rain water mixing ratio on lateral boundary cells"
-                             packages="lbc_hydrometeors_tempoall;lbc_hydrometeors_gfs"/>
+                             packages="lbc_hydrometeors_rrfs;lbc_hydrometeors_gfs"/>
 
                         <var name="lbc_qi" array_group="moist" units="kg kg^{-1}"
                              description="Lateral boundary tendency of ice mixing ratio"
-                             packages="lbc_hydrometeors_tempoall;lbc_hydrometeors_gfs"/>
+                             packages="lbc_hydrometeors_rrfs;lbc_hydrometeors_gfs"/>
 
                         <var name="lbc_qs" array_group="moist" units="kg kg^{-1}"
                              description="Lateral boundary tendency of snow mixing ratio"
-                             packages="lbc_hydrometeors_tempoall;lbc_hydrometeors_gfs"/>
+                             packages="lbc_hydrometeors_rrfs;lbc_hydrometeors_gfs"/>
 
                         <var name="lbc_qg" array_group="moist" units="kg kg^{-1}"
                              description="Lateral boundary tendency of graupel mixing ratio"
-                             packages="lbc_hydrometeors_tempoall;lbc_hydrometeors_gfs"/>
+                             packages="lbc_hydrometeors_rrfs;lbc_hydrometeors_gfs"/>
 
                         <var name="lbc_qh" array_group="moist"  units="kg kg^{-1} s^{-1}"
                              description="Lateral boundary tendency of hail mixing ratio"
-                             packages="lbc_hydrometeors_tempoall"/>
+                             packages="lbc_hydrometeors_rrfs"/>
 
                         <var name="lbc_nr" array_group="number" units="kg^{-1}"
                              description="Lateral boundary tendency of rain number concentration"
-                             packages="lbc_hydrometeors_tempoall"/>
+                             packages="lbc_hydrometeors_rrfs"/>
 
                         <var name="lbc_ni" array_group="number" units="kg^{-1}"
                              description="Lateral boundary tendency of ice number concentration"
-                             packages="lbc_hydrometeors_tempoall"/>
+                             packages="lbc_hydrometeors_rrfs"/>
 
                         <var name="lbc_nc" array_group="number" units="kg^{-1}"
                              description="Lateral boundary tendency of droplet number concentration"
-                             packages="lbc_hydrometeors_tempoall"/>
+                             packages="lbc_hydrometeors_rrfs"/>
 
                         <var name="lbc_ns" array_group="number" units="kg^{-1}"
                              description="Lateral boundary tendency of snow number concentration"
-                             packages="lbc_hydrometeors_tempoall"/>
+                             packages="lbc_hydrometeors_rrfs"/>
 
                         <var name="lbc_ng" array_group="number" units="kg^{-1}"
                              description="Lateral boundary tendency of graupel number concentration"
-                             packages="lbc_hydrometeors_tempoall"/>
+                             packages="lbc_hydrometeors_rrfs"/>
 
                         <var name="lbc_nh" array_group="number" units="m^{-3} s^{-1}"
                              description="Lateral boundary tendency of hail number concentration"
-                             packages="lbc_hydrometeors_tempoall"/>
+                             packages="lbc_hydrometeors_rrfs"/>
 
                         <var name="lbc_nccn" array_group="number" units="m^{-3} s^{-1}"
                              description="Lateral boundary tendency of CCN number concentration"
-                             packages="lbc_hydrometeors_tempoall"/>
+                             packages="lbc_hydrometeors_rrfs"/>
 
                         <var name="lbc_volg" array_group="volume" units="m^{3} s^{-1}"
                              description="Lateral boundary tendency of graupel particle volume"
-                             packages="lbc_hydrometeors_tempoall"/>
+                             packages="lbc_hydrometeors_rrfs"/>
 
                         <var name="lbc_volh" array_group="volume" units="m^{3} s^{-1}"
                              description="Lateral boundary tendency of hail particle volume"
-                             packages="lbc_hydrometeors_tempoall"/>
+                             packages="lbc_hydrometeors_rrfs"/>
 
                         <var name="lbc_nifa" array_group="number" units="nb kg^{-1}"
                              description="Gocart ice-friendly aerosol number concentration on lateral boundary cells"
-                             packages="mp_thompson_aers_in;tempo_aerosolaware_in;lbc_hydrometeors_tempoall"/>
+                             packages="mp_thompson_aers_in;tempo_aerosolaware_in;lbc_hydrometeors_rrfs"/>
 
                         <var name="lbc_nwfa" array_group="number" units="nb kg^{-1}"
                              description="Gocart water-friendly aerosol number concentration on lateral boundary cells"
-                             packages="mp_thompson_aers_in;tempo_aerosolaware_in;lbc_hydrometeors_tempoall"/>
+                             packages="mp_thompson_aers_in;tempo_aerosolaware_in;lbc_hydrometeors_rrfs"/>
                 </var_array>
 
         </var_struct>
