@@ -214,7 +214,7 @@
                      description="The supersampling factor to be used for MODIS maximum snow albedo and monthly albedo datasets (case 7 only)"
                      possible_values="Positive integer values"/>
 
-	        <nml_option name="config_lu_supersample_factor" type="integer"       default_value="1"
+                <nml_option name="config_lu_supersample_factor" type="integer"       default_value="1"
                      units="-"
                      description="The supersampling factor to be used for 30s or 15s MODIS land use, or for 30s USGS land use, as selected by `config_landuse_data' (case 7 only)"
                      possible_values="Positive integer values"/>
@@ -234,7 +234,7 @@
                      description="Whether to use specific-humidity as the first-guess moisture variable. If this option is False, relative humidity will be used."
                      possible_values="true or false"/>
 
-		<nml_option name="config_lai_data"           type="character"     default_value="MODIS"
+                <nml_option name="config_lai_data"           type="character"     default_value="MODIS"
                      units="-"
                      description="The climatological monthly leaf area index dataset to use (case 7 only)"
                      possible_values="`MODIS'"/>
@@ -325,7 +325,7 @@
                      description="Whether to interpolate first-guess fields from intermediate file"
                      possible_values="true or false"/>
 
-		<nml_option name="config_tempo_rap"            type="logical"       default_value="false"
+                <nml_option name="config_tempo_rap"             type="logical"       default_value="false"
                      units="-"
                      description="Whether to use aerosols from RAP for TEMPO microphysics instead of the monthly climatology"
                      possible_values="true or false"/>
@@ -345,6 +345,20 @@
                 <nml_option name="config_tsk_seaice_threshold" type="real" default_value="100." units="K"
                      description="surface temperature threshold below which water points are set to seaice points"
                      possible_values="Positive real values"/>
+        </nml_record>
+
+        <nml_record name="lbcs" in_defaults="true">
+
+                <nml_option name="config_lbc_hydrometeors_rrfs" type="logical" default_value="true"
+                     units="-"
+			description="Whether to include hydrometeors qc, qr, etc. in LBC files available from RRFS/HRRR/RAP"
+                     possible_values="Logical values"/>
+
+                <nml_option name="config_lbc_hydrometeors_gfs" type="logical" default_value="false"
+                     units="-"
+                     description="Whether to include hydrometeors qc, qr, etc. in LBC files available only from GFS"
+                     possible_values="Logical values"/>
+
         </nml_record>
 
         <nml_record name="io" in_defaults="true">
@@ -410,6 +424,8 @@
                 <package name="mp_tempo_in" description="parameterization of TEMPO cloud microphysics."/>
                 <package name="tempo_aerosolaware_in" description="variables for TEMPO aerosol-aware microphysics."/>
                 <package name="noahmp" description="Whether to process, read, and write static fields only required by Noah-MP"/>
+                <package name="lbc_hydrometeors_gfs" active_when="config_lbc_hydrometeors_gfs" description="When active, hydrometeors are to be included in LBC files available only from GFS"/>
+		<package name="lbc_hydrometeors_rrfs" active_when="config_lbc_hydrometeors_rrfs" description="When active, hydrometeors are to be included in LBC files available from RRFS/HRRR/RAP"/>
         </packages>
 
 
@@ -885,7 +901,7 @@
                 <var name="ivgtyp" name_in_code="lu_index" type="integer"  dimensions="nCells" units="unitless"
                      description="dominant vegetation category"/>
 
-		<var name="landusef" name_in_code="landusef" type="real"  dimensions="nlcat nCells" units="unitless"
+                <var name="landusef" name_in_code="landusef" type="real"  dimensions="nlcat nCells" units="unitless"
                      description="fraction of each landuse category present in each cell"/>
 
                 <var name="mminlu" type="text" dimensions="" units="unitless"
@@ -894,7 +910,7 @@
                 <var name="isltyp" name_in_code="soilcat_top"  type="integer"  dimensions="nCells" units="unitless"
                      description="dominate soil category"/>
 
-		<var name="soilf" name_in_code="soilf" type="real"  dimensions="nscat nCells" units="unitless"
+                <var name="soilf" name_in_code="soilf" type="real"  dimensions="nscat nCells" units="unitless"
                      description="fraction of each soil type present in each cell"/>
 
                 <var name="snoalb" type="real" dimensions="nCells" units="unitless"
@@ -1284,57 +1300,72 @@
                              description="Water vapor mixing ratio on lateral boundary cells"/>
 
                         <var name="lbc_qc" array_group="moist" units="kg kg^{-1}"
-                             description="Cloud water mixing ratio on lateral boundary cells"/>
+                             description="Cloud water mixing ratio on lateral boundary cells"
+                             packages="lbc_hydrometeors_rrfs;lbc_hydrometeors_gfs"/>
 
                         <var name="lbc_qr" array_group="moist" units="kg kg^{-1}"
-                             description="Rain water mixing ratio on lateral boundary cells"/>
+                             description="Rain water mixing ratio on lateral boundary cells"
+                             packages="lbc_hydrometeors_rrfs;lbc_hydrometeors_gfs"/>
 
                         <var name="lbc_qi" array_group="moist" units="kg kg^{-1}"
-                             description="Lateral boundary tendency of ice mixing ratio"/>
+                             description="Lateral boundary tendency of ice mixing ratio"
+                             packages="lbc_hydrometeors_rrfs;lbc_hydrometeors_gfs"/>
 
                         <var name="lbc_qs" array_group="moist" units="kg kg^{-1}"
-                             description="Lateral boundary tendency of snow mixing ratio"/>
+                             description="Lateral boundary tendency of snow mixing ratio"
+                             packages="lbc_hydrometeors_rrfs;lbc_hydrometeors_gfs"/>
 
                         <var name="lbc_qg" array_group="moist" units="kg kg^{-1}"
-                             description="Lateral boundary tendency of graupel mixing ratio"/>
+                             description="Lateral boundary tendency of graupel mixing ratio"
+                             packages="lbc_hydrometeors_rrfs;lbc_hydrometeors_gfs"/>
 
                         <var name="lbc_qh" array_group="moist"  units="kg kg^{-1} s^{-1}"
-                             description="Lateral boundary tendency of hail mixing ratio"/>
+                             description="Lateral boundary tendency of hail mixing ratio"
+                             packages="lbc_hydrometeors_rrfs"/>
 
                         <var name="lbc_nr" array_group="number" units="kg^{-1}"
-                             description="Lateral boundary tendency of rain number concentration"/>
+                             description="Lateral boundary tendency of rain number concentration"
+                             packages="lbc_hydrometeors_rrfs"/>
 
                         <var name="lbc_ni" array_group="number" units="kg^{-1}"
-                             description="Lateral boundary tendency of ice number concentration"/>
+                             description="Lateral boundary tendency of ice number concentration"
+                             packages="lbc_hydrometeors_rrfs"/>
 
                         <var name="lbc_nc" array_group="number" units="kg^{-1}"
-                             description="Lateral boundary tendency of droplet number concentration"/>
+                             description="Lateral boundary tendency of droplet number concentration"
+                             packages="lbc_hydrometeors_rrfs"/>
 
                         <var name="lbc_ns" array_group="number" units="kg^{-1}"
-                             description="Lateral boundary tendency of snow number concentration"/>
+                             description="Lateral boundary tendency of snow number concentration"
+                             packages="lbc_hydrometeors_rrfs"/>
 
                         <var name="lbc_ng" array_group="number" units="kg^{-1}"
-                             description="Lateral boundary tendency of graupel number concentration"/>
+                             description="Lateral boundary tendency of graupel number concentration"
+                             packages="lbc_hydrometeors_rrfs"/>
 
                         <var name="lbc_nh" array_group="number" units="m^{-3} s^{-1}"
-                             description="Lateral boundary tendency of hail number concentration"/>
+                             description="Lateral boundary tendency of hail number concentration"
+                             packages="lbc_hydrometeors_rrfs"/>
 
                         <var name="lbc_nccn" array_group="number" units="m^{-3} s^{-1}"
-                             description="Lateral boundary tendency of CCN number concentration"/>
+                             description="Lateral boundary tendency of CCN number concentration"
+                             packages="lbc_hydrometeors_rrfs"/>
 
                         <var name="lbc_volg" array_group="volume" units="m^{3} s^{-1}"
-                             description="Lateral boundary tendency of graupel particle volume"/>
+                             description="Lateral boundary tendency of graupel particle volume"
+                             packages="lbc_hydrometeors_rrfs"/>
 
                         <var name="lbc_volh" array_group="volume" units="m^{3} s^{-1}"
-                             description="Lateral boundary tendency of hail particle volume"/>
+                             description="Lateral boundary tendency of hail particle volume"
+                             packages="lbc_hydrometeors_rrfs"/>
 
                         <var name="lbc_nifa" array_group="number" units="nb kg^{-1}"
                              description="Gocart ice-friendly aerosol number concentration on lateral boundary cells"
-                             packages="mp_thompson_aers_in;tempo_aerosolaware_in"/>
+                             packages="mp_thompson_aers_in;tempo_aerosolaware_in;lbc_hydrometeors_rrfs"/>
 
                         <var name="lbc_nwfa" array_group="number" units="nb kg^{-1}"
                              description="Gocart water-friendly aerosol number concentration on lateral boundary cells"
-                             packages="mp_thompson_aers_in;tempo_aerosolaware_in"/>
+                             packages="mp_thompson_aers_in;tempo_aerosolaware_in;lbc_hydrometeors_rrfs"/>
                 </var_array>
 
         </var_struct>
@@ -1370,11 +1401,11 @@
                      description="First guess specific humidity"
                      packages="first_guess_field"/>
 
-	           <var name="qnwfa_fg" name_in_code="qnwfa" type="real" dimensions="nFGLevels nCells Time" units="kg^{-1}"
-		           description="First guess water-friendly aerosols"/>
+                <var name="qnwfa_fg" name_in_code="qnwfa" type="real" dimensions="nFGLevels nCells Time" units="kg^{-1}"
+                     description="First guess water-friendly aerosols"/>
 
-		      <var name="qnifa_fg" name_in_code="qnifa" type="real" dimensions="nFGLevels nCells Time" units="kg^{-1}"
-		           description="First guess ice-friendly aerosols"/>
+                <var name="qnifa_fg" name_in_code="qnifa" type="real" dimensions="nFGLevels nCells Time" units="kg^{-1}"
+                     description="First guess ice-friendly aerosols"/>
 
                 <var name="qc_fg" name_in_code="qc" type="real" dimensions="nFGLevels nCells Time" units="kg kg^{-1}"
                      description="First guess cloud mixing ratio"/>
@@ -1501,9 +1532,9 @@
                      description="vegetation fraction"
                      packages="met_stage_out"/>
 
-	        <var name="canwat" type="real" dimensions="nCells Time" units="kg m^{-2}"
-		     description="water in canopy" 
-   		     packages="met_stage_out"/>
+                <var name="canwat" type="real" dimensions="nCells Time" units="kg m^{-2}"
+                     description="water in canopy" 
+                     packages="met_stage_out"/>
 
                 <var name="sfc_albbck" type="real" dimensions="nCells Time" units="unitless"
                      description="background surface albedo"
@@ -1644,7 +1675,7 @@
                 <var name="refl10cm" type="real" dimensions="nVertLevels nCells Time" units="dBZ"
                      description="10 cm radar reflectivity"
                      packages="met_stage_out"/>
-</var_struct>
+        </var_struct>
 
 #include "registry.chemistry.xml"
 
