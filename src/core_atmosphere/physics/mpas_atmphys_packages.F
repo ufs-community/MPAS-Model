@@ -39,16 +39,13 @@
  character(len=StrKIND),pointer:: config_convection_scheme
  character(len=StrKIND),pointer:: config_pbl_scheme
  character(len=StrKIND),pointer:: config_lsm_scheme
- character(len=StrKIND),pointer:: config_smoke_scheme
- character(len=StrKIND),pointer:: config_dust_scheme
- logical,pointer:: config_tempo_hailaware, config_tempo_aerosolaware
+ logical,pointer:: config_tempo_aerosolaware,config_tempo_hailaware
  logical,pointer:: mp_kessler_in,mp_thompson_in,mp_thompson_aers_in,mp_wsm6_in,mp_nssl2m_in,nssl3m_in
- logical,pointer:: mp_tempo_in, tempo_hailaware_in, tempo_aerosolaware_in
+ logical,pointer:: mp_tempo_in,tempo_hailaware_in,tempo_aerosolaware_in
  logical,pointer:: cu_grell_freitas_in,cu_grell_freitas_li_in,cu_kain_fritsch_in,cu_ntiedtke_in
  logical,pointer:: bl_mynn_in,bl_mynnedmf_in,bl_ysu_in,bl_myj_in
  logical,pointer:: lsm_noah_in,lsm_ruc_in
  logical,pointer:: sf_noahmp_in
- logical,pointer:: mpas_smoke_in,mpas_dust_in
 
  integer :: ierr
 
@@ -66,8 +63,8 @@
  call mpas_pool_get_config(configs,'config_microp_scheme',config_microp_scheme)
 
  call mpas_pool_get_config(configs,'config_nssl_moments',config_nssl_moments)
- call mpas_pool_get_config(configs,'config_tempo_hailaware',config_tempo_hailaware)
  call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
+ call mpas_pool_get_config(configs,'config_tempo_hailaware',config_tempo_hailaware)
 
  nullify(mp_kessler_in)
  call mpas_pool_get_package(packages,'mp_kessler_inActive',mp_kessler_in)
@@ -129,12 +126,8 @@
     mp_wsm6_in = .true.
  elseif(config_microp_scheme == 'mp_tempo') then
     mp_tempo_in = .true.
-    if (config_tempo_aerosolaware) then
-       tempo_aerosolaware_in = .true.
-    endif
-    if (config_tempo_hailaware) then
-       tempo_hailaware_in = .true.
-    endif
+    if (config_tempo_aerosolaware) tempo_aerosolaware_in = .true.
+    if (config_tempo_hailaware) tempo_hailaware_in = .true.
  elseif(config_microp_scheme == 'mp_nssl2m') then
     mp_nssl2m_in = .true.
     IF ( config_nssl_moments == 'nssl3m' ) THEN
@@ -298,54 +291,6 @@
  endif
 
  call mpas_log_write('    sf_noahmp_in            = $l', logicArgs=(/sf_noahmp_in/))
- call mpas_log_write('')
-
-!--- initialization of packages for parameterizations of smoke:
-
- call mpas_pool_get_config(configs,'config_smoke_scheme', config_smoke_scheme)
-
- nullify(mpas_smoke_in)
- call mpas_pool_get_package(packages,'mpas_smoke_inActive', mpas_smoke_in)
-
-  if(.not.associated(mpas_smoke_in)) then
-     call mpas_log_write('================================================================================',messageType=MPAS_LOG_ERR)
-     call mpas_log_write('* Error while setting up packages for smoke options in atmosphere core.',  messageType=MPAS_LOG_ERR)
-     call mpas_log_write('================================================================================',messageType=MPAS_LOG_ERR)
-    ierr = 1
-    return
- endif
-
- mpas_smoke_in = .false.
-
- if(config_smoke_scheme.ne.'off') then
-   mpas_smoke_in = .true.
- endif
-
- call mpas_log_write('    mpas_smoke_in              = $l', logicArgs=(/mpas_smoke_in/))
- call mpas_log_write('')
-
-!--- initialization of packages for parameterizations of dust:
-
-  call mpas_pool_get_config(configs,'config_dust_scheme', config_dust_scheme)
-
-  nullify(mpas_dust_in)
-  call mpas_pool_get_package(packages,'mpas_dust_inActive', mpas_dust_in)
-
-   if(.not.associated(mpas_dust_in)) then
-    call mpas_log_write('================================================================================',messageType=MPAS_LOG_ERR)
-    call mpas_log_write('* Error while setting up packages for dust options in atmosphere core.',  messageType=MPAS_LOG_ERR)
-    call mpas_log_write('================================================================================',messageType=MPAS_LOG_ERR)
-    ierr = 1
-    return
- endif
-
- mpas_dust_in = .false.
-
- if(config_dust_scheme.ne.'off') then
-   mpas_dust_in = .true.
- endif
-
- call mpas_log_write('    mpas_dust_in              = $l', logicArgs=(/mpas_dust_in/))
  call mpas_log_write('')
 
  end function atmphys_setup_packages

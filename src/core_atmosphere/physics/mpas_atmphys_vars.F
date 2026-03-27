@@ -159,7 +159,7 @@
  integer,public:: num_months          !number of months                                         [-]
 
  integer,public:: num_chem             !Temporary workaround for defining dimensions holding chem data
- integer,public:: kanthro,kbiogenic,kwildfire,kvolcanic!Number of vertical levels in input emission data
+ integer,public:: kanthro,kbiogenic,kwildfire,kvolcanic,kreswoodcomb!Number of vertical levels in input emission data
  logical:: do_chemistry                !controls call to smoke, dust and other chemical processes
 
  integer,public:: num_e_ant_in,num_e_bb_in,num_e_bio_in,num_e_vol_in
@@ -248,6 +248,8 @@
     aod3d_smoke_p, aod3d_p
  real(kind=RKIND),dimension(:,:),allocatable:: &
     aod550_p
+ real(kind=RKIND),dimension(:,:),allocatable:: &
+    aero_emis_for_enhmix_p
 ! Input/output smoke 2D fields - JLS
  real(kind=RKIND),dimension(:,:),allocatable::  &
     frp_in_p,          &!
@@ -758,7 +760,7 @@
     lakedepth_p,      &!depth of lakes needed to run the lake model physics.
     lakemask_p         !mask needed to detect the location of lakes to run the lake model physics.
 
-!... arrays only in mynn surface layer scheme (module_sf_mynn.F):
+!... arrays only in mynn surface layer scheme (module_sf_mynn.F): (note qcg is not needed for mynn sfclayer submodule)
  real(kind=RKIND),dimension(:,:),allocatable:: &
     ch_p,             &!surface exchange coeff for heat                                                      [m/s]
     qcg_p              !cloud water mixing ratio at the ground surface                                     [kg/kg]

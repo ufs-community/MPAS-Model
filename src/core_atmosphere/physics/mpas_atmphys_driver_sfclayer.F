@@ -15,11 +15,10 @@
  use mpas_atmphys_vars
 
  use module_sf_mynn,only: sfclay_mynn
- use module_mynnsfclay_driver,only:mynnsfclay_driver
+ use module_sf_mynnsfc_driver,only: mynnsfc_driver,mynnsfc_init
  use module_sf_sfclay
  use module_sf_sfclayrev,only: sfclayrev
  use sf_mynn,only: sf_mynn_init
- use module_mynnsfclay,only: mynnsfclay_init
  use sf_sfclayrev,only: sf_sfclayrev_init
  use module_sf_myjsfc
 
@@ -678,7 +677,6 @@
 
     case("sf_mynnsfclay")
        !input variables:
-       call mpas_pool_get_array(diag_physics,'qcg'  ,qcg  )
        call mpas_pool_get_array(sfc_input   ,'snowh',snowh)
        !inout variables:
        call mpas_pool_get_array(diag_physics,'ch' ,ch )
@@ -688,7 +686,6 @@
        do i = its,ite
           !input variables:
           snowh_p(i,j) = snowh(i)
-          qcg_p(i,j)   = qcg(i)
           !inout variables:
           ch_p(i,j)    = ch(i)
           cqs_p(i,j)   = cqs(i)
@@ -1097,7 +1094,7 @@
        call sf_mynn_init(errmsg,errflg)
 
     case("sf_mynnsfclay")
-       call mynnsfclay_init(errmsg,errflg)
+       call mynnsfc_init(allowed_to_read,errmsg,errflg)
        
     case("sf_myj") 
        call mpas_pool_get_config(configs,'config_do_restart'     ,config_do_restart )
@@ -1164,6 +1161,8 @@
  logical,pointer:: config_do_restart,config_frac_seaice
  logical,pointer:: config_do_DAcycling     
  character(len=StrKIND),pointer:: sfclayer_scheme
+ character(len=StrKIND),pointer:: lsm_scheme
+ integer,pointer:: sf_mynn_sfcflux_land,sf_mynn_sfcflux_water
  real(kind=RKIND),dimension(:),pointer:: areaCell
 
 !local variables:
@@ -1390,32 +1389,33 @@
 
     case("sf_mynnsfclay")
        call mpas_timer_start('sf_mynnsfclay')
-       call mpas_log_write('--- enter subroutine mynnsfclay_driver:')
-       call mynnsfclay_driver( &
-                   p3d      = pres_hyd_p , pi3d      = pi_p     , psfcpa   = psfc_p      , &
-                   th3d     = th_p       , t3d       = t_p      , u3d      = u_p         , &
-                   v3d      = v_p        , qv3d      = qv_p     , qc3d     = qc_p        , &
-                   rho3d    = rho_p      , dz8w      = dz_p     , cp       = cp          , &
-                   g        = gravity    , rovcp     = rcp      , R        = R_d         , &
-                   xlv      = xlv        , chs       = chs_p    , chs2     = chs2_p      , &
+       call mpas_log_write('--- enter subroutine mynnsfc_driver:')
+       call mpas_pool_get_config(configs,'config_mynn_sfcflux_land' ,sf_mynn_sfcflux_land )
+       call mpas_pool_get_config(configs,'config_mynn_sfcflux_water',sf_mynn_sfcflux_water)
+       call mpas_pool_get_config(configs,'config_lsm_scheme'        ,lsm_scheme           )
+       call mynnsfc_driver( &
+                   p3d      = pres_hyd_p , th3d      = th_p     , t3d      = t_p         , &
+                   u3d      = u_p        , v3d       = v_p      , qv3d     = qv_p        , &
+                   rho3d    = rho_p      , dz8w      = dz_p     ,                          &
+                   chs      = chs_p      , chs2      = chs2_p   , psfcpa   = psfc_p      , &
                    cqs      = cqs_p      , cqs2      = cqs2_p   , cpm      = cpm_p       , &
-                   znt      = znt_p                                                      , &
+                   znt      = znt_p      , qgh       = qgh_p                             , &
                    ust      = ust_p      , pblh      = hpbl_p   , mavail   = mavail_p    , &
-                   zol      = zol_p      , mol       = mol_p    , regime   = regime_p    , &
+                   zol      = zol_p      , mol       = mol_p    , &
                    psim     = psim_p     , psih      = psih_p   , xland    = xland_p     , &
                    hfx      = hfx_p      , qfx       = qfx_p    , lh       = lh_p        , &
                    tsk      = tsk_p      , flhc      = flhc_p   , flqc     = flqc_p      , &
-                   qgh      = qgh_p      , qsfc      = qsfc_p   , rmol     = rmol_p      , &
+                   qsfc     = qsfc_p     , rmol      = rmol_p   , &
                    u10      = u10_p      , v10       = v10_p    , th2      = th2m_p      , &
                    t2       = t2m_p      , q2        = q2_p     , snowh    = snowh_p     , &
                    gz1oz0   = gz1oz0_p   , wspd      = wspd_p   , br       = br_p        , &
-                   isfflx   = isfflx     , dx        = dx_p     , svp1     = svp1        , &
-                   svp2     = svp2       , svp3      = svp3     , svpt0    = svpt0       , &
-                   ep1      = ep_1       , ep2       = ep_2     , karman   = karman      , &
+                   isfflx   = isfflx     , dx        = dx_p     , &
                    ustm     = ustm_p     , ck        = ck_p     , cka      = cka_p       , &
                    cd       = cd_p       , cda       = cda_p    , ch       = ch_p        , &
-                   qcg      = qcg_p      , spp_pbl   = spp_pbl  , isftcflx = isftcflx    , &
-                   iz0tlnd  = iz0tlnd                                                    , &
+                   spp_pbl               = spp_pbl                                       , &
+                   sf_mynn_sfcflux_land  = sf_mynn_sfcflux_land                          , &
+                   sf_mynn_sfcflux_water = sf_mynn_sfcflux_water                         , &
+                   flagc_lsm             = lsm_scheme                                    , &
                    itimestep= itimestep  , initflag  = initflag                          , &
                    restart  = config_do_restart                                          , &
                    cycling  = config_do_DAcycling                                        , &
@@ -1426,31 +1426,29 @@
                        )
 
        if(config_frac_seaice) then
-          call mynnsfclay_driver( &
-                      p3d      = pres_hyd_p , pi3d      = pi_p     , psfcpa   = psfc_p      , &
-                      th3d     = th_p       , t3d       = t_p      , u3d      = u_p         , &
-                      v3d      = v_p        , qv3d      = qv_p     , qc3d     = qc_p        , &
-                      rho3d    = rho_p      , dz8w      = dz_p     , cp       = cp          , &
-                      g        = gravity    , rovcp     = rcp      , R        = R_d         , &
-                      xlv      = xlv        , chs       = chs_sea  , chs2     = chs2_sea    , &
+          call mynnsfc_driver( &
+                      p3d      = pres_hyd_p , th3d      = th_p     , t3d      = t_p         , &
+                      u3d      = u_p        , v3d       = v_p      , qv3d     = qv_p        , &
+                      rho3d    = rho_p      , dz8w      = dz_p     ,                          &
+                      chs      = chs_sea    , chs2      = chs2_sea , psfcpa   = psfc_p      , &
                       cqs      = cqs_sea    , cqs2      = cqs2_sea , cpm      = cpm_sea     , &
-                      znt      = znt_sea                                                    , &
+                      znt      = znt_sea    , qgh       = qgh_sea                           , &
                       ust      = ust_sea    , pblh      = hpbl_p   , mavail   = mavail_sea  , &
-                      zol      = zol_sea    , mol       = mol_sea  , regime   = regime_sea  , &
+                      zol      = zol_sea    , mol       = mol_sea  , &
                       psim     = psim_sea   , psih      = psih_sea , xland    = xland_sea   , &
                       hfx      = hfx_sea    , qfx       = qfx_sea  , lh       = lh_sea      , &
                       tsk      = tsk_sea    , flhc      = flhc_sea , flqc     = flqc_sea    , &
-                      qgh      = qgh_sea    , qsfc      = qsfc_sea , rmol     = rmol_sea    , &
+                      qsfc     = qsfc_sea   , rmol      = rmol_sea , &
                       u10      = u10_sea    , v10       = v10_sea  , th2      = th2m_sea    , &
                       t2       = t2m_sea    , q2        = q2_sea   , snowh    = snowh_p     , &
                       gz1oz0   = gz1oz0_sea , wspd      = wspd_sea , br       = br_sea      , &
-                      isfflx   = isfflx     , dx        = dx_p     , svp1     = svp1        , &
-                      svp2     = svp2       , svp3      = svp3     , svpt0    = svpt0       , &
-                      ep1      = ep_1       , ep2       = ep_2     , karman   = karman      , &
+                      isfflx   = isfflx     , dx        = dx_p     , &
                       ustm     = ustm_sea   , ck        = ck_sea   , cka      = cka_sea     , &
                       cd       = cd_sea     , cda       = cda_sea  , ch       = ch_sea      , &
-                      qcg      = qcg_p      , spp_pbl   = spp_pbl  , isftcflx = isftcflx    , &
-                      iz0tlnd  = iz0tlnd                                                    , &
+                      spp_pbl               = spp_pbl                                       , &
+                      sf_mynn_sfcflux_land  = sf_mynn_sfcflux_land                          , &
+                      sf_mynn_sfcflux_water = sf_mynn_sfcflux_water     	            , &
+                      flagc_lsm    	    = lsm_scheme 	      	      	            , &
                       itimestep= itimestep  , initflag  = initflag                          , &
                       restart  = config_do_restart                                          , &
                       cycling  = config_do_DAcycling                                        , &
