@@ -28,12 +28,12 @@ core_reg:
 
 core_input_gen:
 	if [ ! -e default_inputs ]; then  mkdir default_inputs; fi
-	@# Since both the streams.atmosphere file and new stream_list.atmoshpere 
+	@# Since both the streams.atmosphere file and new stream_list.atmoshpere.* 
 	@# files are regenerated on every make invocation, delete all such existing
-	@# files in default_inputs in order ensure that any stale stream_list.atmosphere.
-	@# files are removed.  Removal of streams.atmosphere is not necessary since
-	@# it will always be overwritten, but we do so to maintain the same behavior
-	@# for all stream-related files.
+	@# files in default_inputs in order ensure that any stale stream_list.atmosphere.*
+	@# files are removed.  Note that removal of streams.atmosphere is not necessary
+	@# here since it will always be overwritten, but we do so to maintain the
+	@# same behavior for all stream-related files.
 	rm -f default_inputs/streams.atmosphere default_inputs/stream_list.atmosphere.*
 	( cd default_inputs; $(NL_GEN) ../Registry_processed.xml namelist.atmosphere in_defaults=true )
 	( cd default_inputs; $(ST_GEN) ../Registry_processed.xml streams.atmosphere stream_list.atmosphere. listed in_defaults=true)
@@ -54,10 +54,10 @@ post_build:
 	@#
 	if [ ! -e $(ROOT_DIR)/default_inputs ]; then mkdir $(ROOT_DIR)/default_inputs; fi
 	@# 
-	@# Remove streams.atmosphere and any stream_list.atmosphere. files from
-	@# ROOT_DIR/default_inputs before copying into this directory the newly-
+	@# Remove streams.atmosphere and any stream_list.atmosphere.* files from
+	@# ROOT_DIR/default_inputs before copying into this directory the newly
 	@# generated files from the current core's default_inputs directory.  This
-	@# ensures that stale streams.atmosphere files from previous make invocations
+	@# ensures that stale streams.atmosphere.* files from previous make invocations
 	@# are removed from ROOT_DIR/default_inputs.
 	@#
 	rm -f $(ROOT_DIR)/default_inputs/streams.$(CORE) $(ROOT_DIR)/default_inputs/stream_list.$(CORE).*
@@ -70,7 +70,7 @@ post_build:
 	@#
 	@#   /path/to/my/MPAS-Model/src/core_atmosphere
 	@#
-	@# Then the following command will copy everything from
+	@# Then the line below will copy everything from
 	@#
 	@#   /path/to/my/MPAS-Model/src/core_atmosphere/default_inputs
 	@#
@@ -79,15 +79,16 @@ post_build:
 	@#   /path/to/my/MPAS-Model/default_inputs
 	@#
 	@# Note that the core's default_inputs directory is guaranteed to not
-	@# contain any stale stream_list.atmosphere. files from previous make
-	@# invocations (see the rm command in the core_input_gen target).  
+	@# contain any stale stream_list.atmosphere.* files from previous make
+	@# invocations (see the rm command in the core_input_gen target above).  
 	@#
 	cp default_inputs/* $(ROOT_DIR)/default_inputs/.
 	@#
 	@################################################################
 	@# The following line will copy each file in the main default_inputs
-	@# directory one level up into the top-level MPAS-Model directory, i.e.
-	@# ROOT_DIR, but ONLY IF that file doesn't already exist in ROOT_DIR.
+	@# directory (at ROOT_DIR/default_inputs) one level up into the top-level
+	@# MPAS-Model directory, i.e. ROOT_DIR, but ONLY IF that file doesn't
+	@# already exist in ROOT_DIR.
 	@#
 	@# CAUTION:
 	@# If files from an old build are already present in ROOT_DIR and a
