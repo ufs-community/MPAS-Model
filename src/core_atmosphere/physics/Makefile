@@ -65,7 +65,7 @@ core_physics_mmm: core_physics_init
 	(cd physics_mmm; $(MAKE) -f Makefile.mpas all)
 
 core_microphysics: core_physics_init core_physics_mmm
-	(cd physics_noaa/TEMPO; $(MAKE) -f Makefile.mpas)
+	(cd physics_noaa/TEMPO; $(MAKE) -f Makefile.mpas; cp tables/ccn_activate.bin ../../../../../)
 	(cd physics_noaa/TEMPO; $(MAKE) -f Makefile.intel run_build_tables ; cp run_build_tables ../../../../../)
 
 core_SMOKE: core_physics_init
