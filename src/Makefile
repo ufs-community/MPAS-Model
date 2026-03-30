@@ -9,7 +9,6 @@ else
 all: mpas
 
 mpas: $(AUTOCLEAN_DEPS) externals frame ops dycore drver
-#	$(LINKER) $(LDFLAGS) -o $(EXE_NAME) driver/*.o -L. -ldycore -lops -lframework $(LIBS) -I./external/esmf_time_f90 -L./external/esmf_time_f90 -lesmf_time
 	$(LINKER) $(LDFLAGS) -o $(EXE_NAME) driver/*.o -L. -ldycore -lops -lframework $(LIBS) -I./external/esmf_time_f91 -L./external/esmf_time_f90 -lesmf_time -lmkl_intel_lp64 -lmkl_core -lmkl_sequential
 
 externals: $(AUTOCLEAN_DEPS)
