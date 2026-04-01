@@ -18,6 +18,23 @@ OBJS_init = \
 	mpas_atmphys_functions.o \
 	mpas_atmphys_utilities.o
 
+# Set MAKEFILE_SUFFIX needed to build TEMPO's executable for generating
+# microphysics tables. 
+MAKEFILE_SUFFIX = none
+
+ifeq "$(FC_SERIAL)" "gfortran"
+ifeq "$(FC_PARALLEL)" "mpif90"
+MAKEFILE_SUFFIX = gfortran
+endif
+endif
+
+ifeq "$(FC_SERIAL)" "ifort"
+ifeq "$(FC_PARALLEL)" "mpiifort"
+MAKEFILE_SUFFIX = intel
+endif
+endif
+$(info MAKEFILE_SUFFIX = $(MAKEFILE_SUFFIX))
+
 OBJS = \
 	mpas_atmphys_camrad_init.o         \
 	mpas_atmphys_control.o             \
@@ -66,7 +83,7 @@ core_physics_mmm: core_physics_init
 
 core_microphysics: core_physics_init core_physics_mmm
 	(cd physics_noaa/TEMPO; $(MAKE) -f Makefile.mpas; cp tables/ccn_activate.bin ../../../../../)
-	@#(cd physics_noaa/TEMPO; $(MAKE) -f Makefile.intel run_build_tables ; cp run_build_tables ../../../../../)
+	(cd physics_noaa/TEMPO; $(MAKE) -f Makefile.$(MAKEFILE_SUFFIX) run_build_tables ; cp run_build_tables ../../../../../)
 
 core_SMOKE: core_physics_init
 	(cd physics_noaa/SMOKE; cp ./MPAS/Makefile .; cp ./MPAS/mpas_smoke_wrapper.F90 .; $(MAKE) all)
@@ -291,7 +308,7 @@ clean:
 	( cd physics_noahmp/src; $(MAKE) clean )
 	( cd physics_noahmp/utility; $(MAKE) clean )
 	( if [ -d physics_noaa/TEMPO ]; then cd physics_noaa/TEMPO; $(MAKE) -f Makefile.mpas clean; fi )
-	@#( if [ -d physics_noaa/TEMPO ]; then cd physics_noaa/TEMPO; $(MAKE) -f Makefile.intel clean; fi )
+	( if [ -d physics_noaa/TEMPO ]; then cd physics_noaa/TEMPO; $(MAKE) -f Makefile.$(MAKEFILE_SUFFIX) clean; fi )
 	( if [ -d physics_noaa/UGWP ]; then cd physics_noaa/UGWP; $(MAKE) clean; fi )
 	( if [ -d physics_noaa/RUCLSM ]; then cd physics_noaa/RUCLSM; $(MAKE) -f MPAS/Makefile clean; fi )
 	( if [ -d physics_noaa/MYNN-EDMF ]; then cd physics_noaa/MYNN-EDMF; cp ./MPAS/Makefile .; $(MAKE) clean; fi )
