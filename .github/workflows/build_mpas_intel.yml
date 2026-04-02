@@ -44,16 +44,15 @@ jobs:
 
     - name: Find MKL library location
       run: |
-        echo "=== MKL root candidates ==="
-        ls /opt/intel/oneapi/mkl/ || echo "No mkl dir"
-        echo "=== lib dir contents ==="
-        ls /opt/intel/oneapi/mkl/latest/lib/ || echo "No lib dir"
-        echo "=== lib/intel64 dir ==="
-        ls /opt/intel/oneapi/mkl/latest/lib/intel64/ 2>/dev/null || echo "No intel64 subdir"
-        echo "=== find libmkl ==="
-        find /opt/intel/oneapi/mkl -name "libmkl_core*" 2>/dev/null | head -20
-        echo "=== MKLROOT env var ==="
-        echo "${MKLROOT}"
+        echo "=== /opt/intel/oneapi contents ==="
+        ls /opt/intel/oneapi/ 2>/dev/null || echo "No /opt/intel/oneapi dir"
+        echo "=== broad libmkl search ==="
+        find /opt/intel /usr -name "libmkl_core*" 2>/dev/null | head -20 || echo "libmkl_core not found"
+        echo "=== installed intel-oneapi packages ==="
+        dpkg -l | grep intel-oneapi || echo "No intel-oneapi packages found"
+        echo "=== MKLROOT / MKL_ROOT env ==="
+        echo "MKLROOT=${MKLROOT}"
+        echo "MKL_ROOT=${MKL_ROOT}"
 
     - name: Cache Intel
       id: cache-INTEL
