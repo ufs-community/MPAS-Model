@@ -42,6 +42,19 @@ jobs:
         install-oneapi: false
         mpi-wrapper-setup: classic
 
+    - name: Find MKL library location
+      run: |
+        echo "=== MKL root candidates ==="
+        ls /opt/intel/oneapi/mkl/ || echo "No mkl dir"
+        echo "=== lib dir contents ==="
+        ls /opt/intel/oneapi/mkl/latest/lib/ || echo "No lib dir"
+        echo "=== lib/intel64 dir ==="
+        ls /opt/intel/oneapi/mkl/latest/lib/intel64/ 2>/dev/null || echo "No intel64 subdir"
+        echo "=== find libmkl ==="
+        find /opt/intel/oneapi/mkl -name "libmkl_core*" 2>/dev/null | head -20
+        echo "=== MKLROOT env var ==="
+        echo "${MKLROOT}"
+
     - name: Cache Intel
       id: cache-INTEL
       uses: actions/cache@v4
