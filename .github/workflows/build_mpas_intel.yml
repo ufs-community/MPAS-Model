@@ -152,15 +152,15 @@ jobs:
         echo "PATH=${PNETCDF}/bin:$PATH" >> $GITHUB_ENV
         echo "LD_LIBRARY_PATH=${PNETCDF}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
         echo "MKLROOT=/opt/intel/oneapi/mkl/2025.3" >> $GITHUB_ENV
-        echo "LDFLAGS=-L/opt/intel/oneapi/mkl/2025.3/lib" >> $GITHUB_ENV
+        echo "MKL_LIBDIR=/opt/intel/oneapi/mkl/2025.3/lib" >> $GITHUB_ENV
         echo "LD_LIBRARY_PATH=/opt/intel/oneapi/mkl/2025.3/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
 
     - name: Build MPAS Standalone (make)
       if: matrix.build-system == 'make'
       run: |
         cd ${driver_ROOT}/MPAS-Model/MPAS-Model
-        make intel-mpi CORE=init_atmosphere
-        make intel-mpi CORE=atmosphere
+        make intel-mpi CORE=init_atmosphere "LDFLAGS_OPT=-O3 -L${MKL_LIBDIR}"
+        make intel-mpi CORE=atmosphere "LDFLAGS_OPT=-O3 -L${MKL_LIBDIR}"
 
     - name: Build MPAS Standalone (cmake)
       if: matrix.build-system == 'cmake'
