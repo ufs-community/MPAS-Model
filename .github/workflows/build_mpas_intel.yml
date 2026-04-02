@@ -42,6 +42,16 @@ jobs:
         install-oneapi: false
         mpi-wrapper-setup: classic
 
+    - name: Install MKL
+      run: |
+        wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB \
+          | gpg --dearmor \
+          | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
+        echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" \
+          | sudo tee /etc/apt/sources.list.d/oneAPI.list
+        sudo apt-get update -q
+        sudo apt-get install -y intel-oneapi-mkl-devel
+
     - name: Find MKL library location
       run: |
         echo "=== /opt/intel/oneapi contents ==="
