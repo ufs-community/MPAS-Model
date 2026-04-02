@@ -151,9 +151,9 @@ jobs:
         echo "LD_LIBRARY_PATH=${AUTOTOOLS}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
         echo "PATH=${PNETCDF}/bin:$PATH" >> $GITHUB_ENV
         echo "LD_LIBRARY_PATH=${PNETCDF}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
-        echo "MKLROOT=/opt/intel/oneapi/mkl/latest" >> $GITHUB_ENV
-        echo "LDFLAGS=-L/opt/intel/oneapi/mkl/latest/lib/intel64" >> $GITHUB_ENV
-        echo "LD_LIBRARY_PATH=/opt/intel/oneapi/mkl/latest/lib/intel64:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+        echo "MKLROOT=/opt/intel/oneapi/mkl/2025.3" >> $GITHUB_ENV
+        echo "LDFLAGS=-L/opt/intel/oneapi/mkl/2025.3/lib" >> $GITHUB_ENV
+        echo "LD_LIBRARY_PATH=/opt/intel/oneapi/mkl/2025.3/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
 
     - name: Build MPAS Standalone (make)
       if: matrix.build-system == 'make'
