@@ -78,7 +78,12 @@ mpas_atm_dimensions.o:
 clean:
 	( cd physics; $(MAKE) clean )
 	( cd dynamics; $(MAKE) clean )
-	( cd stochastic_physics; $(MAKE) clean )
+	@# The stochastic_physics directory contains both a makefile (lower case
+	@# "m") and a Makefile (upper case "M").  The former is used for FV3 and
+	@# the latter for MPAS.  The default for "make" is to use "makefile", but
+	@# here, we want to use the one for MPAS (with an upper case "M").  Indicate
+	@# that using the -f flag.
+	( cd stochastic_physics; $(MAKE) -f Makefile clean )
 	( cd diagnostics; $(MAKE) clean )
 	( cd utils; $(MAKE) clean )
 	( cd ../..; rm -f *TBL )
