@@ -63,6 +63,7 @@ jobs:
         echo "=== MKLROOT / MKL_ROOT env ==="
         echo "MKLROOT=${MKLROOT}"
         echo "MKL_ROOT=${MKL_ROOT}"
+        echo "Bye"
 
     - name: Cache Intel
       id: cache-INTEL
