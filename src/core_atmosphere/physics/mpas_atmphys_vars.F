@@ -159,7 +159,7 @@
  integer,public:: num_months          !number of months                                         [-]
 
  integer,public:: num_chem             !Temporary workaround for defining dimensions holding chem data
- integer,public:: kanthro,kbiogenic,kwildfire,kvolcanic!Number of vertical levels in input emission data
+ integer,public:: kanthro,kbiogenic,kwildfire,kvolcanic,kreswoodcomb!Number of vertical levels in input emission data
  logical:: do_chemistry                !controls call to smoke, dust and other chemical processes
 
  integer,public:: num_e_ant_in,num_e_bb_in,num_e_bio_in,num_e_vol_in
@@ -248,6 +248,8 @@
     aod3d_smoke_p, aod3d_p
  real(kind=RKIND),dimension(:,:),allocatable:: &
     aod550_p
+ real(kind=RKIND),dimension(:,:),allocatable:: &
+    aero_emis_for_enhmix_p
 ! Input/output smoke 2D fields - JLS
  real(kind=RKIND),dimension(:,:),allocatable::  &
     frp_in_p,          &!
