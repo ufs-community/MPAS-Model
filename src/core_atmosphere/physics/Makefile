@@ -18,26 +18,6 @@ OBJS_init = \
 	mpas_atmphys_functions.o \
 	mpas_atmphys_utilities.o
 
-# Set TEMPO_TBLS_MAKEFILE_SUFFIX needed to build TEMPO's executable for
-# generating microphysics tables.  Note that when the "clean" target is
-# invoked by upstream Makefies, FC_SERIAL and FC_PARALLEL will not be set,
-# in which case TEMPO_TBLS_MAKEFILE_SUFFIX will be set to its default
-# value of "none".
-TEMPO_TBLS_MAKEFILE_SUFFIX = none
-
-ifeq "$(FC_SERIAL)" "gfortran"
-ifeq "$(FC_PARALLEL)" "mpif90"
-TEMPO_TBLS_MAKEFILE_SUFFIX = gfortran
-endif
-endif
-
-ifeq "$(FC_SERIAL)" "ifort"
-ifeq "$(FC_PARALLEL)" "mpiifort"
-TEMPO_TBLS_MAKEFILE_SUFFIX = intel
-endif
-endif
-$(info TEMPO_TBLS_MAKEFILE_SUFFIX = $(TEMPO_TBLS_MAKEFILE_SUFFIX))
-
 OBJS = \
 	mpas_atmphys_camrad_init.o         \
 	mpas_atmphys_control.o             \
@@ -85,8 +65,7 @@ core_physics_mmm: core_physics_init
 	(cd physics_mmm; $(MAKE) -f Makefile.mpas all)
 
 core_microphysics: core_physics_init core_physics_mmm
-	(cd physics_noaa/TEMPO; $(MAKE) -f Makefile.mpas; cp tables/ccn_activate.bin ../../../../../)
-	(cd physics_noaa/TEMPO; $(MAKE) -f Makefile.$(TEMPO_TBLS_MAKEFILE_SUFFIX) run_build_tables ; cp run_build_tables ../../../../../)
+	(cd physics_noaa/TEMPO; $(MAKE) -f Makefile.mpas)
 
 core_SMOKE: core_physics_init
 	(cd physics_noaa/SMOKE; cp ./MPAS/Makefile .; cp ./MPAS/mpas_smoke_wrapper.F90 .; $(MAKE) all)
@@ -311,13 +290,6 @@ clean:
 	( cd physics_noahmp/src; $(MAKE) clean )
 	( cd physics_noahmp/utility; $(MAKE) clean )
 	( if [ -d physics_noaa/TEMPO ]; then cd physics_noaa/TEMPO; $(MAKE) -f Makefile.mpas clean; fi )
-	@# For cleaning the TEMPO executable for generating microphysics tables, call both
-	@# the intel and the gfortran Makefiles.  This is because when the "clean" target
-	@# is invoked in upstream Makefiles, a compiler is not specified, so it is not 
-	@# clear which of the two Makefiles to use here.  By calling both, we ensure that 
-	@# the directory is properly cleaned regardless of which compiler was used to build
-	@# the executable.
-	( if [ -d physics_noaa/TEMPO ]; then cd physics_noaa/TEMPO; $(MAKE) -f Makefile.gfortran clean; $(MAKE) -f Makefile.intel clean; fi )
 	( if [ -d physics_noaa/UGWP ]; then cd physics_noaa/UGWP; $(MAKE) clean; fi )
 	( if [ -d physics_noaa/RUCLSM ]; then cd physics_noaa/RUCLSM; $(MAKE) -f MPAS/Makefile clean; fi )
 	( if [ -d physics_noaa/MYNN-EDMF ]; then cd physics_noaa/MYNN-EDMF; cp ./MPAS/Makefile .; $(MAKE) clean; fi )

@@ -199,9 +199,9 @@
 <!-- **************************************************************************************** -->
 
    <streams>
-      <stream name="output_smoke"
+      <stream name="output"
               type="output"
-              filename_template="history_smoke.$Y-$M-$D_$h.$m.$s.nc"
+              filename_template="history.$Y-$M-$D_$h.$m.$s.nc"
               output_interval="6:00:00"
               runtime_format="separate_file">
 	      <var name="aero_emis_for_enhmix"/>
