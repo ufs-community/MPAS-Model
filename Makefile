@@ -481,6 +481,7 @@ intel-mpi:   # BUILDTARGET Intel compiler suite with Intel MPI library
 	"DEBUG = $(DEBUG)" \
 	"USE_PAPI = $(USE_PAPI)" \
 	"OPENMP = $(OPENMP)" \
+	"LAPACK_LIBS = -lmkl_intel_lp64 -lmkl_core -lmkl_sequential" \
 	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI" )
 
 intel-llvm-mpi:   # BUILDTARGET Intel LLVM compiler suite with Intel MPI library
@@ -565,6 +566,7 @@ gfortran:   # BUILDTARGET GNU Fortran, C, and C++ compilers
 	"USE_PAPI = $(USE_PAPI)" \
 	"OPENMP = $(OPENMP)" \
 	"OPENACC = $(OPENACC)" \
+	"LAPACK_LIBS = -llapack -lblas" \
 	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI" )
 
 gfortran-clang:   # BUILDTARGET GNU Fortran compiler with LLVM clang/clang++ compilers
