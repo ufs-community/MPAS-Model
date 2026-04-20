@@ -42,33 +42,6 @@ jobs:
         install-oneapi: false
         mpi-wrapper-setup: classic
         install-mkl: true
-#       mkl-version: '2025.3'
-
-#   - name: Install MKL
-#     run: |
-#       wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB \
-#         | gpg --dearmor \
-#         | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
-#       echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" \
-#         | sudo tee /etc/apt/sources.list.d/oneAPI.list
-#       sudo apt-get update -q
-#       sudo apt-get install -y intel-oneapi-mkl-devel
-
-#   - name: Find MKL library location
-#     run: |
-#       echo "=== /opt/intel/oneapi contents ==="
-#       ls /opt/intel/oneapi/ 2>/dev/null || echo "The directory /opt/intel/oneapi does not exist."
-#       echo "=== broad libmkl search ==="
-#       find /opt/intel /usr -name "libmkl_core*" 2>/dev/null | head -20 || echo "libmkl_core not found."
-#       echo "=== installed intel-oneapi packages ==="
-#       dpkg -l | grep intel-oneapi || echo "No intel-oneapi packages found."
-#       echo "=== MKLROOT / MKL_ROOT env ==="
-#       echo "MKLROOT=${MKLROOT}"
-#       echo "MKL_ROOT=${MKL_ROOT}"
-#       echo "Done finding MKL library location."
-#       MKLROOT=$(ls -d /opt/intel/oneapi/mkl/[0-9]* 2>/dev/null | tail -1)
-#       echo "Detected MKLROOT=${MKLROOT}"
-#       echo "MKLROOT=${MKLROOT}" >> $GITHUB_ENV
 
     - name: Cache Intel
       id: cache-INTEL
@@ -164,9 +137,6 @@ jobs:
         echo "LD_LIBRARY_PATH=${AUTOTOOLS}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
         echo "PATH=${PNETCDF}/bin:$PATH" >> $GITHUB_ENV
         echo "LD_LIBRARY_PATH=${PNETCDF}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
-        #echo "MKL_LIBDIR=${MKLROOT}/lib" >> $GITHUB_ENV
-        #echo "LIBRARY_PATH=${MKLROOT}/lib:$LIBRARY_PATH" >> $GITHUB_ENV
-        #echo "LD_LIBRARY_PATH=${MKLROOT}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
         echo "NETCDF=/home/runner/NetCDF" >> $GITHUB_ENV
 
     - name: Build NetCDF-Fortran
