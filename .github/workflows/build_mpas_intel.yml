@@ -77,10 +77,17 @@ jobs:
         path: /opt/intel/oneapi/mpi/2021.10.0
         key: cache-AUTOTOOLS-${{matrix.fortran-compiler}}-key
 
-    - name: Install NetCDF library
+    - name: Install NetCDF-C library
       run: |
         sudo apt-get update
-        sudo apt-get install libnetcdff-dev
+        sudo apt-get install libnetcdf-dev
+
+    - name: Cache NetCDF-Fortran
+      id: cache-netcdf-fortran
+      uses: actions/cache@v4
+      with:
+        path: /home/runner/NetCDF
+        key: cache-NetCDF-Fortran-${{matrix.fortran-compiler}}-key
 
     - name: Cache GNU autotools
       id: cache-AUTOTOOLS
@@ -160,6 +167,23 @@ jobs:
 #       echo "MKL_LIBDIR=${MKLROOT}/lib" >> $GITHUB_ENV
 #       echo "LIBRARY_PATH=${MKLROOT}/lib:$LIBRARY_PATH" >> $GITHUB_ENV
 #       echo "LD_LIBRARY_PATH=${MKLROOT}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+        echo "NETCDF=/home/runner/NetCDF" >> $GITHUB_ENV
+
+    - name: Build NetCDF-Fortran
+      if: steps.cache-netcdf-fortran.outputs.cache-hit != 'true'
+      run: |
+        NETCDF_F_VERSION=4.6.1
+        wget -q https://github.com/Unidata/netcdf-fortran/archive/refs/tags/v${NETCDF_F_VERSION}.tar.gz
+        tar -xf v${NETCDF_F_VERSION}.tar.gz
+        cd netcdf-fortran-${NETCDF_F_VERSION}
+        autoreconf -i
+        FC=mpiifort CC=mpiicc \
+          CPPFLAGS="-I$(nc-config --includedir)" \
+          LDFLAGS="-L$(nc-config --libdir)" \
+          ./configure --prefix=/home/runner/NetCDF
+        make -j 8 install
+        NCLIBDIR=$(nc-config --libdir)
+        ln -sf ${NCLIBDIR}/libnetcdf.so /home/runner/NetCDF/lib/libnetcdf.so
 
     - name: Build MPAS Standalone (make)
       if: matrix.build-system == 'make'
