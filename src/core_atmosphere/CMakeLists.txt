@@ -151,7 +151,7 @@ set(ATMOSPHERE_CORE_STOCHASTIC_PHYSICS_SOURCES
     compns_stochy.F90
     stochy_internal_state_mod.F90
     spectral_transforms.F90
-    stochastic_physics.F90
+    stochastic_physics_m.F90
     stochy_patterngenerator.F90
     stochy_data_mod.F90
     stochy_nml_rec.F90
@@ -162,7 +162,7 @@ set(ATMOSPHERE_CORE_STOCHASTIC_PHYSICS_SOURCES
 list(TRANSFORM ATMOSPHERE_CORE_STOCHASTIC_PHYSICS_SOURCES PREPEND stochastic_physics/)
 add_library(stochastic_physics ${ATMOSPHERE_CORE_STOCHASTIC_PHYSICS_SOURCES})
 mpas_fortran_target(stochastic_physics)
-target_compile_definitions(stochastic_physics PRIVATE INTERNAL_FILE_NML)
+target_compile_definitions(stochastic_physics PRIVATE INTERNAL_FILE_NML MPAS)
 if(NOT MPAS_DOUBLE_PRECISION)
   target_compile_definitions(stochastic_physics PRIVATE CCPP_32BIT)
 endif()
