@@ -214,24 +214,24 @@ function(mpas_core_target)
         set(CPP_EXTRA_FLAGS ${CPP_EXTRA_FLAGS} -DDO_PHYSICS)
     endif()
 
-add_custom_command(OUTPUT Registry_processed.xml
-            COMMAND ${CPP_EXECUTABLE} -E -P ${CPP_EXTRA_FLAGS} ${CMAKE_CURRENT_SOURCE_DIR}/Registry.xml > Registry_processed.xml
+add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/Registry_processed.xml
+            COMMAND ${CPP_EXECUTABLE} -E -P ${CPP_EXTRA_FLAGS} ${CMAKE_CURRENT_SOURCE_DIR}/Registry.xml > ${CMAKE_CURRENT_BINARY_DIR}/Registry_processed.xml
             COMMENT "CORE ${ARG_CORE}: Pre-Process Registry"
-            DEPENDS Registry.xml)
+            DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Registry.xml)
     add_custom_command(OUTPUT ${ARG_INCLUDES}
-            COMMAND mpas_parse_${ARG_CORE} Registry_processed.xml ${CPP_EXTRA_FLAGS}
+            COMMAND mpas_parse_${ARG_CORE} ${CMAKE_CURRENT_BINARY_DIR}/Registry_processed.xml ${CPP_EXTRA_FLAGS}
             COMMENT "CORE ${ARG_CORE}: Parse Registry"
-            DEPENDS mpas_parse_${ARG_CORE} Registry_processed.xml)
+            DEPENDS mpas_parse_${ARG_CORE} ${CMAKE_CURRENT_BINARY_DIR}/Registry_processed.xml)
     add_custom_command(OUTPUT namelist.${ARG_CORE}
             WORKING_DIRECTORY ${CORE_DATADIR}
             COMMAND mpas_namelist_gen ${CMAKE_CURRENT_BINARY_DIR}/Registry_processed.xml namelist.${ARG_CORE} in_defaults=true
             COMMENT "CORE ${ARG_CORE}: Generate Namelist"
-            DEPENDS mpas_namelist_gen Registry_processed.xml)
+            DEPENDS mpas_namelist_gen ${CMAKE_CURRENT_BINARY_DIR}/Registry_processed.xml)
     add_custom_command(OUTPUT streams.${ARG_CORE}
             WORKING_DIRECTORY ${CORE_DATADIR}
             COMMAND mpas_streams_gen ${CMAKE_CURRENT_BINARY_DIR}/Registry_processed.xml streams.${ARG_CORE} stream_list.${ARG_CORE}. listed
             COMMENT "CORE ${ARG_CORE}: Generate Streams"
-            DEPENDS mpas_streams_gen Registry_processed.xml)
+            DEPENDS mpas_streams_gen ${CMAKE_CURRENT_BINARY_DIR}/Registry_processed.xml)
     add_custom_target(gen_${ARG_CORE} DEPENDS ${ARG_INCLUDES} namelist.${ARG_CORE} streams.${ARG_CORE})
     add_dependencies(${ARG_TARGET} gen_${ARG_CORE})
 

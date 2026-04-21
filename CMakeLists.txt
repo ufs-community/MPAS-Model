@@ -122,6 +122,13 @@ foreach(_core IN LISTS MPAS_CORES)
     add_subdirectory(src/core_${_core}) # Target: MPAS::core::<core_name>
 endforeach()
 
+# When both atmosphere and init_atmosphere cores are built, ifort transitively
+# resolves atm_core_interface.mod while compiling mpas.F for mpas_init_atmosphere.
+# Ensure core_atmosphere (which produces atm_core_interface.mod) is built first.
+if("atmosphere" IN_LIST MPAS_CORES AND "init_atmosphere" IN_LIST MPAS_CORES)
+    add_dependencies(mpas_init_atmosphere core_atmosphere)
+endif()
+
 ### Package config
 include(CMakePackageConfigHelpers)
 
