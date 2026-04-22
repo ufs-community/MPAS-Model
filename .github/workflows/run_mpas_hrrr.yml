@@ -81,7 +81,7 @@ jobs:
 
     - name: Setup NetCDF
       run: |
-        NETCDF_DIR=/tmp/netcdf
+        NETCDF_DIR=/home/runner/NetCDF
         mkdir -p ${NETCDF_DIR}/lib ${NETCDF_DIR}/include
         for f in /usr/include/netcdf*.h /usr/include/netcdf*.inc /usr/include/netcdf*.mod; do
           [ -e "$f" ] && ln -sf "$f" ${NETCDF_DIR}/include/ || true

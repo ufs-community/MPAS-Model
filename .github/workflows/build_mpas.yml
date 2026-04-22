@@ -138,14 +138,15 @@ jobs:
         echo "LD_LIBRARY_PATH=${PNETCDF}/bin:$LD_LIBRARY_PATH" >> $GITHUB_ENV
         echo "PATH=${PNETCDF}/bin:$PATH" >> $GITHUB_ENV
 
-    - name: Add (NETCDF) to paths.
+    - name: Setup NetCDF
       run: |
         NETCDF_DIR=/home/runner/NetCDF
         mkdir -p ${NETCDF_DIR}/lib ${NETCDF_DIR}/include
-        ln -sf /usr/lib/x86_64-linux-gnu/libnetcdf.so  ${NETCDF_DIR}/lib/
-        ln -sf /usr/lib/x86_64-linux-gnu/libnetcdff.so ${NETCDF_DIR}/lib/
         for f in /usr/include/netcdf*.h /usr/include/netcdf*.inc /usr/include/netcdf*.mod; do
           [ -e "$f" ] && ln -sf "$f" ${NETCDF_DIR}/include/ || true
+        done
+        for f in /usr/lib/x86_64-linux-gnu/libnetcdf*.so; do
+          [ -e "$f" ] && ln -sf "$f" ${NETCDF_DIR}/lib/ || true
         done
         echo "NETCDF=${NETCDF_DIR}" >> $GITHUB_ENV
 
