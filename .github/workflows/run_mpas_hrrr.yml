@@ -81,8 +81,8 @@ jobs:
 
     - name: Install LAPACK/BLAS
       run: |
-        sudo apt-get update -y
-        sudo apt-get install -y liblapack-dev libblas-dev
+        apt-get update -y
+        apt-get install -y liblapack-dev libblas-dev
 
     - name: Setup NetCDF
       run: |
