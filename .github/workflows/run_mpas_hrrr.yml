@@ -82,7 +82,7 @@ jobs:
     - name: Install LAPACK/BLAS
       run: |
         apt-get update -y
-        apt-get install -y liblapack-dev libblas-dev
+        apt-get install -y liblapack-dev libblas-dev libnetcdff-dev
 
     - name: Setup NetCDF
       run: |
