@@ -79,6 +79,11 @@ jobs:
         echo "CXX=mpicxx" >> $GITHUB_ENV
         echo "FC=mpif90"  >> $GITHUB_ENV
 
+    - name: Install LAPACK/BLAS
+      run: |
+        sudo apt-get update -y
+        sudo apt-get install -y liblapack-dev libblas-dev
+
     - name: Setup NetCDF
       run: |
         NETCDF_DIR=/home/runner/NetCDF
