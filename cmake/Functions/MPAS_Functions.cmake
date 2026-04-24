@@ -214,7 +214,7 @@ function(mpas_core_target)
         set(CPP_EXTRA_FLAGS ${CPP_EXTRA_FLAGS} -DDO_PHYSICS)
     endif()
 
-add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/Registry_processed.xml
+    add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/Registry_processed.xml
             COMMAND ${CPP_EXECUTABLE} -E -P ${CPP_EXTRA_FLAGS} ${CMAKE_CURRENT_SOURCE_DIR}/Registry.xml > ${CMAKE_CURRENT_BINARY_DIR}/Registry_processed.xml
             COMMENT "CORE ${ARG_CORE}: Pre-Process Registry"
             DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Registry.xml)
