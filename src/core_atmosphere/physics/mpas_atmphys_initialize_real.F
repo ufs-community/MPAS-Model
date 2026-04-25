@@ -944,7 +944,6 @@ end subroutine init_soil_layers_properties
  real(kind=RKIND),dimension(:),pointer  :: seaice,snoalb,xice
  real(kind=RKIND),dimension(:),pointer  :: snow, snowh, snowc
  real(kind=RKIND),dimension(:),pointer  :: skintemp,tmn,xland
- real(kind=RKIND),dimension(:),pointer  :: snow, snowh
  real(kind=RKIND),dimension(:,:),pointer:: tslb,smois,sh2o,smcrel
 
  logical, pointer :: config_frac_seaice
