@@ -6802,7 +6802,7 @@ module atm_time_integration
 
                delsq_u(k,iEdge) = delsq_u(k,iEdge) + u_diffusion
 
-               kdiffu = 0.5*(kdiff(k,cell1)+kdiff(k,cell2))
+               kdiffu = 0.5*(eddy_visc_horz(k,cell1)+eddy_visc_horz(k,cell2))
 
                ! include 2nd-orer diffusion here
                tend_u_euler(k,iEdge) = tend_u_euler(k,iEdge) &
@@ -7142,7 +7142,7 @@ module atm_time_integration
                   w_turb_flux =  edge_sign*(rho_edge(k,iEdge)+rho_edge(k-1,iEdge))*(w(k,cell2) - w(k,cell1))
                   delsq_w(k,iCell) = delsq_w(k,iCell) + w_turb_flux
                   w_turb_flux = w_turb_flux * meshScalingDel2(iEdge) * 0.25 * &
-                                  (kdiff(k,cell1)+kdiff(k,cell2)+kdiff(k-1,cell1)+kdiff(k-1,cell2))
+                                  (eddy_visc_horz(k,cell1)+eddy_visc_horz(k,cell2)+eddy_visc_horz(k-1,cell1)+eddy_visc_horz(k-1,cell2))
                   tend_w_euler(k,iCell) = tend_w_euler(k,iCell) + w_turb_flux
                end do
             end do
@@ -7348,7 +7348,7 @@ module atm_time_integration
 
                   theta_turb_flux = edge_sign*(theta_m(k,cell2) - theta_m(k,cell1))*rho_edge(k,iEdge)
                   delsq_theta(k,iCell) = delsq_theta(k,iCell) + theta_turb_flux
-                  theta_turb_flux = theta_turb_flux*0.5*(kdiff(k,cell1)+kdiff(k,cell2)) * pr_scale
+                  theta_turb_flux = theta_turb_flux*0.5*(eddy_visc_horz(k,cell1)+eddy_visc_horz(k,cell2)) * pr_scale
                   tend_theta_euler(k,iCell) = tend_theta_euler(k,iCell) + theta_turb_flux
 
                end do
