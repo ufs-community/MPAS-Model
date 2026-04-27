@@ -160,17 +160,22 @@ jobs:
       run: |
         cd ${MPAS_ROOT}
         ./testing_and_setup/ufs-community/data/get_data.sh
-        echo "AAAAAAAAAA"
         set -x
+        echo "AAAAAAAAAA"
         cd testing_and_setup
+        pwd
+        ls -alF
         echo "BBBBBBBBBB"
+        cd ufs-community
         pwd
         ls -alF
         echo "CCCCCCCCCC"
-        cd ufs-community
-        echo "DDDDDDDDDD"
+        cd data
+        pwd
         ls -alF
+        echo "DDDDDDDDDD"
         echo "EEEEEEEEEE"
+        echo "FFFFFFFFFF"
 
     ##########################################################################################
     # Step 4a: Configure MPAS baseline runs
@@ -223,8 +228,8 @@ jobs:
         echo "MPAS_ROOT = |${MPAS_ROOT}|"
         cd ${MPAS_ROOT}
         pwd
-        echo "CCCCCCCCCC"
         ls -alF
+        echo "CCCCCCCCCC"
         echo "DDDDDDDDDD"
 
     - name: Link surface files to run directory (feature)
