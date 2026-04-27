@@ -126,6 +126,11 @@ jobs:
     ##########################################################################################
     # Step 2b: Clone MPAS and build (feature branch)
     ##########################################################################################
+# actions/checkout@v3 is a standard GitHub Actions action that clones the
+# repository that triggered the workflow into the runner's workspace.
+# Specifically it:
+# 1) Clones the feature branch (the one that was pushed or opened as a PR) into ${MPAS_ROOT}.
+# 2) Checks out the specific commit that triggered the workflow.
     - name: Checkout MPAS codebase for testing.
       uses: actions/checkout@v3
 
@@ -156,15 +161,18 @@ jobs:
         cd ${MPAS_ROOT}
         ./testing_and_setup/ufs-community/data/get_data.sh
         echo "AAAAAAAAAA"
+        cd testing_and_setup
+        echo "BBBBBBBBBB"
         pwd
         ls -alF
-        echo "BBBBBBBBBB"
+        echo "CCCCCCCCCC"
 
     ##########################################################################################
     # Step 4a: Configure MPAS baseline runs
     ##########################################################################################
     - name: Create and populate run directory (baselines)
       run: |
+        echo "AAAAAAAAAA"
         cd ${runner_ROOT} && mkdir run_bl && cd run_bl
         cp ${MPAS_ROOT}/testing_and_setup/ufs-community/cases/ufscommunity.${{env.physics}}.${{matrix.ic_source}}.${{matrix.season}}.stoch/* .
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.TBL .
@@ -179,8 +187,9 @@ jobs:
         ln -sf ${MPAS_ROOT}/${physics_tables}/tempo/* .
         ln -sf ${MPAS_ROOT}/${physics_tables}/ugw/* .
         ln -sf ${mpas_bl_ROOT}/atmosphere_model .
-        echo "CCCCCCCCCC"
+        echo "BBBBBBBBBB"
         pwd
+        echo "CCCCCCCCCC"
         ls -alF
         echo "DDDDDDDDDD"
 
