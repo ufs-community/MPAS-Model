@@ -1,4 +1,4 @@
-name: Run MPAS Standalone (NOAA GSL HRRRv5 tests)
+name: Run MPAS Standalone with Stochastic Physics (NOAA GSL HRRRv5 tests)
 
 on: [push, pull_request, workflow_dispatch]
 #on: workflow_dispatch
@@ -175,7 +175,7 @@ jobs:
         ln -sf ${mpas_bl_ROOT}/atmosphere_model .
 
     - name: Link surface files to run directory (baselines)
-      if: ${{matrix.ic_source}} == 'gfs'
+      if: matrix.ic_source == 'gfs'
       run: |
         cd ${runner_ROOT}/run_bl
         ln -sf ${MPAS_ROOT}/${mpas_ics}.${{matrix.ic_source}}.${{matrix.season}}/mpas.sfc_update.nc .
@@ -201,7 +201,7 @@ jobs:
         ln -sf ${MPAS_ROOT}/atmosphere_model .
 
     - name: Link surface files to run directory (feature)
-      if: ${{matrix.ic_source}} == 'gfs'
+      if: matrix.ic_source == 'gfs'
       run: |
         cd ${runner_ROOT}/run_rt
         ln -sf ${MPAS_ROOT}/${mpas_ics}.${{matrix.ic_source}}.${{matrix.season}}/mpas.sfc_update.nc .
