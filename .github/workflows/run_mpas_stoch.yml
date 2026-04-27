@@ -178,6 +178,9 @@ jobs:
         pwd
         ls -alF
         echo "EEEEEEEEEE"
+        cd ufscommunity.gfs.winter
+        pwd
+        ls -alF
         echo "FFFFFFFFFF"
 
     ##########################################################################################
@@ -234,7 +237,12 @@ jobs:
         pwd
         ls -alF
         echo "CCCCCCCCCC"
+        cd ${MPAS_ROOT}/testing_and_setup/ufs-community/cases/ufscommunity.${{env.physics}}.${{matrix.ic_source}}.${{matrix.season}}.stoch
+        pwd
+        ls -alF
         echo "DDDDDDDDDD"
+        more namelist.atmosphere
+        echo "EEEEEEEEEE"
 
     - name: Link surface files to run directory (feature)
       if: matrix.ic_source == 'gfs'
