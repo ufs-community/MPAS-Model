@@ -146,12 +146,12 @@ jobs:
 #      run: |
 #        cd ${MPAS_ROOT}
 #        make ${{matrix.bld_target}} CORE=atmosphere DEBUG=true
-#
-#    - name: Build MPAS standalone for testing (Release)
-#      if: contains(matrix.build-type, 'Release')
-#      run: |
-#        cd ${MPAS_ROOT}
-#        make ${{matrix.bld_target}} CORE=atmosphere
+
+    - name: Build MPAS standalone for testing (Release)
+      if: contains(matrix.build-type, 'Release')
+      run: |
+        cd ${MPAS_ROOT}
+        make ${{matrix.bld_target}} CORE=atmosphere
 
     ##########################################################################################
     # Step 3: Fetch any data/files needed for MPAS runs.
