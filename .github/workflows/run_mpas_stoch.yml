@@ -1,0 +1,265 @@
+name: Run MPAS Standalone (NOAA GSL HRRRv5 tests)
+
+#on: [push, pull_request, workflow_dispatch]
+on: workflow_dispatch
+
+#############################################################################################
+# Testing script/workflow for ufs-community fork of MPAS-Dev/MPAS-A.
+#
+# Description
+#
+# - Clone and build MPAS for baseline generation.
+# - Clone and build MPAS for feature branch testing (against baselines).
+# - Download any data (MP tables, MPAS ICs/LBCs/etc...).
+# - Create/populate MPAS run directories.
+# - Run MPAS using baseline codebase/configuration.
+# - Run MPAS using feature branch.
+# - Compare results.
+# - Save output files to GitHub artifact (for comparision w/ inline/standaloen results)
+#
+# Comments:
+# - The test build/run configurations matrix is described below.
+# - This script uses a matrix run configuration with exclusions to achieve the desired "run list"
+#
+# Tests:
+#        Baseline Codebase Repository:Branch  Physics   IC source   season   build-type
+# 1/4)   ufs-community:gsl/develop            hrrrv5    gfs         winter   Release/Debug
+# 2/5)   ufs-community:gsl/develop            hrrrv5    rap         summer   Release/Debug
+# 3/6)   ufs-community:gsl/develop            hrrrv5    rap         winter   Release/Debug
+#
+#############################################################################################
+jobs:
+  run_mpas_hrrr:   
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false  # Disable fail-fast
+      matrix:
+        f-compiler: [gfortran]#,ifx]
+#        ic_source:  [gfs, rap]
+        ic_source:  [gfs]
+#        season:     [summer, winter]
+        season:     [winter]
+        build-type: [Release]
+        exclude:
+          - ic_source: gfs
+            season: summer
+        include:
+        # Set container images for each compiler
+        - f-compiler: gfortran
+          bld_target: gfortran
+          image: dustinswales/ufs-community-mpas-ci:gnu
+#        - f-compiler: ifx
+#          bld_target: intel
+#          image: dustinswales/ufs-community-mpas-ci:oneapi
+    container:
+      image: ${{ matrix.image }}
+    # 
+    defaults:
+      run:
+        shell: bash -el {0}
+
+    # Environmental variables
+    env:
+      physics:        hrrrv5
+      py-version:     3.11
+      runner_ROOT:    /__w/
+      MPAS_ROOT:      /__w/MPAS-Model/MPAS-Model
+      mpas_bl_ROOT:   /__w/MPAS-Model-BL
+      PNETCDF:        /opt/pnetcdf
+      mpas_ics:       testing_and_setup/ufs-community/data/ics/ufscommunity
+      physics_tables: testing_and_setup/ufs-community/data/tables
+
+    # Workflow steps
+    steps:
+
+    ##########################################################################################
+    # Step 1: Setup
+    ##########################################################################################
+    - name: Setup MPI (GNU)
+      if: matrix.f-compiler == 'gfortran'
+      run: |
+        echo "CC=mpicc"   >> $GITHUB_ENV
+        echo "CXX=mpicxx" >> $GITHUB_ENV
+        echo "FC=mpif90"  >> $GITHUB_ENV
+
+    - name: Install LAPACK/BLAS
+      run: |
+        apt-get update -y
+        apt-get install -y liblapack-dev libblas-dev libnetcdff-dev
+
+    - name: Setup NetCDF
+      run: |
+        NETCDF_DIR=/home/runner/NetCDF
+        mkdir -p ${NETCDF_DIR}/lib ${NETCDF_DIR}/include
+        for f in /usr/include/netcdf*.h /usr/include/netcdf*.inc /usr/include/netcdf*.mod; do
+          [ -e "$f" ] && ln -sf "$f" ${NETCDF_DIR}/include/ || true
+        done
+        for f in /usr/lib/x86_64-linux-gnu/libnetcdf*.so; do
+          [ -e "$f" ] && ln -sf "$f" ${NETCDF_DIR}/lib/ || true
+        done
+        echo "NETCDF=${NETCDF_DIR}" >> $GITHUB_ENV
+
+    - name: Setup PnetCDF
+      run: |
+        echo "PNETCDF=/opt/pnetcdf"   >> $GITHUB_ENV
+
+     ##########################################################################################
+     # Step 2a: Clone MPAS and build. (baselines)
+     ##########################################################################################
+    - name: Checkout and build MPAS standalone for baseline generation (Debug)
+      if: contains(matrix.build-type, 'Debug')
+      run: |
+        cd ${runner_ROOT}
+        git clone --recursive --branch gsl/develop https://github.com/ufs-community/MPAS-Model.git MPAS-Model-BL
+        cd ${mpas_bl_ROOT}
+        make ${{matrix.bld_target}} CORE=atmosphere DEBUG=true
+
+    - name: Checkout and build MPAS standalone for baseline generation (Release)
+      if: contains(matrix.build-type, 'Release')
+      run: |
+        cd ${runner_ROOT}
+        git clone --recursive --branch gsl/develop https://github.com/ufs-community/MPAS-Model.git MPAS-Model-BL
+        cd ${mpas_bl_ROOT}
+        make ${{matrix.bld_target}} CORE=atmosphere
+
+    ##########################################################################################
+    # Step 2b: Clone MPAS and build (feature branch)
+    ##########################################################################################
+    - name: Checkout MPAS codebase for testing.
+      uses: actions/checkout@v3
+
+    - name: Initialize any submodules from testing codebase.
+      run: |
+        git config --global --add safe.directory ${MPAS_ROOT}
+        cd ${MPAS_ROOT}
+        git submodule update --init --recursive
+
+    - name: Build MPAS standalone for testing (Debug)
+      if: contains(matrix.build-type, 'Debug')
+      run: |
+        cd ${MPAS_ROOT}
+        make ${{matrix.bld_target}}  CORE=atmosphere DEBUG=true
+
+    - name: Build MPAS standalone for testing (Release)
+      if: contains(matrix.build-type, 'Release')
+      run: |
+        cd ${MPAS_ROOT}
+        make ${{matrix.bld_target}}  CORE=atmosphere
+
+    ##########################################################################################
+    # Step 3: Fetch any data/files needed for MPAS runs.
+    ##########################################################################################
+    - name: Download MPAS data (grid info, IC and LBC files)
+      run: |
+        cd ${MPAS_ROOT}
+        ./testing_and_setup/ufs-community/data/get_data.sh
+
+    ##########################################################################################
+    # Step 4a: Configure MPAS baseline runs
+    ##########################################################################################
+    - name: Create and populate run directory (baselines)
+      run: |
+        cd ${runner_ROOT} && mkdir run_bl && cd run_bl
+        cp ${MPAS_ROOT}/testing_and_setup/ufs-community/cases/ufscommunity.${{env.physics}}.${{matrix.ic_source}}.${{matrix.season}}.stoch/* .
+        ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.TBL .
+        ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.DBL .
+        ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*DATA .
+        ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_noahmp/parameters/NoahmpTable.TBL .
+        ln -sf ${MPAS_ROOT}/src/core_atmosphere/physics/physics_noaa/TEMPO/tables/ccn_activate.bin .
+        ln -sf ${MPAS_ROOT}/${mpas_ics}.${{matrix.ic_source}}.${{matrix.season}}/mpas.init.nc .
+        ln -sf ${MPAS_ROOT}/${mpas_ics}.${{matrix.ic_source}}.${{matrix.season}}/mpas.ugwp_oro_data.nc .
+        ln -sf ${MPAS_ROOT}/${mpas_ics}.${{matrix.ic_source}}.${{matrix.season}}/mpas.lbc.nc .
+        ln -sf ${MPAS_ROOT}/${mpas_ics}.${{matrix.ic_source}}.${{matrix.season}}/graph.info.part.2 .
+        ln -sf ${MPAS_ROOT}/${physics_tables}/tempo/* .
+        ln -sf ${MPAS_ROOT}/${physics_tables}/ugw/* .
+        ln -sf ${mpas_bl_ROOT}/atmosphere_model .
+
+    - name: Link surface files to run directory (baselines)
+      if: ${{matrix.ic_source}} == 'gfs'
+      run: |
+        cd ${runner_ROOT}/run_bl
+        ln -sf ${MPAS_ROOT}/${mpas_ics}.${{matrix.ic_source}}.${{matrix.season}}/mpas.sfc_update.nc .
+
+    ##########################################################################################
+    # Step 4b: Configure MPAS feature runs
+    ##########################################################################################
+    - name: Create and populate run directory (feature test)
+      run: |
+        cd ${runner_ROOT} && mkdir run_rt && cd run_rt
+        cp ${MPAS_ROOT}/testing_and_setup/ufs-community/cases/ufscommunity.${{env.physics}}.${{matrix.ic_source}}.${{matrix.season}}.stoch/* .
+        ln -sf ${MPAS_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.TBL .
+        ln -sf ${MPAS_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.DBL .
+        ln -sf ${MPAS_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*DATA .
+        ln -sf ${MPAS_ROOT}/src/core_atmosphere/physics/physics_noahmp/parameters/NoahmpTable.TBL .
+        ln -sf ${MPAS_ROOT}/src/core_atmosphere/physics/physics_noaa/TEMPO/tables/ccn_activate.bin .
+        ln -sf ${MPAS_ROOT}/${mpas_ics}.${{matrix.ic_source}}.${{matrix.season}}/mpas.init.nc .
+        ln -sf ${MPAS_ROOT}/${mpas_ics}.${{matrix.ic_source}}.${{matrix.season}}/mpas.ugwp_oro_data.nc .
+        ln -sf ${MPAS_ROOT}/${mpas_ics}.${{matrix.ic_source}}.${{matrix.season}}/mpas.lbc.nc .
+        ln -sf ${MPAS_ROOT}/${mpas_ics}.${{matrix.ic_source}}.${{matrix.season}}/graph.info.part.2 .
+        ln -sf ${MPAS_ROOT}/${physics_tables}/tempo/* .
+        ln -sf ${MPAS_ROOT}/${physics_tables}/ugw/* .
+        ln -sf ${MPAS_ROOT}/atmosphere_model .
+
+    - name: Link surface files to run directory (feature)
+      if: ${{matrix.ic_source}} == 'gfs'
+      run: |
+        cd ${runner_ROOT}/run_rt
+        ln -sf ${MPAS_ROOT}/${mpas_ics}.${{matrix.ic_source}}.${{matrix.season}}/mpas.sfc_update.nc .
+
+    ##########################################################################################
+    # Step 5: Run MPAS
+    ##########################################################################################
+    - name: Run MPAS (baselines)
+      run: |
+        cd ${runner_ROOT}/run_bl
+        pwd && ls -l
+        mpiexec --allow-run-as-root -np 1 ./atmosphere_model
+        pwd && ls -l
+
+    - name: Run MPAS (feature branch)
+      run: |
+        cd ${runner_ROOT}/run_rt
+        pwd && ls -l
+        mpiexec --allow-run-as-root -np 1 ./atmosphere_model
+        pwd && ls -l
+
+    ##########################################################################################
+    # Step 6: Compare feature branch to baseline branch.
+    ##########################################################################################
+    - name: Setup Miniconda
+      uses: conda-incubator/setup-miniconda@v3.2.0
+      with:
+        python-version: ${{env.py-version}}
+        auto-update-conda: true
+        auto-activate-base: false
+        environment-file: testing_and_setup/ufs-community/environment.yml
+        activate-environment: mpas-ci-env
+
+    - name: Run comparison script
+      run: |
+        cd ${MPAS_ROOT}/testing_and_setup/ufs-community
+        ./cmp_rt2bl.py --dir_rt ${runner_ROOT}/run_rt --dir_bl ${runner_ROOT}/run_bl
+
+    ##########################################################################################
+    # Step 7: Save MPAS output and log files as GitHub Artifact.
+    ##########################################################################################
+    - name: Create GitHub artifact
+      run: |
+        cd ${runner_ROOT}
+        mkdir artifact-${{matrix.f-compiler}}-${{matrix.build-type}}-${{matrix.ic_source}}-${{matrix.season}}-${{env.physics}}-stoch
+        cd artifact-${{matrix.f-compiler}}-${{matrix.build-type}}-${{matrix.ic_source}}-${{matrix.season}}-${{env.physics}}-stoch
+        mkdir data_bl && cd data_bl
+        cp ${runner_ROOT}/run_bl/log.atmosphere.*.out log.atmosphere.BL.out
+        cp ${runner_ROOT}/run_bl/history.*.nc .
+        cp ${runner_ROOT}/run_bl/diag.*.nc .
+        cd ..
+        mkdir data_rt && cd data_rt
+        cp ${runner_ROOT}/run_rt/log.atmosphere.*.out log.atmosphere.RT.out
+        cp ${runner_ROOT}/run_rt/history.*.nc .
+        cp ${runner_ROOT}/run_rt/diag.*.nc .
+
+    - name: Upload log files as GitHub Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: mpas-baselines-${{matrix.f-compiler}}-${{matrix.build-type}}-${{matrix.ic_source}}-${{matrix.season}}-${{env.physics}}-stoch
+        path: /__w/artifact-${{matrix.f-compiler}}-${{matrix.build-type}}-${{matrix.ic_source}}-${{matrix.season}}-${{env.physics}}-stoch
