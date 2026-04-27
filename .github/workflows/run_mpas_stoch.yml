@@ -126,27 +126,27 @@ jobs:
     ##########################################################################################
     # Step 2b: Clone MPAS and build (feature branch)
     ##########################################################################################
+    - name: Checkout MPAS codebase for testing.
+      uses: actions/checkout@v3
+
+    - name: Initialize any submodules from testing codebase.
+      run: |
+        git config --global --add safe.directory ${MPAS_ROOT}
+        cd ${MPAS_ROOT}
+        git submodule update --init --recursive
+
 # Don't build for now, since currently debugging the data download step
-#    - name: Checkout MPAS codebase for testing.
-#      uses: actions/checkout@v3
-#
-#    - name: Initialize any submodules from testing codebase.
-#      run: |
-#        git config --global --add safe.directory ${MPAS_ROOT}
-#        cd ${MPAS_ROOT}
-#        git submodule update --init --recursive
-#
 #    - name: Build MPAS standalone for testing (Debug)
 #      if: contains(matrix.build-type, 'Debug')
 #      run: |
 #        cd ${MPAS_ROOT}
-#        make ${{matrix.bld_target}}  CORE=atmosphere DEBUG=true
+#        make ${{matrix.bld_target}} CORE=atmosphere DEBUG=true
 #
 #    - name: Build MPAS standalone for testing (Release)
 #      if: contains(matrix.build-type, 'Release')
 #      run: |
 #        cd ${MPAS_ROOT}
-#        make ${{matrix.bld_target}}  CORE=atmosphere
+#        make ${{matrix.bld_target}} CORE=atmosphere
 
     ##########################################################################################
     # Step 3: Fetch any data/files needed for MPAS runs.
