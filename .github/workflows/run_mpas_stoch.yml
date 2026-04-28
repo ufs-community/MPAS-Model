@@ -104,50 +104,42 @@ jobs:
         echo "PNETCDF=/opt/pnetcdf"   >> $GITHUB_ENV
 
      ##########################################################################################
-     # Step 2a: Clone MPAS and build. (baselines)
+     # Step 2a: Clone MPAS and build -- baseline branch.
      ##########################################################################################
-# Don't build baseline branch for now.
-#    - name: Checkout and build MPAS for baseline generation (baseline branch; debug build)
-#      if: contains(matrix.build-type, 'Debug')
-#      run: |
-#        cd ${runner_ROOT}
-#        git clone --recursive --branch gsl/develop https://github.com/ufs-community/MPAS-Model.git MPAS-Model-BL
-#        cd ${mpas_bl_ROOT}
-#        make ${{matrix.bld_target}} CORE=atmosphere DEBUG=true
-#
     - name: Get baseline branch SHA
       id: baseline-sha
       run: |
         echo "sha=$(git ls-remote https://github.com/ufs-community/MPAS-Model.git gsl/develop | cut -f1)" >> $GITHUB_OUTPUT
 
-    - name: Cache MPAS build (baseline branch; release build)
-      id: cache-bl-release
+    - name: Cache MPAS build (baseline branch)
+      id: cache-bl
       uses: actions/cache@v3
       with:
         path: ${{ env.mpas_bl_ROOT }}/atmosphere_model
         key: mpas-build-bl-${{ runner.os }}-${{ matrix.image }}-${{ matrix.f-compiler }}-${{ matrix.build-type }}-${{ steps.baseline-sha.outputs.sha }}
 
-    - name: Checkout and build MPAS for baseline generation (baseline branch; release build)
-      if: contains(matrix.build-type, 'Release') && steps.cache-bl-release.outputs.cache-hit != 'true'
+    - name: Checkout and build MPAS for baseline generation (baseline branch)
+      if: steps.cache-bl.outputs.cache-hit != 'true'
       run: |
         cd ${runner_ROOT}
         git clone --recursive --branch gsl/develop https://github.com/ufs-community/MPAS-Model.git MPAS-Model-BL
         cd ${mpas_bl_ROOT}
-        make ${{matrix.bld_target}} CORE=atmosphere
+        make ${{matrix.bld_target}} CORE=atmosphere ${{ matrix.build-type == 'Debug' && 'DEBUG=true' || '' }}
 
     ##########################################################################################
-    # Step 2b: Clone MPAS and build (feature branch)
+    # Step 2b: Clone MPAS and build -- feature branch.
     ##########################################################################################
+
     # actions/checkout@v3 is a standard GitHub Actions action that clones the repository that
     # triggered the workflow into the runner's workspace.  Specifically it:
     #
     #   1) Clones the feature branch (the one that was pushed or opened as a PR) into ${MPAS_ROOT}.
     #   2) Checks out the specific commit that triggered the workflow.
     #
-    - name: Checkout MPAS for testing (feature branch).
+    - name: Checkout MPAS for testing (feature branch)
       uses: actions/checkout@v3
 
-    - name: Initialize any submodules from testing codebase (feature branch).
+    - name: Initialize submodules (feature branch)
       run: |
         git config --global --add safe.directory ${MPAS_ROOT}
         cd ${MPAS_ROOT}
@@ -160,18 +152,11 @@ jobs:
         path: ${{ env.MPAS_ROOT }}/atmosphere_model
         key: mpas-build-${{ runner.os }}-${{ matrix.image }}-${{ matrix.f-compiler }}-${{ matrix.build-type }}-${{ hashFiles('Makefile', 'src/**') }}
 
-# Don't build for now, since currently debugging the data download step
-#    - name: Build MPAS for testing (Debug)
-#      if: contains(matrix.build-type, 'Debug')
-#      run: |
-#        cd ${MPAS_ROOT}
-#        make ${{matrix.bld_target}} CORE=atmosphere DEBUG=true
-
-    - name: Build MPAS for testing (feature branch; release build)
-      if: contains(matrix.build-type, 'Release') && steps.cache-feature.outputs.cache-hit != 'true'
+    - name: Build MPAS for testing (feature branch)
+      if: steps.cache-feature.outputs.cache-hit != 'true'
       run: |
         cd ${MPAS_ROOT}
-        make ${{matrix.bld_target}} CORE=atmosphere
+        make ${{matrix.bld_target}} CORE=atmosphere ${{ matrix.build-type == 'Debug' && 'DEBUG=true' || '' }}
 
     ##########################################################################################
     # Step 3: Fetch any data/files needed for MPAS runs.
@@ -180,33 +165,33 @@ jobs:
       run: |
         cd ${MPAS_ROOT}
         ./testing_and_setup/ufs-community/data/get_data.sh
-        set -x
-        echo "AAAAAAAAAA"
-        cd testing_and_setup
-        pwd
-        ls -alF
-        echo "BBBBBBBBBB"
-        cd ufs-community
-        pwd
-        ls -alF
-        echo "CCCCCCCCCC"
-        cd data
-        pwd
-        ls -alF
-        echo "DDDDDDDDDD"
-        cd ics
-        pwd
-        ls -alF
-        echo "EEEEEEEEEE"
-        cd ufscommunity.gfs.winter
-        pwd
-        ls -alF
-        echo "FFFFFFFFFF"
+#        set -x
+#        echo "AAAAAAAAAA"
+#        cd testing_and_setup
+#        pwd
+#        ls -alF
+#        echo "BBBBBBBBBB"
+#        cd ufs-community
+#        pwd
+#        ls -alF
+#        echo "CCCCCCCCCC"
+#        cd data
+#        pwd
+#        ls -alF
+#        echo "DDDDDDDDDD"
+#        cd ics
+#        pwd
+#        ls -alF
+#        echo "EEEEEEEEEE"
+#        cd ufscommunity.gfs.winter
+#        pwd
+#        ls -alF
+#        echo "FFFFFFFFFF"
 
     ##########################################################################################
-    # Step 4a: Configure MPAS baseline runs
+    # Step 4a: Configure MPAS baseline branch run directory.
     ##########################################################################################
-    - name: Create and populate run directory (baseline generation)
+    - name: Create and populate run directory -- baseline branch runs
       run: |
         cd ${runner_ROOT} && mkdir run_bl && cd run_bl
         cp ${MPAS_ROOT}/testing_and_setup/ufs-community/cases/ufscommunity.${{env.physics}}.${{matrix.ic_source}}.${{matrix.season}}/* .
@@ -223,20 +208,20 @@ jobs:
         ln -sf ${MPAS_ROOT}/${physics_tables}/ugw/* .
         ln -sf ${mpas_bl_ROOT}/atmosphere_model .
 
-    - name: Link surface files to run directory (baselines)
+    - name: Link surface files to run directory -- baseline branch runs
       if: matrix.ic_source == 'gfs'
       run: |
         cd ${runner_ROOT}/run_bl
         ln -sf ${MPAS_ROOT}/${mpas_ics}.${{matrix.ic_source}}.${{matrix.season}}/mpas.sfc_update.nc .
 
     ##########################################################################################
-    # Step 4b: Configure MPAS feature runs
+    # Step 4b: Configure MPAS feature branch run directory.
     ##########################################################################################
-    - name: Create and populate run directory (feature test)
+    - name: Create and populate run directory -- feature branch runs
       run: |
-        set -x
-        echo "AAAAAAAAAA"
-        echo "pwd = |$(pwd)|"
+#        set -x
+#        echo "AAAAAAAAAA"
+#        echo "pwd = |$(pwd)|"
         cd ${runner_ROOT} && mkdir run_rt && cd run_rt
         cp ${MPAS_ROOT}/testing_and_setup/ufs-community/cases/ufscommunity.${{env.physics}}.${{matrix.ic_source}}.${{matrix.season}}.stoch/* .
         ln -sf ${MPAS_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.TBL .
@@ -251,36 +236,36 @@ jobs:
         ln -sf ${MPAS_ROOT}/${physics_tables}/tempo/* .
         ln -sf ${MPAS_ROOT}/${physics_tables}/ugw/* .
         ln -sf ${MPAS_ROOT}/atmosphere_model .
-        echo "BBBBBBBBBB"
-        echo "MPAS_ROOT = |${MPAS_ROOT}|"
-        cd ${MPAS_ROOT}
-        pwd
-        ls -alF
-        echo "CCCCCCCCCC"
-        cd ${MPAS_ROOT}/testing_and_setup/ufs-community/cases/ufscommunity.${{env.physics}}.${{matrix.ic_source}}.${{matrix.season}}.stoch
-        pwd
-        ls -alF
-        echo "DDDDDDDDDD"
-        more namelist.atmosphere
-        echo "EEEEEEEEEE"
+#        echo "BBBBBBBBBB"
+#        echo "MPAS_ROOT = |${MPAS_ROOT}|"
+#        cd ${MPAS_ROOT}
+#        pwd
+#        ls -alF
+#        echo "CCCCCCCCCC"
+#        cd ${MPAS_ROOT}/testing_and_setup/ufs-community/cases/ufscommunity.${{env.physics}}.${{matrix.ic_source}}.${{matrix.season}}.stoch
+#        pwd
+#        ls -alF
+#        echo "DDDDDDDDDD"
+#        more namelist.atmosphere
+#        echo "EEEEEEEEEE"
 
-    - name: Link surface files to run directory (feature)
+    - name: Link surface files to run directory -- feature branch runs
       if: matrix.ic_source == 'gfs'
       run: |
         cd ${runner_ROOT}/run_rt
         ln -sf ${MPAS_ROOT}/${mpas_ics}.${{matrix.ic_source}}.${{matrix.season}}/mpas.sfc_update.nc .
 
     ##########################################################################################
-    # Step 5: Run MPAS
+    # Step 5: Run MPAS with both baseline and feature branches.
     ##########################################################################################
-    - name: Run MPAS (baseline generation)
+    - name: Run MPAS -- baseline branch
       run: |
         cd ${runner_ROOT}/run_bl
         pwd && ls -l
         mpiexec --allow-run-as-root -np 1 ./atmosphere_model
         pwd && ls -l
 
-    - name: Run MPAS (feature test)
+    - name: Run MPAS -- feature branch
       run: |
         cd ${runner_ROOT}/run_rt
         pwd && ls -l
