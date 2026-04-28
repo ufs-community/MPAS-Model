@@ -283,6 +283,16 @@ jobs:
       run: |
         cd ${MPAS_ROOT}/testing_and_setup/ufs-community
         ./cmp_rt2bl.py --dir_rt ${runner_ROOT}/run_rt --dir_bl ${runner_ROOT}/run_bl
+        set -x
+        echo "AAAAAAAAAA"
+        cd ${runner_ROOT}/run_rt
+        echo "pwd = $(pwd)"
+        ls -alF
+        echo "BBBBBBBBBB"
+        cd ${runner_ROOT}/run_bl
+        echo "pwd = $(pwd)"
+        ls -alF
+        echo "CCCCCCCCCC"
 
     ##########################################################################################
     # Step 7: Save MPAS output and log files as GitHub Artifact.
@@ -293,7 +303,10 @@ jobs:
         mkdir artifact-${{matrix.f-compiler}}-${{matrix.build-type}}-${{matrix.ic_source}}-${{matrix.season}}-${{env.physics}}-stoch
         cd artifact-${{matrix.f-compiler}}-${{matrix.build-type}}-${{matrix.ic_source}}-${{matrix.season}}-${{env.physics}}-stoch
         mkdir data_bl && cd data_bl
+        set -x
+        echo "AAAAAAAAAA"
         cp ${runner_ROOT}/run_bl/log.atmosphere.*.out log.atmosphere.BL.out
+        echo "BBBBBBBBBB"
         cp ${runner_ROOT}/run_bl/history.*.nc .
         cp ${runner_ROOT}/run_bl/diag.*.nc .
         cd ..
