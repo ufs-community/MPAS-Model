@@ -140,6 +140,24 @@ jobs:
         cd ${MPAS_ROOT}
         git submodule update --init --recursive
 
+#    - name: Cache MPAS build
+#      id: cache
+#      uses: actions/cache@v3
+#      with:
+#        path: ${{ env.MPAS_ROOT }}/atmosphere_model
+#        key: mpas-build-${{ runner.os }}-${{ matrix.image }}-${{ matrix.f-compiler }}-${{ matrix.build-type }}-${{ hashFiles('Makefile', 'src/**') }}
+#        restore-keys: |
+#          mpas-build-${{ runner.os }}-${{ matrix.image }}-${{ matrix.f-compiler }}-${{ matrix.build-type }}-
+
+    - name: Check changed files
+      id: changed
+      uses: dorny/paths-filter@v3
+      with:
+        filters: |
+          source:
+            - 'src/**'
+            - 'Makefile'
+
 # Don't build for now, since currently debugging the data download step
 #    - name: Build MPAS standalone for testing (Debug)
 #      if: contains(matrix.build-type, 'Debug')
@@ -148,7 +166,7 @@ jobs:
 #        make ${{matrix.bld_target}} CORE=atmosphere DEBUG=true
 
     - name: Build MPAS standalone for testing (Release)
-      if: contains(matrix.build-type, 'Release')
+      if: contains(matrix.build-type, 'Release') && steps.changed.outputs.source == 'true'
       run: |
         cd ${MPAS_ROOT}
         make ${{matrix.bld_target}} CORE=atmosphere
@@ -282,17 +300,20 @@ jobs:
     - name: Run comparison script
       run: |
         cd ${MPAS_ROOT}/testing_and_setup/ufs-community
+        # Note that if the baseline directory ${runner_ROOT}/run_bl doesn't exist, the
+        # comparison script cmp_rt2bl.py will still report a success.  Not clear if this
+        # is by design.
         ./cmp_rt2bl.py --dir_rt ${runner_ROOT}/run_rt --dir_bl ${runner_ROOT}/run_bl
-        set -x
-        echo "AAAAAAAAAA"
-        cd ${runner_ROOT}/run_rt
-        echo "pwd = $(pwd)"
-        ls -alF
-        echo "BBBBBBBBBB"
-        cd ${runner_ROOT}/run_bl
-        echo "pwd = $(pwd)"
-        ls -alF
-        echo "CCCCCCCCCC"
+#        set -x
+#        echo "AAAAAAAAAA"
+#        cd ${runner_ROOT}/run_rt
+#        echo "pwd = $(pwd)"
+#        ls -alF
+#        echo "BBBBBBBBBB"
+#        cd ${runner_ROOT}/run_bl
+#        echo "pwd = $(pwd)"
+#        ls -alF
+#        echo "CCCCCCCCCC"
 
     ##########################################################################################
     # Step 7: Save MPAS output and log files as GitHub Artifact.
