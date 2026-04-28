@@ -317,11 +317,13 @@ jobs:
         echo "BBBBBBBBBB"
         cp ${runner_ROOT}/run_bl/history.*.nc .
         cp ${runner_ROOT}/run_bl/diag.*.nc .
+        cp ${runner_ROOT}/run_bl/namelist.atmosphere .
         cd ..
         mkdir data_rt && cd data_rt
         cp ${runner_ROOT}/run_rt/log.atmosphere.*.out log.atmosphere.RT.out
         cp ${runner_ROOT}/run_rt/history.*.nc .
         cp ${runner_ROOT}/run_rt/diag.*.nc .
+        cp ${runner_ROOT}/run_rt/namelist.atmosphere .
 
     - name: Upload log files as GitHub Artifact
       uses: actions/upload-artifact@v4
