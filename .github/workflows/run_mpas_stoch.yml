@@ -219,9 +219,9 @@ jobs:
     ##########################################################################################
     - name: Create and populate run directory -- feature branch runs
       run: |
-#        set -x
-#        echo "AAAAAAAAAA"
-#        echo "pwd = |$(pwd)|"
+        #set -x
+        #echo "AAAAAAAAAA"
+        #echo "pwd = |$(pwd)|"
         cd ${runner_ROOT} && mkdir run_rt && cd run_rt
         cp ${MPAS_ROOT}/testing_and_setup/ufs-community/cases/ufscommunity.${{env.physics}}.${{matrix.ic_source}}.${{matrix.season}}.stoch/* .
         ln -sf ${MPAS_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.TBL .
