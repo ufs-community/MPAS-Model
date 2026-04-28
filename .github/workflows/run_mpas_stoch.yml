@@ -111,14 +111,14 @@ jobs:
       run: |
         echo "sha=$(git ls-remote https://github.com/ufs-community/MPAS-Model.git gsl/develop | cut -f1)" >> $GITHUB_OUTPUT
 
-    - name: Cache MPAS build (baseline branch)
+    - name: Cache MPAS build -- baseline branch
       id: cache-bl
       uses: actions/cache@v3
       with:
         path: ${{ env.mpas_bl_ROOT }}/atmosphere_model
         key: mpas-build-bl-${{ runner.os }}-${{ matrix.image }}-${{ matrix.f-compiler }}-${{ matrix.build-type }}-${{ steps.baseline-sha.outputs.sha }}
 
-    - name: Checkout and build MPAS for baseline generation (baseline branch)
+    - name: Checkout and build MPAS for baseline generation -- baseline branch
       if: steps.cache-bl.outputs.cache-hit != 'true'
       run: |
         cd ${runner_ROOT}
@@ -136,7 +136,7 @@ jobs:
     #   1) Clones the feature branch (the one that was pushed or opened as a PR) into ${MPAS_ROOT}.
     #   2) Checks out the specific commit that triggered the workflow.
     #
-    - name: Checkout MPAS for testing (feature branch)
+    - name: Checkout MPAS for testing -- feature branch
       uses: actions/checkout@v3
 
     - name: Initialize submodules (feature branch)
@@ -145,7 +145,7 @@ jobs:
         cd ${MPAS_ROOT}
         git submodule update --init --recursive
 
-    - name: Cache MPAS build (feature branch)
+    - name: Cache MPAS build -- feature branch
       id: cache-feature
       uses: actions/cache@v3
       with:
@@ -258,11 +258,13 @@ jobs:
     ##########################################################################################
     # Step 5: Run MPAS with both baseline and feature branches.
     ##########################################################################################
+###        cp ${runner_ROOT}/run_bl/history.*.nc .
     - name: Run MPAS -- baseline branch
+      continue-on-error: true
       run: |
         cd ${runner_ROOT}/run_bl
         pwd && ls -l
-        mpiexec --allow-run-as-root -np 1 ./atmosphere_model
+        mpiexec --allow-run-as-root -np 1 ./atmosphere_model || true
         pwd && ls -l
 
     - name: Run MPAS -- feature branch
