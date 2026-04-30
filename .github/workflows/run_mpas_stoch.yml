@@ -125,6 +125,11 @@ jobs:
         path: ${{ env.mpas_bl_ROOT }}/atmosphere_model
         key: mpas-build-bl-${{ runner.os }}-${{ matrix.image }}-${{ matrix.f-compiler }}-${{ matrix.build-type }}-${{ steps.baseline-sha.outputs.sha }}
 
+    - name: Download physics tables -- baseline branch
+      run: |
+        cd ${mpas_bl_ROOT}/src/core_atmosphere/physics
+        ./checkout_data_files.sh
+
     - name: Build MPAS -- baseline branch
       if: steps.cache-bl.outputs.cache-hit != 'true'
       run: |
@@ -156,6 +161,11 @@ jobs:
       with:
         path: ${{ env.MPAS_ROOT }}/atmosphere_model
         key: mpas-build-${{ runner.os }}-${{ matrix.image }}-${{ matrix.f-compiler }}-${{ matrix.build-type }}-${{ hashFiles('Makefile', 'src/**') }}
+
+    - name: Download physics tables -- feature branch
+      run: |
+        cd ${MPAS_ROOT}/src/core_atmosphere/physics
+        ./checkout_data_files.sh
 
     - name: Build MPAS for testing -- feature branch
       if: steps.cache-feature.outputs.cache-hit != 'true'
