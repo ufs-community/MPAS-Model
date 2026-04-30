@@ -109,12 +109,14 @@ jobs:
     - name: Get baseline branch SHA
       id: baseline-sha
       run: |
-        echo "sha=$(git ls-remote https://github.com/ufs-community/MPAS-Model.git gsl/develop | cut -f1)" >> $GITHUB_OUTPUT
+        #echo "sha=$(git ls-remote https://github.com/ufs-community/MPAS-Model.git gsl/develop | cut -f1)" >> $GITHUB_OUTPUT
+        echo "sha=$(git ls-remote https://github.com/ufs-community/MPAS-Model.git noaa/develop | cut -f1)" >> $GITHUB_OUTPUT
 
     - name: Checkout MPAS -- baseline branch
       run: |
         cd ${runner_ROOT}
-        git clone --recursive --branch gsl/develop https://github.com/ufs-community/MPAS-Model.git MPAS-Model-BL
+        #git clone --recursive --branch gsl/develop https://github.com/ufs-community/MPAS-Model.git MPAS-Model-BL
+        git clone --recursive --branch noaa/develop https://github.com/ufs-community/MPAS-Model.git MPAS-Model-BL
 
     - name: Cache MPAS build -- baseline branch
       id: cache-bl
@@ -196,8 +198,13 @@ jobs:
     ##########################################################################################
     - name: Create and populate run directory -- baseline branch runs
       run: |
+        set -x
         cd ${runner_ROOT} && mkdir run_bl && cd run_bl
         cp ${MPAS_ROOT}/testing_and_setup/ufs-community/cases/ufscommunity.${{env.physics}}.${{matrix.ic_source}}.${{matrix.season}}/* .
+        echo
+        echo "AAAAAAAAAA"
+        ls -alF ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.TBL
+        echo "BBBBBBBBBB"
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.TBL .
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.DBL .
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*DATA .
