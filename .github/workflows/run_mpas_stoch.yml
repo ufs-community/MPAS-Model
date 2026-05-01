@@ -65,10 +65,11 @@ jobs:
       physics:        hrrrv5
       py-version:     3.11
       runner_ROOT:    /__w/
-      MPAS_ROOT:      /__w/MPAS-Model/MPAS-Model
-      MPAS_BL_ROOT:   /__w/MPAS-Model-BL
       PNETCDF:        /opt/pnetcdf
       ufs_community:  testing_and_setup/ufs-community
+      # Root directories for git clones of the MPAS baseline and feature branches.
+      SRCDIR_BL:      /__w/MPAS-Model-BL
+      SRCDIR_FT:      /__w/MPAS-Model/MPAS-Model
 
     # Workflow steps
     steps:
@@ -77,8 +78,8 @@ jobs:
     ##########################################################################################
     - name: Set derived shell environment variables
       run: |
-        # Define various (relative) directories for convenience.  These are all relative to
-        # the MPAS-Model base directory.
+        # Define various directories for convenience.  Relative paths are with respect to the
+        # the root directory of the MPAS-Model clone.
         #
         # The wrf_phys_tables directory contains physics tables and other files specific to
         # WRF physics.
@@ -98,6 +99,12 @@ jobs:
         # The mpas_ics directory contains MPAS initial and boundary condition files and MPAS
         # static files.
         echo "mpas_ics=${ufscmnty_data}/ics" >> $GITHUB_ENV
+        #
+        # Absolute paths to the base directories of the runs with the baseline and feature
+        # branches.
+        #
+        echo "RUNDIR_BL=${runner_ROOT}/run_bl" >> $GITHUB_ENV
+        echo "RUNDIR_FT=${runner_ROOT}/run_ft" >> $GITHUB_ENV
 
     - name: Setup MPI (GNU)
       if: matrix.f-compiler == 'gfortran'
@@ -144,18 +151,18 @@ jobs:
       id: cache-bl
       uses: actions/cache@v3
       with:
-        path: ${{env.MPAS_BL_ROOT}}/atmosphere_model
+        path: ${{env.SRCDIR_BL}}/atmosphere_model
         key: mpas-build-bl-${{runner.os}}-${{matrix.image}}-${{matrix.f-compiler}}-${{matrix.build-type}}-${{steps.baseline-sha.outputs.sha}}
 
     - name: Download physics tables -- baseline branch
       run: |
-        cd ${MPAS_BL_ROOT}/src/core_atmosphere/physics
+        cd ${SRCDIR_BL}/src/core_atmosphere/physics
         ./checkout_data_files.sh
 
     - name: Build MPAS -- baseline branch
       if: steps.cache-bl.outputs.cache-hit != 'true'
       run: |
-        cd ${MPAS_BL_ROOT}
+        cd ${SRCDIR_BL}
         make ${{matrix.bld_target}} CORE=atmosphere ${{matrix.build-type == 'Debug' && 'DEBUG=true' || ''}}
 
     ##########################################################################################
@@ -165,7 +172,7 @@ jobs:
     # actions/checkout@v3 is a standard GitHub Actions action that clones the repository that
     # triggered the workflow into the runner's workspace.  Specifically it:
     #
-    #   1) Clones the feature branch (the one that was pushed or opened as a PR) into ${MPAS_ROOT}.
+    #   1) Clones the feature branch (the one that was pushed or opened as a PR) into ${SRCDIR_FT}.
     #   2) Checks out the specific commit that triggered the workflow.
     #
     - name: Checkout MPAS -- feature branch
@@ -173,26 +180,26 @@ jobs:
 
     - name: Initialize submodules -- feature branch
       run: |
-        git config --global --add safe.directory ${MPAS_ROOT}
-        cd ${MPAS_ROOT}
+        git config --global --add safe.directory ${SRCDIR_FT}
+        cd ${SRCDIR_FT}
         git submodule update --init --recursive
 
     - name: Cache MPAS build -- feature branch
       id: cache-feature
       uses: actions/cache@v3
       with:
-        path: ${{env.MPAS_ROOT}}/atmosphere_model
+        path: ${{env.SRCDIR_FT}}/atmosphere_model
         key: mpas-build-${{runner.os}}-${{matrix.image}}-${{matrix.f-compiler}}-${{matrix.build-type}}-${{hashFiles('Makefile', 'src/**')}}
 
     - name: Download physics tables -- feature branch
       run: |
-        cd ${MPAS_ROOT}/src/core_atmosphere/physics
+        cd ${SRCDIR_FT}/src/core_atmosphere/physics
         ./checkout_data_files.sh
 
     - name: Build MPAS -- feature branch
       if: steps.cache-feature.outputs.cache-hit != 'true'
       run: |
-        cd ${MPAS_ROOT}
+        cd ${SRCDIR_FT}
         make ${{matrix.bld_target}} CORE=atmosphere ${{matrix.build-type == 'Debug' && 'DEBUG=true' || ''}}
 
     ##########################################################################################
@@ -200,99 +207,95 @@ jobs:
     ##########################################################################################
     - name: Download MPAS static, IC, and LBC files, UFS physics lookup tables -- baseline branch
       run: |
-        ${MPAS_BL_ROOT}/${ufscmnty_data}/get_data.sh
+        ${SRCDIR_BL}/${ufscmnty_data}/get_data.sh
 
     - name: Download MPAS static, IC, and LBC files, UFS physics lookup tables -- feature branch
       run: |
-        ${MPAS_ROOT}/${ufscmnty_data}/get_data.sh
+        ${SRCDIR_FT}/${ufscmnty_data}/get_data.sh
 
     ##########################################################################################
     # Configure MPAS baseline branch run directory.
     ##########################################################################################
     - name: Create and populate run directory -- baseline branch runs
       run: |
-        cd ${runner_ROOT} && mkdir run_bl && cd run_bl
-        cp ${MPAS_ROOT}/${ufscmnty_cases}/ufscommunity.${{env.physics}}.${{matrix.ic_source}}.${{matrix.season}}/* .
+        #cd ${runner_ROOT} && mkdir run_bl && cd run_bl
+        mkdir -p ${RUNDIR_BL} && cd ${RUNDIR_BL}
+        cp ${SRCDIR_FT}/${ufscmnty_cases}/ufscommunity.${{env.physics}}.${{matrix.ic_source}}.${{matrix.season}}/* .
         #
         # Create symlinks in the run directory.
         #
         # Links to WRF physics tables and other files that are downloaded during the call to
         # checkout_data_files.sh.
-        ln -sf ${MPAS_BL_ROOT}/${wrf_phys_tables}/{*.TBL,*.DBL,*DATA} .
-        #ln -sf ${MPAS_BL_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.TBL .
-        #ln -sf ${MPAS_BL_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.DBL .
-        #ln -sf ${MPAS_BL_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*DATA .
+        ln -sf ${SRCDIR_BL}/${wrf_phys_tables}/{*.TBL,*.DBL,*DATA} .
         # Links to UFS physics tables that are under version control, i.e. part of the MPAS-Model
         # repo or submodules.  These are not created in the build step or some other way.  They
         # are present once the repository is cloned (recursively).
-        ln -sf ${MPAS_BL_ROOT}/src/core_atmosphere/physics/physics_noahmp/parameters/NoahmpTable.TBL .
-        ln -sf ${MPAS_BL_ROOT}/src/core_atmosphere/physics/physics_noaa/TEMPO/tables/ccn_activate.bin .
+        ln -sf ${SRCDIR_BL}/src/core_atmosphere/physics/physics_noahmp/parameters/NoahmpTable.TBL .
+        ln -sf ${SRCDIR_BL}/src/core_atmosphere/physics/physics_noaa/TEMPO/tables/ccn_activate.bin .
         # Links to the UFS physics tables downloaded by the get_data.sh script.
-        ln -sf ${MPAS_BL_ROOT}/${ufs_phys_tables}/tempo/* .
-        ln -sf ${MPAS_BL_ROOT}/${ufs_phys_tables}/ugw/* .
+        ln -sf ${SRCDIR_BL}/${ufs_phys_tables}/tempo/* .
+        ln -sf ${SRCDIR_BL}/${ufs_phys_tables}/ugw/* .
         # Links to the MPAS initial and boundary condition files and other static files.
-        ln -sf ${MPAS_BL_ROOT}/${mpas_ics}/ufscommunity.${{matrix.ic_source}}.${{matrix.season}}/mpas.init.nc .
-        ln -sf ${MPAS_BL_ROOT}/${mpas_ics}/ufscommunity.${{matrix.ic_source}}.${{matrix.season}}/mpas.lbc.nc .
-        ln -sf ${MPAS_BL_ROOT}/${mpas_ics}/ufscommunity.${{matrix.ic_source}}.${{matrix.season}}/mpas.ugwp_oro_data.nc .
-        #ln -sf ${MPAS_BL_ROOT}/${mpas_ics}/ufscommunity.${{matrix.ic_source}}.${{matrix.season}}/graph.info.part.2 .
+        ln -sf ${SRCDIR_BL}/${mpas_ics}/ufscommunity.${{matrix.ic_source}}.${{matrix.season}}/mpas.init.nc .
+        ln -sf ${SRCDIR_BL}/${mpas_ics}/ufscommunity.${{matrix.ic_source}}.${{matrix.season}}/mpas.lbc.nc .
+        ln -sf ${SRCDIR_BL}/${mpas_ics}/ufscommunity.${{matrix.ic_source}}.${{matrix.season}}/mpas.ugwp_oro_data.nc .
         # Link to the MPAS executable.
-        ln -sf ${MPAS_BL_ROOT}/atmosphere_model .
+        ln -sf ${SRCDIR_BL}/atmosphere_model .
 
     - name: Link surface files to run directory -- baseline branch runs
       if: matrix.ic_source == 'gfs'
       run: |
-        cd ${runner_ROOT}/run_bl
-        ln -sf ${MPAS_ROOT}/${mpas_ics}/ufscommunity.${{matrix.ic_source}}.${{matrix.season}}/mpas.sfc_update.nc .
+        cd ${RUNDIR_BL}
+        ln -sf ${SRCDIR_FT}/${mpas_ics}/ufscommunity.${{matrix.ic_source}}.${{matrix.season}}/mpas.sfc_update.nc .
 
     ##########################################################################################
     # Configure MPAS feature branch run directory.
     ##########################################################################################
     - name: Create and populate run directory -- feature branch runs
       run: |
-        cd ${runner_ROOT} && mkdir run_rt && cd run_rt
-        cp ${MPAS_ROOT}/${ufscmnty_cases}/ufscommunity.${{env.physics}}.${{matrix.ic_source}}.${{matrix.season}}.stoch/* .
+        #cd ${runner_ROOT} && mkdir run_rt && cd run_rt
+        mkdir -p ${RUNDIR_FT} && cd ${RUNDIR_FT}
+        cp ${SRCDIR_FT}/${ufscmnty_cases}/ufscommunity.${{env.physics}}.${{matrix.ic_source}}.${{matrix.season}}.stoch/* .
         #
         # Create symlinks in the run directory.
         #
         # Links to WRF physics tables and other files that are downloaded during the call to
         # checkout_data_files.sh.
-        ln -sf ${MPAS_ROOT}/${wrf_phys_tables}/{*.TBL,*.DBL,*DATA} .
+        ln -sf ${SRCDIR_FT}/${wrf_phys_tables}/{*.TBL,*.DBL,*DATA} .
         # Links to UFS physics tables that are under version control, i.e. part of the MPAS-Model
         # repo or submodules.  These are not created in the build step or some other way.  They
         # are present once the repository is cloned (recursively).
-        ln -sf ${MPAS_ROOT}/src/core_atmosphere/physics/physics_noahmp/parameters/NoahmpTable.TBL .
-        ln -sf ${MPAS_ROOT}/src/core_atmosphere/physics/physics_noaa/TEMPO/tables/ccn_activate.bin .
+        ln -sf ${SRCDIR_FT}/src/core_atmosphere/physics/physics_noahmp/parameters/NoahmpTable.TBL .
+        ln -sf ${SRCDIR_FT}/src/core_atmosphere/physics/physics_noaa/TEMPO/tables/ccn_activate.bin .
         # Links to the UFS physics tables downloaded by the get_data.sh script.
-        ln -sf ${MPAS_ROOT}/${ufs_phys_tables}/tempo/* .
-        ln -sf ${MPAS_ROOT}/${ufs_phys_tables}/ugw/* .
+        ln -sf ${SRCDIR_FT}/${ufs_phys_tables}/tempo/* .
+        ln -sf ${SRCDIR_FT}/${ufs_phys_tables}/ugw/* .
         # Links to the MPAS initial and boundary condition files and other static files.
-        ln -sf ${MPAS_ROOT}/${mpas_ics}/ufscommunity.${{matrix.ic_source}}.${{matrix.season}}/mpas.init.nc .
-        ln -sf ${MPAS_ROOT}/${mpas_ics}/ufscommunity.${{matrix.ic_source}}.${{matrix.season}}/mpas.lbc.nc .
-        ln -sf ${MPAS_ROOT}/${mpas_ics}/ufscommunity.${{matrix.ic_source}}.${{matrix.season}}/mpas.ugwp_oro_data.nc .
-        #ln -sf ${MPAS_ROOT}/${mpas_ics}/ufscommunity.${{matrix.ic_source}}.${{matrix.season}}/graph.info.part.2 .
+        ln -sf ${SRCDIR_FT}/${mpas_ics}/ufscommunity.${{matrix.ic_source}}.${{matrix.season}}/mpas.init.nc .
+        ln -sf ${SRCDIR_FT}/${mpas_ics}/ufscommunity.${{matrix.ic_source}}.${{matrix.season}}/mpas.lbc.nc .
+        ln -sf ${SRCDIR_FT}/${mpas_ics}/ufscommunity.${{matrix.ic_source}}.${{matrix.season}}/mpas.ugwp_oro_data.nc .
         # Link to the MPAS executable.
-        ln -sf ${MPAS_ROOT}/atmosphere_model .
+        ln -sf ${SRCDIR_FT}/atmosphere_model .
 
     - name: Link surface files to run directory -- feature branch runs
       if: matrix.ic_source == 'gfs'
       run: |
-        cd ${runner_ROOT}/run_rt
-        ln -sf ${MPAS_ROOT}/${mpas_ics}/ufscommunity.${{matrix.ic_source}}.${{matrix.season}}/mpas.sfc_update.nc .
+        cd ${RUNDIR_FT}
+        ln -sf ${SRCDIR_FT}/${mpas_ics}/ufscommunity.${{matrix.ic_source}}.${{matrix.season}}/mpas.sfc_update.nc .
 
     ##########################################################################################
     # Run MPAS with both baseline and feature branches.
     ##########################################################################################
     - name: Run MPAS -- baseline branch
-      continue-on-error: true
       run: |
-        cd ${runner_ROOT}/run_bl
+        cd ${RUNDIR_BL}
         pwd && ls -l
         mpiexec --allow-run-as-root -np 1 ./atmosphere_model || true
         pwd && ls -l
 
     - name: Run MPAS -- feature branch
       run: |
-        cd ${runner_ROOT}/run_rt
+        cd ${RUNDIR_FT}
         pwd && ls -l
         mpiexec --allow-run-as-root -np 1 ./atmosphere_model || true
         pwd && ls -l
@@ -311,11 +314,11 @@ jobs:
 
     - name: Run comparison script
       run: |
-        cd ${MPAS_ROOT}/${ufs_community}
-        # Note that if the baseline directory ${runner_ROOT}/run_bl doesn't exist, the
+        cd ${SRCDIR_FT}/${ufs_community}
+        # Note that if the directory for the baseline run ${RUNDIR_BL} doesn't exist, the
         # comparison script cmp_rt2bl.py will still report a success.  Not clear if this
         # is by design.
-        ./cmp_rt2bl.py --dir_rt ${runner_ROOT}/run_rt --dir_bl ${runner_ROOT}/run_bl
+        ./cmp_rt2bl.py --dir_rt ${RUNDIR_FT} --dir_bl ${RUNDIR_BL}
 
     ##########################################################################################
     # Save MPAS output and log files as GitHub Artifact.
@@ -327,17 +330,17 @@ jobs:
         cd artifact-${{matrix.f-compiler}}-${{matrix.build-type}}-${{matrix.ic_source}}-${{matrix.season}}-${{env.physics}}-stoch
         #
         mkdir data_bl && cd data_bl
-        cp ${runner_ROOT}/run_bl/log.atmosphere.*.out log.atmosphere.BL.out
-        cp ${runner_ROOT}/run_bl/history.*.nc .
-        cp ${runner_ROOT}/run_bl/diag.*.nc .
-        cp ${runner_ROOT}/run_bl/namelist.atmosphere .
+        cp ${RUNDIR_BL}/log.atmosphere.*.out log.atmosphere.BL.out
+        cp ${RUNDIR_BL}/history.*.nc .
+        cp ${RUNDIR_BL}/diag.*.nc .
+        cp ${RUNDIR_BL}/namelist.atmosphere .
         cd ..
         #
         mkdir data_rt && cd data_rt
-        cp ${runner_ROOT}/run_rt/log.atmosphere.*.out log.atmosphere.RT.out
-        cp ${runner_ROOT}/run_rt/history.*.nc .
-        cp ${runner_ROOT}/run_rt/diag.*.nc .
-        cp ${runner_ROOT}/run_rt/namelist.atmosphere .
+        cp ${RUNDIR_FT}/log.atmosphere.*.out log.atmosphere.RT.out
+        cp ${RUNDIR_FT}/history.*.nc .
+        cp ${RUNDIR_FT}/diag.*.nc .
+        cp ${RUNDIR_FT}/namelist.atmosphere .
 
     - name: Upload log files as GitHub Artifact
       uses: actions/upload-artifact@v4
