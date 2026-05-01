@@ -68,6 +68,8 @@ jobs:
       PNETCDF:        /opt/pnetcdf
       mpas_ics:       testing_and_setup/ufs-community/data/ics/ufscommunity
       physics_tables: testing_and_setup/ufs-community/data/tables
+      ufs_community:  testing_and_setup/ufs-community
+      ufs_community_data:  testing_and_setup/ufs-community/data
 
     # Workflow steps
     steps:
@@ -176,30 +178,32 @@ jobs:
     ##########################################################################################
     - name: Download MPAS data (grid info, IC and LBC files)
       run: |
+        echo "0000000000"
         cd ${MPAS_ROOT}
-        ./testing_and_setup/ufs-community/data/get_data.sh
-#        set -x
-#        echo "AAAAAAAAAA"
-#        cd testing_and_setup
-#        pwd
-#        ls -alF
-#        echo "BBBBBBBBBB"
-#        cd ufs-community
-#        pwd
-#        ls -alF
-#        echo "CCCCCCCCCC"
-#        cd data
-#        pwd
-#        ls -alF
-#        echo "DDDDDDDDDD"
-#        cd ics
-#        pwd
-#        ls -alF
-#        echo "EEEEEEEEEE"
-#        cd ufscommunity.gfs.winter
-#        pwd
-#        ls -alF
-#        echo "FFFFFFFFFF"
+        #./testing_and_setup/ufs-community/data/get_data.sh
+        ./${ufs_community_data}/get_data.sh
+        set -x
+        echo "AAAAAAAAAA"
+        cd testing_and_setup
+        pwd
+        ls -alF
+        echo "BBBBBBBBBB"
+        cd ufs-community
+        pwd
+        ls -alF
+        echo "CCCCCCCCCC"
+        cd data
+        pwd
+        ls -alF
+        echo "DDDDDDDDDD"
+        cd ics
+        pwd
+        ls -alF
+        echo "EEEEEEEEEE"
+        cd ufscommunity.gfs.winter
+        pwd
+        ls -alF
+        echo "FFFFFFFFFF"
 
     ##########################################################################################
     # Step 4a: Configure MPAS baseline branch run directory.
@@ -242,15 +246,18 @@ jobs:
         #echo "pwd = |$(pwd)|"
         cd ${runner_ROOT} && mkdir run_rt && cd run_rt
         cp ${MPAS_ROOT}/testing_and_setup/ufs-community/cases/ufscommunity.${{env.physics}}.${{matrix.ic_source}}.${{matrix.season}}.stoch/* .
+        # Create links in the run directory to the physics parameterization tables.
         ln -sf ${MPAS_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.TBL .
         ln -sf ${MPAS_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.DBL .
         ln -sf ${MPAS_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*DATA .
         ln -sf ${MPAS_ROOT}/src/core_atmosphere/physics/physics_noahmp/parameters/NoahmpTable.TBL .
         ln -sf ${MPAS_ROOT}/src/core_atmosphere/physics/physics_noaa/TEMPO/tables/ccn_activate.bin .
+        # Create links in the run directory to the initial and boundary condition 
         ln -sf ${MPAS_ROOT}/${mpas_ics}.${{matrix.ic_source}}.${{matrix.season}}/mpas.init.nc .
         ln -sf ${MPAS_ROOT}/${mpas_ics}.${{matrix.ic_source}}.${{matrix.season}}/mpas.ugwp_oro_data.nc .
         ln -sf ${MPAS_ROOT}/${mpas_ics}.${{matrix.ic_source}}.${{matrix.season}}/mpas.lbc.nc .
         ln -sf ${MPAS_ROOT}/${mpas_ics}.${{matrix.ic_source}}.${{matrix.season}}/graph.info.part.2 .
+        # Create links in the run directory to the tables fetched by the 
         ln -sf ${MPAS_ROOT}/${physics_tables}/tempo/* .
         ln -sf ${MPAS_ROOT}/${physics_tables}/ugw/* .
         ln -sf ${MPAS_ROOT}/atmosphere_model .
@@ -276,7 +283,6 @@ jobs:
     ##########################################################################################
     # Step 5: Run MPAS with both baseline and feature branches.
     ##########################################################################################
-###        cp ${runner_ROOT}/run_bl/history.*.nc .
     - name: Run MPAS -- baseline branch
       continue-on-error: true
       run: |
