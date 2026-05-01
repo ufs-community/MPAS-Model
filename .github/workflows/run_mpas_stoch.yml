@@ -288,17 +288,17 @@ jobs:
         # Link to the MPAS executable.
         ln -sf ${MPAS_ROOT}/atmosphere_model .
         echo "BBBBBBBBBB"
-        echo "MPAS_ROOT = |${MPAS_ROOT}|"
-        cd ${MPAS_ROOT}
-        pwd
+        #echo "MPAS_ROOT = |${MPAS_ROOT}|"
+        #cd ${MPAS_ROOT}
+        echo "pwd = $(pwd)"
         ls -alF
         echo "CCCCCCCCCC"
-        cd ${MPAS_ROOT}/testing_and_setup/ufs-community/cases/ufscommunity.${{env.physics}}.${{matrix.ic_source}}.${{matrix.season}}.stoch
-        pwd
-        ls -alF
-        echo "DDDDDDDDDD"
-#        more namelist.atmosphere
-#        echo "EEEEEEEEEE"
+        #cd ${MPAS_ROOT}/testing_and_setup/ufs-community/cases/ufscommunity.${{env.physics}}.${{matrix.ic_source}}.${{matrix.season}}.stoch
+        #pwd
+        #ls -alF
+        #echo "DDDDDDDDDD"
+        #more namelist.atmosphere
+        # echo "EEEEEEEEEE"
 
     - name: Link surface files to run directory -- feature branch runs
       if: matrix.ic_source == 'gfs'
