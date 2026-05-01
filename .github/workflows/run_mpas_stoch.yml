@@ -52,7 +52,7 @@ jobs:
 #          bld_target: intel
 #          image: dustinswales/ufs-community-mpas-ci:oneapi
     container:
-      image: ${{ matrix.image }}
+      image: ${{matrix.image}}
     # 
     defaults:
       run:
@@ -67,25 +67,37 @@ jobs:
       MPAS_ROOT:      /__w/MPAS-Model/MPAS-Model
       mpas_bl_ROOT:   /__w/MPAS-Model-BL
       PNETCDF:        /opt/pnetcdf
-      #mpas_ics:       testing_and_setup/ufs-community/data/ics/ufscommunity
-      #physics_tables: testing_and_setup/ufs-community/data/tables
       ufs_community:  testing_and_setup/ufs-community
-      #ufs_community_data:  testing_and_setup/ufs-community/data
 
     # Workflow steps
     steps:
-
-    - name: Set derived env vars
+    ##########################################################################################
+    # Setup
+    ##########################################################################################
+    - name: Set derived shell environment variables
       run: |
-        ufs_community_data="${{ env.ufs_community }}/data"
-        echo "ufs_community_data=${ufs_community_data}" >> $GITHUB_ENV
-        echo "ufs_community_cases=${{ env.ufs_community }}/cases" >> $GITHUB_ENV
-        echo "ufs_community_phys_tables=${ufs_community_data}/tables" >> $GITHUB_ENV
-        echo "ufs_community_mpas_ics=${ufs_community_data}/ics/ufscommunity" >> $GITHUB_ENV
+        # Define various (relative) directories for convenience.  These are all relative to
+        # the MPAS-Model base directory.
+        #
+        # The wrf_phys_tables directory contains physics tables and other files specific to
+        # WRF physics.
+        echo "wrf_phys_tables=src/core_atmosphere/physics/physics_wrf/files" >> $GITHUB_ENV
+        # The ufscmnty_cases directory contains MPAS configuration files for various CI test
+        # cases.  These consist of MPAS namelists and stream definitions.
+        echo "ufscmnty_cases=${ufs_community}/cases" >> $GITHUB_ENV
+        # The ufscmnty_data directory contains the script (get_data.sh) that downloads into
+        # subdirectories various files needed for running MPAS.  These include physics tables
+        # specific to UFS physics parameterizations (as opposed to WRF physics), MPAS initial
+        # and boundary conditions, and MPAS static files.
+        ufscmnty_data="${ufs_community}/data"
+        echo "ufscmnty_data=${ufscmnty_data}" >> $GITHUB_ENV
+        # The ufs_phys_tables directory contains physics tables and other files specific to
+        # ufs physics.
+        echo "ufs_phys_tables=${ufscmnty_data}/tables" >> $GITHUB_ENV
+        # The mpas_ics directory contains MPAS initial and boundary condition files and MPAS
+        # static files.
+        echo "mpas_ics=${ufscmnty_data}/ics" >> $GITHUB_ENV
 
-    ##########################################################################################
-    # Step 1: Setup
-    ##########################################################################################
     - name: Setup MPI (GNU)
       if: matrix.f-compiler == 'gfortran'
       run: |
@@ -115,9 +127,9 @@ jobs:
         echo "PNETCDF=/opt/pnetcdf"   >> $GITHUB_ENV
 
      ##########################################################################################
-     # Step 2a: Clone MPAS and build -- baseline branch.
+     # Clone and build the MPAS baseline branch.
      ##########################################################################################
-    - name: Get baseline branch SHA
+    - name: Get SHA -- baseline branch
       id: baseline-sha
       run: |
         echo "sha=$(git ls-remote https://github.com/ufs-community/MPAS-Model.git noaa/develop | cut -f1)" >> $GITHUB_OUTPUT
@@ -131,8 +143,8 @@ jobs:
       id: cache-bl
       uses: actions/cache@v3
       with:
-        path: ${{ env.mpas_bl_ROOT }}/atmosphere_model
-        key: mpas-build-bl-${{ runner.os }}-${{ matrix.image }}-${{ matrix.f-compiler }}-${{ matrix.build-type }}-${{ steps.baseline-sha.outputs.sha }}
+        path: ${{env.mpas_bl_ROOT}}/atmosphere_model
+        key: mpas-build-bl-${{runner.os}}-${{matrix.image}}-${{matrix.f-compiler}}-${{matrix.build-type}}-${{steps.baseline-sha.outputs.sha}}
 
     - name: Download physics tables -- baseline branch
       run: |
@@ -143,10 +155,10 @@ jobs:
       if: steps.cache-bl.outputs.cache-hit != 'true'
       run: |
         cd ${mpas_bl_ROOT}
-        make ${{matrix.bld_target}} CORE=atmosphere ${{ matrix.build-type == 'Debug' && 'DEBUG=true' || '' }}
+        make ${{matrix.bld_target}} CORE=atmosphere ${{matrix.build-type == 'Debug' && 'DEBUG=true' || ''}}
 
     ##########################################################################################
-    # Step 2b: Clone MPAS and build -- feature branch.
+    # Clone and build the MPAS feature branch.
     ##########################################################################################
 
     # actions/checkout@v3 is a standard GitHub Actions action that clones the repository that
@@ -155,7 +167,7 @@ jobs:
     #   1) Clones the feature branch (the one that was pushed or opened as a PR) into ${MPAS_ROOT}.
     #   2) Checks out the specific commit that triggered the workflow.
     #
-    - name: Checkout MPAS for testing -- feature branch
+    - name: Checkout MPAS -- feature branch
       uses: actions/checkout@v3
 
     - name: Initialize submodules -- feature branch
@@ -168,61 +180,60 @@ jobs:
       id: cache-feature
       uses: actions/cache@v3
       with:
-        path: ${{ env.MPAS_ROOT }}/atmosphere_model
-        key: mpas-build-${{ runner.os }}-${{ matrix.image }}-${{ matrix.f-compiler }}-${{ matrix.build-type }}-${{ hashFiles('Makefile', 'src/**') }}
+        path: ${{env.MPAS_ROOT}}/atmosphere_model
+        key: mpas-build-${{runner.os}}-${{matrix.image}}-${{matrix.f-compiler}}-${{matrix.build-type}}-${{hashFiles('Makefile', 'src/**')}}
 
     - name: Download physics tables -- feature branch
       run: |
         cd ${MPAS_ROOT}/src/core_atmosphere/physics
         ./checkout_data_files.sh
 
-    - name: Build MPAS for testing -- feature branch
+    - name: Build MPAS -- feature branch
       if: steps.cache-feature.outputs.cache-hit != 'true'
       run: |
         cd ${MPAS_ROOT}
-        make ${{matrix.bld_target}} CORE=atmosphere ${{ matrix.build-type == 'Debug' && 'DEBUG=true' || '' }}
+        make ${{matrix.bld_target}} CORE=atmosphere ${{matrix.build-type == 'Debug' && 'DEBUG=true' || ''}}
 
     ##########################################################################################
-    # Step 3: Fetch any data/files needed for MPAS runs.
+    # Download any data/files needed for MPAS runs.
+    # Note that this step uses the get_data.sh script in the feature branch, assuming that
+    # the data downloaded is also sufficient for runs with the baseline branch.
     ##########################################################################################
-    - name: Download MPAS data (grid info, IC and LBC files)
+    - name: Download MPAS data (grid info, IC and LBC files, some larger physics tables)
       run: |
-        echo "0000000000"
-        cd ${MPAS_ROOT}
-        #./testing_and_setup/ufs-community/data/get_data.sh
-        ./${ufs_community_data}/get_data.sh
-        set -x
-        echo "AAAAAAAAAA"
-        cd testing_and_setup
-        pwd
-        ls -alF
-        echo "BBBBBBBBBB"
-        cd ufs-community
-        pwd
-        ls -alF
-        echo "CCCCCCCCCC"
-        cd data
-        pwd
-        ls -alF
-        echo "DDDDDDDDDD"
-        cd ics
-        pwd
-        ls -alF
-        echo "EEEEEEEEEE"
-        cd ufscommunity.gfs.winter
-        pwd
-        ls -alF
-        echo "FFFFFFFFFF"
+        #echo "0000000000"
+        ${MPAS_ROOT}/${ufscmnty_data}/get_data.sh
+        #set -x
+        #echo "AAAAAAAAAA"
+        #cd testing_and_setup
+        #pwd
+        #ls -alF
+        #echo "BBBBBBBBBB"
+        #cd ufs-community
+        #pwd
+        #ls -alF
+        #echo "CCCCCCCCCC"
+        #cd data
+        #pwd
+        #ls -alF
+        #echo "DDDDDDDDDD"
+        #cd ics
+        #pwd
+        #ls -alF
+        #echo "EEEEEEEEEE"
+        #cd ufscommunity.gfs.winter
+        #pwd
+        #ls -alF
+        #echo "FFFFFFFFFF"
 
     ##########################################################################################
-    # Step 4a: Configure MPAS baseline branch run directory.
+    # Configure MPAS baseline branch run directory.
     ##########################################################################################
     - name: Create and populate run directory -- baseline branch runs
       run: |
         set -x
         cd ${runner_ROOT} && mkdir run_bl && cd run_bl
-        #cp ${MPAS_ROOT}/testing_and_setup/ufs-community/cases/ufscommunity.${{env.physics}}.${{matrix.ic_source}}.${{matrix.season}}/* .
-        cp ${MPAS_ROOT}/${ufs_community_cases}/ufscommunity.${{env.physics}}.${{matrix.ic_source}}.${{matrix.season}}/* .
+        cp ${MPAS_ROOT}/${ufscmnty_cases}/ufscommunity.${{env.physics}}.${{matrix.ic_source}}.${{matrix.season}}/* .
         echo
         echo "AAAAAAAAAA"
         ls -alF ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.TBL
@@ -232,56 +243,60 @@ jobs:
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*DATA .
         ln -sf ${mpas_bl_ROOT}/src/core_atmosphere/physics/physics_noahmp/parameters/NoahmpTable.TBL .
         ln -sf ${MPAS_ROOT}/src/core_atmosphere/physics/physics_noaa/TEMPO/tables/ccn_activate.bin .
-        ln -sf ${MPAS_ROOT}/${ufs_community_mpas_ics}.${{matrix.ic_source}}.${{matrix.season}}/mpas.init.nc .
-        ln -sf ${MPAS_ROOT}/${ufs_community_mpas_ics}.${{matrix.ic_source}}.${{matrix.season}}/mpas.ugwp_oro_data.nc .
-        ln -sf ${MPAS_ROOT}/${ufs_community_mpas_ics}.${{matrix.ic_source}}.${{matrix.season}}/mpas.lbc.nc .
-        ln -sf ${MPAS_ROOT}/${ufs_community_mpas_ics}.${{matrix.ic_source}}.${{matrix.season}}/graph.info.part.2 .
-        ln -sf ${MPAS_ROOT}/${ufs_community_phys_tables}/tempo/* .
-        ln -sf ${MPAS_ROOT}/${ufs_community_phys_tables}/ugw/* .
+        ln -sf ${MPAS_ROOT}/${mpas_ics}/ufscommunity.${{matrix.ic_source}}.${{matrix.season}}/mpas.init.nc .
+        ln -sf ${MPAS_ROOT}/${mpas_ics}/ufscommunity.${{matrix.ic_source}}.${{matrix.season}}/mpas.ugwp_oro_data.nc .
+        ln -sf ${MPAS_ROOT}/${mpas_ics}/ufscommunity.${{matrix.ic_source}}.${{matrix.season}}/mpas.lbc.nc .
+        ln -sf ${MPAS_ROOT}/${mpas_ics}/ufscommunity.${{matrix.ic_source}}.${{matrix.season}}/graph.info.part.2 .
+        ln -sf ${MPAS_ROOT}/${ufs_phys_tables}/tempo/* .
+        ln -sf ${MPAS_ROOT}/${ufs_phys_tables}/ugw/* .
         ln -sf ${mpas_bl_ROOT}/atmosphere_model .
 
     - name: Link surface files to run directory -- baseline branch runs
       if: matrix.ic_source == 'gfs'
       run: |
         cd ${runner_ROOT}/run_bl
-        ln -sf ${MPAS_ROOT}/${ufs_community_mpas_ics}.${{matrix.ic_source}}.${{matrix.season}}/mpas.sfc_update.nc .
+        ln -sf ${MPAS_ROOT}/${mpas_ics}/ufscommunity.${{matrix.ic_source}}.${{matrix.season}}/mpas.sfc_update.nc .
 
     ##########################################################################################
-    # Step 4b: Configure MPAS feature branch run directory.
+    # Configure MPAS feature branch run directory.
     ##########################################################################################
     - name: Create and populate run directory -- feature branch runs
       run: |
-        #set -x
-        #echo "AAAAAAAAAA"
+        set -x
+        echo "AAAAAAAAAA"
         #echo "pwd = |$(pwd)|"
         cd ${runner_ROOT} && mkdir run_rt && cd run_rt
-        #cp ${MPAS_ROOT}/testing_and_setup/ufs-community/cases/ufscommunity.${{env.physics}}.${{matrix.ic_source}}.${{matrix.season}}.stoch/* .
-        cp ${MPAS_ROOT}/${ufs_community_cases}/ufscommunity.${{env.physics}}.${{matrix.ic_source}}.${{matrix.season}}.stoch/* .
-        # Create links in the run directory to the physics parameterization tables.
-        ln -sf ${MPAS_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.TBL .
-        ln -sf ${MPAS_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.DBL .
-        ln -sf ${MPAS_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*DATA .
+        cp ${MPAS_ROOT}/${ufscmnty_cases}/ufscommunity.${{env.physics}}.${{matrix.ic_source}}.${{matrix.season}}.stoch/* .
+        # Create symlinks in the run directory.
+        #
+        # Links to WRF physics tables and other files that are downloaded during the call to
+        # checkout_data_files.sh.
+        ln -sf ${MPAS_ROOT}/${wrf_phys_tables}/{*.TBL,*.DBL,*.DATA} .
+        # Links to UFS physics tables that are under version control, i.e. part of the MPAS-Model
+        # repo or submodules.  These are not created in the build step or some other way.  They
+        # are present once the repository is cloned (recursively).
         ln -sf ${MPAS_ROOT}/src/core_atmosphere/physics/physics_noahmp/parameters/NoahmpTable.TBL .
         ln -sf ${MPAS_ROOT}/src/core_atmosphere/physics/physics_noaa/TEMPO/tables/ccn_activate.bin .
-        # Create links in the run directory to the initial and boundary condition 
-        ln -sf ${MPAS_ROOT}/${ufs_community_mpas_ics}.${{matrix.ic_source}}.${{matrix.season}}/mpas.init.nc .
-        ln -sf ${MPAS_ROOT}/${ufs_community_mpas_ics}.${{matrix.ic_source}}.${{matrix.season}}/mpas.ugwp_oro_data.nc .
-        ln -sf ${MPAS_ROOT}/${ufs_community_mpas_ics}.${{matrix.ic_source}}.${{matrix.season}}/mpas.lbc.nc .
-        ln -sf ${MPAS_ROOT}/${ufs_community_mpas_ics}.${{matrix.ic_source}}.${{matrix.season}}/graph.info.part.2 .
-        # Create links in the run directory to the tables fetched by the 
-        ln -sf ${MPAS_ROOT}/${ufs_community_phys_tables}/tempo/* .
-        ln -sf ${MPAS_ROOT}/${ufs_community_phys_tables}/ugw/* .
+        # Links to the UFS physics tables downloaded by the get_data.sh script.
+        ln -sf ${MPAS_ROOT}/${ufs_phys_tables}/tempo/* .
+        ln -sf ${MPAS_ROOT}/${ufs_phys_tables}/ugw/* .
+        # Links to the MPAS initial and boundary condition files and other static files.
+        ln -sf ${MPAS_ROOT}/${mpas_ics}/ufscommunity.${{matrix.ic_source}}.${{matrix.season}}/mpas.init.nc .
+        ln -sf ${MPAS_ROOT}/${mpas_ics}/ufscommunity.${{matrix.ic_source}}.${{matrix.season}}/mpas.ugwp_oro_data.nc .
+        ln -sf ${MPAS_ROOT}/${mpas_ics}/ufscommunity.${{matrix.ic_source}}.${{matrix.season}}/mpas.lbc.nc .
+        ln -sf ${MPAS_ROOT}/${mpas_ics}/ufscommunity.${{matrix.ic_source}}.${{matrix.season}}/graph.info.part.2 .
+        # Link to the MPAS executable.
         ln -sf ${MPAS_ROOT}/atmosphere_model .
 #        echo "BBBBBBBBBB"
 #        echo "MPAS_ROOT = |${MPAS_ROOT}|"
 #        cd ${MPAS_ROOT}
 #        pwd
 #        ls -alF
-#        echo "CCCCCCCCCC"
-#        cd ${MPAS_ROOT}/testing_and_setup/ufs-community/cases/ufscommunity.${{env.physics}}.${{matrix.ic_source}}.${{matrix.season}}.stoch
-#        pwd
-#        ls -alF
-#        echo "DDDDDDDDDD"
+        echo "CCCCCCCCCC"
+        cd ${MPAS_ROOT}/testing_and_setup/ufs-community/cases/ufscommunity.${{env.physics}}.${{matrix.ic_source}}.${{matrix.season}}.stoch
+        pwd
+        ls -alF
+        echo "DDDDDDDDDD"
 #        more namelist.atmosphere
 #        echo "EEEEEEEEEE"
 
@@ -289,10 +304,10 @@ jobs:
       if: matrix.ic_source == 'gfs'
       run: |
         cd ${runner_ROOT}/run_rt
-        ln -sf ${MPAS_ROOT}/${ufs_community_mpas_ics}.${{matrix.ic_source}}.${{matrix.season}}/mpas.sfc_update.nc .
+        ln -sf ${MPAS_ROOT}/${mpas_ics}/ufscommunity.${{matrix.ic_source}}.${{matrix.season}}/mpas.sfc_update.nc .
 
     ##########################################################################################
-    # Step 5: Run MPAS with both baseline and feature branches.
+    # Run MPAS with both baseline and feature branches.
     ##########################################################################################
     - name: Run MPAS -- baseline branch
       continue-on-error: true
@@ -322,7 +337,7 @@ jobs:
         more log.atmosphere.0000.out
 
     ##########################################################################################
-    # Step 6: Compare feature branch to baseline branch.
+    # Compare feature branch to baseline branch.
     ##########################################################################################
     - name: Setup Miniconda
       uses: conda-incubator/setup-miniconda@v3.2.0
@@ -331,7 +346,7 @@ jobs:
         auto-update-conda: true
         auto-activate-base: false
         #environment-file: testing_and_setup/ufs-community/environment.yml
-        environment-file: ${{ env.ufs_community }}/environment.yml
+        environment-file: ${{env.ufs_community}}/environment.yml
         activate-environment: mpas-ci-env
 
     - name: Run comparison script
@@ -354,7 +369,7 @@ jobs:
 #        echo "CCCCCCCCCC"
 
     ##########################################################################################
-    # Step 7: Save MPAS output and log files as GitHub Artifact.
+    # Save MPAS output and log files as GitHub Artifact.
     ##########################################################################################
     - name: Create GitHub artifact
       run: |
