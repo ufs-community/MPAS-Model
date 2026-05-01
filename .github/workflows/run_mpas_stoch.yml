@@ -271,7 +271,7 @@ jobs:
         #
         # Links to WRF physics tables and other files that are downloaded during the call to
         # checkout_data_files.sh.
-        ln -sf ${MPAS_ROOT}/${wrf_phys_tables}/{*.TBL,*.DBL,*.DATA} .
+        ln -sf ${MPAS_ROOT}/${wrf_phys_tables}/{*.TBL,*.DBL,*DATA} .
         # Links to UFS physics tables that are under version control, i.e. part of the MPAS-Model
         # repo or submodules.  These are not created in the build step or some other way.  They
         # are present once the repository is cloned (recursively).
@@ -282,8 +282,8 @@ jobs:
         ln -sf ${MPAS_ROOT}/${ufs_phys_tables}/ugw/* .
         # Links to the MPAS initial and boundary condition files and other static files.
         ln -sf ${MPAS_ROOT}/${mpas_ics}/ufscommunity.${{matrix.ic_source}}.${{matrix.season}}/mpas.init.nc .
-        ln -sf ${MPAS_ROOT}/${mpas_ics}/ufscommunity.${{matrix.ic_source}}.${{matrix.season}}/mpas.ugwp_oro_data.nc .
         ln -sf ${MPAS_ROOT}/${mpas_ics}/ufscommunity.${{matrix.ic_source}}.${{matrix.season}}/mpas.lbc.nc .
+        ln -sf ${MPAS_ROOT}/${mpas_ics}/ufscommunity.${{matrix.ic_source}}.${{matrix.season}}/mpas.ugwp_oro_data.nc .
         ln -sf ${MPAS_ROOT}/${mpas_ics}/ufscommunity.${{matrix.ic_source}}.${{matrix.season}}/graph.info.part.2 .
         # Link to the MPAS executable.
         ln -sf ${MPAS_ROOT}/atmosphere_model .
@@ -293,10 +293,12 @@ jobs:
         echo "pwd = $(pwd)"
         ls -alF
         echo "CCCCCCCCCC"
+        # Test if the symlink target exists:
+        [ -e graph.info.part.2 ] && echo "valid" || echo "dangling"
         #cd ${MPAS_ROOT}/testing_and_setup/ufs-community/cases/ufscommunity.${{env.physics}}.${{matrix.ic_source}}.${{matrix.season}}.stoch
         #pwd
         #ls -alF
-        #echo "DDDDDDDDDD"
+        echo "DDDDDDDDDD"
         #more namelist.atmosphere
         # echo "EEEEEEEEEE"
 
