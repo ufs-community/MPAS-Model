@@ -23,9 +23,9 @@ on: [push, pull_request, workflow_dispatch]
 #
 # Tests:
 #        Baseline Codebase Repository:Branch  Physics   IC source   season   build-type
-# 1/4)   ufs-community:gsl/develop            hrrrv5    gfs         winter   Release/Debug
-# 2/5)   ufs-community:gsl/develop            hrrrv5    rap         summer   Release/Debug
-# 3/6)   ufs-community:gsl/develop            hrrrv5    rap         winter   Release/Debug
+# 1/4)   ufs-community:noaa/develop           hrrrv5    gfs         winter   Release/Debug
+# 2/5)   ufs-community:noaa/develop           hrrrv5    rap         summer   Release/Debug
+# 3/6)   ufs-community:noaa/develop           hrrrv5    rap         winter   Release/Debug
 #
 #############################################################################################
 jobs:
@@ -109,13 +109,11 @@ jobs:
     - name: Get baseline branch SHA
       id: baseline-sha
       run: |
-        #echo "sha=$(git ls-remote https://github.com/ufs-community/MPAS-Model.git gsl/develop | cut -f1)" >> $GITHUB_OUTPUT
         echo "sha=$(git ls-remote https://github.com/ufs-community/MPAS-Model.git noaa/develop | cut -f1)" >> $GITHUB_OUTPUT
 
     - name: Checkout MPAS -- baseline branch
       run: |
         cd ${runner_ROOT}
-        #git clone --recursive --branch gsl/develop https://github.com/ufs-community/MPAS-Model.git MPAS-Model-BL
         git clone --recursive --branch noaa/develop https://github.com/ufs-community/MPAS-Model.git MPAS-Model-BL
 
     - name: Cache MPAS build -- baseline branch
@@ -256,18 +254,18 @@ jobs:
         ln -sf ${MPAS_ROOT}/${physics_tables}/tempo/* .
         ln -sf ${MPAS_ROOT}/${physics_tables}/ugw/* .
         ln -sf ${MPAS_ROOT}/atmosphere_model .
-        echo "BBBBBBBBBB"
-        echo "MPAS_ROOT = |${MPAS_ROOT}|"
-        cd ${MPAS_ROOT}
-        pwd
-        ls -alF
-        echo "CCCCCCCCCC"
-        cd ${MPAS_ROOT}/testing_and_setup/ufs-community/cases/ufscommunity.${{env.physics}}.${{matrix.ic_source}}.${{matrix.season}}.stoch
-        pwd
-        ls -alF
-        echo "DDDDDDDDDD"
-        more namelist.atmosphere
-        echo "EEEEEEEEEE"
+#        echo "BBBBBBBBBB"
+#        echo "MPAS_ROOT = |${MPAS_ROOT}|"
+#        cd ${MPAS_ROOT}
+#        pwd
+#        ls -alF
+#        echo "CCCCCCCCCC"
+#        cd ${MPAS_ROOT}/testing_and_setup/ufs-community/cases/ufscommunity.${{env.physics}}.${{matrix.ic_source}}.${{matrix.season}}.stoch
+#        pwd
+#        ls -alF
+#        echo "DDDDDDDDDD"
+#        more namelist.atmosphere
+#        echo "EEEEEEEEEE"
 
     - name: Link surface files to run directory -- feature branch runs
       if: matrix.ic_source == 'gfs'
