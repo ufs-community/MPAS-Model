@@ -50,10 +50,9 @@
     config_radtlw_interval = '00:15:00'
     config_radtsw_interval = '00:15:00'
     config_bucket_update = 'none'
-!    config_physics_suite = 'hrrrv5'
-!    num_soil_layers = 9
-    config_physics_suite = 'convection_permitting'
-    config_microp_scheme = 'mp_tempo'
+    config_physics_suite = 'hrrrv5'
+    num_soil_layers = 9
+    config_mynn_mixnumcon = 0    
 /
 &physics_mp_tempo
     config_tempo_aerosolaware = true
