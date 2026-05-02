@@ -218,6 +218,8 @@ jobs:
 
     ##########################################################################################
     # Download any data/files needed for MPAS runs.
+    # This is done for both branches since the files downloaded by the get_data.sh script may
+    # not be the same for the two branches.
     ##########################################################################################
     - name: Download MPAS static/IC/LBC files and UFS physics tables -- baseline branch
       run: |
@@ -339,30 +341,12 @@ jobs:
     # Compare feature branch to baseline branch.
     ##########################################################################################
 
-    # Note that the comparison script used below (cmp_rt2bl.py) is the one in the feature
-    # branch.  Thus, the environment file used in the miniconda setup should be the one in
-    # that branch (SRCDIR_FT).  Since the miniconda step prepends ${GITHUB_WORKSPACE} to
-    # whatever value is provided to environment-file: below and since ${SRCDIR_FT} is set
-    # to ${GITHUB_WORKSPACE}, the environment file used below is in fact the one in the
-    # feature branch.
-    - name: Setup miniconda
-      #uses: conda-incubator/setup-miniconda@v3.2.0
-      uses: conda-incubator/setup-miniconda@v3
-      with:
-        python-version: ${{env.py-version}}
-        auto-update-conda: true
-        auto-activate-base: false
-        activate-environment: mpas-ci-env
-        #environment-file: ${{env.SRCDIR_FT}}/${{env.ufs_community}}/environment.yml
-        environment-file: ${{env.ufs_community}}/environment.yml
-
-#    - name: Cache conda environment
-#      id: cache-conda
-#      uses: actions/cache@v3
-#      with:
-#        path: ${{ env.CONDA }}/envs
-#        key: conda-${{ runner.os }}-${{ hashFiles(format('{0}/environment.yml', env.ufs_community)) }}
-#
+#    # Note that the comparison script used below (cmp_rt2bl.py) is the one in the feature
+#    # branch.  Thus, the environment file used in the miniconda setup should be the one in
+#    # that branch (SRCDIR_FT).  Since the miniconda step prepends ${GITHUB_WORKSPACE} to
+#    # whatever value is provided to environment-file: below and since ${SRCDIR_FT} is set
+#    # to ${GITHUB_WORKSPACE}, the environment file used below is in fact the one in the
+#    # feature branch.
 #    - name: Setup miniconda
 #      uses: conda-incubator/setup-miniconda@v3
 #      with:
@@ -370,11 +354,27 @@ jobs:
 #        auto-update-conda: true
 #        auto-activate-base: false
 #        activate-environment: mpas-ci-env
-#        #use-only-tar-bz2: true
-#
-#    - name: Create conda environment
-#      if: steps.cache-conda.outputs.cache-hit != 'true'
-#      run: conda env update --file ${SRCDIR_FT}/${{env.ufs_community}}/environment.yml --name mpas-ci-env
+#        environment-file: ${{env.ufs_community}}/environment.yml
+
+    - name: Cache conda environment
+      id: cache-conda
+      uses: actions/cache@v3
+      with:
+        path: ${{ env.CONDA }}/envs
+        key: conda-${{ runner.os }}-${{ hashFiles(format('{0}/environment.yml', env.ufs_community)) }}
+
+    - name: Setup miniconda
+      uses: conda-incubator/setup-miniconda@v3
+      with:
+        python-version: ${{env.py-version}}
+        auto-update-conda: true
+        auto-activate-base: false
+        activate-environment: mpas-ci-env
+        #use-only-tar-bz2: true
+
+    - name: Create conda environment
+      if: steps.cache-conda.outputs.cache-hit != 'true'
+      run: conda env update --file ${SRCDIR_FT}/${{env.ufs_community}}/environment.yml --name mpas-ci-env
 
 
     - name: Run comparison script
