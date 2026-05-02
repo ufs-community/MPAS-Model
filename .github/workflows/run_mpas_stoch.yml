@@ -213,11 +213,11 @@ jobs:
     ##########################################################################################
     # Download any data/files needed for MPAS runs.
     ##########################################################################################
-    - name: Download MPAS static, IC, and LBC files, UFS physics lookup tables -- baseline branch
+    - name: Download MPAS static/IC/LBC files and UFS physics tables -- baseline branch
       run: |
         ${SRCDIR_BL}/${ufscmnty_data}/get_data.sh
 
-    - name: Download MPAS static, IC, and LBC files, UFS physics lookup tables -- feature branch
+    - name: Download MPAS static/IC/LBC files and UFS physics tables -- feature branch
       run: |
         ${SRCDIR_FT}/${ufscmnty_data}/get_data.sh
 
@@ -243,7 +243,7 @@ jobs:
         # feature branch.  Also, since the namelist file that the baseline branch cannot
         # contain the stochastic physics namelist (called "nam_stochy", we specifically copy
         # in a version of the namelist file without that namelist.
-        cp ${RUNDIR_FT}/${ufscmnty_cases}/ufscommunity.${{env.physics}}.${{matrix.ic_source}}.${{matrix.season}}.stoch/* .
+        cp ${SRCDIR_FT}/${ufscmnty_cases}/ufscommunity.${{env.physics}}.${{matrix.ic_source}}.${{matrix.season}}.stoch/* .
         # The following command takes the namelist.atmosphere file copied into the run directory
         # above (and which contains the nam_stochy namelist) and removes that namelist from it.
         sed -i '/^[[:space:]]*&nam_stochy/,/^[[:space:]]*\//d' namelist.atmosphere
