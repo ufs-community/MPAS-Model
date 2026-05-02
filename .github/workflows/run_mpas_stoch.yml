@@ -67,9 +67,6 @@ jobs:
       runner_ROOT:    /__w/
       PNETCDF:        /opt/pnetcdf
       ufs_community:  testing_and_setup/ufs-community
-      # Root directories for git clones of the MPAS baseline and feature branches.
-      SRCDIR_BL:      /__w/MPAS-Model-BL
-      SRCDIR_FT:      /__w/MPAS-Model/MPAS-Model
       # Github artifact name.
       artifact:       artifact-${{matrix.f-compiler}}-${{matrix.build-type}}-${{matrix.ic_source}}-${{matrix.season}}-${{matrix.physics}}-stoch
 
@@ -103,6 +100,16 @@ jobs:
         # static files.
         echo "mpas_ics=${ufscmnty_data}/ics" >> $GITHUB_ENV
         #
+        # Define base directories for git clones of the MPAS baseline and feature branches.
+        #
+        echo "SRCDIR_BL=/__w/MPAS-Model-BL" >> $GITHUB_ENV
+        # Note that GITHUB_WORKSPACE is set using the pattern
+        #   /__w/<repo-name>/<repo-name>
+        # i.e. the repository name is repeated twice: once for the parent directory and once
+        # for the checkout directory within it.  Thus, here, it will be set to
+        #   /__w/MPAS-Model/MPAS-Model
+        # and SRCDIR_FT will be set to that as well.
+        echo "SRCDIR_FT=${GITHUB_WORKSPACE}" >> $GITHUB_ENV
         # Define absolute paths to the base directories of the runs with the baseline and feature
         # branches.
         #
