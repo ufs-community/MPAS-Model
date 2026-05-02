@@ -64,14 +64,15 @@
 &nam_stochy
     do_sppt = true
     do_skeb = false
-!    config_spptint = 60
+    config_spptint = 60
 !    config_spptint = 0
-    config_spptint = 720
+!    config_spptint = 720
     config_sppt_1 = 0.8
     config_sppt_2 = 0.0
     config_sppt_3 = 0.0
-!    config_sppt_tau_1 = 21600
-    config_sppt_tau_1 = 3600
+    config_sppt_tau_1 = 21600
+!    config_sppt_tau_1 = 600
+!    config_sppt_tau_1 = 3600
     config_sppt_tau_2 = 86400
     config_sppt_tau_3 = 21600
     config_sppt_lscale_1 = 150000
