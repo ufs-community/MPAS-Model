@@ -360,10 +360,11 @@ jobs:
         #mkdir ${ARTDIR}
         #cd ${artifact_dir}
         #
+        set -x
         datadir="${ARTDIR}/data_bl"
         mkdir -p ${datadir}
         cd ${RUNDIR_BL}
-        cp ./* ${data_dir}
+        cp ./* ${datadir}
         #mkdir data_bl && cd data_bl
         #cp ${RUNDIR_BL}/log.atmosphere.*.out .
         #cp ${RUNDIR_BL}/history.*.nc .
@@ -379,7 +380,7 @@ jobs:
         datadir="${ARTDIR}/data_ft"
         mkdir -p ${datadir}
         cd ${RUNDIR_FT}
-        cp ./* ${data_dir}
+        cp ./* ${datadir}
 
     - name: Upload log files as GitHub Artifact
       uses: actions/upload-artifact@v4
