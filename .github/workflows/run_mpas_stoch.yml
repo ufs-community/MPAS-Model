@@ -41,6 +41,7 @@ jobs:
 #        season:     [summer, winter]
         season:     [winter]
         build-type: [Release]
+        physics:    [hrrrv5]
         exclude:
           - ic_source: gfs
             season: summer
@@ -62,7 +63,6 @@ jobs:
     # Environmental variables.  GitHub Actions automatically exports these to all shell
     # environments.
     env:
-      physics:        hrrrv5
       py-version:     3.11
       runner_ROOT:    /__w/
       PNETCDF:        /opt/pnetcdf
@@ -70,6 +70,9 @@ jobs:
       # Root directories for git clones of the MPAS baseline and feature branches.
       SRCDIR_BL:      /__w/MPAS-Model-BL
       SRCDIR_FT:      /__w/MPAS-Model/MPAS-Model
+      # Github artifact name.
+      artifact:       artifact-${{matrix.f-compiler}}-${{matrix.build-type}}-${{matrix.ic_source}}-${{matrix.season}}-${{matrix.physics}}-stoch"
+      #ARTIFACT_DIR:   ${runner_ROOT}/${artifact}" >> $GITHUB_ENV
 
     # Workflow steps
     steps:
@@ -107,12 +110,11 @@ jobs:
         echo "RUNDIR_BL=${runner_ROOT}/run_bl" >> $GITHUB_ENV
         echo "RUNDIR_FT=${runner_ROOT}/run_ft" >> $GITHUB_ENV
         #
-        # Set the Github artifact name and absolute path.
+        # Set the absolute path to the Github artifact.
         #
-        artifact="artifact-${{matrix.f-compiler}}-${{matrix.build-type}}-${{matrix.ic_source}}-${{matrix.season}}-${physics}-stoch"
-        echo "artifact=${artifact}" >> $GITHUB_ENV
-        echo "ARTDIR=${runner_ROOT}/${artifact}" >> $GITHUB_ENV
-
+        #artifact="artifact-${{matrix.f-compiler}}-${{matrix.build-type}}-${{matrix.ic_source}}-${{matrix.season}}-${{matrix.physics}}-stoch"
+        #echo "artifact=${artifact}" >> $GITHUB_ENV
+        echo "ARTIFACT_DIR=${runner_ROOT}/${artifact}" >> $GITHUB_ENV
 
     - name: Setup MPI (GNU)
       if: matrix.f-compiler == 'gfortran'
@@ -162,7 +164,7 @@ jobs:
         path: ${{env.SRCDIR_BL}}/atmosphere_model
         key: mpas-build-bl-${{runner.os}}-${{matrix.image}}-${{matrix.f-compiler}}-${{matrix.build-type}}-${{steps.baseline-sha.outputs.sha}}
 
-    - name: Download physics tables -- baseline branch
+    - name: Download WRF physics tables -- baseline branch
       run: |
         cd ${SRCDIR_BL}/src/core_atmosphere/physics
         ./checkout_data_files.sh
@@ -199,7 +201,7 @@ jobs:
         path: ${{env.SRCDIR_FT}}/atmosphere_model
         key: mpas-build-${{runner.os}}-${{matrix.image}}-${{matrix.f-compiler}}-${{matrix.build-type}}-${{hashFiles('Makefile', 'src/**')}}
 
-    - name: Download physics tables -- feature branch
+    - name: Download WRF physics tables -- feature branch
       run: |
         cd ${SRCDIR_FT}/src/core_atmosphere/physics
         ./checkout_data_files.sh
@@ -237,13 +239,13 @@ jobs:
         # copying the MPAS configuration files to the run directory will not work.  Thus,
         # comment this out for now and uncomment only after the stochastic physics PR is
         # merged.
-        #cp ${srcdir}/${ufscmnty_cases}/ufscommunity.${{env.physics}}.${{matrix.ic_source}}.${{matrix.season}}.stoch/* .
+        #cp ${srcdir}/${ufscmnty_cases}/ufscommunity.${{matrix.physics}}.${{matrix.ic_source}}.${{matrix.season}}.stoch/* .
         #
         # Instead, copy the MPAS configuration files from the corresponding directory for the
         # feature branch.  Also, since the namelist file that the baseline branch cannot
         # contain the stochastic physics namelist (called "nam_stochy", we specifically copy
         # in a version of the namelist file without that namelist.
-        cp ${SRCDIR_FT}/${ufscmnty_cases}/ufscommunity.${{env.physics}}.${{matrix.ic_source}}.${{matrix.season}}.stoch/* .
+        cp ${SRCDIR_FT}/${ufscmnty_cases}/ufscommunity.${{matrix.physics}}.${{matrix.ic_source}}.${{matrix.season}}.stoch/* .
         # The following command takes the namelist.atmosphere file copied into the run directory
         # above (and which contains the nam_stochy namelist) and removes that namelist from it.
         sed -i '/^[[:space:]]*&nam_stochy/,/^[[:space:]]*\//d' namelist.atmosphere
@@ -284,7 +286,7 @@ jobs:
         # Create and cd into run directory.
         mkdir -p ${rundir} && cd ${rundir}
         # Copy MPAS configuration files (namelist, stream) into run directory.
-        cp ${srcdir}/${ufscmnty_cases}/ufscommunity.${{env.physics}}.${{matrix.ic_source}}.${{matrix.season}}.stoch/* .
+        cp ${srcdir}/${ufscmnty_cases}/ufscommunity.${{matrix.physics}}.${{matrix.ic_source}}.${{matrix.season}}.stoch/* .
         #
         # Create symlinks in the run directory.
         #
@@ -333,7 +335,8 @@ jobs:
     # Compare feature branch to baseline branch.
     ##########################################################################################
     - name: Setup Miniconda
-      uses: conda-incubator/setup-miniconda@v3.2.0
+      #uses: conda-incubator/setup-miniconda@v3.2.0
+      uses: conda-incubator/setup-miniconda@v3
       with:
         python-version: ${{env.py-version}}
         auto-update-conda: true
@@ -356,13 +359,13 @@ jobs:
     - name: Create GitHub artifact
       run: |
         #cd ${runner_ROOT}
-        #mkdir artifact-${{matrix.f-compiler}}-${{matrix.build-type}}-${{matrix.ic_source}}-${{matrix.season}}-${{env.physics}}-stoch
-        #cd artifact-${{matrix.f-compiler}}-${{matrix.build-type}}-${{matrix.ic_source}}-${{matrix.season}}-${{env.physics}}-stoch
-        #mkdir ${ARTDIR}
+        #mkdir artifact-${{matrix.f-compiler}}-${{matrix.build-type}}-${{matrix.ic_source}}-${{matrix.season}}-${{matrix.physics}}-stoch
+        #cd artifact-${{matrix.f-compiler}}-${{matrix.build-type}}-${{matrix.ic_source}}-${{matrix.season}}-${{matrix.physics}}-stoch
+        #mkdir ${ARTIFACT_DIR}
         #cd ${artifact_dir}
         #
         set -x
-        datadir="${ARTDIR}/data_bl"
+        datadir="${ARTIFACT_DIR}/data_bl"
         mkdir -p ${datadir}
         cd ${RUNDIR_BL}
         cp ./* ${datadir}
@@ -378,15 +381,17 @@ jobs:
         #cp ${RUNDIR_FT}/history.*.nc .
         #cp ${RUNDIR_FT}/diag.*.nc .
         #cp ${RUNDIR_FT}/namelist.atmosphere .
-        datadir="${ARTDIR}/data_ft"
+        datadir="${ARTIFACT_DIR}/data_ft"
         mkdir -p ${datadir}
         cd ${RUNDIR_FT}
         cp ./* ${datadir}
 
-    - name: Upload log files as GitHub Artifact
+    - name: Upload MPAS Runs as GitHub Artifact
       uses: actions/upload-artifact@v4
       with:
-        #name: mpas-baselines-${{matrix.f-compiler}}-${{matrix.build-type}}-${{matrix.ic_source}}-${{matrix.season}}-${{env.physics}}-stoch
-        name: mpas-baselines-${artifact}
+        #name: mpas-baselines-${{matrix.f-compiler}}-${{matrix.build-type}}-${{matrix.ic_source}}-${{matrix.season}}-${{matrix.physics}}-stoch
+        #name: mpas-baselines-${artifact}
+        name: mpas-baselines-${{env.artifact}}
         #path: /__w/${artifact}
-        path: ${ARTDIR}
+        path: ${{env.runner_ROOT}}/${{env.artifact}}
+        #path: ${ARTIFACT_DIR}
