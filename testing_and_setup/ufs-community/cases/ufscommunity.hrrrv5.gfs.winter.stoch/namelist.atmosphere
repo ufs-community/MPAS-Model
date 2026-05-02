@@ -71,7 +71,7 @@
     config_sppt_2 = 0.0
     config_sppt_3 = 0.0
 !    config_sppt_tau_1 = 21600
-    config_sppt_tau_1 = 600
+    config_sppt_tau_1 = 3600
     config_sppt_tau_2 = 86400
     config_sppt_tau_3 = 21600
     config_sppt_lscale_1 = 150000
