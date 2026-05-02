@@ -72,7 +72,6 @@ jobs:
       SRCDIR_FT:      /__w/MPAS-Model/MPAS-Model
       # Github artifact name.
       artifact:       artifact-${{matrix.f-compiler}}-${{matrix.build-type}}-${{matrix.ic_source}}-${{matrix.season}}-${{matrix.physics}}-stoch
-      #ARTIFACT_DIR:   ${runner_ROOT}/${artifact}" >> $GITHUB_ENV
 
     # Workflow steps
     steps:
@@ -112,8 +111,6 @@ jobs:
         #
         # Set the absolute path to the Github artifact.
         #
-        #artifact="artifact-${{matrix.f-compiler}}-${{matrix.build-type}}-${{matrix.ic_source}}-${{matrix.season}}-${{matrix.physics}}-stoch"
-        #echo "artifact=${artifact}" >> $GITHUB_ENV
         echo "ARTIFACT_DIR=${runner_ROOT}/${artifact}" >> $GITHUB_ENV
 
     - name: Setup MPI (GNU)
@@ -358,29 +355,11 @@ jobs:
     ##########################################################################################
     - name: Create GitHub artifact
       run: |
-        #cd ${runner_ROOT}
-        #mkdir artifact-${{matrix.f-compiler}}-${{matrix.build-type}}-${{matrix.ic_source}}-${{matrix.season}}-${{matrix.physics}}-stoch
-        #cd artifact-${{matrix.f-compiler}}-${{matrix.build-type}}-${{matrix.ic_source}}-${{matrix.season}}-${{matrix.physics}}-stoch
-        #mkdir ${ARTIFACT_DIR}
-        #cd ${artifact_dir}
-        #
-        set -x
         datadir="${ARTIFACT_DIR}/data_bl"
         mkdir -p ${datadir}
         cd ${RUNDIR_BL}
         cp ./* ${datadir}
-        #mkdir data_bl && cd data_bl
-        #cp ${RUNDIR_BL}/log.atmosphere.*.out .
-        #cp ${RUNDIR_BL}/history.*.nc .
-        #cp ${RUNDIR_BL}/diag.*.nc .
-        #cp ${RUNDIR_BL}/namelist.atmosphere .
-        cd ..
         #
-        #mkdir data_ft && cd data_ft
-        #cp ${RUNDIR_FT}/log.atmosphere.*.out .
-        #cp ${RUNDIR_FT}/history.*.nc .
-        #cp ${RUNDIR_FT}/diag.*.nc .
-        #cp ${RUNDIR_FT}/namelist.atmosphere .
         datadir="${ARTIFACT_DIR}/data_ft"
         mkdir -p ${datadir}
         cd ${RUNDIR_FT}
@@ -389,9 +368,5 @@ jobs:
     - name: Upload MPAS Runs as GitHub Artifact
       uses: actions/upload-artifact@v4
       with:
-        #name: mpas-baselines-${{matrix.f-compiler}}-${{matrix.build-type}}-${{matrix.ic_source}}-${{matrix.season}}-${{matrix.physics}}-stoch
-        #name: mpas-baselines-${artifact}
         name: mpas-baselines-${{env.artifact}}
-        #path: /__w/${artifact}
-        path: ${{env.runner_ROOT}}/${{env.artifact}}
-        #path: ${ARTIFACT_DIR}
+        path: ${{env.ARTIFACT_DIR}}
