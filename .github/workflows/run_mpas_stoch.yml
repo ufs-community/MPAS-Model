@@ -71,7 +71,7 @@ jobs:
       SRCDIR_BL:      /__w/MPAS-Model-BL
       SRCDIR_FT:      /__w/MPAS-Model/MPAS-Model
       # Github artifact name.
-      artifact:       artifact-${{matrix.f-compiler}}-${{matrix.build-type}}-${{matrix.ic_source}}-${{matrix.season}}-${{matrix.physics}}-stoch"
+      artifact:       artifact-${{matrix.f-compiler}}-${{matrix.build-type}}-${{matrix.ic_source}}-${{matrix.season}}-${{matrix.physics}}-stoch
       #ARTIFACT_DIR:   ${runner_ROOT}/${artifact}" >> $GITHUB_ENV
 
     # Workflow steps
