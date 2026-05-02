@@ -331,16 +331,40 @@ jobs:
     ##########################################################################################
     # Compare feature branch to baseline branch.
     ##########################################################################################
-    - name: Setup Miniconda
+
+    # Note that the comparison script used below (cmp_rt2bl.py) is the one in the feature
+    # branch.  Thus, the environment file used in the miniconda setup should be the one in
+    # that branch (SRCDIR_FT).
+    - name: Setup miniconda
       #uses: conda-incubator/setup-miniconda@v3.2.0
       uses: conda-incubator/setup-miniconda@v3
       with:
         python-version: ${{env.py-version}}
         auto-update-conda: true
         auto-activate-base: false
-        environment-file: ${{env.ufs_community}}/environment.yml
         activate-environment: mpas-ci-env
-        cache-environment: true
+        environment-file: ${{env.SRCDIR_FT}}/${{env.ufs_community}}/environment.yml
+
+#    - name: Cache conda environment
+#      id: cache-conda
+#      uses: actions/cache@v3
+#      with:
+#        path: ${{ env.CONDA }}/envs
+#        key: conda-${{ runner.os }}-${{ hashFiles(format('{0}/environment.yml', env.ufs_community)) }}
+#
+#    - name: Setup miniconda
+#      uses: conda-incubator/setup-miniconda@v3
+#      with:
+#        python-version: ${{env.py-version}}
+#        auto-update-conda: true
+#        auto-activate-base: false
+#        activate-environment: mpas-ci-env
+#        #use-only-tar-bz2: true
+#
+#    - name: Create conda environment
+#      if: steps.cache-conda.outputs.cache-hit != 'true'
+#      run: conda env update --file ${SRCDIR_FT}/${{env.ufs_community}}/environment.yml --name mpas-ci-env
+
 
     - name: Run comparison script
       run: |
@@ -365,7 +389,7 @@ jobs:
         cd ${RUNDIR_FT}
         cp ./* ${datadir}
 
-    - name: Upload MPAS Runs as GitHub Artifact
+    - name: Upload MPAS runs as GitHub artifact
       uses: actions/upload-artifact@v4
       with:
         name: mpas-baselines-${{env.artifact}}
