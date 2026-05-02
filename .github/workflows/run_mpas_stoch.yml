@@ -64,7 +64,7 @@ jobs:
     # environments.
     env:
       py-version:     3.11
-      runner_ROOT:    /__w/
+      runner_ROOT:    /__w
       PNETCDF:        /opt/pnetcdf
       ufs_community:  testing_and_setup/ufs-community
       # Github artifact name.
