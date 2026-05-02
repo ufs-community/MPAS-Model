@@ -110,7 +110,7 @@ jobs:
         # Set the Github artifact name and absolute path.
         #
         artifact="artifact-${{matrix.f-compiler}}-${{matrix.build-type}}-${{matrix.ic_source}}-${{matrix.season}}-${physics}-stoch"
-        #echo "artifact=${artifact}" >> $GITHUB_ENV
+        echo "artifact=${artifact}" >> $GITHUB_ENV
         echo "ARTDIR=${runner_ROOT}/${artifact}" >> $GITHUB_ENV
 
 
@@ -340,6 +340,7 @@ jobs:
         auto-activate-base: false
         environment-file: ${{env.ufs_community}}/environment.yml
         activate-environment: mpas-ci-env
+        cache-environment: true
 
     - name: Run comparison script
       run: |
@@ -385,6 +386,7 @@ jobs:
     - name: Upload log files as GitHub Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: mpas-baselines-${{matrix.f-compiler}}-${{matrix.build-type}}-${{matrix.ic_source}}-${{matrix.season}}-${{env.physics}}-stoch
+        #name: mpas-baselines-${{matrix.f-compiler}}-${{matrix.build-type}}-${{matrix.ic_source}}-${{matrix.season}}-${{env.physics}}-stoch
+        name: mpas-baselines-${artifact}
         #path: /__w/${artifact}
         path: ${ARTDIR}
