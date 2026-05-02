@@ -341,7 +341,10 @@ jobs:
 
     # Note that the comparison script used below (cmp_rt2bl.py) is the one in the feature
     # branch.  Thus, the environment file used in the miniconda setup should be the one in
-    # that branch (SRCDIR_FT).
+    # that branch (SRCDIR_FT).  Since the miniconda step prepends ${GITHUB_WORKSPACE} to
+    # whatever value is provided to environment-file: below and since ${SRCDIR_FT} is set
+    # to ${GITHUB_WORKSPACE}, the environment file used below is in fact the one in the
+    # feature branch.
     - name: Setup miniconda
       #uses: conda-incubator/setup-miniconda@v3.2.0
       uses: conda-incubator/setup-miniconda@v3
@@ -350,7 +353,8 @@ jobs:
         auto-update-conda: true
         auto-activate-base: false
         activate-environment: mpas-ci-env
-        environment-file: ${{env.SRCDIR_FT}}/${{env.ufs_community}}/environment.yml
+        #environment-file: ${{env.SRCDIR_FT}}/${{env.ufs_community}}/environment.yml
+        environment-file: ${{env.ufs_community}}/environment.yml
 
 #    - name: Cache conda environment
 #      id: cache-conda
