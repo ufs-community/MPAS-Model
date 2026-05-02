@@ -352,7 +352,7 @@ jobs:
 #      with:
 #        python-version: ${{env.py-version}}
 #        auto-update-conda: true
-#        auto-activate-base: false
+#        auto-activate: false
 #        activate-environment: mpas-ci-env
 #        environment-file: ${{env.ufs_community}}/environment.yml
 
@@ -368,7 +368,7 @@ jobs:
       with:
         python-version: ${{env.py-version}}
         auto-update-conda: true
-        auto-activate-base: false
+        auto-activate: false
         activate-environment: mpas-ci-env
 
     - name: Create conda environment
