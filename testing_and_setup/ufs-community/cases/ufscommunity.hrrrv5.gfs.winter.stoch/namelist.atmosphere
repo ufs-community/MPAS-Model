@@ -64,7 +64,8 @@
 &nam_stochy
     do_sppt = true
     do_skeb = false
-    config_spptint = 60
+!    config_spptint = 60
+    config_spptint = 0
     config_sppt_1 = 0.8
     config_sppt_2 = 0.0
     config_sppt_3 = 0.0
