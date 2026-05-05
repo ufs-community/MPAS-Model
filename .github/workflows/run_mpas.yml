@@ -183,7 +183,7 @@ jobs:
     - name: Link lateral boundary condition file for regional MPAS.
       run: |
         cd ${runner_ROOT}/run_bl
-        ln -sf ${MPAS_ROOT}/${mpas_ics}/mpas.lbc.nc.
+        ln -sf ${MPAS_ROOT}/${mpas_ics}/mpas.lbc.nc .
 
     - name: Link Thompson MP data tables to run directory
       if: contains(matrix.physics, 'convection_permitting')
