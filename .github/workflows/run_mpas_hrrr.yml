@@ -22,9 +22,9 @@ on: [push, pull_request, workflow_dispatch]
 #
 # Tests:
 #        Baseline Codebase Repository:Branch  Physics   IC source   season   build-type
-# 1/4)   ufs-community:gsl/develop            hrrrv5    gfs         winter   Release/Debug
-# 2/5)   ufs-community:gsl/develop            hrrrv5    rap         summer   Release/Debug
-# 3/6)   ufs-community:gsl/develop            hrrrv5    rap         winter   Release/Debug
+# 1/4)   ufs-community:noaa/develop           hrrrv5    gfs         winter   Release/Debug
+# 2/5)   ufs-community:noaa/develop           hrrrv5    rap         summer   Release/Debug
+# 3/6)   ufs-community:noaa/develop           hrrrv5    rap         winter   Release/Debug
 #
 #############################################################################################
 jobs:
@@ -90,7 +90,7 @@ jobs:
       if: contains(matrix.build-type, 'Debug')
       run: |
         cd ${runner_ROOT}
-        git clone --recursive --branch gsl/develop https://github.com/ufs-community/MPAS-Model.git MPAS-Model-BL
+        git clone --recursive --branch noaa/develop https://github.com/ufs-community/MPAS-Model.git MPAS-Model-BL
         cd ${mpas_bl_ROOT}
         make ${{matrix.bld_target}} CORE=atmosphere DEBUG=true
 
@@ -98,7 +98,7 @@ jobs:
       if: contains(matrix.build-type, 'Release')
       run: |
         cd ${runner_ROOT}
-        git clone --recursive --branch gsl/develop https://github.com/ufs-community/MPAS-Model.git MPAS-Model-BL
+        git clone --recursive --branch noaa/develop https://github.com/ufs-community/MPAS-Model.git MPAS-Model-BL
         cd ${mpas_bl_ROOT}
         make ${{matrix.bld_target}} CORE=atmosphere
 
