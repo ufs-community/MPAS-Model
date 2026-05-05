@@ -13,6 +13,8 @@
 
  use mpas_atmphys_constants
  use mpas_atmphys_vars
+ use mpas_satmedmfvdifq_wrapper_mod, only : mpas_satmedmfvdifq_config_type, &
+                                            mpas_call_satmedmfvdifq
 
  use bl_mynn,only: bl_mynn_init
  use module_bl_mynn,only: mynn_bl_driver
@@ -148,6 +150,25 @@
        if(.not.allocated(v10_p)   ) allocate(v10_p(ims:ime,jms:jme)         )
        if(.not.allocated(exch_p)  ) allocate(exch_p(ims:ime,kms:kme,jms:jme))
        if(.not.allocated(wstar_p) ) allocate(wstar_p(ims:ime,jms:jme)       )
+
+
+    case("bl_tke_edmf")
+       ! Minimal MPAS application additions for UFS TKE-EDMF adapter.
+       ! Reuse existing local arrays to stage MPAS fields for the wrapper:
+       !   dx_p       : areaCell
+       !   tsk_p      : skin temperature
+       !   psim_p     : fm
+       !   psih_p     : fh
+       !   rthraten_p : SW radiative heating
+       !   exch_p     : LW radiative heating
+       if(.not.allocated(dx_p)      ) allocate(dx_p(ims:ime,jms:jme)          )
+       if(.not.allocated(tsk_p)     ) allocate(tsk_p(ims:ime,jms:jme)         )
+       if(.not.allocated(psim_p)    ) allocate(psim_p(ims:ime,jms:jme)        )
+       if(.not.allocated(psih_p)    ) allocate(psih_p(ims:ime,jms:jme)        )
+       if(.not.allocated(u10_p)     ) allocate(u10_p(ims:ime,jms:jme)         )
+       if(.not.allocated(v10_p)     ) allocate(v10_p(ims:ime,jms:jme)         )
+       if(.not.allocated(exch_p)    ) allocate(exch_p(ims:ime,kms:kme,jms:jme))
+       if(.not.allocated(rthraten_p)) allocate(rthraten_p(ims:ime,kms:kme,jms:jme))
 
     case("bl_mynn")
        if(.not.allocated(kbl_plume_p) ) allocate(kbl_plume_p(ims:ime,jms:jme)         )
@@ -334,6 +355,17 @@
        if(allocated(exch_p)  ) deallocate(exch_p  )
        if(allocated(wstar_p) ) deallocate(wstar_p )
 
+
+    case("bl_tke_edmf")
+       if(allocated(dx_p)      ) deallocate(dx_p      )
+       if(allocated(tsk_p)     ) deallocate(tsk_p     )
+       if(allocated(psim_p)    ) deallocate(psim_p    )
+       if(allocated(psih_p)    ) deallocate(psih_p    )
+       if(allocated(u10_p)     ) deallocate(u10_p     )
+       if(allocated(v10_p)     ) deallocate(v10_p     )
+       if(allocated(exch_p)    ) deallocate(exch_p    )
+       if(allocated(rthraten_p)) deallocate(rthraten_p)
+
     case("bl_mynn")
        if(allocated(kbl_plume_p) ) deallocate(kbl_plume_p )
        if(allocated(dx_p)        ) deallocate(dx_p        )
@@ -484,6 +516,9 @@
  logical,pointer:: config_ysu_pblmix
  real(kind=RKIND),dimension(:),pointer:: br,fh,fm,u10,v10
  real(kind=RKIND),dimension(:,:),pointer:: rthratenlw,rthratensw
+
+!local pointers for bl_tke_edmf adapter:
+ real(kind=RKIND),dimension(:),pointer:: areaCell,skintemp
 
 !local pointers for MYNN scheme:
  real(kind=RKIND),pointer:: len_disp
@@ -662,6 +697,35 @@
        do k = kts,kte
        do i = its,ite
           exch_p(i,k,j) = 0._RKIND
+       enddo
+       enddo
+       enddo
+
+
+    case("bl_tke_edmf")
+       ! Stage MPAS fields needed by the UFS TKE-EDMF adapter.
+       call mpas_pool_get_array(mesh        ,'areaCell'  ,areaCell  )
+       call mpas_pool_get_array(sfc_input   ,'skintemp'  ,skintemp  )
+       call mpas_pool_get_array(diag_physics,'fm'        ,fm        )
+       call mpas_pool_get_array(diag_physics,'fh'        ,fh        )
+       call mpas_pool_get_array(diag_physics,'u10'       ,u10       )
+       call mpas_pool_get_array(diag_physics,'v10'       ,v10       )
+       call mpas_pool_get_array(tend_physics,'rthratenlw',rthratenlw)
+       call mpas_pool_get_array(tend_physics,'rthratensw',rthratensw)
+
+       do j = jts,jte
+       do i = its,ite
+          dx_p(i,j)   = areaCell(i)
+          tsk_p(i,j)  = skintemp(i)
+          psim_p(i,j) = fm(i)
+          psih_p(i,j) = fh(i)
+          u10_p(i,j)  = u10(i)
+          v10_p(i,j)  = v10(i)
+       enddo
+       do k = kts,kte
+       do i = its,ite
+          rthraten_p(i,k,j) = rthratensw(k,i)
+          exch_p(i,k,j)     = rthratenlw(k,i)
        enddo
        enddo
        enddo
@@ -1022,6 +1086,18 @@
 
  pbl_select: select case (trim(pbl_scheme))
 
+
+    case("bl_tke_edmf")
+       call mpas_pool_get_array(diag_physics,'tke_pbl',tke_pbl)
+
+       do j = jts,jte
+       do k = kts,kte
+       do i = its,ite
+          tke_pbl(k,i) = tkepbl_p(i,k,j)
+       enddo
+       enddo
+       enddo
+
     case("bl_ysu")
        call mpas_pool_get_array(diag_physics,'delta',delta  )
        call mpas_pool_get_array(diag_physics,'wstar' ,wstar )
@@ -1370,6 +1446,11 @@
  character(len=StrKIND):: errmsg
  integer:: errflg
 
+!UFS TKE-EDMF adapter variables:
+ type(mpas_satmedmfvdifq_config_type) :: tke_edmf_cfg
+ character(len=256) :: tke_edmf_errmsg
+ integer :: tke_edmf_errflg
+
 !-----------------------------------------------------------------------------------------------------------------
 !call mpas_log_write('')
 !call mpas_log_write('--- enter subroutine driver_pbl:')
@@ -1420,6 +1501,84 @@
                  its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte    &
                 )
        call mpas_timer_stop('bl_ysu')
+
+
+    case("bl_tke_edmf")
+       call mpas_timer_start('bl_tke_edmf')
+
+       ! Conservative initial settings.  Expose these through Registry later.
+       tke_edmf_cfg%sa3dtke     = .false.
+       tke_edmf_cfg%tte_edmf    = .false.
+       tke_edmf_cfg%dspheat     = .false.
+       tke_edmf_cfg%use_oceanuv = .false.
+       tke_edmf_cfg%do_canopy   = .false.
+       tke_edmf_cfg%cplaqm      = .false.
+       tke_edmf_cfg%gen_tend    = .false.
+       tke_edmf_cfg%ldiag3d     = .false.
+
+       tke_edmf_cfg%sfc_rlm = 0
+       tke_edmf_cfg%tc_pbl  = 0
+       tke_edmf_cfg%use_lpt = 0
+
+       tke_edmf_cfg%xkzm_m  = 1.0_RKIND
+       tke_edmf_cfg%xkzm_h  = 1.0_RKIND
+       tke_edmf_cfg%xkzm_s  = 0.7_RKIND
+       tke_edmf_cfg%dspfac  = 1.0_RKIND
+       tke_edmf_cfg%bl_upfr = 1.0_RKIND
+       tke_edmf_cfg%bl_dnfr = 1.0_RKIND
+       tke_edmf_cfg%rlmx    = 300.0_RKIND
+       tke_edmf_cfg%elmx    = 300.0_RKIND
+
+       tke_edmf_errmsg = ''
+       tke_edmf_errflg = 0
+
+       call mpas_call_satmedmfvdifq(                                      &
+            nCells       = (ite-its+1),                                    &
+            nVertLevels  = (kte-kts+1),                                    &
+            ntrac        = 4,                                              &
+            dt           = dt_pbl,                                         &
+            z_mid        = zl_p(its:ite,kts:kte,jts),                      &
+            z_int        = zi_p(its:ite,kts:kte+1,jts),                    &
+            areaCell     = dx_p(its:ite,jts),                              &
+            u_mpas       = u_p(its:ite,kts:kte,jts),                       &
+            v_mpas       = v_p(its:ite,kts:kte,jts),                       &
+            t_mpas       = t_p(its:ite,kts:kte,jts),                       &
+            qv_mpas      = qv_p(its:ite,kts:kte,jts),                      &
+            qc_mpas      = qc_p(its:ite,kts:kte,jts),                      &
+            qi_mpas      = qi_p(its:ite,kts:kte,jts),                      &
+            tke_mpas     = tkepbl_p(its:ite,kts:kte,jts),                  &
+            p_mid        = pres_hyd_p(its:ite,kts:kte,jts),                &
+            p_int        = pres2_hyd_p(its:ite,kts:kte+1,jts),             &
+            exner_mid    = pi_p(its:ite,kts:kte,jts),                      &
+            sw_heat      = rthraten_p(its:ite,kts:kte,jts),                &
+            lw_heat      = exch_p(its:ite,kts:kte,jts),                    &
+            coszen       = xland_p(its:ite,jts)*0.0_RKIND + 1.0_RKIND,     &
+            skin_temp    = tsk_p(its:ite,jts),                             &
+            shflx        = hfx_p(its:ite,jts),                             &
+            lhflx        = qfx_p(its:ite,jts) * xlv,                       &
+            stress_in    = ust_p(its:ite,jts) * ust_p(its:ite,jts),        &
+            z0_mpas      = znt_p(its:ite,jts),                             &
+            u10          = u10_p(its:ite,jts),                              &
+            v10          = v10_p(its:ite,jts),                              &
+            fm_in        = psim_p(its:ite,jts),                             &
+            fh_in        = psih_p(its:ite,jts),                             &
+            hpbl_out     = hpbl_p(its:ite,jts),                            &
+            kpbl_out     = kpbl_p(its:ite,jts),                            &
+            ten_t_out    = rthblten_p(its:ite,kts:kte,jts),                &
+            ten_u_out    = rublten_p(its:ite,kts:kte,jts),                 &
+            ten_v_out    = rvblten_p(its:ite,kts:kte,jts),                 &
+            cfg          = tke_edmf_cfg,                                   &
+            errmsg       = tke_edmf_errmsg,                                &
+            errflg       = tke_edmf_errflg)
+
+       if (tke_edmf_errflg /= 0) then
+          write(*,*) 'FATAL in bl_tke_edmf: ', trim(tke_edmf_errmsg)
+          call mpas_timer_stop('bl_tke_edmf')
+          call mpas_timer_stop('PBL Scheme')
+          stop 1
+       endif
+
+       call mpas_timer_stop('bl_tke_edmf')
 
     case("bl_mynn")
        call mpas_pool_get_config(configs,'config_mynn_cloudpdf'   ,bl_mynn_cloudpdf   )

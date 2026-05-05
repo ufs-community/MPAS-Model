@@ -56,7 +56,14 @@ OBJS = \
 	mpas_atmphys_todynamics.o          \
 	mpas_atmphys_update_surface.o      \
 	mpas_atmphys_update.o              \
-	mpas_atmphys_vars.o
+	mpas_atmphys_vars.o                \
+	gfs_tke_edmf_compat.o              \
+	tridi_mod.o                        \
+	mfpbltq_mod.o                      \
+	mfscuq_mod.o                       \
+	canopy_utils_mod.o                 \
+	satmedmfvdifq.o                    \
+	mpas_atmphys_bl_satmedmfvdifq.o
 
 lookup_tables:
 	./checkout_data_files.sh
@@ -172,9 +179,39 @@ mpas_atmphys_driver_oml.o: \
 	mpas_atmphys_landuse.o \
 	mpas_atmphys_vars.o
 
+# TKE-EDMF / SATMEDMF dependencies for MPAS application
+gfs_tke_edmf_compat.o: \
+	mpas_atmphys_constants.o
+
+tridi_mod.o: \
+	gfs_tke_edmf_compat.o
+
+mfpbltq_mod.o: \
+	gfs_tke_edmf_compat.o
+
+mfscuq_mod.o: \
+	gfs_tke_edmf_compat.o
+
+satmedmfvdifq.o: \
+	gfs_tke_edmf_compat.o \
+	tridi_mod.o \
+	mfpbltq_mod.o \
+	mfscuq_mod.o \
+	canopy_utils_mod.o \
+	mpas_atmphys_constants.o \
+	mpas_atmphys_functions.o \
+	mpas_atmphys_vars.o
+
+mpas_atmphys_bl_satmedmfvdifq.o: \
+	satmedmfvdifq.o \
+	mpas_atmphys_constants.o \
+	mpas_atmphys_vars.o \
+	mpas_atmphys_utilities.o
+
 mpas_atmphys_driver_pbl.o: \
 	mpas_atmphys_constants.o \
-	mpas_atmphys_vars.o
+	mpas_atmphys_vars.o \
+	mpas_atmphys_bl_satmedmfvdifq.o
 
 mpas_atmphys_driver_radiation_lw.o: \
 	mpas_atmphys_camrad_init.o \
