@@ -3311,7 +3311,7 @@
 
                 <var name="tke_pbl" type="real" dimensions="nVertLevels nCells Time" units="m^{2} s^{-2}"
                      description="turbulent kinetic energy from PBL"
-                     packages="bl_tke_edmf_in, bl_mynn_in;bl_myj_in"/>
+                     packages="bl_tke_edmf_in; bl_mynn_in;bl_myj_in"/>
 
                 <var name="dqke" type="real" dimensions="nVertLevels nCells Time" units="m^{2} s^{-2}"
                      description="TKE change"
