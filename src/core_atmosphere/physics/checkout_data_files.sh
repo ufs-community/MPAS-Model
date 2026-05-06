@@ -29,6 +29,16 @@ github_org="MPAS-Dev"   # GitHub organization where the MPAS-Data repository is 
                         # For physics development, it can be helpful for a developer
                         # to obtain tables from their own fork of the MPAS-Data repository.
 
+
+#
+# Local GFS/UFS TKE-EDMF helper directory.
+# These files are source-code additions and do not require lookup-table downloads,
+# but the directory is created here so the MPAS physics build layout is consistent.
+#
+if [ ! -d physics_gfs ]; then
+   mkdir -p physics_gfs
+fi
+
 #
 # Return 1 if the "mpas_vers" string is found in the physics table COMPATIBILITY
 # file, and 0 otherwise
