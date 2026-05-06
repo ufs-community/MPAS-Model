@@ -98,7 +98,6 @@ contains
 
     real(kind=RKIND), allocatable :: rtg(:,:,:), q1(:,:,:)
     real(kind=RKIND), allocatable :: u1(:,:), v1(:,:), t1(:,:)
-    real(kind=RKIND), allocatable :: usfco(:), vsfco(:)
     real(kind=RKIND), allocatable :: swh(:,:), hlw(:,:), xmu(:)
     real(kind=RKIND), allocatable :: garea(:), zvfun(:), sigmaf(:)
     real(kind=RKIND), allocatable :: psk(:), rbsoil(:), zorl(:)
@@ -112,6 +111,7 @@ contains
     real(kind=RKIND), allocatable :: def_1(:,:), def_2(:,:), def_3(:,:)
     real(kind=RKIND), allocatable :: dku3d_h(:,:), dku3d_e(:,:)
     real(kind=RKIND), allocatable :: ten_t(:,:), ten_u(:,:), ten_v(:,:)
+    real(kind=RKIND), allocatable :: dv(:,:), du(:,:), tdt(:,:)
     real(kind=RKIND), allocatable :: dtend(:,:,:)
     real(kind=RKIND), allocatable :: claie(:), cfch(:), cfrt(:), cclu(:), cpopu(:)
     real(kind=RKIND) :: tem1, tem2
@@ -138,7 +138,6 @@ contains
 
     allocate(rtg(im,km,ntrac), q1(im,km,ntrac))
     allocate(u1(im,km), v1(im,km), t1(im,km))
-    allocate(usfco(im), vsfco(im))
     allocate(swh(im,km), hlw(im,km), xmu(im))
     allocate(garea(im), zvfun(im), sigmaf(im))
     allocate(psk(im), rbsoil(im), zorl(im))
@@ -151,14 +150,13 @@ contains
     allocate(def_1(im,km), def_2(im,km), def_3(im,km))
     allocate(dku3d_h(im,km), dku3d_e(im,km))
     allocate(ten_t(im,km), ten_u(im,km), ten_v(im,km))
+    allocate(dv(im,km), du(im,km), tdt(im,km))
     allocate(kpbl(im), kinver(im))
     allocate(dtidx(3,1), dtend(im,km,3))
     allocate(claie(im), cfch(im), cfrt(im), cclu(im), cpopu(im))
 
     rtg = 0.0_RKIND
     q1 = 0.0_RKIND
-    usfco = 0.0_RKIND
-    vsfco = 0.0_RKIND
     dkt = 0.0_RKIND
     dku = 0.0_RKIND
     tkeh = 0.0_RKIND
@@ -170,6 +168,9 @@ contains
     ten_t = 0.0_RKIND
     ten_u = 0.0_RKIND
     ten_v = 0.0_RKIND
+    dv = 0.0_RKIND
+    du = 0.0_RKIND
+    tdt = 0.0_RKIND
     dtend = 0.0_RKIND
     dtidx = 0
     claie = 0.0_RKIND
@@ -276,7 +277,7 @@ contains
     call satmedmfvdifq_run(im, km, ntrac, ntcw, ntrw, ntiw, ntke,       &
          grav, pi, rd, cp, rv, hvap, hfus, fv, eps, epsm1,             &
          def_1, def_2, def_3, cfg%sa3dtke, dku3d_h, dku3d_e,           &
-         rtg, u1, v1, t1, q1, usfco, vsfco, cfg%use_oceanuv,           &
+         dv, du, tdt, rtg, u1, v1, t1, q1,                             &
          swh, hlw, xmu, garea, zvfun, sigmaf,                          &
          psk, rbsoil, zorl, u10m, v10m, fm, fh,                        &
          tsea, heat, evap, stress, spd1, kpbl,                         &
@@ -288,16 +289,15 @@ contains
          cfg%do_canopy, cfg%cplaqm, claie, cfch, cfrt, cclu, cpopu,    &
          ntqv, dtend, dtidx, index_of_temperature,                     &
          index_of_x_wind, index_of_y_wind, index_of_process_pbl,       &
-         cfg%gen_tend, cfg%ldiag3d, ten_t, ten_u, ten_v,               &
-         errmsg, errflg)
+         cfg%gen_tend, cfg%ldiag3d, errmsg, errflg)
 
     if (errflg /= 0) return
 
     do k = 1, km
       do i = 1, im
-        ten_t_out(i,k) = ten_t(i,k)
-        ten_u_out(i,k) = ten_u(i,k)
-        ten_v_out(i,k) = ten_v(i,k)
+        ten_t_out(i,k) = tdt(i,k)
+        ten_u_out(i,k) = du(i,k)
+        ten_v_out(i,k) = dv(i,k)
 
         tke_mpas(i,k) = max(q1(i,k,ntke), 0.0_RKIND)
       enddo
