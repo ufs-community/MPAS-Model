@@ -95,7 +95,7 @@ core_physics_noahmp: core_physics_init
 	(cd physics_noahmp/drivers/mpas; $(MAKE) all COREDEF="$(COREDEF)")
 
 core_physics_gfs: core_physics_init
-	(cd physics_gfs; $(MAKE) -f Makefile.mpas all COREDEF="$(COREDEF)")
+	(cd physics_gfs; $(MAKE) -f Makefile all COREDEF="$(COREDEF)")
 
 core_physics_init: $(OBJS_init)
 
