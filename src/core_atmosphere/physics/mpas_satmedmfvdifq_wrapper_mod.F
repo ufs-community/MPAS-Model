@@ -1,6 +1,6 @@
 module mpas_satmedmfvdifq_wrapper_mod
 
-  use machine,       only: kind_phys
+  use mpas_kind_types, only: RKIND
   use satmedmfvdifq, only: satmedmfvdifq_run
   implicit none
 
@@ -8,6 +8,7 @@ module mpas_satmedmfvdifq_wrapper_mod
     logical :: sa3dtke      = .false.
     logical :: tte_edmf     = .false.
     logical :: dspheat      = .false.
+    logical :: use_oceanuv  = .false.
     logical :: do_canopy    = .false.
     logical :: cplaqm       = .false.
     logical :: gen_tend     = .false.
@@ -17,14 +18,14 @@ module mpas_satmedmfvdifq_wrapper_mod
     integer :: tc_pbl  = 0
     integer :: use_lpt = 0
 
-    real(kind_phys) :: xkzm_m = 1.0_kind_phys
-    real(kind_phys) :: xkzm_h = 1.0_kind_phys
-    real(kind_phys) :: xkzm_s = 0.7_kind_phys
-    real(kind_phys) :: dspfac = 1.0_kind_phys
-    real(kind_phys) :: bl_upfr = 1.0_kind_phys
-    real(kind_phys) :: bl_dnfr = 1.0_kind_phys
-    real(kind_phys) :: rlmx = 300.0_kind_phys
-    real(kind_phys) :: elmx = 300.0_kind_phys
+    real(kind=RKIND) :: xkzm_m = 1.0_RKIND
+    real(kind=RKIND) :: xkzm_h = 1.0_RKIND
+    real(kind=RKIND) :: xkzm_s = 0.7_RKIND
+    real(kind=RKIND) :: dspfac = 1.0_RKIND
+    real(kind=RKIND) :: bl_upfr = 1.0_RKIND
+    real(kind=RKIND) :: bl_dnfr = 1.0_RKIND
+    real(kind=RKIND) :: rlmx = 300.0_RKIND
+    real(kind=RKIND) :: elmx = 300.0_RKIND
   end type mpas_satmedmfvdifq_config_type
 
 contains
@@ -42,36 +43,36 @@ contains
                                      cfg, errmsg, errflg)
 
     integer, intent(in) :: nCells, nVertLevels, ntrac
-    real(kind_phys), intent(in) :: dt
-    real(kind_phys), intent(in) :: z_mid(nCells,nVertLevels)
-    real(kind_phys), intent(in) :: z_int(nCells,nVertLevels+1)
-    real(kind_phys), intent(in) :: areaCell(nCells)
-    real(kind_phys), intent(in) :: u_mpas(nCells,nVertLevels)
-    real(kind_phys), intent(in) :: v_mpas(nCells,nVertLevels)
-    real(kind_phys), intent(in) :: t_mpas(nCells,nVertLevels)
-    real(kind_phys), intent(in) :: qv_mpas(nCells,nVertLevels)
-    real(kind_phys), intent(in) :: qc_mpas(nCells,nVertLevels)
-    real(kind_phys), intent(in) :: qi_mpas(nCells,nVertLevels)
-    real(kind_phys), intent(inout) :: tke_mpas(nCells,nVertLevels)
-    real(kind_phys), intent(in) :: p_mid(nCells,nVertLevels)
-    real(kind_phys), intent(in) :: p_int(nCells,nVertLevels+1)
-    real(kind_phys), intent(in) :: exner_mid(nCells,nVertLevels)
-    real(kind_phys), intent(in) :: sw_heat(nCells,nVertLevels)
-    real(kind_phys), intent(in) :: lw_heat(nCells,nVertLevels)
-    real(kind_phys), intent(in) :: coszen(nCells)
-    real(kind_phys), intent(in) :: skin_temp(nCells)
-    real(kind_phys), intent(in) :: shflx(nCells)
-    real(kind_phys), intent(in) :: lhflx(nCells)
-    real(kind_phys), intent(in) :: stress_in(nCells)
-    real(kind_phys), intent(in) :: z0_mpas(nCells)
-    real(kind_phys), intent(in) :: u10(nCells), v10(nCells)
-    real(kind_phys), intent(in) :: vegfra_in(nCells),rb_in(nCells)
-    real(kind_phys), intent(in) :: fm_in(nCells), fh_in(nCells)
-    real(kind_phys), intent(out) :: hpbl_out(nCells)
+    real(kind=RKIND), intent(in) :: dt
+    real(kind=RKIND), intent(in) :: z_mid(nCells,nVertLevels)
+    real(kind=RKIND), intent(in) :: z_int(nCells,nVertLevels+1)
+    real(kind=RKIND), intent(in) :: areaCell(nCells)
+    real(kind=RKIND), intent(in) :: u_mpas(nCells,nVertLevels)
+    real(kind=RKIND), intent(in) :: v_mpas(nCells,nVertLevels)
+    real(kind=RKIND), intent(in) :: t_mpas(nCells,nVertLevels)
+    real(kind=RKIND), intent(in) :: qv_mpas(nCells,nVertLevels)
+    real(kind=RKIND), intent(in) :: qc_mpas(nCells,nVertLevels)
+    real(kind=RKIND), intent(in) :: qi_mpas(nCells,nVertLevels)
+    real(kind=RKIND), intent(inout) :: tke_mpas(nCells,nVertLevels)
+    real(kind=RKIND), intent(in) :: p_mid(nCells,nVertLevels)
+    real(kind=RKIND), intent(in) :: p_int(nCells,nVertLevels+1)
+    real(kind=RKIND), intent(in) :: exner_mid(nCells,nVertLevels)
+    real(kind=RKIND), intent(in) :: sw_heat(nCells,nVertLevels)
+    real(kind=RKIND), intent(in) :: lw_heat(nCells,nVertLevels)
+    real(kind=RKIND), intent(in) :: coszen(nCells)
+    real(kind=RKIND), intent(in) :: skin_temp(nCells)
+    real(kind=RKIND), intent(in) :: shflx(nCells)
+    real(kind=RKIND), intent(in) :: lhflx(nCells)
+    real(kind=RKIND), intent(in) :: stress_in(nCells)
+    real(kind=RKIND), intent(in) :: z0_mpas(nCells)
+    real(kind=RKIND), intent(in) :: u10(nCells), v10(nCells)
+    real(kind=RKIND), intent(in) :: vegfra_in(nCells),rb_in(nCells)
+    real(kind=RKIND), intent(in) :: fm_in(nCells), fh_in(nCells)
+    real(kind=RKIND), intent(out) :: hpbl_out(nCells)
     integer, intent(out) :: kpbl_out(nCells)
-    real(kind_phys), intent(out) :: ten_t_out(nCells,nVertLevels)
-    real(kind_phys), intent(out) :: ten_u_out(nCells,nVertLevels)
-    real(kind_phys), intent(out) :: ten_v_out(nCells,nVertLevels)
+    real(kind=RKIND), intent(out) :: ten_t_out(nCells,nVertLevels)
+    real(kind=RKIND), intent(out) :: ten_u_out(nCells,nVertLevels)
+    real(kind=RKIND), intent(out) :: ten_v_out(nCells,nVertLevels)
     type(mpas_satmedmfvdifq_config_type), intent(in) :: cfg
     character(len=*), intent(out) :: errmsg
     integer, intent(out) :: errflg
@@ -82,36 +83,38 @@ contains
     integer :: index_of_temperature, index_of_x_wind
     integer :: index_of_y_wind, index_of_process_pbl
 
-    real(kind_phys), parameter :: grav  = 9.80665_kind_phys
-    real(kind_phys), parameter :: pi    = 3.14159265358979323846_kind_phys
-    real(kind_phys), parameter :: rd    = 287.0_kind_phys
-    real(kind_phys), parameter :: cp    = 1004.0_kind_phys
-    real(kind_phys), parameter :: rv    = 461.5_kind_phys
-    real(kind_phys), parameter :: hvap  = 2.5e6_kind_phys
-    real(kind_phys), parameter :: hfus  = 3.3358e5_kind_phys
-    real(kind_phys), parameter :: fv    = rv/rd - 1.0_kind_phys
-    real(kind_phys), parameter :: eps   = rd/rv
-    real(kind_phys), parameter :: epsm1 = eps - 1.0_kind_phys
-    real(kind_phys), parameter :: z0lo = 0.1_kind_phys
-    real(kind_phys), parameter :: z0up = 1.0_kind_phys
+    real(kind=RKIND), parameter :: grav  = 9.80665_RKIND
+    real(kind=RKIND), parameter :: pi    = 3.14159265358979323846_RKIND
+    real(kind=RKIND), parameter :: rd    = 287.0_RKIND
+    real(kind=RKIND), parameter :: cp    = 1004.0_RKIND
+    real(kind=RKIND), parameter :: rv    = 461.5_RKIND
+    real(kind=RKIND), parameter :: hvap  = 2.5e6_RKIND
+    real(kind=RKIND), parameter :: hfus  = 3.3358e5_RKIND
+    real(kind=RKIND), parameter :: fv    = rv/rd - 1.0_RKIND
+    real(kind=RKIND), parameter :: eps   = rd/rv
+    real(kind=RKIND), parameter :: epsm1 = eps - 1.0_RKIND
+    real(kind=RKIND), parameter :: z0lo = 0.1_RKIND
+    real(kind=RKIND), parameter :: z0up = 1.0_RKIND
 
-    real(kind_phys), allocatable :: rtg(:,:,:), q1(:,:,:)
-    real(kind_phys), allocatable :: u1(:,:), v1(:,:), t1(:,:)
-    real(kind_phys), allocatable :: swh(:,:), hlw(:,:), xmu(:)
-    real(kind_phys), allocatable :: garea(:), zvfun(:), sigmaf(:)
-    real(kind_phys), allocatable :: psk(:), rbsoil(:), zorl(:)
-    real(kind_phys), allocatable :: u10m(:), v10m(:), fm(:), fh(:)
-    real(kind_phys), allocatable :: tsea(:), heat(:), evap(:)
-    real(kind_phys), allocatable :: stress(:), spd1(:)
-    real(kind_phys), allocatable :: prsi(:,:), del(:,:), prsl(:,:), prslk(:,:)
-    real(kind_phys), allocatable :: phii(:,:), phil(:,:)
-    real(kind_phys), allocatable :: dusfc(:), dvsfc(:), dtsfc(:), dqsfc(:)
-    real(kind_phys), allocatable :: hpbl(:), dkt(:,:), dku(:,:), tkeh(:,:)
-    real(kind_phys), allocatable :: def_1(:,:), def_2(:,:), def_3(:,:)
-    real(kind_phys), allocatable :: dku3d_h(:,:), dku3d_e(:,:)
-    real(kind_phys), allocatable :: ten_t(:,:), ten_u(:,:), ten_v(:,:)
-    real(kind_phys), allocatable :: dtend(:,:,:)
-    real(kind_phys) :: tem1, tem2
+    real(kind=RKIND), allocatable :: rtg(:,:,:), q1(:,:,:)
+    real(kind=RKIND), allocatable :: u1(:,:), v1(:,:), t1(:,:)
+    real(kind=RKIND), allocatable :: usfco(:), vsfco(:)
+    real(kind=RKIND), allocatable :: swh(:,:), hlw(:,:), xmu(:)
+    real(kind=RKIND), allocatable :: garea(:), zvfun(:), sigmaf(:)
+    real(kind=RKIND), allocatable :: psk(:), rbsoil(:), zorl(:)
+    real(kind=RKIND), allocatable :: u10m(:), v10m(:), fm(:), fh(:)
+    real(kind=RKIND), allocatable :: tsea(:), heat(:), evap(:)
+    real(kind=RKIND), allocatable :: stress(:), spd1(:)
+    real(kind=RKIND), allocatable :: prsi(:,:), del(:,:), prsl(:,:), prslk(:,:)
+    real(kind=RKIND), allocatable :: phii(:,:), phil(:,:)
+    real(kind=RKIND), allocatable :: dusfc(:), dvsfc(:), dtsfc(:), dqsfc(:)
+    real(kind=RKIND), allocatable :: hpbl(:), dkt(:,:), dku(:,:), tkeh(:,:)
+    real(kind=RKIND), allocatable :: def_1(:,:), def_2(:,:), def_3(:,:)
+    real(kind=RKIND), allocatable :: dku3d_h(:,:), dku3d_e(:,:)
+    real(kind=RKIND), allocatable :: ten_t(:,:), ten_u(:,:), ten_v(:,:)
+    real(kind=RKIND), allocatable :: dtend(:,:,:)
+    real(kind=RKIND), allocatable :: claie(:), cfch(:), cfrt(:), cclu(:), cpopu(:)
+    real(kind=RKIND) :: tem1, tem2
     integer, allocatable :: kpbl(:), kinver(:), dtidx(:,:)
 
     im = nCells
@@ -135,6 +138,7 @@ contains
 
     allocate(rtg(im,km,ntrac), q1(im,km,ntrac))
     allocate(u1(im,km), v1(im,km), t1(im,km))
+    allocate(usfco(im), vsfco(im))
     allocate(swh(im,km), hlw(im,km), xmu(im))
     allocate(garea(im), zvfun(im), sigmaf(im))
     allocate(psk(im), rbsoil(im), zorl(im))
@@ -149,22 +153,30 @@ contains
     allocate(ten_t(im,km), ten_u(im,km), ten_v(im,km))
     allocate(kpbl(im), kinver(im))
     allocate(dtidx(3,1), dtend(im,km,3))
+    allocate(claie(im), cfch(im), cfrt(im), cclu(im), cpopu(im))
 
-    rtg = 0.0_kind_phys
-    q1 = 0.0_kind_phys
-    dkt = 0.0_kind_phys
-    dku = 0.0_kind_phys
-    tkeh = 0.0_kind_phys
-    def_1 = 0.0_kind_phys
-    def_2 = 0.0_kind_phys
-    def_3 = 0.0_kind_phys
-    dku3d_h = 0.0_kind_phys
-    dku3d_e = 0.0_kind_phys
-    ten_t = 0.0_kind_phys
-    ten_u = 0.0_kind_phys
-    ten_v = 0.0_kind_phys
-    dtend = 0.0_kind_phys
+    rtg = 0.0_RKIND
+    q1 = 0.0_RKIND
+    usfco = 0.0_RKIND
+    vsfco = 0.0_RKIND
+    dkt = 0.0_RKIND
+    dku = 0.0_RKIND
+    tkeh = 0.0_RKIND
+    def_1 = 0.0_RKIND
+    def_2 = 0.0_RKIND
+    def_3 = 0.0_RKIND
+    dku3d_h = 0.0_RKIND
+    dku3d_e = 0.0_RKIND
+    ten_t = 0.0_RKIND
+    ten_u = 0.0_RKIND
+    ten_v = 0.0_RKIND
+    dtend = 0.0_RKIND
     dtidx = 0
+    claie = 0.0_RKIND
+    cfch  = 0.0_RKIND
+    cfrt  = 0.0_RKIND
+    cclu  = 0.0_RKIND
+    cpopu = 0.0_RKIND
 
     do k = 1, km
       do i = 1, im
@@ -172,10 +184,10 @@ contains
         v1(i,k) = v_mpas(i,k)
         t1(i,k) = t_mpas(i,k)
 
-        q1(i,k,ntqv) = max(qv_mpas(i,k), 1.0e-12_kind_phys)
-        q1(i,k,ntcw) = max(qc_mpas(i,k), 0.0_kind_phys)
-        q1(i,k,ntiw) = max(qi_mpas(i,k), 0.0_kind_phys)
-        q1(i,k,ntke) = max(tke_mpas(i,k), 1.0e-9_kind_phys)
+        q1(i,k,ntqv) = max(qv_mpas(i,k), 1.0e-12_RKIND)
+        q1(i,k,ntcw) = max(qc_mpas(i,k), 0.0_RKIND)
+        q1(i,k,ntiw) = max(qi_mpas(i,k), 0.0_RKIND)
+        q1(i,k,ntke) = max(tke_mpas(i,k), 1.0e-9_RKIND)
 
         prsl(i,k)  = p_mid(i,k)
         prslk(i,k) = exner_mid(i,k)
@@ -206,10 +218,10 @@ contains
     do i = 1, im
       garea(i) = areaCell(i)
 
-      xmu(i) = max(coszen(i), 0.0_kind_phys)
+      xmu(i) = max(coszen(i), 0.0_RKIND)
 
       ! UFS code uses z0 = 0.01*zorl, so zorl is in cm.
-      zorl(i) = max(z0_mpas(i), 1.0e-6_kind_phys) * 100.0_kind_phys
+      zorl(i) = max(z0_mpas(i), 1.0e-6_RKIND) * 100.0_RKIND
 
       tsea(i) = skin_temp(i)
       heat(i) = shflx(i)
@@ -217,24 +229,24 @@ contains
       ! If MPAS gives latent heat flux W m-2, convert to kg m-2 s-1.
       evap(i) = lhflx(i) / hvap
 
-      stress(i) = max(stress_in(i), 0.0_kind_phys)
-      spd1(i) = max(sqrt(u1(i,1)**2 + v1(i,1)**2), 0.1_kind_phys)
+      stress(i) = max(stress_in(i), 0.0_RKIND)
+      spd1(i) = max(sqrt(u1(i,1)**2 + v1(i,1)**2), 0.1_RKIND)
 
       u10m(i) = u10(i)
       v10m(i) = v10(i)
       rbsoil(i) = rb_in(i)
-      fm(i) = max(fm_in(i), 1.0e-6_kind_phys)
-      fh(i) = max(fh_in(i), 1.0e-6_kind_phys)
+      fm(i) = max(fm_in(i), 1.0e-6_RKIND)
+      fh(i) = max(fh_in(i), 1.0e-6_RKIND)
 
       ! If MPAS does not have rbsoil, start neutral.
-!     rbsoil(i) = 0.0_kind_phys
+!     rbsoil(i) = 0.0_RKIND
 
       ! psk is surface Exner. Use lowest layer as fallback.
       psk(i) = prslk(i,1)
 
       ! Need real mappings later from vegetation/roughness data.
       sigmaf(i) = vegfra_in(i)
-!     zvfun(i) = 1.0_kind_phys
+!     zvfun(i) = 1.0_RKIND
       !-------------------------------------------------------
 ! Compute zvfun: function of surface roughness and vegetation
 !-------------------------------------------------------
@@ -243,9 +255,9 @@ contains
 ! Here we stay consistent with MPAS units (meters)
       tem1 = (z0_mpas(i) - z0lo) / (z0up - z0lo)
 ! limit between 0 and 1
-      tem1 = min(max(tem1, 0.0_kind_phys), 1.0_kind_phys)
+      tem1 = min(max(tem1, 0.0_RKIND), 1.0_RKIND)
 ! ensure minimum vegetation fraction
-      tem2 = max(sigmaf(i), 0.1_kind_phys)
+      tem2 = max(sigmaf(i), 0.1_RKIND)
 ! final function
       zvfun(i) = sqrt(tem1 * tem2)
 
@@ -253,7 +265,7 @@ contains
       kinver(i) = km
 
       kpbl(i) = 1
-      hpbl(i) = 0.0_kind_phys
+      hpbl(i) = 0.0_RKIND
     enddo
 
     index_of_temperature = 1
@@ -264,7 +276,7 @@ contains
     call satmedmfvdifq_run(im, km, ntrac, ntcw, ntrw, ntiw, ntke,       &
          grav, pi, rd, cp, rv, hvap, hfus, fv, eps, epsm1,             &
          def_1, def_2, def_3, cfg%sa3dtke, dku3d_h, dku3d_e,           &
-         rtg, u1, v1, t1, q1,                                          &
+         rtg, u1, v1, t1, q1, usfco, vsfco, cfg%use_oceanuv,           &
          swh, hlw, xmu, garea, zvfun, sigmaf,                          &
          psk, rbsoil, zorl, u10m, v10m, fm, fh,                        &
          tsea, heat, evap, stress, spd1, kpbl,                         &
@@ -273,7 +285,7 @@ contains
          kinver, cfg%xkzm_m, cfg%xkzm_h, cfg%xkzm_s, cfg%dspfac,       &
          cfg%bl_upfr, cfg%bl_dnfr, cfg%rlmx, cfg%elmx,                 &
          cfg%sfc_rlm, cfg%tc_pbl, cfg%use_lpt,                         &
-         cfg%do_canopy, cfg%cplaqm,                                    &
+         cfg%do_canopy, cfg%cplaqm, claie, cfch, cfrt, cclu, cpopu,    &
          ntqv, dtend, dtidx, index_of_temperature,                     &
          index_of_x_wind, index_of_y_wind, index_of_process_pbl,       &
          cfg%gen_tend, cfg%ldiag3d, ten_t, ten_u, ten_v,               &
@@ -287,7 +299,7 @@ contains
         ten_u_out(i,k) = ten_u(i,k)
         ten_v_out(i,k) = ten_v(i,k)
 
-        tke_mpas(i,k) = max(q1(i,k,ntke), 0.0_kind_phys)
+        tke_mpas(i,k) = max(q1(i,k,ntke), 0.0_RKIND)
       enddo
     enddo
 
