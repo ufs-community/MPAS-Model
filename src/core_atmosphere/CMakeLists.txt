@@ -28,6 +28,7 @@ set(ATMOSPHERE_CORE_PHYSICS_SOURCES
     mpas_atmphys_driver_convection.F
     mpas_atmphys_driver_gwdo.F
     mpas_atmphys_driver_lsm.F
+    mpas_satmedmfvdifq_wrapper_mod.F
     mpas_atmphys_driver_pbl.F
     mpas_atmphys_driver_radiation_lw.F
     mpas_atmphys_driver_radiation_sw.F

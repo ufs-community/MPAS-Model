@@ -57,7 +57,7 @@ OBJS = \
 	mpas_atmphys_update_surface.o      \
 	mpas_atmphys_update.o              \
 	mpas_atmphys_vars.o                \
-	mpas_atmphys_bl_satmedmfvdifq.o
+	mpas_satmedmfvdifq_wrapper_mod.o
 
 lookup_tables:
 	./checkout_data_files.sh
@@ -179,7 +179,7 @@ mpas_atmphys_driver_oml.o: \
 
 # TKE-EDMF / SATMEDMF dependencies for MPAS application.
 # GFS/UFS science objects are built in physics_gfs/.
-mpas_atmphys_bl_satmedmfvdifq.o: \
+mpas_satmedmfvdifq_wrapper_mod.o: \
 	mpas_atmphys_constants.o \
 	mpas_atmphys_vars.o \
 	mpas_atmphys_utilities.o
@@ -187,7 +187,7 @@ mpas_atmphys_bl_satmedmfvdifq.o: \
 mpas_atmphys_driver_pbl.o: \
 	mpas_atmphys_constants.o \
 	mpas_atmphys_vars.o \
-	mpas_atmphys_bl_satmedmfvdifq.o
+	mpas_satmedmfvdifq_wrapper_mod.o
 
 mpas_atmphys_driver_radiation_lw.o: \
 	mpas_atmphys_camrad_init.o \
