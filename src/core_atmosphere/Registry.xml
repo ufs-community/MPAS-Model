@@ -413,14 +413,6 @@
                      possible_values="`mpas_dmpar', `mpas_halo'"/>
         </nml_record>
 
-
-        <nml_record name="physics" in_defaults="true">
-                <nml_option name="config_pbl_scheme" type="character" default_value="bl_ysu"
-                     units="-"
-                     description="Planetary boundary layer scheme"
-                     possible_values="`bl_ysu', `bl_mynn', `bl_mynnedmf', `bl_myj', `bl_tke_edmf'"/>
-        </nml_record>
-
 <!-- **************************************************************************************** -->
 <!-- **************************************  Packages  ************************************** -->
 <!-- **************************************************************************************** -->
@@ -442,7 +434,7 @@
                 <package name="bl_ysu_in" description="parameterization of YSU Planetary Boundary Layer."/>
                 <package name="bl_mynn_in" description="parameterization of MYNN Planetary Boundary Layer."/>
                 <package name="bl_mynnedmf_in" description="parameterization of MYNN-EDMF Planetary Boundary Layer."/>
-                <package name="bl_tke_edmf_in" description="parameterization of GFS/UFS TKE-EDMF Planetary Boundary Layer."/>
+                <package name="bl_tke_edmf_in" description="parameterization of GFS-UFS TKE-EDMF Planetary Boundary Layer."/>
                 <package name="sf_noahmp_in" description="parameterization of NOAH-MP land surface scheme."/>
 		<package name="bl_myj_in" description="parameterization of MYJ Planetary Boundary Layer."/>
                 <package name="lsm_ruc_in" description="parameterization of the RUC land surface."/>
