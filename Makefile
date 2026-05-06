@@ -484,6 +484,34 @@ intel-mpi:   # BUILDTARGET Intel compiler suite with Intel MPI library
 	"LAPACK_LIBS = -lmkl_intel_lp64 -lmkl_core -lmkl_sequential" \
 	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI" )
 
+intel-mpi-gaeac6:   # BUILDTARGET for gaea C6
+	( $(MAKE) all \
+	"FC_PARALLEL = ftn" \
+	"CC_PARALLEL = cc" \
+	"CXX_PARALLEL = mpiicpc" \
+	"FC_SERIAL = ifort" \
+	"CC_SERIAL = cc" \
+	"CXX_SERIAL = icpc" \
+	"FFLAGS_PROMOTION = -real-size 64" \
+	"FFLAGS_OPT = -O3 -convert big_endian -free -align array64byte" \
+	"CFLAGS_OPT = -O3" \
+	"CXXFLAGS_OPT = -O3" \
+	"LDFLAGS_OPT = -O3" \
+	"FFLAGS_DEBUG = -g -convert big_endian -free -CU -CB -check all -fpe0 -traceback" \
+	"CFLAGS_DEBUG = -g -traceback" \
+	"CXXFLAGS_DEBUG = -g -traceback" \
+	"LDFLAGS_DEBUG = -g -fpe0 -traceback" \
+	"FFLAGS_OMP = -qopenmp" \
+	"CFLAGS_OMP = -qopenmp" \
+	"PICFLAG = -fpic" \
+	"BUILD_TARGET = $(@)" \
+	"CORE = $(CORE)" \
+	"DEBUG = $(DEBUG)" \
+	"USE_PAPI = $(USE_PAPI)" \
+	"OPENMP = $(OPENMP)" \
+	"LAPACK_LIBS = -lmkl_intel_lp64 -lmkl_core -lmkl_sequential" \
+	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI" )
+
 intel-llvm-mpi:   # BUILDTARGET Intel LLVM compiler suite with Intel MPI library
 	( $(MAKE) all \
 	"FC_PARALLEL = mpiifx" \
