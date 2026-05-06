@@ -1539,46 +1539,41 @@
        tke_edmf_errmsg = ''
        tke_edmf_errflg = 0
 
-       call mpas_call_satmedmfvdifq(                                      &
-            nCells       = (ite-its+1),                                    &
-            nVertLevels  = (kte-kts+1),                                    &
-            ntrac        = 4,                                              &
-            dt           = dt_pbl,                                         &
-            z_mid        = zl_p(its:ite,kts:kte,jts),                      &
-            z_int        = zi_p(its:ite,kts:kte+1,jts),                    &
-            areaCell     = dx_p(its:ite,jts),                              &
-            u_mpas       = u_p(its:ite,kts:kte,jts),                       &
-            v_mpas       = v_p(its:ite,kts:kte,jts),                       &
-            t_mpas       = t_p(its:ite,kts:kte,jts),                       &
-            qv_mpas      = qv_p(its:ite,kts:kte,jts),                      &
-            qc_mpas      = qc_p(its:ite,kts:kte,jts),                      &
-            qi_mpas      = qi_p(its:ite,kts:kte,jts),                      &
-            tke_mpas     = tkepbl_p(its:ite,kts:kte,jts),                  &
-            p_mid        = pres_hyd_p(its:ite,kts:kte,jts),                &
-            p_int        = pres2_hyd_p(its:ite,kts:kte+1,jts),             &
-            exner_mid    = pi_p(its:ite,kts:kte,jts),                      &
-            sw_heat      = rthraten_p(its:ite,kts:kte,jts),                &
-            lw_heat      = exch_p(its:ite,kts:kte,jts),                    &
-            coszen       = xland_p(its:ite,jts)*0.0_RKIND + 1.0_RKIND,     &
-            skin_temp    = tsk_p(its:ite,jts),                             &
-            shflx        = hfx_p(its:ite,jts),                             &
-            lhflx        = qfx_p(its:ite,jts) * xlv,                       &
-            stress_in    = ust_p(its:ite,jts) * ust_p(its:ite,jts),        &
-            z0_mpas      = znt_p(its:ite,jts),                             &
-            u10          = u10_p(its:ite,jts),                              &
-            v10          = v10_p(its:ite,jts),                              &
-            vegfra_in    = vegfra_p(its:ite,jts),                          &
-            rb_in        = br_p(its:ite,jts),                              &
-            fm_in        = psim_p(its:ite,jts),                             &
-            fh_in        = psih_p(its:ite,jts),                             &
-            hpbl_out     = hpbl_p(its:ite,jts),                            &
-            kpbl_out     = kpbl_p(its:ite,jts),                            &
-            ten_t_out    = rthblten_p(its:ite,kts:kte,jts),                &
-            ten_u_out    = rublten_p(its:ite,kts:kte,jts),                 &
-            ten_v_out    = rvblten_p(its:ite,kts:kte,jts),                 &
-            cfg          = tke_edmf_cfg,                                   &
-            errmsg       = tke_edmf_errmsg,                                &
-            errflg       = tke_edmf_errflg)
+       call mpas_call_satmedmfvdifq(
+     &      (ite-its+1), (kte-kts+1), 4, dt_pbl,
+     &      zl_p(its:ite,kts:kte,jts),
+     &      zi_p(its:ite,kts:kte+1,jts),
+     &      dx_p(its:ite,jts),
+     &      u_p(its:ite,kts:kte,jts),
+     &      v_p(its:ite,kts:kte,jts),
+     &      t_p(its:ite,kts:kte,jts),
+     &      qv_p(its:ite,kts:kte,jts),
+     &      qc_p(its:ite,kts:kte,jts),
+     &      qi_p(its:ite,kts:kte,jts),
+     &      tkepbl_p(its:ite,kts:kte,jts),
+     &      pres_hyd_p(its:ite,kts:kte,jts),
+     &      pres2_hyd_p(its:ite,kts:kte+1,jts),
+     &      pi_p(its:ite,kts:kte,jts),
+     &      rthraten_p(its:ite,kts:kte,jts),
+     &      exch_p(its:ite,kts:kte,jts),
+     &      xland_p(its:ite,jts)*0.0_RKIND + 1.0_RKIND,
+     &      tsk_p(its:ite,jts),
+     &      hfx_p(its:ite,jts),
+     &      qfx_p(its:ite,jts) * xlv,
+     &      ust_p(its:ite,jts) * ust_p(its:ite,jts),
+     &      znt_p(its:ite,jts),
+     &      u10_p(its:ite,jts),
+     &      v10_p(its:ite,jts),
+     &      vegfra_p(its:ite,jts),
+     &      br_p(its:ite,jts),
+     &      psim_p(its:ite,jts),
+     &      psih_p(its:ite,jts),
+     &      hpbl_p(its:ite,jts),
+     &      kpbl_p(its:ite,jts),
+     &      rthblten_p(its:ite,kts:kte,jts),
+     &      rublten_p(its:ite,kts:kte,jts),
+     &      rvblten_p(its:ite,kts:kte,jts),
+     &      tke_edmf_cfg, tke_edmf_errmsg, tke_edmf_errflg)
 
        if (tke_edmf_errflg /= 0) then
           write(*,*) 'FATAL in bl_tke_edmf: ', trim(tke_edmf_errmsg)
