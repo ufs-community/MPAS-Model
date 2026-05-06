@@ -1458,6 +1458,11 @@
  type(mpas_satmedmfvdifq_config_type) :: tke_edmf_cfg
  character(len=256) :: tke_edmf_errmsg
  integer :: tke_edmf_errflg
+ real(kind=RKIND), allocatable :: coszen_tkeedmf_p(:,:)
+ real(kind=RKIND), allocatable :: lh_tkeedmf_p(:,:)
+ real(kind=RKIND), allocatable :: stress_tkeedmf_p(:,:)
+ real(kind=RKIND), allocatable :: zmid_tkeedmf_p(:,:,:)
+ real(kind=RKIND), allocatable :: zint_tkeedmf_p(:,:,:)
 
 !-----------------------------------------------------------------------------------------------------------------
 !call mpas_log_write('')
@@ -1539,41 +1544,69 @@
        tke_edmf_errmsg = ''
        tke_edmf_errflg = 0
 
-       call mpas_call_satmedmfvdifq(
-     &      (ite-its+1), (kte-kts+1), 4, dt_pbl,
-     &      zl_p(its:ite,kts:kte,jts),
-     &      zi_p(its:ite,kts:kte+1,jts),
-     &      dx_p(its:ite,jts),
-     &      u_p(its:ite,kts:kte,jts),
-     &      v_p(its:ite,kts:kte,jts),
-     &      t_p(its:ite,kts:kte,jts),
-     &      qv_p(its:ite,kts:kte,jts),
-     &      qc_p(its:ite,kts:kte,jts),
-     &      qi_p(its:ite,kts:kte,jts),
-     &      tkepbl_p(its:ite,kts:kte,jts),
-     &      pres_hyd_p(its:ite,kts:kte,jts),
-     &      pres2_hyd_p(its:ite,kts:kte+1,jts),
-     &      pi_p(its:ite,kts:kte,jts),
-     &      rthraten_p(its:ite,kts:kte,jts),
-     &      exch_p(its:ite,kts:kte,jts),
-     &      xland_p(its:ite,jts)*0.0_RKIND + 1.0_RKIND,
-     &      tsk_p(its:ite,jts),
-     &      hfx_p(its:ite,jts),
-     &      qfx_p(its:ite,jts) * xlv,
-     &      ust_p(its:ite,jts) * ust_p(its:ite,jts),
-     &      znt_p(its:ite,jts),
-     &      u10_p(its:ite,jts),
-     &      v10_p(its:ite,jts),
-     &      vegfra_p(its:ite,jts),
-     &      br_p(its:ite,jts),
-     &      psim_p(its:ite,jts),
-     &      psih_p(its:ite,jts),
-     &      hpbl_p(its:ite,jts),
-     &      kpbl_p(its:ite,jts),
-     &      rthblten_p(its:ite,kts:kte,jts),
-     &      rublten_p(its:ite,kts:kte,jts),
-     &      rvblten_p(its:ite,kts:kte,jts),
-     &      tke_edmf_cfg, tke_edmf_errmsg, tke_edmf_errflg)
+       if (.not. allocated(coszen_tkeedmf_p)) then
+          allocate(coszen_tkeedmf_p(ims:ime,jms:jme))
+          allocate(lh_tkeedmf_p(ims:ime,jms:jme))
+          allocate(stress_tkeedmf_p(ims:ime,jms:jme))
+          allocate(zmid_tkeedmf_p(ims:ime,kms:kme,jms:jme))
+          allocate(zint_tkeedmf_p(ims:ime,kms:kme+1,jms:jme))
+       endif
+
+       do j = jts,jte
+       do i = its,ite
+          coszen_tkeedmf_p(i,j) = 1.0_RKIND
+          lh_tkeedmf_p(i,j) = qfx_p(i,j) * xlv
+          stress_tkeedmf_p(i,j) = ust_p(i,j) * ust_p(i,j)
+
+          ! Build geometric heights from MPAS layer thickness.
+          ! zint is interface height and zmid is layer-center height.
+          zint_tkeedmf_p(i,kts,j) = 0.0_RKIND
+       enddo
+       do k = kts,kte
+       do i = its,ite
+          zint_tkeedmf_p(i,k+1,j) = zint_tkeedmf_p(i,k,j)              &
+                                  + dz_p(i,k,j)
+          zmid_tkeedmf_p(i,k,j) = 0.5_RKIND *                         &
+             (zint_tkeedmf_p(i,k,j) + zint_tkeedmf_p(i,k+1,j))
+       enddo
+       enddo
+       enddo
+
+       call mpas_call_satmedmfvdifq(                                  &
+            (ite-its+1), (kte-kts+1), 4, dt_pbl,                      &
+            zmid_tkeedmf_p(its:ite,kts:kte,jts),                                &
+            zint_tkeedmf_p(its:ite,kts:kte+1,jts),                              &
+            dx_p(its:ite,jts),                                        &
+            u_p(its:ite,kts:kte,jts),                                 &
+            v_p(its:ite,kts:kte,jts),                                 &
+            t_p(its:ite,kts:kte,jts),                                 &
+            qv_p(its:ite,kts:kte,jts),                                &
+            qc_p(its:ite,kts:kte,jts),                                &
+            qi_p(its:ite,kts:kte,jts),                                &
+            tkepbl_p(its:ite,kts:kte,jts),                            &
+            pres_hyd_p(its:ite,kts:kte,jts),                          &
+            pres2_hyd_p(its:ite,kts:kte+1,jts),                       &
+            pi_p(its:ite,kts:kte,jts),                                &
+            rthraten_p(its:ite,kts:kte,jts),                          &
+            exch_p(its:ite,kts:kte,jts),                              &
+            coszen_tkeedmf_p(its:ite,jts),                            &
+            tsk_p(its:ite,jts),                                       &
+            hfx_p(its:ite,jts),                                       &
+            lh_tkeedmf_p(its:ite,jts),                                &
+            stress_tkeedmf_p(its:ite,jts),                            &
+            znt_p(its:ite,jts),                                       &
+            u10_p(its:ite,jts),                                       &
+            v10_p(its:ite,jts),                                       &
+            vegfra_p(its:ite,jts),                                    &
+            br_p(its:ite,jts),                                        &
+            psim_p(its:ite,jts),                                      &
+            psih_p(its:ite,jts),                                      &
+            hpbl_p(its:ite,jts),                                      &
+            kpbl_p(its:ite,jts),                                      &
+            rthblten_p(its:ite,kts:kte,jts),                          &
+            rublten_p(its:ite,kts:kte,jts),                           &
+            rvblten_p(its:ite,kts:kte,jts),                           &
+            tke_edmf_cfg, tke_edmf_errmsg, tke_edmf_errflg)
 
        if (tke_edmf_errflg /= 0) then
           write(*,*) 'FATAL in bl_tke_edmf: ', trim(tke_edmf_errmsg)
