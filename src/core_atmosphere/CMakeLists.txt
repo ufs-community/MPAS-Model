@@ -114,6 +114,9 @@ set(ATMOSPHERE_CORE_PHYSICS_GFS_SOURCES
     ../mpas_satmedmfvdifq_wrapper_mod.F
 )
 list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_GFS_SOURCES PREPEND physics/physics_gfs/)
+# GFS/UFS TKE-EDMF helper files are fixed-form Fortran.
+set_source_files_properties(${ATMOSPHERE_CORE_PHYSICS_GFS_SOURCES}
+    PROPERTIES Fortran_FORMAT FIXED)
 
 
 # physics/physics_noaa/GFL/
