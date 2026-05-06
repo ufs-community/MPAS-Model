@@ -1518,7 +1518,6 @@
        tke_edmf_cfg%sa3dtke     = .false.
        tke_edmf_cfg%tte_edmf    = .false.
        tke_edmf_cfg%dspheat     = .false.
-       tke_edmf_cfg%use_oceanuv = .false.
        tke_edmf_cfg%do_canopy   = .false.
        tke_edmf_cfg%cplaqm      = .false.
        tke_edmf_cfg%gen_tend    = .false.
