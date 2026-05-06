@@ -28,6 +28,7 @@ set(ATMOSPHERE_CORE_PHYSICS_SOURCES
     mpas_atmphys_driver_convection.F
     mpas_atmphys_driver_gwdo.F
     mpas_atmphys_driver_lsm.F
+    mpas_satmedmfvdifq_wrapper_mod.F90
     mpas_atmphys_driver_pbl.F
     mpas_atmphys_driver_radiation_lw.F
     mpas_atmphys_driver_radiation_sw.F
@@ -104,6 +105,10 @@ set(ATMOSPHERE_CORE_PHYSICS_WRF_SOURCES
 list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_WRF_SOURCES PREPEND physics/physics_wrf/)
 
 # physics/physics_gfs/
+# Imported GFS/UFS TKE-EDMF science/helper routines.
+# These files are fixed-form Fortran.  The MPAS wrapper is NOT included here;
+# it remains in physics/mpas_satmedmfvdifq_wrapper_mod.F90 and is compiled as
+# free-form Fortran.
 set(ATMOSPHERE_CORE_PHYSICS_GFS_SOURCES
     gfs_tke_edmf_compat.F
     tridi_mod.F
@@ -111,10 +116,8 @@ set(ATMOSPHERE_CORE_PHYSICS_GFS_SOURCES
     mfscuq_mod.F
     canopy_utils_mod.F
     satmedmfvdifq.F
-    ../mpas_satmedmfvdifq_wrapper_mod.F
 )
 list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_GFS_SOURCES PREPEND physics/physics_gfs/)
-# GFS/UFS TKE-EDMF helper files are fixed-form Fortran.
 set_source_files_properties(${ATMOSPHERE_CORE_PHYSICS_GFS_SOURCES}
     PROPERTIES Fortran_FORMAT FIXED)
 
