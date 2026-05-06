@@ -1176,10 +1176,10 @@
 			<var name="excess_h"/>
 			<var name="excess_q"/>
                         <var name="hpbl"/>
-			<var name="kpbl" packages="bl_tke_edmf_in"/>
-			<var name="rublten" packages="bl_tke_edmf_in"/>
-			<var name="rvblten" packages="bl_tke_edmf_in"/>
-			<var name="rthblten" packages="bl_tke_edmf_in"/>
+			<var name="kpbl"/>
+			<var name="rublten"/>
+			<var name="rvblten"/>
+			<var name="rthblten"/>
                         <var name="cldfrac_cu"/>
                         <var name="refl10cm_cu"/>
 #endif
@@ -3311,7 +3311,7 @@
 
                 <var name="tke_pbl" type="real" dimensions="nVertLevels nCells Time" units="m^{2} s^{-2}"
                      description="turbulent kinetic energy from PBL"
-                     packages="bl_tke_edmf_in; bl_mynn_in;bl_myj_in"/>
+                     packages="bl_mynn_in;bl_myj_in;bl_tke_edmf_in"/>
 
                 <var name="dqke" type="real" dimensions="nVertLevels nCells Time" units="m^{2} s^{-2}"
                      description="TKE change"
