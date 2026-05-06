@@ -2768,7 +2768,7 @@
                 <nml_option name="config_pbl_scheme" type="character" default_value="suite" in_defaults="false"
                      units="-"
                      description="configuration for planetary boundary layer schemes"
-                     possible_values="`suite',`bl_ysu',`bl_mynn',`bl_mynnedmf',`bl_myj',`off'"/>
+                     possible_values="`suite',`bl_ysu',`bl_tke_edmf',`bl_mynn',`bl_mynnedmf',`bl_myj',`off'"/>
 
                 <nml_option name="config_gwdo_scheme" type="character" default_value="suite" in_defaults="false"
                      units="-"
