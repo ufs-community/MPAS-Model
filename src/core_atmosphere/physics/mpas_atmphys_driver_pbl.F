@@ -161,6 +161,8 @@
        !   psih_p     : fh
        !   rthraten_p : SW radiative heating
        !   exch_p     : LW radiative heating
+       if(.not.allocated(vegfra_p)  ) allocate(vegfra_p(ims:ime,jms:jme)      )
+       if(.not.allocated(br_p)      ) allocate(br_p(ims:ime,jms:jme)          )
        if(.not.allocated(dx_p)      ) allocate(dx_p(ims:ime,jms:jme)          )
        if(.not.allocated(tsk_p)     ) allocate(tsk_p(ims:ime,jms:jme)         )
        if(.not.allocated(psim_p)    ) allocate(psim_p(ims:ime,jms:jme)        )
@@ -357,6 +359,8 @@
 
 
     case("bl_tke_edmf")
+       if(allocated(vegfra_p)  ) deallocate(vegfra_p  )
+       if(allocated(br_p)      ) deallocate(br_p      )
        if(allocated(dx_p)      ) deallocate(dx_p      )
        if(allocated(tsk_p)     ) deallocate(tsk_p     )
        if(allocated(psim_p)    ) deallocate(psim_p    )
@@ -518,12 +522,12 @@
  real(kind=RKIND),dimension(:,:),pointer:: rthratenlw,rthratensw
 
 !local pointers for bl_tke_edmf adapter:
- real(kind=RKIND),dimension(:),pointer:: areaCell,skintemp
+ real(kind=RKIND),dimension(:),pointer:: areaCell,skintemp,vegfra
 
 !local pointers for MYNN scheme:
  real(kind=RKIND),pointer:: len_disp
  real(kind=RKIND),dimension(:),pointer  :: meshDensity
- real(kind=RKIND),dimension(:),pointer  :: ch,qsfc,rmol,skintemp
+ real(kind=RKIND),dimension(:),pointer  :: ch,qsfc,rmol
  real(kind=RKIND),dimension(:,:),pointer:: cov,qke,qsq,tsq,sh3d,sm3d,tke_pbl,qke_adv,el_pbl
  real(kind=RKIND),dimension(:,:),pointer:: cldfrac_bl,qc_bl,qi_bl
  real(kind=RKIND),dimension(:,:),pointer:: edmf_a,edmf_ent,edmf_qc,edmf_qt,edmf_thl,edmf_w
@@ -704,8 +708,10 @@
 
     case("bl_tke_edmf")
        ! Stage MPAS fields needed by the UFS TKE-EDMF adapter.
+       call mpas_pool_get_array(sfc_input,   'vegfra'    ,vegfra    )
        call mpas_pool_get_array(mesh        ,'areaCell'  ,areaCell  )
        call mpas_pool_get_array(sfc_input   ,'skintemp'  ,skintemp  )
+       call mpas_pool_get_array(diag_physics,'br'        ,br        )
        call mpas_pool_get_array(diag_physics,'fm'        ,fm        )
        call mpas_pool_get_array(diag_physics,'fh'        ,fh        )
        call mpas_pool_get_array(diag_physics,'u10'       ,u10       )
@@ -715,8 +721,10 @@
 
        do j = jts,jte
        do i = its,ite
+          vegfra_p(i,j) = vegfra(i)
           dx_p(i,j)   = areaCell(i)
           tsk_p(i,j)  = skintemp(i)
+          br_p(i,j)   = br(i)
           psim_p(i,j) = fm(i)
           psih_p(i,j) = fh(i)
           u10_p(i,j)  = u10(i)
@@ -1560,6 +1568,8 @@
             z0_mpas      = znt_p(its:ite,jts),                             &
             u10          = u10_p(its:ite,jts),                              &
             v10          = v10_p(its:ite,jts),                              &
+            vegfra_in    = vegfra_p(its:ite,jts),                          &
+            rb_in        = br_p(its:ite,jts),                              &
             fm_in        = psim_p(its:ite,jts),                             &
             fh_in        = psih_p(its:ite,jts),                             &
             hpbl_out     = hpbl_p(its:ite,jts),                            &

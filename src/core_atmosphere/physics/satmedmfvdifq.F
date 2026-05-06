@@ -90,7 +90,7 @@
      &     ntiw,ntke,grav,pi,rd,cp,rv,hvap,hfus,fv,eps,epsm1,              &
 !The following three variables are for SA-3D-TKE
      &     def_1,def_2,def_3,sa3dtke,dku3d_h,dku3d_e,                   &
-     &     dv,du,tdt,rtg,u1,v1,t1,q1,usfco,vsfco,use_oceanuv,           &
+     &     dv,du,tdt,rtg,u1,v1,t1,q1,                                   &
      &     swh,hlw,xmu,garea,zvfun,sigmaf,                              &
      &     psk,rbsoil,zorl,u10m,v10m,fm,fh,                             &
      &     tsea,heat,evap,stress,spd1,kpbl,                             &
@@ -133,7 +133,6 @@
      &                     tdt(:,:),    rtg(:,:,:),    tkeh(:,:)
       real(kind=kind_phys), intent(in) ::                               &
      &                     u1(:,:),     v1(:,:),                        &
-     &                     usfco(:),    vsfco(:),                       &
      &                     t1(:,:),     q1(:,:,:),                      &
 !The following two variables are for SA-3D-TKE
      &                     def_1(:,:),  def_2(:,:), def_3(:,:),         &
@@ -153,7 +152,6 @@
      &     dtend
       integer, intent(in) :: dtidx(:,:), index_of_temperature,          &
      &       index_of_x_wind, index_of_y_wind, index_of_process_pbl
-      logical, intent(in) :: use_oceanuv
       real(kind=kind_phys), intent(out) ::                              &
      &                     dusfc(:),     dvsfc(:),                      &
      &                     dtsfc(:),     dqsfc(:),                      &
@@ -3026,18 +3024,11 @@ c
 !           dvsfc(i) = dvsfc(i)+conw*del(i,k)*vtend
          enddo
       enddo
-      if (use_oceanuv) then
-        do i = 1,im
-          spd1_m=sqrt( (u1(i,1)-usfco(i))**2+(v1(i,1)-vsfco(i))**2 )
-          dusfc(i) = -1.*rho_a(i)*stress(i)*(u1(i,1)-usfco(i))/spd1_m
-          dvsfc(i) = -1.*rho_a(i)*stress(i)*(v1(i,1)-vsfco(i))/spd1_m
-        enddo
-      else
+
         do i = 1,im
           dusfc(i) = -1.*rho_a(i)*stress(i)*u1(i,1)/spd1(i)
           dvsfc(i) = -1.*rho_a(i)*stress(i)*v1(i,1)/spd1(i)
         enddo
-      endif
 !
       if(ldiag3d .and. .not. gen_tend) then
         idtend = dtidx(index_of_x_wind,index_of_process_pbl)

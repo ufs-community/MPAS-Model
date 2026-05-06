@@ -8,7 +8,6 @@ module mpas_satmedmfvdifq_wrapper_mod
     logical :: sa3dtke      = .false.
     logical :: tte_edmf     = .false.
     logical :: dspheat      = .false.
-    logical :: use_oceanuv  = .false.
     logical :: do_canopy    = .false.
     logical :: cplaqm       = .false.
     logical :: gen_tend     = .false.
@@ -37,7 +36,7 @@ contains
                                      p_mid, p_int, exner_mid,            &
                                      sw_heat, lw_heat, coszen,           &
                                      skin_temp, shflx, lhflx, stress_in, &
-                                     z0_mpas, u10, v10, fm_in, fh_in,    &
+                                     z0_mpas, u10, v10, vegfra_in, rb_in, fm_in, fh_in,    &
                                      hpbl_out, kpbl_out,                 &
                                      ten_t_out, ten_u_out, ten_v_out,    &
                                      cfg, errmsg, errflg)
@@ -66,6 +65,7 @@ contains
     real(kind_phys), intent(in) :: stress_in(nCells)
     real(kind_phys), intent(in) :: z0_mpas(nCells)
     real(kind_phys), intent(in) :: u10(nCells), v10(nCells)
+    real(kind_phys), intent(in) :: vegfra_in(nCells),rb_in(nCells)
     real(kind_phys), intent(in) :: fm_in(nCells), fh_in(nCells)
     real(kind_phys), intent(out) :: hpbl_out(nCells)
     integer, intent(out) :: kpbl_out(nCells)
@@ -92,10 +92,11 @@ contains
     real(kind_phys), parameter :: fv    = rv/rd - 1.0_kind_phys
     real(kind_phys), parameter :: eps   = rd/rv
     real(kind_phys), parameter :: epsm1 = eps - 1.0_kind_phys
+    real(kind_phys), parameter :: z0lo = 0.1_kind_phys
+    real(kind_phys), parameter :: z0up = 1.0_kind_phys
 
     real(kind_phys), allocatable :: rtg(:,:,:), q1(:,:,:)
     real(kind_phys), allocatable :: u1(:,:), v1(:,:), t1(:,:)
-    real(kind_phys), allocatable :: usfco(:), vsfco(:)
     real(kind_phys), allocatable :: swh(:,:), hlw(:,:), xmu(:)
     real(kind_phys), allocatable :: garea(:), zvfun(:), sigmaf(:)
     real(kind_phys), allocatable :: psk(:), rbsoil(:), zorl(:)
@@ -110,6 +111,7 @@ contains
     real(kind_phys), allocatable :: dku3d_h(:,:), dku3d_e(:,:)
     real(kind_phys), allocatable :: ten_t(:,:), ten_u(:,:), ten_v(:,:)
     real(kind_phys), allocatable :: dtend(:,:,:)
+    real(kind_phys) :: tem1, tem2
     integer, allocatable :: kpbl(:), kinver(:), dtidx(:,:)
 
     im = nCells
@@ -133,7 +135,6 @@ contains
 
     allocate(rtg(im,km,ntrac), q1(im,km,ntrac))
     allocate(u1(im,km), v1(im,km), t1(im,km))
-    allocate(usfco(im), vsfco(im))
     allocate(swh(im,km), hlw(im,km), xmu(im))
     allocate(garea(im), zvfun(im), sigmaf(im))
     allocate(psk(im), rbsoil(im), zorl(im))
@@ -221,21 +222,32 @@ contains
 
       u10m(i) = u10(i)
       v10m(i) = v10(i)
+      rbsoil(i) = rb_in(i)
       fm(i) = max(fm_in(i), 1.0e-6_kind_phys)
       fh(i) = max(fh_in(i), 1.0e-6_kind_phys)
 
       ! If MPAS does not have rbsoil, start neutral.
-      rbsoil(i) = 0.0_kind_phys
+!     rbsoil(i) = 0.0_kind_phys
 
       ! psk is surface Exner. Use lowest layer as fallback.
       psk(i) = prslk(i,1)
 
       ! Need real mappings later from vegetation/roughness data.
-      zvfun(i) = 1.0_kind_phys
-      sigmaf(i) = 0.5_kind_phys
+      sigmaf(i) = vegfra_in(i)
+!     zvfun(i) = 1.0_kind_phys
+      !-------------------------------------------------------
+! Compute zvfun: function of surface roughness and vegetation
+!-------------------------------------------------------
 
-      usfco(i) = 0.0_kind_phys
-      vsfco(i) = 0.0_kind_phys
+! z0 from MPAS is in meters; UFS uses zorl in cm
+! Here we stay consistent with MPAS units (meters)
+      tem1 = (z0_mpas(i) - z0lo) / (z0up - z0lo)
+! limit between 0 and 1
+      tem1 = min(max(tem1, 0.0_kind_phys), 1.0_kind_phys)
+! ensure minimum vegetation fraction
+      tem2 = max(sigmaf(i), 0.1_kind_phys)
+! final function
+      zvfun(i) = sqrt(tem1 * tem2)
 
       ! No inversion limiter initially.
       kinver(i) = km
@@ -252,7 +264,7 @@ contains
     call satmedmfvdifq_run(im, km, ntrac, ntcw, ntrw, ntiw, ntke,       &
          grav, pi, rd, cp, rv, hvap, hfus, fv, eps, epsm1,             &
          def_1, def_2, def_3, cfg%sa3dtke, dku3d_h, dku3d_e,           &
-         rtg, u1, v1, t1, q1, usfco, vsfco, cfg%use_oceanuv,           &
+         rtg, u1, v1, t1, q1,                                          &
          swh, hlw, xmu, garea, zvfun, sigmaf,                          &
          psk, rbsoil, zorl, u10m, v10m, fm, fh,                        &
          tsea, heat, evap, stress, spd1, kpbl,                         &
