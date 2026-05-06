@@ -6,14 +6,14 @@
 !! routines: machine, physcons, and funcphys.  It should be used only if these
 !! modules are not already provided by the MPAS build.
 
-      module machine
+      module gfs_tke_edmf_machine
         use mpas_kind_types, only: RKIND
         implicit none
         integer, parameter :: kind_phys = RKIND
-      end module machine
+      end module gfs_tke_edmf_machine
 
       module physcons
-        use machine, only: kind_phys
+        use gfs_tke_edmf_machine, only: kind_phys
         implicit none
         real(kind=kind_phys), parameter :: con_g     = 9.80665_kind_phys
         real(kind=kind_phys), parameter :: con_cp    = 1004.0_kind_phys
@@ -26,7 +26,7 @@
       end module physcons
 
       module funcphys
-        use machine, only: kind_phys
+        use gfs_tke_edmf_machine, only: kind_phys
         implicit none
       contains
 

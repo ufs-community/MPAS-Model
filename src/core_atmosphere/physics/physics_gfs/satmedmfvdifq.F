@@ -104,7 +104,7 @@
      &     errmsg,errflg)
 
 !
-      use machine  , only : kind_phys
+      use gfs_tke_edmf_machine  , only : kind_phys
       use funcphys , only : fpvs
 !
       implicit none

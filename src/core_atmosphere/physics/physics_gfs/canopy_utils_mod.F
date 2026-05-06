@@ -1,6 +1,6 @@
        module canopy_utils_mod
         
-        use machine, only : kind_phys 
+        use gfs_tke_edmf_machine, only : kind_phys 
         
         implicit none
 
