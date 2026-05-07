@@ -221,6 +221,7 @@
            config_pbl_scheme .eq. 'bl_mynn'     .or. &
            config_pbl_scheme .eq. 'bl_mynnedmf' .or. &
            config_pbl_scheme .eq. 'bl_ysu'      .or. &
+           config_pbl_scheme .eq. 'bl_tke_edmf' .or. &
            config_pbl_scheme .eq. 'bl_myj')) then
 
     write(mpas_err_message,'(A,A20)') 'illegal value for pbl_scheme: ', &
@@ -326,7 +327,7 @@
        config_sfclayer_scheme = 'sf_mynn'
     elseif(config_pbl_scheme == 'bl_mynnedmf') then
        config_sfclayer_scheme = 'sf_mynnsfclay'
-    elseif(config_pbl_scheme == 'bl_ysu') then
+    elseif(config_pbl_scheme == 'bl_ysu' .or. config_pbl_scheme == 'bl_tke_edmf') then
        if(config_sfclayer_scheme /= 'sf_monin_obukhov' .and. &
           config_sfclayer_scheme /= 'sf_monin_obukhov_rev') then
           write(mpas_err_message,'(A,A20)') 'wrong choice for surface layer scheme with YSU PBL: ', &
