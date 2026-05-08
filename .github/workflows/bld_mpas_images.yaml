@@ -4,8 +4,8 @@ run-name: CI Image Build for MPAS-A
 on:
   push:
     branches:
-      # Only build containers when pushing to gsl/develop
-      - "gsl/develop"
+      # Only build containers when pushing to noaa/develop
+      - "noaa/develop"
 
 jobs:
   docker:

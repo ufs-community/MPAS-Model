@@ -131,6 +131,7 @@
     if(.not.allocated(tend_chem_settle_p)) allocate(tend_chem_settle_p(ims:ime,kms:kme,jms:jme,1:num_chem))
     if(.not.allocated(chem_p)) allocate(chem_p(ims:ime,kms:kme,jms:jme,1:num_chem))
     if(.not.allocated(frp_out_p)) allocate(frp_out_p(ims:ime,jms:jme))
+    if(.not.allocated(aero_emis_for_enhmix_p)) allocate(aero_emis_for_enhmix_p(ims:ime,jms:jme))
  endif
 
  pbl_select: select case (trim(pbl_scheme))
@@ -311,10 +312,11 @@
 
  !deallocation of chemistry arrays
  if (do_chemistry) then
-    if(allocated(ddvel_p)           ) deallocate(ddvel_p           )
-    if(allocated(chem_p)            ) deallocate(chem_p            )
-    if(allocated(tend_chem_settle_p)) deallocate(tend_chem_settle_p)
-    if(allocated(frp_out_p)         ) deallocate(frp_out_p         )
+    if(allocated(ddvel_p)            ) deallocate(ddvel_p             )
+    if(allocated(chem_p)             ) deallocate(chem_p              )
+    if(allocated(tend_chem_settle_p) ) deallocate(tend_chem_settle_p  )
+    if(allocated(frp_out_p)          ) deallocate(frp_out_p           )
+    if(allocated(aero_emis_for_enhmix_p)) deallocate(aero_emis_for_enhmix_p )
  endif
 
  pbl_select: select case (trim(pbl_scheme))
@@ -499,8 +501,12 @@
  real(kind=RKIND),dimension(:,:  ),pointer :: ddvel
  real(kind=RKIND),dimension(:,:,:),pointer :: chem
  real(kind=RKIND),dimension(:),pointer     :: frp_out
+ real(kind=RKIND),dimension(:),pointer     :: aero_emis_for_enhmix
  integer,pointer:: drydep_opt
  logical,pointer:: enh_mix
+ character(len=StrKIND),pointer :: config_smoke_scheme, &
+                                   config_anthro_scheme, &
+                                   config_rwc_scheme
       
 !local pointers for MYJ scheme:
  real(kind=RKIND),dimension(:),pointer   :: chlowq,thz0,qz0,uz0,vz0,ct,akhs,akms,lh,mixht
@@ -555,17 +561,42 @@
     call mpas_pool_get_dimension(state, 'chemistry_end', chemistry_end)
     chem => scalars(chemistry_start:chemistry_end,:,:)
     call mpas_pool_get_config(configs,'config_mynn_enh_mix',enh_mix)
-    if (enh_mix) then
-       call mpas_pool_get_array(diag_physics,'frp_out',frp_out)
-    end if
 
-    do j = jts,jte
-    do i = its,ite
-       if ( enh_mix ) then
-          frp_out_p(i,j)     = frp_out(i)
-    endif
-    enddo
-    enddo
+    if (enh_mix) then
+       call mpas_pool_get_config(configs,'config_smoke_scheme',config_smoke_scheme)
+       if ( trim(config_smoke_scheme) .eq. 'on' ) then
+          call mpas_pool_get_array(diag_physics,'frp_out',frp_out)
+          do j = jts,jte
+          do i = its,ite
+                frp_out_p(i,j)     = frp_out(i)
+          enddo
+          enddo
+       else
+          do j = jts,jte
+          do i = its,ite
+                frp_out_p(i,j)     = 0._RKIND
+          enddo
+          enddo
+       endif
+
+       call mpas_pool_get_config(configs,'config_anthro_scheme',config_anthro_scheme)
+       call mpas_pool_get_config(configs,'config_rwc_scheme',config_rwc_scheme)
+       if ( config_anthro_scheme .ne. 'off' .or. config_rwc_scheme .ne. 'off') then
+          call mpas_pool_get_array(diag_physics,'aero_emis_for_enhmix',aero_emis_for_enhmix)
+          do j = jts,jte
+          do i = its,ite
+             aero_emis_for_enhmix_p(i,j) = aero_emis_for_enhmix(i)
+          enddo
+          enddo
+       else
+          do j = jts,jte
+          do i = its,ite
+             aero_emis_for_enhmix_p(i,j) = 0._RKIND
+          enddo
+          enddo
+       endif
+    endif ! If enh
+
 
     do n = 1,num_chem
     do j = jts,jte
@@ -1622,7 +1653,7 @@
                   settle3d           = tend_chem_settle_p  ,                                              &
                   enh_mix            = enh_mix             ,                                              &
                   frp_mean           = frp_out_p           ,                                              &
-                  emis_ant_no        = xland_p             ,                                              &
+                  emis_ant_no        = aero_emis_for_enhmix_p ,                                           &
                   ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde ,                 &
                   ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme ,                 &
                   its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte ,                 &

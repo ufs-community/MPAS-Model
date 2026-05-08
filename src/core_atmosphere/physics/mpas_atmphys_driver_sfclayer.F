@@ -148,10 +148,10 @@
  if(.not.allocated(xland_p) ) allocate(xland_p(ims:ime,jms:jme) )
  if(.not.allocated(zol_p)   ) allocate(zol_p(ims:ime,jms:jme)   )
  if(.not.allocated(znt_p)   ) allocate(znt_p(ims:ime,jms:jme)   )
+ if(.not.allocated(xice_p)  ) allocate(xice_p(ims:ime,jms:jme)  )
 
  if(config_frac_seaice) then
     if(.not.allocated(sst_p)      ) allocate(sst_p(ims:ime,jms:jme)      )
-    if(.not.allocated(xice_p)     ) allocate(xice_p(ims:ime,jms:jme)     )
 
     if(.not.allocated(br_sea)     ) allocate(br_sea(ims:ime,jms:jme)     )
     if(.not.allocated(chs_sea)    ) allocate(chs_sea(ims:ime,jms:jme)    )
@@ -324,10 +324,10 @@
  if(allocated(xland_p) ) deallocate(xland_p )
  if(allocated(zol_p)   ) deallocate(zol_p   )
  if(allocated(znt_p)   ) deallocate(znt_p   )
-
+ if(allocated(xice_p)  ) deallocate(xice_p  )
+      
  if(config_frac_seaice) then
     if(allocated(sst_p)      ) deallocate(sst_p      )
-    if(allocated(xice_p)     ) deallocate(xice_p     )
 
     if(allocated(br_sea)     ) deallocate(br_sea     )
     if(allocated(gz1oz0_sea) ) deallocate(gz1oz0_sea )
@@ -482,7 +482,8 @@
  call mpas_pool_get_array(diag_physics,'mavail'  ,mavail  )
  call mpas_pool_get_array(sfc_input   ,'skintemp',skintemp)
  call mpas_pool_get_array(sfc_input   ,'xland'   ,xland   )
-
+ call mpas_pool_get_array(sfc_input   ,'xice'    ,xice    )
+      
 !inout variables:
  call mpas_pool_get_array(diag_physics,'br'      ,br      )
  call mpas_pool_get_array(diag_physics,'cpm'     ,cpm     )
@@ -516,7 +517,8 @@
     mavail_p(i,j) = mavail(i)
     tsk_p(i,j)    = skintemp(i)
     xland_p(i,j)  = xland(i)
-
+    xice_p(i,j)   = xice(i)
+      
     !inout variables:
     br_p(i,j)     = br(i)
     cpm_p(i,j)    = cpm(i)
@@ -559,11 +561,9 @@
 
  if(config_frac_seaice) then
     call mpas_pool_get_array(sfc_input,'sst' ,sst)
-    call mpas_pool_get_array(sfc_input,'xice',xice)
     do j = jts,jte
     do i = its,ite
        sst_p(i,j)      = sst(i)
-       xice_p(i,j)     = xice(i)
 
        !input variables:
        mavail_sea(i,j) = mavail(i)
@@ -1401,17 +1401,18 @@
                    cqs      = cqs_p      , cqs2      = cqs2_p   , cpm      = cpm_p       , &
                    znt      = znt_p      , qgh       = qgh_p                             , &
                    ust      = ust_p      , pblh      = hpbl_p   , mavail   = mavail_p    , &
-                   zol      = zol_p      , mol       = mol_p    , &
+                   zol      = zol_p      , mol       = mol_p    ,                          &
                    psim     = psim_p     , psih      = psih_p   , xland    = xland_p     , &
                    hfx      = hfx_p      , qfx       = qfx_p    , lh       = lh_p        , &
                    tsk      = tsk_p      , flhc      = flhc_p   , flqc     = flqc_p      , &
-                   qsfc     = qsfc_p     , rmol      = rmol_p   , &
+                   qsfc     = qsfc_p     , rmol      = rmol_p   ,                          &
                    u10      = u10_p      , v10       = v10_p    , th2      = th2m_p      , &
                    t2       = t2m_p      , q2        = q2_p     , snowh    = snowh_p     , &
                    gz1oz0   = gz1oz0_p   , wspd      = wspd_p   , br       = br_p        , &
-                   isfflx   = isfflx     , dx        = dx_p     , &
+                   isfflx   = isfflx     , dx        = dx_p     ,                          &
                    ustm     = ustm_p     , ck        = ck_p     , cka      = cka_p       , &
                    cd       = cd_p       , cda       = cda_p    , ch       = ch_p        , &
+                   xice     =xice_P      , xice_threshold       = xice_threshold         , &
                    spp_pbl               = spp_pbl                                       , &
                    sf_mynn_sfcflux_land  = sf_mynn_sfcflux_land                          , &
                    sf_mynn_sfcflux_water = sf_mynn_sfcflux_water                         , &
@@ -1434,17 +1435,18 @@
                       cqs      = cqs_sea    , cqs2      = cqs2_sea , cpm      = cpm_sea     , &
                       znt      = znt_sea    , qgh       = qgh_sea                           , &
                       ust      = ust_sea    , pblh      = hpbl_p   , mavail   = mavail_sea  , &
-                      zol      = zol_sea    , mol       = mol_sea  , &
+                      zol      = zol_sea    , mol       = mol_sea  ,                          &
                       psim     = psim_sea   , psih      = psih_sea , xland    = xland_sea   , &
                       hfx      = hfx_sea    , qfx       = qfx_sea  , lh       = lh_sea      , &
                       tsk      = tsk_sea    , flhc      = flhc_sea , flqc     = flqc_sea    , &
-                      qsfc     = qsfc_sea   , rmol      = rmol_sea , &
+                      qsfc     = qsfc_sea   , rmol      = rmol_sea ,                          &
                       u10      = u10_sea    , v10       = v10_sea  , th2      = th2m_sea    , &
                       t2       = t2m_sea    , q2        = q2_sea   , snowh    = snowh_p     , &
                       gz1oz0   = gz1oz0_sea , wspd      = wspd_sea , br       = br_sea      , &
-                      isfflx   = isfflx     , dx        = dx_p     , &
+                      isfflx   = isfflx     , dx        = dx_p     ,                          &
                       ustm     = ustm_sea   , ck        = ck_sea   , cka      = cka_sea     , &
                       cd       = cd_sea     , cda       = cda_sea  , ch       = ch_sea      , &
+                      xice     =xice_P      , xice_threshold       = xice_threshold         , & 
                       spp_pbl               = spp_pbl                                       , &
                       sf_mynn_sfcflux_land  = sf_mynn_sfcflux_land                          , &
                       sf_mynn_sfcflux_water = sf_mynn_sfcflux_water     	            , &
