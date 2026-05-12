@@ -53,6 +53,10 @@ else()
 endif()
 target_compile_definitions(framework PRIVATE ${FRAMEWORK_COMPILE_DEFINITIONS})
 
+if (MPAS_UFS_DYCORE)
+  add_definitions(-DMPAS_UFS_DYCORE)
+endif()
+
 mpas_fortran_target(framework)
 add_library(${PROJECT_NAME}::framework ALIAS framework)
 

@@ -118,10 +118,6 @@ add_subdirectory(src/tools/registry) # Targets: mpas_parse_<core_name>
 add_subdirectory(src/framework) # Target: MPAS::framework
 add_subdirectory(src/operators) # Target: MPAS::operators
 
-if (MPAS_UFS_DYCORE)
-  add_definitions(-DMPAS_UFS_DYCORE)
-endif()
-
 foreach(_core IN LISTS MPAS_CORES)
     add_subdirectory(src/core_${_core}) # Target: MPAS::core::<core_name>
 endforeach()
