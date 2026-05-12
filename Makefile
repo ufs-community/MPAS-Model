@@ -119,6 +119,57 @@ ftn:   # BUILDTARGET Cray compilers
 	"OPENACC = $(OPENACC)" \
 	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI" )
 
+ftn-wcoss2:   # wcoss2
+	( $(MAKE) all \
+	"FC_PARALLEL = ftn" \
+	"CC_PARALLEL = cc" \
+	"CXX_PARALLEL = CC" \
+	"FC_SERIAL = ftn" \
+	"CC_SERIAL = cc" \
+	"CXX_SERIAL = CC" \
+	"FFLAGS_PROMOTION = -real-size 64" \
+	"FFLAGS_OPT = -O3 -convert big_endian -free -align array64byte" \
+	"CFLAGS_OPT = -O3" \
+	"CXXFLAGS_OPT = -O3" \
+	"LDFLAGS_OPT =  -O3" \
+	"FFLAGS_OMP = -mp" \
+	"CFLAGS_OMP = -mp" \
+	"FFLAGS_ACC =" \
+	"CFLAGS_ACC =" \
+	"BUILD_TARGET = $(@)" \
+	"CORE = $(CORE)" \
+	"DEBUG = $(DEBUG)" \
+	"USE_PAPI = $(USE_PAPI)" \
+	"OPENMP = $(OPENMP)" \
+	"OPENACC = $(OPENACC)" \
+	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI" )
+
+vecna_ifort:
+	( $(MAKE) all \
+	"FC_PARALLEL = mpif90" \
+	"CC_PARALLEL = mpicc -diag-disable=10441"  \
+	"CXX_PARALLEL = mpiicpc" \
+	"FC_SERIAL = ifort" \
+	"CC_SERIAL = icx" \
+	"CXX_SERIAL = icpc" \
+	"FFLAGS_PROMOTION = -real-size 64" \
+	"FFLAGS_OPT = -O3 -convert big_endian -free -align array64byte" \
+	"CFLAGS_OPT = -O3 " \
+	"CXXFLAGS_OPT = -O3" \
+	"LDFLAGS_OPT = -O3" \
+	"LIB_HDF5=-L$(HDF5_LIBRARIES) -lhdf5_hl -lhdf5 -L${ZLIB_LIBRARIES} -lz -ldl -lm" \
+	"FFLAGS_DEBUG = -g -convert big_endian -free -CU -CB -check all -check bounds -fpe0 -traceback" \
+	"CFLAGS_DEBUG = -g -traceback" \
+	"CXXFLAGS_DEBUG = -g -traceback" \
+	"LDFLAGS_DEBUG = -g -fpe0 -traceback" \
+	"FFLAGS_OMP = -qopenmp" \
+	"CFLAGS_OMP = -qopenmp" \
+	"CORE = $(CORE)" \
+	"DEBUG = $(DEBUG)" \
+	"USE_PAPI = $(USE_PAPI)" \
+	"OPENMP = $(OPENMP)" \
+	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI" )
+
 titan-cray:   # BUILDTARGET (deprecated) Cray compilers with options for ORNL Titan
 	( $(MAKE) all \
 	"FC_PARALLEL = ftn" \
@@ -299,6 +350,60 @@ ifort:   # BUILDTARGET Intel Fortran, C, and C++ compiler suite
 	"OPENMP = $(OPENMP)" \
 	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI" )
 
+ifort_icx:   # BUILDTARGET Intel Fortran, C, and C++ compiler suite
+	( $(MAKE) all \
+	"FC_PARALLEL = mpif90" \
+	"CC_PARALLEL = mpicc" \
+	"CXX_PARALLEL = mpicxx" \
+	"FC_SERIAL = ifort" \
+	"CC_SERIAL = icx" \
+	"CXX_SERIAL = icpx" \
+	"FFLAGS_PROMOTION = -real-size 64" \
+	"FFLAGS_OPT = -O3 -convert big_endian -free -align array64byte" \
+	"CFLAGS_OPT = -O3" \
+	"CXXFLAGS_OPT = -O3" \
+	"LDFLAGS_OPT = -O3" \
+	"FFLAGS_DEBUG = -g -convert big_endian -free -check all -fpe0 -traceback" \
+	"CFLAGS_DEBUG = -g -traceback" \
+	"CXXFLAGS_DEBUG = -g -traceback" \
+	"LDFLAGS_DEBUG = -g -fpe0 -traceback" \
+	"FFLAGS_OMP = -qopenmp" \
+	"CFLAGS_OMP = -qopenmp" \
+	"PICFLAG = -fpic" \
+	"BUILD_TARGET = $(@)" \
+	"CORE = $(CORE)" \
+	"DEBUG = $(DEBUG)" \
+	"USE_PAPI = $(USE_PAPI)" \
+	"OPENMP = $(OPENMP)" \
+	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI" )
+
+jet_ifort:
+	( $(MAKE) all \
+	"FC_PARALLEL = mpiifort" \
+	"CC_PARALLEL = mpiicc" \
+	"CXX_PARALLEL = mpicpc" \
+	"FC_SERIAL = ifort" \
+	"CC_SERIAL = icc" \
+	"CXX_SERIAL = icpc" \
+	"FFLAGS_PROMOTION = -real-size 64" \
+	"FFLAGS_OPT = -O3 -convert big_endian -free -align array64byte" \
+	"CFLAGS_OPT = -O3" \
+	"CXXFLAGS_OPT = -O3" \
+	"LDFLAGS_OPT = -O3" \
+	"FFLAGS_DEBUG = -g -convert big_endian -free -check all -fpe0 -traceback" \
+	"CFLAGS_DEBUG = -g -traceback" \
+	"CXXFLAGS_DEBUG = -g -traceback" \
+	"LDFLAGS_DEBUG = -g -fpe0 -traceback" \
+	"FFLAGS_OMP = -qopenmp" \
+	"CFLAGS_OMP = -qopenmp" \
+	"PICFLAG = -fpic" \
+	"BUILD_TARGET = $(@)" \
+	"CORE = $(CORE)" \
+	"DEBUG = $(DEBUG)" \
+	"USE_PAPI = $(USE_PAPI)" \
+	"OPENMP = $(OPENMP)" \
+	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI" )
+
 ifort-scorep:   # BUILDTARGET Intel compiler suite with ScoreP profiling library
 	( $(MAKE) all \
 	"FC_PARALLEL = scorep --compiler mpif90" \
@@ -368,6 +473,60 @@ intel-mpi:   # BUILDTARGET Intel compiler suite with Intel MPI library
 	"CFLAGS_DEBUG = -g -traceback" \
 	"CXXFLAGS_DEBUG = -g -traceback" \
 	"LDFLAGS_DEBUG = -g -fpe0 -traceback" \
+	"FFLAGS_OMP = -qopenmp" \
+	"CFLAGS_OMP = -qopenmp" \
+	"PICFLAG = -fpic" \
+	"BUILD_TARGET = $(@)" \
+	"CORE = $(CORE)" \
+	"DEBUG = $(DEBUG)" \
+	"USE_PAPI = $(USE_PAPI)" \
+	"OPENMP = $(OPENMP)" \
+	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI" )
+
+intel-llvm-mpi:   # BUILDTARGET Intel LLVM compiler suite with Intel MPI library
+	( $(MAKE) all \
+	"FC_PARALLEL = mpiifx" \
+	"CC_PARALLEL = mpiicx" \
+	"CXX_PARALLEL = mpiicpx" \
+	"FC_SERIAL = ifx" \
+	"CC_SERIAL = icx" \
+	"CXX_SERIAL = icpx" \
+	"FFLAGS_PROMOTION = -real-size 64" \
+	"FFLAGS_OPT = -O3 -convert big_endian -free -align array64byte" \
+	"CFLAGS_OPT = -O3" \
+	"CXXFLAGS_OPT = -O3" \
+	"LDFLAGS_OPT = -O3" \
+	"FFLAGS_DEBUG = -g -convert big_endian -free -CU -CB -check all -fpe0 -traceback" \
+	"CFLAGS_DEBUG = -g -traceback" \
+	"CXXFLAGS_DEBUG = -g -traceback" \
+	"LDFLAGS_DEBUG = -g -fpe0 -traceback" \
+	"FFLAGS_OMP = -qopenmp" \
+	"CFLAGS_OMP = -qopenmp" \
+	"PICFLAG = -fpic" \
+	"BUILD_TARGET = $(@)" \
+	"CORE = $(CORE)" \
+	"DEBUG = $(DEBUG)" \
+	"USE_PAPI = $(USE_PAPI)" \
+	"OPENMP = $(OPENMP)" \
+	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI" )
+
+intel-mpi-ursa:   # usra
+	( $(MAKE) all \
+	"FC_PARALLEL = mpiifort" \
+	"CC_PARALLEL = mpiicc" \
+	"CXX_PARALLEL = mpiicpc" \
+	"FC_SERIAL = ifort" \
+	"CC_SERIAL = icx" \
+	"CXX_SERIAL = icpx" \
+	"FFLAGS_PROMOTION = -real-size 64" \
+	"FFLAGS_OPT = -O3 -convert big_endian -free -align array64byte" \
+	"CFLAGS_OPT = -O3" \
+	"CXXFLAGS_OPT = -O3" \
+	"LDFLAGS_OPT = -O3" \
+	"FFLAGS_DEBUG = -g -convert big_endian -free -CU -CB -check all -fpe0 -traceback" \
+	"CFLAGS_DEBUG = -g -traceback" \
+	"CXXFLAGS_DEBUG = -g -traceback" \
+	"LDFLAGS_DEBUG = -g -traceback" \
 	"FFLAGS_OMP = -qopenmp" \
 	"CFLAGS_OMP = -qopenmp" \
 	"PICFLAG = -fpic" \

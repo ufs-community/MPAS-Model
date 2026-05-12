@@ -101,6 +101,74 @@
 !   (land       =1: czil_new (modified according to chen & zhang 2008)
 !    only)      =2: modified yang et al (2002, 2008) - generalized for all landuse
 !               =3: constant zt = z0/7.4 (garratt 1992)
+!-- u3d         3d u-velocity interpolated to theta points (m/s)
+!-- v3d         3d v-velocity interpolated to theta points (m/s)
+!-- t3d         3d temperature (k)
+!-- qv3d        3d water vapor mixing ratio (kg/kg)
+!-- p3d         3d pressure (pa)
+!-- rho3d       3d density (kg/m3) 
+!-- dz8w        3d dz between full levels (m)
+!-- cp          heat capacity at constant pressure for dry air (j/kg/k)
+!-- g           acceleration due to gravity (m/s^2)
+!-- rovcp       r/cp
+!-- r           gas constant for dry air (j/kg/k)
+!-- xlv         latent heat of vaporization for water (j/kg)
+!-- psfcpa      surface pressure (pa)
+!-- znt         roughness length (m)
+!-- ust         u* in similarity theory (m/s)
+!-- ustm        u* in similarity theory (m/s) w* added to wspd. this is
+!               used to couple with tke scheme but not in mynn.
+!               (as of now, ustm = ust in this version)
+!-- pblh        pbl height from previous time (m)
+!-- mavail      surface moisture availability (between 0 and 1)
+!-- zol         z/l height over monin-obukhov length
+!-- mol         t* (similarity theory) (k)
+!-- rmol        reciprocal of m-o length (/m)
+!-- regime      flag indicating pbl regime (stable, unstable, etc.)
+!-- psim        similarity stability function for momentum
+!-- psih        similarity stability function for heat
+!-- xland       land mask (1 for land, 2 for water)
+!-- hfx         upward heat flux at the surface (w/m^2)
+!-- qfx         upward moisture flux at the surface (kg/m^2/s)
+!-- lh          net upward latent heat flux at surface (w/m^2)
+!-- tsk         surface temperature (k)
+!-- flhc        exchange coefficient for heat (w/m^2/k)
+!-- flqc        exchange coefficient for moisture (kg/m^2/s)
+!-- chs         heat/moisture exchange coefficient for lsm (m/s)
+!-- qgh         lowest-level saturated mixing ratio
+!-- qsfc        qv (specific humidity) at the surface
+!-- qsfcmr      qv (mixing ratio) at the surface
+!-- u10         diagnostic 10m u wind
+!-- v10         diagnostic 10m v wind
+!-- th2         diagnostic 2m theta (k)
+!-- t2          diagnostic 2m temperature (k)
+!-- q2          diagnostic 2m mixing ratio (kg/kg)
+!-- snowh       snow height (m)
+!-- gz1oz0      log((z1+znt)/znt) where znt is roughness length 
+!-- wspd        wind speed at lowest model level (m/s)
+!-- br          bulk richardson number in surface layer
+!-- isfflx      isfflx=1 for surface heat and moisture fluxes
+!-- dx          horizontal grid size (m)
+!-- svp1        constant for saturation vapor pressure (=0.6112 kpa)
+!-- svp2        constant for saturation vapor pressure (=17.67 dimensionless)
+!-- svp3        constant for saturation vapor pressure (=29.65 k)
+!-- svpt0       constant for saturation vapor pressure (=273.15 k)
+!-- ep1         constant for virtual temperature (rv/rd - 1) (dimensionless)
+!-- ep2         constant for spec. hum. calc (rd/rv = 0.622) (dimensionless)
+!-- ep3         constant for spec. hum. calc (1 - rd/rv = 0.378 ) (dimensionless)
+!-- karman      von karman constant
+!-- ck          enthalpy exchange coeff at 10 meters
+!-- cd          momentum exchange coeff at 10 meters
+!-- cka         enthalpy exchange coeff at the lowest model level
+!-- cda         momentum exchange coeff at the lowest model level
+!-- isftcflx    =0: z0, zt, and zq from coare3.0/3.5 (fairall et al 2003/edson et al 2013)
+!   (water      =1: z0 from davis et al (2008), zt & zq from coare3.0/3.5
+!    only)      =2: z0 from davis et al (2008), zt & zq from garratt (1992)
+!               =3: z0 from taylor and yelland (2004), zt and zq from coare 3.0/3.5
+!-- iz0tlnd     =0: zilitinkevich (1995) with czil=0.085, 
+!   (land       =1: czil_new (modified according to chen & zhang 2008)
+!    only)      =2: modified yang et al (2002, 2008) - generalized for all landuse
+!               =3: constant zt = z0/7.4 (garratt 1992)
 !
 !-- ids         start index for i in domain
 !-- ide         end index for i in domain
@@ -314,7 +382,7 @@
                  p1d      = p1d       , dz8w1d   = dz8w1d    , rho1d   = rho1d    , u1d2      = u1d2      , &
                  v1d2     = v1d2      , dz2w1d   = dz2w1d    , cp      = cp       , g         = g         , &
                  rovcp    = rovcp     , r        = r         , xlv     = xlv      , psfcpa    = psfcpa_hv , &
-                 chs      = chs_hv    , chs2     = chs2_hv   , cqs2    = cqs2_hv  , cpm       = cpm_hv    , &
+                 chs      = chs_hv    , chs2     = chs2_hv   , cqs2    = cqs2_hv  , cpm       = cpm_hv ,    &
                  pblh     = pblh_hv   , rmol     = rmol_hv   , znt     = znt_hv   , ust       = ust_hv    , &
                  mavail   = mavail_hv , zol      = zol_hv    , mol     = mol_hv   , regime    = regime_hv , &
                  psim     = psim_hv   , psih     = psih_hv   , xland   = xland_hv , hfx       = hfx_hv    , &

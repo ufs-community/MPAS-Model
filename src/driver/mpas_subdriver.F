@@ -297,6 +297,7 @@ module mpas_subdriver
          call mpas_log_write('Streams file '//trim(domain_ptr % streams_filename)//' does not exist.', messageType=MPAS_LOG_CRIT)
       end if
 
+
       call mpas_timer_start('total time')
       call mpas_timer_start('initialize')
 

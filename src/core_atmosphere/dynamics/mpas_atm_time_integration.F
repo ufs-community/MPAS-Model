@@ -1,3 +1,4 @@
+
 ! Copyright (c) 2013,  Los Alamos National Security, LLC (LANS)
 ! and the University Corporation for Atmospheric Research (UCAR).
 !
@@ -16,7 +17,6 @@
 
 module atm_time_integration
 
-   use mpas_derived_types
    use mpas_pool_routines
    use mpas_kind_types
    use mpas_constants
@@ -34,8 +34,8 @@ module atm_time_integration
 #endif
 
    use mpas_atm_boundaries, only : nSpecZone, nRelaxZone, nBdyZone, mpas_atm_get_bdy_state, mpas_atm_get_bdy_tend  ! regional_MPAS addition
-   
-   use mpas_atm_iau  
+
+   use mpas_atm_iau
 
    ! Provides definition of halo_exchange_routine
 #include "mpas_halo_interface.inc"
@@ -46,10 +46,10 @@ module atm_time_integration
    real (kind=RKIND), dimension(:,:), pointer :: tend_ru_physics, tend_rtheta_physics, tend_rho_physics
    
    ! Used in compute_dyn_tend
-   real (kind=RKIND), allocatable, dimension(:,:) :: qtot 
+   real (kind=RKIND), allocatable, dimension(:,:) :: qtot
    real (kind=RKIND), allocatable, dimension(:,:) :: delsq_theta, delsq_w, delsq_divergence
    real (kind=RKIND), allocatable, dimension(:,:) :: delsq_u
-!   real (kind=RKIND), allocatable, dimension(:,:) :: delsq_circulation    ! no longer used -> removed 
+!   real (kind=RKIND), allocatable, dimension(:,:) :: delsq_circulation    ! no longer used -> removed
    real (kind=RKIND), allocatable, dimension(:,:) :: delsq_vorticity
    real (kind=RKIND), allocatable, dimension(:,:) :: dpdz
    !$acc declare create(qtot)
@@ -109,7 +109,6 @@ module atm_time_integration
 
 
    contains
-
 
    !***********************************************************************
    !
@@ -727,11 +726,11 @@ module atm_time_integration
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
    ! Advance model state forward in time by the specified time step
    !
-   ! Input: domain - current model state in time level 1 (e.g., time_levs(1)state%h(:,:)) 
+   ! Input: domain - current model state in time level 1 (e.g., time_levs(1)state%h(:,:))
    !                 plus grid meta-data
-   ! Output: domain - upon exit, time level 2 (e.g., time_levs(2)%state%h(:,:)) contains 
+   ! Output: domain - upon exit, time level 2 (e.g., time_levs(2)%state%h(:,:)) contains
    !                  model state advanced forward in time by dt seconds
-   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       implicit none
 
@@ -794,12 +793,12 @@ module atm_time_integration
    !
    ! Nonhydrostatic atmospheric solver
    !
-   ! Input: domain - current model state in time level 1 (e.g., time_levs(1)state%h(:,:)) 
+   ! Input: domain - current model state in time level 1 (e.g., time_levs(1)state%h(:,:))
    !                 plus grid meta-data and some diagnostics of state.
-   ! Output: domain - upon exit, time level 2 (e.g., time_levs(2)%state%h(:,:)) contains 
+   ! Output: domain - upon exit, time level 2 (e.g., time_levs(2)%state%h(:,:)) contains
    !                  model state advanced forward in time by dt seconds,
-   !                  and some diagnostics in diag 
-   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
+   !                  and some diagnostics in diag
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       implicit none
 
@@ -1111,9 +1110,9 @@ module atm_time_integration
          call exchange_halo_group(domain, 'dynamics:exner')
 
 
-         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
-         ! BEGIN Runge-Kutta loop 
-         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
+         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+         ! BEGIN Runge-Kutta loop
+         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
          RK3_DYNAMICS : do rk_step = 1, 3  ! Runge-Kutta loop
 
@@ -1199,7 +1198,7 @@ module atm_time_integration
 !$OMP END PARALLEL DO
             call mpas_timer_stop('small_step_prep')
 
-          
+
 !------------------------------------------------------------------------------------------------------------------------
 
             if (config_apply_lbcs) then  ! adjust boundary tendencies for regional_MPAS dry dynamics in the specified zone
@@ -1282,7 +1281,7 @@ module atm_time_integration
 
                call mpas_timer_stop('atm_advance_acoustic_step')
 
-  
+
 ! rtheta_pp
 ! This is the only communications needed during the acoustic steps because we solve for u on all edges of owned cells
 
@@ -1377,7 +1376,7 @@ module atm_time_integration
             end if  ! regional_MPAS addition
 
 !-------------------------------------------------------------------
-            
+
             ! u
             if (config_apply_lbcs) then
                call exchange_halo_group(domain, 'dynamics:u_123')
@@ -1385,7 +1384,7 @@ module atm_time_integration
                call exchange_halo_group(domain, 'dynamics:u_3')
             end if
 
-            ! scalar advection: RK3 scheme of Skamarock and Gassmann (2011). 
+            ! scalar advection: RK3 scheme of Skamarock and Gassmann (2011).
             ! PD or monotonicity constraints applied only on the final Runge-Kutta substep.
 
             if (config_scalar_advection .and. (.not. config_split_dynamics_transport) ) then
@@ -1460,12 +1459,12 @@ module atm_time_integration
             end if
 
             ! set the zero-gradient condition on w for regional_MPAS
-            
+
             if ( config_apply_lbcs ) then  ! regional_MPAS addition
 
 !$OMP PARALLEL DO
               do thread=1,nThreads
-                 call atm_zero_gradient_w_bdy( state, mesh, &
+                 call atm_zero_gradient_w_bdy( state, mesh, block % configs, &
                                                cellSolveThreadStart(thread), cellSolveThreadEnd(thread) )
               end do
 !$OMP END PARALLEL DO
@@ -1473,7 +1472,7 @@ module atm_time_integration
               ! w halo values needs resetting after regional boundary update
               call exchange_halo_group(domain, 'dynamics:w')
 
-            end if ! end of regional_MPAS addition 
+            end if ! end of regional_MPAS addition
 
          end do RK3_DYNAMICS
 
@@ -1872,6 +1871,7 @@ module atm_time_integration
       do thread=1,nThreads
          if (rk_step < 3 .or. (.not. config_monotonic .and. .not. config_positive_definite)) then
             call atm_advance_scalars(field_name, tend, state, diag, mesh, block % configs, rk_timestep(rk_step), &
+                                     cellThreadStart(thread), cellThreadEnd(thread), &
                                      edgeThreadStart(thread), edgeThreadEnd(thread), &
                                      cellSolveThreadStart(thread), cellSolveThreadEnd(thread), &
                                      horiz_flux_array, rk_step, config_time_integration_order, &
@@ -2030,7 +2030,7 @@ module atm_time_integration
                                    cellStart, cellEnd, vertexStart, vertexEnd, edgeStart, edgeEnd, &
                                    cellSolveStart, cellSolveEnd, vertexSolveStart, vertexSolveEnd, edgeSolveStart, edgeSolveEnd)
 
-      ! the moist coefficients cqu and cqw serve to transform the inverse dry density (1/rho_d) 
+      ! the moist coefficients cqu and cqw serve to transform the inverse dry density (1/rho_d)
       ! into the inverse full (moist) density (1/rho_m).
 
       implicit none
@@ -2216,7 +2216,7 @@ module atm_time_integration
                                    cellSolveStart, cellSolveEnd, edgeSolveStart, edgeSolveEnd)
 
       use mpas_atm_dimensions
- 
+
       implicit none
 
 
@@ -2356,8 +2356,8 @@ module atm_time_integration
    subroutine atm_set_smlstep_pert_variables( tend, mesh, cellSolveStart, cellSolveEnd)
 
       ! following Klemp et al MWR 2007, we use preturbation variables
-      ! in the acoustic-step integration.  This routine computes those 
-      ! perturbation variables.  state variables are reconstituted after 
+      ! in the acoustic-step integration.  This routine computes those
+      ! perturbation variables.  state variables are reconstituted after
       ! the acousstic steps in subroutine atm_recover_large_step_variables
 
 
@@ -3009,7 +3009,7 @@ module atm_time_integration
       call mpas_pool_get_dimension(mesh, 'nCellsSolve', nCellsSolve_ptr)
       call mpas_pool_get_dimension(mesh, 'nVertLevels', nVertLevels_ptr)
 
-      call mpas_pool_get_config(configs, 'config_smdiv', smdiv) 
+      call mpas_pool_get_config(configs, 'config_smdiv', smdiv)
       call mpas_pool_get_config(configs, 'config_len_disp', config_len_disp)
 
       rdts = 1.0_RKIND / dts
@@ -3418,7 +3418,6 @@ module atm_time_integration
    end subroutine atm_recover_large_step_variables_work
 
 
-   !-----------------------------------------------------------------------
    !  routine atm_advance_scalars
    !
    !> \brief Integrate scalar equations - explicit transport plus other tendencies
@@ -3430,6 +3429,7 @@ module atm_time_integration
    !
    !-----------------------------------------------------------------------
    subroutine atm_advance_scalars(field_name, tend, state, diag, mesh, configs, dt, &
+                                  cellStart, cellEnd, &
                                   edgeStart, edgeEnd, &
                                   cellSolveStart, cellSolveEnd, &
                                   horiz_flux_arr, rk_step, config_time_integration_order, advance_density)
@@ -3446,6 +3446,7 @@ module atm_time_integration
       integer, intent(in) :: rk_step    !  rk substep we are integrating
       integer, intent(in) :: config_time_integration_order  ! time integration order
       real (kind=RKIND) :: dt
+      integer, intent(in) :: cellStart, cellEnd
       integer, intent(in) :: edgeStart, edgeEnd
       integer, intent(in) :: cellSolveStart, cellSolveEnd
       logical, intent(in), optional :: advance_density
@@ -3470,6 +3471,18 @@ module atm_time_integration
 
       real (kind=RKIND), dimension(:), pointer :: fnm, fnp, rdnw
       real (kind=RKIND), pointer :: coef_3rd_order
+      
+      logical, pointer  :: scalar_eddy_mix
+      
+      real (kind=RKIND), dimension(:), pointer :: meshScalingDel2
+      
+      real (kind=RKIND), pointer :: config_h_scalar_filter4, config_len_disp
+
+      real (kind=RKIND) :: h_scalar_filter4
+      
+      real (kind=RKIND), dimension(:), pointer :: invDcEdge, meshScalingDel4
+      
+      real (kind=RKIND), dimension(:,:), pointer :: kdiff, rho_edge
 
       integer, dimension(:), pointer :: bdyMaskCell, bdyMaskEdge    ! regional_MPAS addition
 
@@ -3515,18 +3528,43 @@ module atm_time_integration
 
       call mpas_pool_get_array(mesh, 'bdyMaskCell', bdyMaskCell)
       call mpas_pool_get_array(mesh, 'bdyMaskEdge', bdyMaskEdge)
+      
+! ON/OFF eddy mixing for scalars?
+      call mpas_pool_get_config(configs, 'config_scalar_eddy_mix', scalar_eddy_mix)
+      
+      call mpas_pool_get_config(configs, 'config_len_disp', config_len_disp)
+      call mpas_pool_get_config(configs, 'config_h_scalar_filter4', config_h_scalar_filter4)
+      call mpas_pool_get_array(mesh,     'invDcEdge', invDcEdge)
+      
+! Retrieval of K-eddy mixing array and things needed for second-order fluxes
+      
+      call mpas_pool_get_array(mesh, 'meshScalingDel2', meshScalingDel2)
+      call mpas_pool_get_array(diag, 'kdiff', kdiff)
+      call mpas_pool_get_array(diag, 'rho_edge', rho_edge)
+
+! Use L**3 (not L**4) for 4th-order scaling to account for grid variation, same scaling as Smagorinsky
+! Make sure we dont violate stability: [K_4 * dt / area**2] < 1 / 36 (Klemp 2017)
+
+      if( config_h_scalar_filter4 > 0.0 ) then
+         h_scalar_filter4 = config_h_scalar_filter4  * config_len_disp**3
+      else
+         h_scalar_filter4 = 0.0
+      endif 
 
       call atm_advance_scalars_work(nCells, num_scalars, dt, &
+             cellStart, cellEnd, &
              edgeStart, edgeEnd, &
              cellSolveStart, cellSolveEnd, &
              coef_3rd_order, scalar_old, scalar_new, rho_zz_old, rho_zz_new, &
              uhAvg, wwAvg, dvEdge, &
              cellsOnEdge, edgesOnCell, nEdgesOnCell, edgesOnCell_sign, invAreaCell, &
+             invDcEdge, meshScalingDel4, meshScalingDel2, &
              scalar_tend_save, fnm, fnp, rdnw, &
              bdyMaskCell, bdyMaskEdge, &
              nAdvCellsForEdge, advCellsForEdge, adv_coefs, adv_coefs_3rd, &
+             kdiff, rho_edge, &
              nEdges, horiz_flux_arr, rk_step, config_time_integration_order, &
-             local_advance_density)
+             local_advance_density, h_scalar_filter4, scalar_eddy_mix)
 
    end subroutine atm_advance_scalars
 
@@ -3560,16 +3598,19 @@ module atm_time_integration
    !
    !-----------------------------------------------------------------------
    subroutine atm_advance_scalars_work(nCells, num_scalars, dt, &
+             cellStart, cellEnd, &
              edgeStart, edgeEnd, &
              cellSolveStart, cellSolveEnd, &
              coef_3rd_order, scalar_old, scalar_new, rho_zz_old, rho_zz_new, &
              uhAvg, wwAvg, dvEdge, &
              cellsOnEdge, edgesOnCell, nEdgesOnCell, edgesOnCell_sign, invAreaCell, &
+             invDcEdge, meshScalingDel4, meshScalingDel2, &
              scalar_tend_save, fnm, fnp, rdnw, &
              bdyMaskCell, bdyMaskEdge, &
              nAdvCellsForEdge, advCellsForEdge, adv_coefs, adv_coefs_3rd, &
+             kdiff, rho_edge, &
              nEdges, horiz_flux_arr, rk_step, config_time_integration_order, &
-             advance_density)
+             advance_density, h_scalar_filter4, scalar_eddy_mix)
 
       use mpas_atm_dimensions, only : nVertLevels
 
@@ -3598,6 +3639,20 @@ module atm_time_integration
       real (kind=RKIND), dimension(num_scalars,nVertLevels,nEdges+1), intent(inout) :: horiz_flux_arr
       real (kind=RKIND), dimension(:), intent(in) :: invAreaCell
       integer, dimension(:), intent(in) :: bdyMaskCell, bdyMaskEdge ! regional_MPAS addition
+      
+      integer, intent(in) :: cellStart, cellEnd
+
+      real (kind=RKIND), dimension(:), intent(in) :: invDcEdge, meshScalingDel4, meshScalingDel2
+      
+      real (kind=RKIND), intent(in) ::  h_scalar_filter4
+      
+      logical, intent(in) :: scalar_eddy_mix
+      
+      real (kind=RKIND), dimension(:,:), intent(in) :: kdiff, rho_edge
+      
+      real (kind=RKIND) :: r_areaCell, edge_sign
+      
+      real (kind=RKIND) :: scalar_turb_flux, kdiff_avg, pr_scale, prandtl_inv
 
       integer :: i, j, iCell, iAdvCell, iEdge, k, iScalar, cell1, cell2
       real (kind=RKIND) :: rho_zz_new_inv
@@ -3651,6 +3706,119 @@ module atm_time_integration
       MPAS_ACC_TIMER_START('atm_advance_scalars [ACC_data_xfer]')
       !$acc enter data copyin(uhAvg, scalar_new)
       MPAS_ACC_TIMER_STOP('atm_advance_scalars [ACC_data_xfer]')
+
+      IF ( rk_step == 1 .and. scalar_eddy_mix .eqv. .true. ) THEN
+      
+!  horizontal eddy mixing for scalars 
+ 
+         prandtl_inv = 1.0_RKIND / prandtl
+     
+!        call mpas_log_write('')
+!        call mpas_log_write('atm_advance_scalar_work:  Running 4th_order_filter...')
+!        call mpas_log_write(' h_scalar_eddy_visc4: $r', realArgs=(/h_scalar_eddy_visc4/))
+!        call mpas_log_write(' prandtl_inv: $r', realArgs=(/prandtl_inv/))
+!        call mpas_log_write(' Max KM $r', realArgs=(/maxval(kdiff)/))
+!        call mpas_log_write('')
+
+! at rk_step == 1, scalar_new == scalar_old.  So use this as temp storage...
+
+         do iCell=cellStart,cellEnd
+            do k=1,nVertLevels
+               do iScalar=1,num_scalars
+                  scalar_new(iScalar,k,iCell) = 0.0_RKIND
+               end do
+            end do
+         end do
+
+         do iCell=cellStart,cellEnd
+
+            r_areaCell = invAreaCell(iCell)
+
+! Computing the filter at more points than needed here so to be able to pick up 4th order stencil
+
+            do i=1,nEdgesOnCell(iCell)
+
+               iEdge     = edgesOnCell(i,iCell)
+               edge_sign = r_areaCell*edgesOnCell_sign(i,iCell) * dvEdge(iEdge) * invDcEdge(iEdge)
+               pr_scale  = prandtl_inv * meshScalingDel2(iEdge)
+               
+               cell1     = cellsOnEdge(1,iEdge)
+               cell2     = cellsOnEdge(2,iEdge)
+!DIR$ IVDEP
+               do k=1,nVertLevels
+               
+                  kdiff_avg = 0.5 * (kdiff(k,cell1) + kdiff(k,cell2)) * pr_scale * rho_edge(k,iEdge)
+
+                  do iScalar=1,num_scalars
+
+                     scalar_turb_flux = edge_sign*(scalar_old(iScalar,k,cell2)  &
+                                                  -scalar_old(iScalar,k,cell1)) 
+                                                  
+                     scalar_tend_save(iScalar,k,iCell) = scalar_tend_save(iScalar,k,iCell) &
+                                                       + scalar_turb_flux * kdiff_avg
+
+! This stores Del^2 (Scalar) for 4th order filter below   
+                                                    
+                     scalar_new(iScalar,k,iCell) = scalar_new(iScalar, k, iCell) + scalar_turb_flux
+                                                 
+                  
+                  end do  ! iScalar loop
+
+               end do  ! nVertsLevels
+
+            end do   ! nEdgesOnCell
+
+          end do   ! iCell
+
+!$OMP BARRIER
+
+! 4th order filtering
+
+         IF (h_scalar_filter4 > 0.0) THEN
+
+           do iCell=cellSolveStart,cellSolveEnd  ! Technically updating fewer cells than before...
+
+             r_areaCell = h_scalar_filter4 * invAreaCell(iCell) 
+
+             do i=1,nEdgesOnCell(iCell)
+
+               iEdge = edgesOnCell(i,iCell)
+               edge_sign = meshScalingDel4(iEdge)*r_areaCell*dvEdge(iEdge)*edgesOnCell_sign(i,iCell)*invDcEdge(iEdge)
+
+               cell1 = cellsOnEdge(1,iEdge)
+               cell2 = cellsOnEdge(2,iEdge)
+ 
+               do k=1,nVertLevels
+               
+                  r_areaCell = h_scalar_filter4 * invAreaCell(iCell) * rho_edge(k,iEdge)  
+
+                  do iScalar=1,num_scalars
+
+                    scalar_tend_save(iScalar,k,iCell) = scalar_tend_save(iScalar,k,iCell)      & 
+                                                      - edge_sign * rho_edge(k,iEdge) &
+                                                      * (scalar_new(iScalar,k,cell2) - scalar_new(iScalar,k,cell1))
+
+                  end do  ! iScalar loop
+                  
+                end do  ! nVertsLevels
+
+             end do   ! nEdgesOnCell
+
+           end do   ! iCell
+         
+         endif ! 4th order filter section
+
+! reset scalar_new == scalar_old
+
+         do iCell=cellStart,cellEnd
+            do k=1,nVertLevels
+               do iScalar=1,num_scalars
+                  scalar_new(iScalar,k,iCell) = scalar_old(iScalar,k,iCell)
+               end do
+            end do
+         end do
+
+       END IF ! scalar mixing & 4th order mixing block
 
       !$acc parallel async
       !$acc loop gang worker private(scalar_weight2, ica)
@@ -4089,7 +4257,7 @@ module atm_time_integration
       end if
 
       !  for positive-definite or monotonic option, we first update scalars using the tendency from sources other than
-      !  the resolved transport (these should constitute a positive definite update).  
+      !  the resolved transport (these should constitute a positive definite update).
       !  Note, however, that we enforce positive-definiteness in this update.
       !  The transport will maintain this positive definite solution and optionally, shape preservation (monotonicity).
 
@@ -4177,7 +4345,7 @@ module atm_time_integration
                   rho_zz_int(k,iCell) = rho_zz_int(k,iCell) - edgesOnCell_sign(i,iCell) &
                                                             * uhAvg(k,iEdge) * dvEdge(iEdge) * invAreaCell(iCell)
                end do
-               
+
             end do
          end do
 
@@ -4284,7 +4452,7 @@ module atm_time_integration
                s_max(k,iCell) = max(scalar_old(k-1,iCell),scalar_old(k,iCell),scalar_old(k+1,iCell))
                s_min(k,iCell) = min(scalar_old(k-1,iCell),scalar_old(k,iCell),scalar_old(k+1,iCell))
             end do
- 
+
             k = nVertLevels
             wdtn(k,iCell) = wwAvg(k,iCell)*(fnm(k)*scalar_new(k,iCell)+fnp(k)*scalar_new(k-1,iCell))
             s_max(k,iCell) = max(scalar_old(k,iCell),scalar_old(k-1,iCell))
@@ -4346,7 +4514,7 @@ module atm_time_integration
             cell2 = cellsOnEdge(2,iEdge)
 
             if (cell1 <= nCellsSolve .or. cell2 <= nCellsSolve) then  ! only for owned cells
-  
+
                ! special treatment of calculations involving edges between hexagonal cells
                ! original code retained in select "default" case
                ! be sure to see additional declarations near top of subroutine
@@ -4433,7 +4601,7 @@ module atm_time_integration
             end do
 
             !
-            ! scale_arr(SCALE_IN,:,:) and scale_arr(SCALE_OUT:,:) are used here to store the incoming and outgoing perturbation flux 
+            ! scale_arr(SCALE_IN,:,:) and scale_arr(SCALE_OUT:,:) are used here to store the incoming and outgoing perturbation flux
             ! contributions to the update:  first the vertical flux component, then the horizontal
             !
 
@@ -4489,7 +4657,7 @@ module atm_time_integration
                !$acc loop vector
                do k=1, nVertLevels
                   scalar_new(k,iCell) = scalar_new(k,iCell) - edgesOnCell_sign(i,iCell) * flux_upwind_tmp(k,iEdge) * invAreaCell(iCell)
- 
+
                   scale_arr(k,SCALE_OUT,iCell) = scale_arr(k,SCALE_OUT,iCell) &
                                                  - max(0.0_RKIND,edgesOnCell_sign(i,iCell)*flux_tmp(k,iEdge)) * invAreaCell(iCell)
                   scale_arr(k,SCALE_IN, iCell) = scale_arr(k,SCALE_IN, iCell) &
@@ -4724,7 +4892,7 @@ module atm_time_integration
    subroutine atm_compute_dyn_tend(tend, tend_physics, state, diag, mesh, configs, nVertLevels, rk_step, dt, &
                                    cellStart, cellEnd, vertexStart, vertexEnd, edgeStart, edgeEnd, &
                                    cellSolveStart, cellSolveEnd, vertexSolveStart, vertexSolveEnd, edgeSolveStart, edgeSolveEnd)
-   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    ! Compute height and normal wind tendencies, as well as diagnostic variables
    !
    ! Input: state - current model state
@@ -4734,8 +4902,8 @@ module atm_time_integration
    ! Output: tend - tendencies: tend_u, tend_w, tend_theta and tend_rho
    !                these are all coupled-variable tendencies.
    !         various other quantities in diag: Smagorinsky eddy viscosity
-   !                
-   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
+   !
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       implicit none
 
@@ -4764,7 +4932,7 @@ module atm_time_integration
                                                    meshScalingDel2, meshScalingDel4
       real (kind=RKIND), dimension(:,:), pointer :: weightsOnEdge, zgrid, rho_edge, rho_zz, ru, u, v, tend_u, &
                                                     divergence, vorticity, ke, pv_edge, theta_m, rw, tend_rho, &
-                                                    rt_diabatic_tend, tend_theta, tend_w, w, cqw, rb, rr, pp, pressure_b, zz, zxu, cqu, & 
+                                                    rt_diabatic_tend, tend_theta, tend_w, w, cqw, rb, rr, pp, pressure_b, zz, zxu, cqu, &
                                                     h_divergence, kdiff, edgesOnCell_sign, edgesOnVertex_sign, rw_save, ru_save
 
       real (kind=RKIND), dimension(:,:), pointer :: theta_m_save
@@ -4789,7 +4957,7 @@ module atm_time_integration
       real (kind=RKIND), dimension(:,:), pointer :: adv_coefs, adv_coefs_3rd
 
       real (kind=RKIND), dimension(:), pointer :: rdzu, rdzw, fzm, fzp, qv_init
-      real (kind=RKIND), dimension(:,:), pointer :: t_init 
+      real (kind=RKIND), dimension(:,:), pointer :: t_init
 
       real (kind=RKIND), pointer :: cf1, cf2, cf3
 
@@ -4947,7 +5115,7 @@ module atm_time_integration
          fEdge, dvEdge, dcEdge, invDcEdge, invDvEdge, invAreaCell, invAreaTriangle, meshScalingDel2, meshScalingDel4, &
          weightsOnEdge, zgrid, rho_edge, rho_zz, ru, u, v, tend_u, &
          divergence, vorticity, ke, pv_edge, theta_m, rw, tend_rho, &
-         rt_diabatic_tend, tend_theta, tend_w, w, cqw, rb, rr, pp, pressure_b, zz, zxu, cqu, & 
+         rt_diabatic_tend, tend_theta, tend_w, w, cqw, rb, rr, pp, pressure_b, zz, zxu, cqu, &
          h_divergence, kdiff, edgesOnCell_sign, edgesOnVertex_sign, rw_save, ru_save, &
          theta_m_save, exner, rr_save, scalars, tend_u_euler, tend_w_euler, tend_theta_euler, deriv_two, &
          cellsOnEdge, verticesOnEdge, edgesOnCell, edgesOnEdge, cellsOnCell, edgesOnVertex, nEdgesOnCell, nEdgesOnEdge, &
@@ -4971,7 +5139,7 @@ module atm_time_integration
       fEdge, dvEdge, dcEdge, invDcEdge, invDvEdge, invAreaCell, invAreaTriangle, meshScalingDel2, meshScalingDel4, &
       weightsOnEdge, zgrid, rho_edge, rho_zz, ru, u, v, tend_u, &
       divergence, vorticity, ke, pv_edge, theta_m, rw, tend_rho, &
-      rt_diabatic_tend, tend_theta, tend_w, w, cqw, rb, rr, pp, pressure_b, zz, zxu, cqu, & 
+      rt_diabatic_tend, tend_theta, tend_w, w, cqw, rb, rr, pp, pressure_b, zz, zxu, cqu, &
       h_divergence, kdiff, edgesOnCell_sign, edgesOnVertex_sign, rw_save, ru_save, &
       theta_m_save, exner, rr_save, scalars, tend_u_euler, tend_w_euler, tend_theta_euler, deriv_two, &
       cellsOnEdge, verticesOnEdge, edgesOnCell, edgesOnEdge, cellsOnCell, edgesOnVertex, nEdgesOnCell, nEdgesOnEdge, &
@@ -5074,7 +5242,7 @@ module atm_time_integration
       real (kind=RKIND), dimension(nVertLevels) :: fzm
       real (kind=RKIND), dimension(nVertLevels) :: fzp
       real (kind=RKIND), dimension(nVertLevels) :: qv_init
-      real (kind=RKIND), dimension(nVertLevels,nCells+1) :: t_init 
+      real (kind=RKIND), dimension(nVertLevels,nCells+1) :: t_init
 
       real (kind=RKIND) :: cf1, cf2, cf3
       real (kind=RKIND) :: prandtl_inv, r_areaCell, rgas_cprcv
@@ -5118,6 +5286,7 @@ module atm_time_integration
       ! Local variables
       !
       integer :: iEdge, iCell, iVertex, k, cell1, cell2, vertex1, vertex2, eoe, i, j, iq, iAdvCell
+      integer :: kk
 
       !real (kind=RKIND), parameter :: c_s = 0.125
       real (kind=RKIND), dimension( nVertLevels+1 ) :: d_diag, d_off_diag, flux_arr
@@ -5235,7 +5404,7 @@ module atm_time_integration
 !DIR$ IVDEP
                !$acc loop vector
                do k=1, nVertLevels
-                  ! here is the Smagorinsky formulation, 
+                  ! here is the Smagorinsky formulation,
                   ! followed by imposition of an upper bound on the eddy viscosity
                   kdiff(k,iCell) = min((c_s * config_len_disp)**2 * sqrt(d_diag(k)**2 + d_off_diag(k)**2),(0.01*config_len_disp**2) * invDt)
                end do
@@ -5281,7 +5450,7 @@ module atm_time_integration
             !$acc end parallel
 
          end if
-            
+
       end if
 
       ! tendency for density.
@@ -5361,7 +5530,7 @@ module atm_time_integration
          cell1 = cellsOnEdge(1,iEdge)
          cell2 = cellsOnEdge(2,iEdge)
 
-         ! horizontal pressure gradient 
+         ! horizontal pressure gradient
 
          if(rk_step == 1) then
 !DIR$ IVDEP
@@ -5422,12 +5591,12 @@ module atm_time_integration
             ! of the horizontal momentum equation
             tend_u(k,iEdge) = tend_u(k,iEdge) + rho_edge(k,iEdge)* (q(k) - (ke(k,cell2) - ke(k,cell1))       &
                                                                  * invDcEdge(iEdge))                            &
-                                             - u(k,iEdge)*0.5*(h_divergence(k,cell1)+h_divergence(k,cell2)) 
+                                             - u(k,iEdge)*0.5*(h_divergence(k,cell1)+h_divergence(k,cell2))
 #ifdef CURVATURE
             ! curvature terms for the sphere
             tend_u(k,iEdge) = tend_u(k,iEdge) &
                              - 2.*omega*cos(angleEdge(iEdge))*cos(latEdge(iEdge))  &
-                               *rho_edge(k,iEdge)*.25*(w(k,cell1)+w(k+1,cell1)+w(k,cell2)+w(k+1,cell2))          & 
+                               *rho_edge(k,iEdge)*.25*(w(k,cell1)+w(k+1,cell1)+w(k,cell2)+w(k+1,cell2))          &
                              - u(k,iEdge)*.25*(w(k+1,cell1)+w(k,cell1)+w(k,cell2)+w(k+1,cell2))                  &
                                *rho_edge(k,iEdge) * inv_r_earth
 #endif
@@ -5482,7 +5651,7 @@ module atm_time_integration
 
                kdiffu = 0.5*(kdiff(k,cell1)+kdiff(k,cell2))
 
-               ! include 2nd-orer diffusion here 
+               ! include 2nd-orer diffusion here
                tend_u_euler(k,iEdge) = tend_u_euler(k,iEdge) &
                                        + rho_edge(k,iEdge)* kdiffu * u_diffusion * meshScalingDel2(iEdge)
 
@@ -5559,14 +5728,14 @@ module atm_time_integration
                   ! Compute diffusion, computed as \nabla divergence - k \times \nabla vorticity
                   !                    only valid for h_mom_eddy_visc4 == constant
                   !
-                  ! Here, we scale the diffusion on the divergence part a factor of config_del4u_div_factor 
+                  ! Here, we scale the diffusion on the divergence part a factor of config_del4u_div_factor
                   !    relative to the rotational part.  The stability constraint on the divergence component is much less
                   !    stringent than the rotational part, and this flexibility may be useful.
                   !
                   u_diffusion =  rho_edge(k,iEdge) *  ( ( delsq_divergence(k,cell2)  - delsq_divergence(k,cell1) ) * r_dc  &
                                                        -( delsq_vorticity(k,vertex2) - delsq_vorticity(k,vertex1) ) * r_dv )
                   tend_u_euler(k,iEdge) = tend_u_euler(k,iEdge) - u_diffusion
-                  
+
                end do
             end do
             !$acc end parallel
@@ -5838,20 +6007,20 @@ module atm_time_integration
                   do k=2,nVertLevels
                      tend_w_euler(k,iCell) = tend_w_euler(k,iCell) - edge_sign * (delsq_w(k,cell2) - delsq_w(k,cell1))
                   end do
-           
+
                end do
             end do
             !$acc end parallel
 
-         end if ! 4th order mixing is active 
+         end if ! 4th order mixing is active
 
       end if ! horizontal mixing for w computed in first rk_step
 
 ! Note for OpenMP parallelization: We could avoid allocating the delsq_w scratch
 !   array, and just use the delsq_theta array as was previously done; however,
 !   particularly when oversubscribing cores with threads, there is the risk that
-!   some threads may reach code further below that re-uses the delsq_theta array, 
-!   in which case we would need a barrier somewhere between here and that code 
+!   some threads may reach code further below that re-uses the delsq_theta array,
+!   in which case we would need a barrier somewhere between here and that code
 !   below to ensure correct behavior.
 
       !
@@ -6045,7 +6214,7 @@ module atm_time_integration
           !$acc end parallel
 
 !$OMP BARRIER
-            
+
          if (h_theta_eddy_visc4 > 0.0) then  ! 4th order mixing is active
 
             !$acc parallel default(present)
@@ -6071,7 +6240,7 @@ module atm_time_integration
             end do
             !$acc end parallel
 
-         end if ! 4th order mixing is active 
+         end if ! 4th order mixing is active
 
       end if ! theta mixing calculated first rk_step
 
@@ -6088,7 +6257,7 @@ module atm_time_integration
          wdtz(1) = 0.0
 
          k = 2
-         wdtz(k) =  rw(k,icell)*(fzm(k)*theta_m(k,iCell)+fzp(k)*theta_m(k-1,iCell))  
+         wdtz(k) =  rw(k,icell)*(fzm(k)*theta_m(k,iCell)+fzp(k)*theta_m(k-1,iCell))
          wdtz(k) =  wdtz(k)+(rw_save(k,icell)-rw(k,icell))*(fzm(k)*theta_m_save(k,iCell)+fzp(k)*theta_m_save(k-1,iCell))
 
          !$acc loop vector
@@ -6113,7 +6282,7 @@ module atm_time_integration
       !$acc end parallel
 
       !
-      !  vertical mixing for theta - 2nd order 
+      !  vertical mixing for theta - 2nd order
       !
 
       if (rk_step == 1) then
@@ -6230,13 +6399,13 @@ module atm_time_integration
    subroutine atm_compute_solve_diagnostics(dt, state, time_lev, diag, mesh, configs, &
                                             cellStart, cellEnd, vertexStart, vertexEnd, edgeStart, edgeEnd, &
                                             rk_step )
-   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    ! Compute diagnostic fields used in the tendency computations
    !
    ! Input: state (s), grid - grid metadata
    !
    ! Output: diag - computed diagnostics
-   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       implicit none
 
@@ -6635,7 +6804,7 @@ module atm_time_integration
 !DIR$ IVDEP
          do k=1,nVertLevels
 !
-! the following commented code is for the PV conserving shallow water solver.  
+! the following commented code is for the PV conserving shallow water solver.
 !            h_vertex = 0.0
 !            do i=1,vertexDegree
 !               h_vertex = h_vertex + h(k,cellsOnVertex(i,iVertex)) * kiteAreasOnVertex(i,iVertex)
@@ -6700,7 +6869,7 @@ module atm_time_integration
 !$OMP BARRIER
 
          !
-         ! Modify PV edge with upstream bias. 
+         ! Modify PV edge with upstream bias.
          !
          ! Compute gradient of PV in the tangent direction
          !   ( this computes gradPVt at all edges bounding real cells )
@@ -6765,7 +6934,7 @@ module atm_time_integration
                                        cellSolveStart, cellSolveEnd, vertexSolveStart, vertexSolveEnd, edgeSolveStart, edgeSolveEnd)
 
       implicit none
-   
+
       type (mpas_pool_type), intent(inout) :: state
       integer, intent(in) :: time_lev                    ! which time level to use from state
       type (mpas_pool_type), intent(inout) :: diag
@@ -7016,7 +7185,7 @@ module atm_time_integration
       integer, intent(in) :: cellSolveStart, cellSolveEnd, vertexSolveStart, vertexSolveEnd, edgeSolveStart, edgeSolveEnd
 
       real (kind=RKIND) :: inv_dynamics_split
-      
+
       real (kind=RKIND), dimension(:,:), pointer :: ru
       real (kind=RKIND), dimension(:,:), pointer :: ru_save
       real (kind=RKIND), dimension(:,:), pointer :: rw
@@ -7181,10 +7350,10 @@ module atm_time_integration
 !-------------------------------------------------------------------------
 !
 ! these next 2 routines set an approximate zero gradient boundary condition for w for regional_MPAS
-!   
-   subroutine atm_zero_gradient_w_bdy( state, mesh, cellSolveStart, cellSolveEnd )
+!
+   subroutine atm_zero_gradient_w_bdy( state, mesh, configs, cellSolveStart, cellSolveEnd )
 
-      ! reconstitute state variables from acoustic-step perturbation variables 
+      ! reconstitute state variables from acoustic-step perturbation variables
       ! after the acoustic steps.  The perturbation variables were originally set in
       ! subroutine atm_set_smlstep_pert_variables prior to their acoustic-steps update.
       ! we are also computing a few other state-derived variables here.
@@ -7193,25 +7362,28 @@ module atm_time_integration
 
       type (mpas_pool_type), intent(inout) :: state
       type (mpas_pool_type), intent(inout) :: mesh
+      type (mpas_pool_type), intent(in)    :: configs
       integer, intent(in) :: cellSolveStart, cellSolveEnd
 
       real (kind=RKIND), dimension(:,:), pointer :: w
 
       integer, dimension(:), pointer :: bdyMaskCell, nearestRelaxationCell
       integer, pointer :: nCells
+      character (len=StrKIND), pointer :: config_lbc_w
 
       call mpas_pool_get_array(state, 'w', w, 2)
       call mpas_pool_get_array(mesh, 'bdyMaskCell', bdyMaskCell)
       call mpas_pool_get_array(mesh, 'nearestRelaxationCell', nearestRelaxationCell)
       call mpas_pool_get_dimension(mesh, 'nCells', nCells)
-      
-      call atm_zero_gradient_w_bdy_work( w, bdyMaskCell, nearestRelaxationCell, nCells, cellSolveStart, cellSolveEnd )
+      call mpas_pool_get_config(configs, 'config_lbc_w', config_lbc_w)
+
+      call atm_zero_gradient_w_bdy_work( w, bdyMaskCell, nearestRelaxationCell, nCells, cellSolveStart, cellSolveEnd, config_lbc_w )
 
    end subroutine atm_zero_gradient_w_bdy
 
 !-------------------------------------------------------------------------
 
-   subroutine atm_zero_gradient_w_bdy_work( w, bdyMaskCell, nearestRelaxationCell, nCells, cellSolveStart, cellSolveEnd )
+   subroutine atm_zero_gradient_w_bdy_work( w, bdyMaskCell, nearestRelaxationCell, nCells, cellSolveStart, cellSolveEnd, config_lbc_w )
 
       use mpas_atm_dimensions
 
@@ -7223,6 +7395,7 @@ module atm_time_integration
       integer, intent(in) :: cellSolveStart, cellSolveEnd, nCells
       integer, dimension(nCells+1), intent(in) :: bdyMaskCell, nearestRelaxationCell
       real (kind=RKIND), dimension(nVertLevels+1,nCells+1), intent(inout) :: w
+      character (len=StrKIND) :: config_lbc_w
 
       ! local variables
 
@@ -7239,10 +7412,16 @@ module atm_time_integration
 !DIR$ IVDEP
             !$acc loop vector
             do k = 2, nVertLevels
-               ! w(k,iCell) = w(k,nearestRelaxationCell(iCell))
-               w(k,iCell) = 0.0  ! WCS fix for instabilities caused by zero-gradient condition on inflow, 20240806
+              lbc_w_select: select case(trim(config_lbc_w))
+                case ("nearest")
+                  w(k,iCell) = w(k,nearestRelaxationCell(iCell))
+                case ("zero")
+                  w(k,iCell) = 0.0  ! WCS fix for instabilities caused by zero-gradient condition on inflow, 20240806
+                case default
+                  call mpas_log_write('unknown lbc_w option: '//trim(config_lbc_w), messageType=MPAS_LOG_CRIT)
+              end select lbc_w_select
             end do
-         end if  
+         end if
       end do
       !$acc end parallel
 
@@ -7521,7 +7700,7 @@ module atm_time_integration
                   divergence2(k) = divergence2(k) + edge_sign * (ru(k,iEdge_div) - ru_driving_values(k,iEdge_div))
                end do
             end do
-            
+
             iVertex = vertex1
             !$acc loop seq
             do i=1,vertexDegree
@@ -7565,7 +7744,7 @@ module atm_time_integration
       MPAS_ACC_TIMER_STOP('atm_bdy_adjust_dynamics_relaxzone_tend [ACC_data_xfer]')
        
    end subroutine atm_bdy_adjust_dynamics_relaxzone_tend
-      
+
 
    subroutine atm_bdy_reset_speczone_values( state, diag, mesh, nVertLevels, &
                                              rt_driving_values, rho_driving_values, &
@@ -7589,7 +7768,7 @@ module atm_time_integration
 
       real (kind=RKIND), dimension(:,:), pointer :: theta_m, rtheta_p, rtheta_base
       integer, dimension(:), pointer :: bdyMaskCell
-      
+
       integer :: iCell, k
 
       call mpas_pool_get_array(mesh, 'bdyMaskCell', bdyMaskCell)
@@ -7874,7 +8053,7 @@ module atm_time_integration
       do iCell = cellSolveStart, cellSolveEnd ! threaded over cells
 
          if ( bdyMaskCell(iCell) > nRelaxZone) then ! specified zone
-            
+
             !  update the specified-zone values
             !
 !DIR$ IVDEP
@@ -7923,10 +8102,12 @@ module atm_time_integration
        real (kind=RKIND) :: scalar_min, scalar_max
        real (kind=RKIND) :: global_scalar_min, global_scalar_max
 
+       real (kind=RKIND), pointer :: config_dt
        real (kind=RKIND), dimension(:), pointer :: latCell
        real (kind=RKIND), dimension(:), pointer :: lonCell
        real (kind=RKIND), dimension(:), pointer :: latEdge
        real (kind=RKIND), dimension(:), pointer :: lonEdge
+       real (kind=RKIND), dimension(:), pointer :: dcEdge
        integer, dimension(:), pointer :: indexToCellID
        integer :: indexMax, indexMax_global
        integer :: kMax, kMax_global
@@ -7940,6 +8121,10 @@ module atm_time_integration
        real (kind=RKIND), dimension(:,:), pointer :: w
        real (kind=RKIND), dimension(:,:), pointer :: u, v, uReconstructZonal, uReconstructMeridional, uReconstructX, uReconstructY, uReconstructZ
        real (kind=RKIND), dimension(:,:,:), pointer :: scalars, scalars_1, scalars_2
+       real (kind=RKIND), dimension(:,:), pointer :: rho_zz, wwavg, uhAvg, zz
+       real (kind=RKIND), dimension(:), pointer :: rdzw, rdzu, fzm, fzp
+       integer, dimension(:,:), pointer :: cellsOnEdge
+       integer :: cell1, cell2
 
        logical :: found_NaN
 

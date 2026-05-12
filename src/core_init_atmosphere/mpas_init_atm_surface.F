@@ -346,6 +346,35 @@
                  lat1 = real(field % startlat,RKIND), &
                  lon1 = real(field % startlon,RKIND))
 !   call mpas_log_write('--- The projection is PROJ_PS.')
+ else if (field % iproj == PROJ_LC) then
+    call map_set(PROJ_LC, proj, &
+                 truelat1 = real(field % truelat1, kind=RKIND), &
+                 truelat2 = real(field % truelat2, kind=RKIND), &
+                 lat1 = real(field % startlat, kind=RKIND), &
+                 lon1 = real(field % startlon, kind=RKIND), &
+                 knowni = 1.0_RKIND, &
+                 knownj = 1.0_RKIND, &
+                 stdlon = real(field % xlonc, kind=RKIND), &
+                 dx = real(field % dx, kind=RKIND))
+!    call mpas_log_write('-- The projection is PROJ_CASSINI.')
+ else if (field % iproj == PROJ_CASSINI ) then
+    call map_set(PROJ_CASSINI, proj, &
+                 latinc = real(field % deltalat,RKIND), &
+                 loninc = real(field % deltalon,RKIND), &
+                 lat1 = real(field % centerlat, RKIND), &
+                 lon1 = real(field % centerlon, RKIND), &
+                 lat0 = real(field % pole_lat, RKIND), &
+                 lon0 = real(field % pole_lon, RKIND), &
+                 knowni = real((field % ny +1)/2,RKIND), &
+                 knownj = real((field % ny + 1)/2,RKIND), &
+                 stdlon = real(field % xlonc, RKIND))
+ else
+    call mpas_log_write('********************************************************************************', &
+                        messageType=MPAS_LOG_ERR)
+    call mpas_log_write('Unhandled projection in interp_to_MPAS', &
+                        messageType=MPAS_LOG_ERR)
+    call mpas_log_write('********************************************************************************', &
+                        messageType=MPAS_LOG_CRIT)
  end if
 
  nInterpPoints = nCells

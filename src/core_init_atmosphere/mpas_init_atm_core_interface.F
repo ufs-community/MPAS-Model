@@ -56,6 +56,7 @@ module init_atm_core_interface
       core % Conventions = 'MPAS'
       core % source = 'MPAS'
 
+
 #include "core_variables.inc"
 
    end subroutine init_atm_setup_core
@@ -80,7 +81,6 @@ module init_atm_core_interface
       implicit none
 
       type (domain_type), pointer :: domain
-
 #include "domain_variables.inc"
 
    end subroutine init_atm_setup_domain
@@ -121,14 +121,32 @@ module init_atm_core_interface
       logical, pointer :: config_native_gwd_gsl_static
       logical, pointer :: first_guess_field
       logical, pointer :: mp_thompson_aers_in
+      logical, pointer :: tempo_aerosolaware_in
       integer, pointer :: config_init_case
       logical, pointer :: noahmp, config_noahmp_static
+
+      logical, pointer :: mpas_smoke_in, mpas_dust_in, mpas_anthro_in
+      character(len=StrKIND),pointer:: config_smoke_scheme, config_dust_scheme, config_anthro_scheme
 
 
       ierr = init_atm_setup_packages_when(configs, packages)
       if (ierr /= 0) then
          return
       end if
+
+! Chemistry
+      call mpas_pool_get_config(configs,'config_smoke_scheme', config_smoke_scheme)
+      call mpas_pool_get_config(configs,'config_dust_scheme', config_dust_scheme)
+      call mpas_pool_get_config(configs,'config_anthro_scheme', config_anthro_scheme)
+      nullify(mpas_smoke_in)
+      call  mpas_pool_get_package(packages,'mpas_smoke_inActive',mpas_smoke_in)
+      if(config_smoke_scheme.ne.'off')  mpas_smoke_in=.true.
+      nullify(mpas_dust_in)
+      call  mpas_pool_get_package(packages,'mpas_dust_inActive',mpas_dust_in)
+      if(config_dust_scheme.ne.'off')  mpas_dust_in=.true.
+      nullify(mpas_anthro_in)
+      call  mpas_pool_get_package(packages,'mpas_anthro_inActive',mpas_anthro_in)
+      if(config_anthro_scheme.ne.'off')  mpas_anthro_in=.true.
 
       call mpas_pool_get_config(configs, 'config_init_case', config_init_case)
       call mpas_pool_get_config(configs, 'config_static_interp', config_static_interp)
@@ -170,6 +188,9 @@ module init_atm_core_interface
       nullify(mp_thompson_aers_in)
       call mpas_pool_get_package(packages, 'mp_thompson_aers_inActive', mp_thompson_aers_in)
 
+      nullify(tempo_aerosolaware_in)
+      call mpas_pool_get_package(packages, 'tempo_aerosolaware_inActive', tempo_aerosolaware_in)
+
       if (.not. associated(initial_conds) .or. &
           .not. associated(sfc_update) .or. &
           .not. associated(gwd_stage_in) .or. &
@@ -179,6 +200,7 @@ module init_atm_core_interface
           .not. associated(vertical_stage_out) .or. &
           .not. associated(met_stage_in) .or. &
           .not. associated(met_stage_out) .or. &
+          .not. associated(tempo_aerosolaware_in) .or. &
           .not. associated(mp_thompson_aers_in)) then
          call mpas_log_write('********************************************************************************', messageType=MPAS_LOG_ERR)
          call mpas_log_write('* Error while setting up packages for init_atmosphere core.',                      messageType=MPAS_LOG_ERR)
@@ -197,11 +219,13 @@ module init_atm_core_interface
 
       if (config_init_case == 9) then
          lbcs = .true.
+         tempo_aerosolaware_in = .true.
          mp_thompson_aers_in = .false.
          inquire(file="QNWFA_QNIFA_SIGMA_MONTHLY.dat",exist=lexist)
          if(lexist) mp_thompson_aers_in = .true.
       else
          lbcs = .false.
+         tempo_aerosolaware_in = .false.
          mp_thompson_aers_in = .false.
       end if
 
@@ -226,9 +250,11 @@ module init_atm_core_interface
                         (.not. config_vertical_grid)
          met_stage_out = config_met_interp
 
+         tempo_aerosolaware_in = .false.
          mp_thompson_aers_in = .false.
          inquire(file="QNWFA_QNIFA_SIGMA_MONTHLY.dat",exist=lexist)
          if((lexist .and. met_stage_out) .or. (lexist .and. met_stage_in)) mp_thompson_aers_in = .true.
+         if((met_stage_out) .or. (met_stage_in)) tempo_aerosolaware_in = .true.
 
       else if (config_init_case == 8) then
          gwd_stage_in = .false.
@@ -252,9 +278,11 @@ module init_atm_core_interface
          met_stage_in = .true.
          met_stage_out = .true.
 
+         tempo_aerosolaware_in = .false.
          mp_thompson_aers_in = .false.
          inquire(file="QNWFA_QNIFA_SIGMA_MONTHLY.dat",exist=lexist)
          if((lexist .and. met_stage_out) .or. (lexist .and. met_stage_in)) mp_thompson_aers_in = .true.
+         if((met_stage_out) .or. (met_stage_in)) tempo_aerosolaware_in = .true.
 
          initial_conds = .false.   ! Also, turn off the initial_conds package to avoid writing the IC "output" stream
 

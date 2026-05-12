@@ -96,13 +96,16 @@
 
 !local pointers:
  logical,pointer:: config_do_restart,  &
+                   config_do_DAcycling,&
                    config_frac_seaice, &
                    config_sfc_albedo
 
- character(len=StrKIND),pointer:: mminlu
+ character(len=StrKIND),pointer:: mminlu, config_lsm_scheme
 
  integer,pointer:: nCells
  integer,pointer:: isice,iswater
+ integer,pointer:: mosaic_lu,mosaic_soil,spp_lsm_loc
+
  integer,dimension(:),pointer:: ivgtyp
  integer,dimension(:),pointer:: landmask
 
@@ -133,9 +136,10 @@
 !call mpas_log_write('--- enter subroutine landuse_init_forMPAS:')
 
  call mpas_pool_get_config(configs,'config_do_restart' ,config_do_restart )
+ call mpas_pool_get_config(configs,'config_do_DAcycling' ,config_do_DAcycling )
  call mpas_pool_get_config(configs,'config_frac_seaice',config_frac_seaice)
  call mpas_pool_get_config(configs,'config_sfc_albedo' ,config_sfc_albedo )
-
+ call mpas_pool_get_config(configs,'config_lsm_scheme' ,config_lsm_scheme )
  call mpas_pool_get_dimension(mesh,'nCells',nCells)
 
  call mpas_pool_get_array(mesh,'latCell',latCell)
@@ -162,6 +166,16 @@
  call mpas_pool_get_array(diag_physics,'xicem'            ,xicem            )
  call mpas_pool_get_array(diag_physics,'z0'               ,z0               )
  call mpas_pool_get_array(diag_physics,'znt'              ,znt              )
+
+ if (config_lsm_scheme .eq. 'sf_ruc') then
+    call mpas_pooL_get_array(diag_physics,'spp_lsm_loc'   , spp_lsm_loc)
+    spp_lsm_loc = 0   !hardcode as 0 for now
+    call mpas_pool_get_array(diag_physics,'mosaic_lu'     , mosaic_lu  )
+    mosaic_lu = 1 ! hardcode to 1 for now
+    call mpas_pool_get_array(diag_physics,'mosaic_soil'   , mosaic_soil)
+    mosaic_soil = 1 ! hardcode to 1 for now
+ endif
+
 
 !call mpas_log_write('')
 !call mpas_log_write('--- enter subroutine landuse_init_forMPAS: julian day=$i' , intArgs=(/julday/))
@@ -227,6 +241,8 @@
           isurban = 1
        case('MODIFIED_IGBP_MODIS_NOAH')
           isurban = 13
+       case('MODIFIED_IGBP_MODIS_NOAH_15s')
+          isurban = 13
        case('SiB')
           isurban = 11
        case('LW12')
@@ -256,6 +272,12 @@
     call mpas_log_write('--- skip the end of landuse_init_forMPAS')
     return
  endif
+  if(config_do_DAcycling) then
+    call mpas_log_write('--- config_do_DAcycling =$l', logicArgs=(/config_do_restart/))
+    call mpas_log_write('--- skip the end of landuse_init_forMPAS')
+    return
+ endif
+
 
 !defines the surface properties over the entire domain:
  do iCell = 1, nCells
