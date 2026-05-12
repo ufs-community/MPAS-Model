@@ -1310,6 +1310,9 @@
              ni   => scalars(index_ni,:,:)
              nr   => scalars(index_nr,:,:)
 
+             call mpas_pool_get_array(diag_physics,'refl10cm_max',compref )
+             call mpas_pool_get_array(diag_physics,'refl10cm_compref_max',refl10cm_compref_max )
+
              do j = jts,jte
              do k = kts,kte
              do i = its,ite
@@ -1318,6 +1321,12 @@
              enddo
              enddo
              enddo
+
+             do j = jts,jte
+             do i = its,ite
+                refl10cm_compref_max(i) = max(refl10cm_compref_max(i),compref(i))
+             end do
+             end do
 
              mp3_select: select case(trim(mp_scheme))
                 case("mp_thompson_aerosols")
@@ -1382,6 +1391,14 @@
        enddo
        enddo
 
+       call mpas_pool_get_array(diag_physics,'refl10cm_compref_max',refl10cm_compref_max )
+       call mpas_pool_get_array(diag_physics,'refl10cm_max',compref )
+       do j = jts,jte
+       do i = its,ite
+          refl10cm_compref_max(i) = max(refl10cm_compref_max(i),compref(i))
+       end do
+       end do
+
        mp2a_select: select case(trim(mp_scheme))
           case("mp_tempo")
              call mpas_pool_get_dimension(state,'index_ni',index_ni)
@@ -1400,11 +1417,8 @@
 
              call mpas_pool_get_array(diag_physics,'max_hail_diameter_sfc' ,max_hail_diameter_sfc)
              call mpas_pool_get_array(diag_physics,'max_hail_diameter_column' ,max_hail_diameter_column)
-             call mpas_pool_get_array(diag_physics,'refl10cm_compref_max',refl10cm_compref_max )
-             call mpas_pool_get_array(diag_physics,'refl10cm_max',compref )
              do j = jts,jte
              do i = its,ite
-                refl10cm_compref_max(i) = max(refl10cm_compref_max(i),compref(i))
                 max_hail_diameter_sfc(i) = max_hail_diameter_sfc_p(i,j)
                 max_hail_diameter_column(i) = max_hail_diameter_column_p(i,j)
              enddo
