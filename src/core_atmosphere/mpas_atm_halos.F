@@ -25,7 +25,7 @@ module mpas_atm_halos
 
       end subroutine halo_exchange_routine
    end interface
-   
+
    procedure (halo_exchange_routine), pointer :: exchange_halo_group
 
 

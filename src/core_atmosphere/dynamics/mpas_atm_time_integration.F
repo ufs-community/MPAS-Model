@@ -52,7 +52,7 @@ module atm_time_integration
 
       end subroutine halo_exchange_routine
    end interface
-   
+
    integer :: timerid, secs, u_secs
 
    ! Used to store physics tendencies for dynamics variables

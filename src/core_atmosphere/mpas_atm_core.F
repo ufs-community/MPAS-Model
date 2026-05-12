@@ -1014,7 +1014,7 @@ module atm_core
       use mpas_atmphys_update
 #endif
       use mpas_atm_halos, only: exchange_halo_group
-
+  
       implicit none
    
       type (domain_type), intent(inout) :: domain 

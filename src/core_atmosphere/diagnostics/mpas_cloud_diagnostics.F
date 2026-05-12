@@ -15,10 +15,11 @@ module mpas_cloud_diagnostics
 
     type (MPAS_clock_type), pointer :: clock
 
-    private
-
     public :: cloud_diagnostics_setup, &
               cloud_diagnostics_compute, &
+
+    private
+
 
     contains
 
