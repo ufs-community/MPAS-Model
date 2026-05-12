@@ -18,8 +18,7 @@ module mpas_cloud_diagnostics
     private
 
     public :: cloud_diagnostics_setup, &
-              cloud_diagnostics_compute
-
+              cloud_diagnostics_compute, &
 
     contains
 
