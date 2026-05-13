@@ -137,7 +137,6 @@
  subroutine physics_timetracker(domain,dt,clock,itimestep,xtime_s)
 !=================================================================================================================
 
-!input arguments:
  integer,intent(in):: itimestep
  real(kind=RKIND),intent(in):: dt
  real(kind=RKIND),intent(in) :: xtime_s
@@ -151,6 +150,7 @@
                    config_o3climatology,      &
                    config_sfc_albedo,         &
                    config_sst_update,         &
+                   config_gvf_update,         &
                    config_sstdiurn_update,    &
                    config_deepsoiltemp_update
 
@@ -161,6 +161,8 @@
  character(len=StrKIND),pointer:: config_conv_interval,    &
                                   config_radtlw_interval,  &
                                   config_radtsw_interval
+
+ character(len=StrKIND),pointer:: config_dust_scheme
 
  type(block_type),pointer    :: block
  type(mpas_pool_type),pointer:: mesh
@@ -196,8 +198,10 @@
  call mpas_pool_get_config(domain%blocklist%configs,'config_o3climatology'      ,config_o3climatology      )
  call mpas_pool_get_config(domain%blocklist%configs,'config_sfc_albedo'         ,config_sfc_albedo         )
  call mpas_pool_get_config(domain%blocklist%configs,'config_sst_update'         ,config_sst_update         )
+ call mpas_pool_get_config(domain%blocklist%configs,'config_gvf_update'         ,config_gvf_update         )
  call mpas_pool_get_config(domain%blocklist%configs,'config_sstdiurn_update'    ,config_sstdiurn_update    )
  call mpas_pool_get_config(domain%blocklist%configs,'config_deepsoiltemp_update',config_deepsoiltemp_update)
+ call mpas_pool_get_config(domain%blocklist%configs,'config_dust_scheme'        ,config_dust_scheme        )
 
 !update the current julian day and current year:
 
@@ -232,8 +236,8 @@
     !monthly values to current day:
     if(mpas_is_alarm_ringing(clock,greenAlarmID,ierr=ierr)) then
        call mpas_reset_clock_alarm(clock,greenAlarmID,ierr=ierr)
-       call mpas_log_write('--- time to update background surface albedo, greeness fraction.')
-       call physics_update_surface(timeStamp,config_sfc_albedo,mesh,sfc_input)
+       call mpas_log_write('--- time to update background surface albedo, greeness fraction, dust fields, ...')
+       call physics_update_surface(timeStamp,config_sfc_albedo,config_gvf_update,config_dust_scheme,mesh,sfc_input,diag_physics)
     endif
 
     !update surface boundary conditions with input sea-surface temperatures and fractional
@@ -375,13 +379,15 @@
  end subroutine physics_timetracker
 
 !=================================================================================================================
- subroutine physics_run_init(configs,mesh,state,clock,stream_manager)
+ subroutine physics_run_init(configs,mesh,state,emission_input,diag_physics,clock,stream_manager)
 !=================================================================================================================
 
 !input arguments:
  type(mpas_pool_type),intent(in):: mesh
  type(mpas_pool_type),intent(in):: configs
  type(mpas_pool_type),intent(in):: state
+ type(mpas_pool_type),intent(in):: diag_physics
+ type(mpas_pool_type),intent(in):: emission_input
  type(MPAS_Clock_type):: clock
  type (MPAS_streamManager_type), intent(inout) :: stream_manager
 
@@ -390,7 +396,10 @@
                                   config_lsm_scheme,        &
                                   config_microp_scheme,     &
                                   config_radt_lw_scheme,    &
-                                  config_radt_sw_scheme
+                                  config_radt_sw_scheme,    &
+                                  config_smoke_scheme,      &
+                                  config_dust_scheme,       &
+                                  config_anthro_scheme
 
  character(len=StrKIND),pointer:: config_conv_interval,     &
                                   config_pbl_interval,      &
@@ -408,7 +417,10 @@
  integer,pointer:: cam_dim1
  integer,pointer:: nMonths
  integer,pointer:: nAerosols,nAerLevels,nOznLevels
- integer,pointer:: nCellsSolve,nSoilLevels,nVertLevels
+ integer,pointer:: nCellsSolve,nSoilLevels,nVertLevels,nlcat,nscat
+ integer,pointer:: nChem,nkanthro,nkwildfire,nkbiogenic,nkvolcanic,nkreswoodcomb
+ integer,pointer:: n_e_bb_in,n_e_ant_in
+ integer,pointer:: n_e_bb_out,n_e_dust_out,n_e_ant_out
 
  real(kind=RKIND):: dt
 
@@ -438,6 +450,9 @@
  call mpas_pool_get_config(configs,'config_sst_update'       ,config_sst_update       )
  call mpas_pool_get_config(configs,'config_frac_seaice'      ,config_frac_seaice      )
  call mpas_pool_get_config(configs,'config_microp_re'        ,config_microp_re        )
+ call mpas_pool_get_config(configs,'config_smoke_scheme'     ,config_smoke_scheme     )
+ call mpas_pool_get_config(configs,'config_dust_scheme'      ,config_dust_scheme      )
+ call mpas_pool_get_config(configs,'config_anthro_scheme'    ,config_anthro_scheme      )
 
  call mpas_get_timeInterval(mpas_get_clock_timestep(clock, ierr), dt=dt)
 
@@ -449,8 +464,23 @@
  call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
  call mpas_pool_get_dimension(mesh,'nSoilLevels',nSoilLevels)
  call mpas_pool_get_dimension(mesh,'nVertLevels',nVertLevels)
-
+ call mpas_pool_get_dimension(mesh,'nlcat'      ,nlcat      )
+ call mpas_pool_get_dimension(mesh,'nscat'      , nscat     )
  call mpas_pool_get_dimension(state,'num_aerosols',nAerosols)
+
+ call mpas_pool_get_dimension(mesh,'nChem'     ,nChem       )
+ call mpas_pool_get_dimension(mesh,'nkanthro'     ,nkanthro       )
+ call mpas_pool_get_dimension(mesh,'nkwildfire'   ,nkwildfire     )
+ call mpas_pool_get_dimension(mesh,'nkbiogenic'   ,nkbiogenic     )
+ call mpas_pool_get_dimension(mesh,'nkvolcanic'   ,nkvolcanic     )
+ call mpas_pool_get_dimension(mesh,'nkreswoodcomb',nkreswoodcomb       )
+
+ call mpas_pool_get_dimension(diag_physics, 'num_e_bb_out',n_e_bb_out    )
+ call mpas_pool_get_dimension(diag_physics, 'num_e_dust_out',n_e_dust_out)
+ call mpas_pool_get_dimension(diag_physics, 'num_e_ant_out',n_e_ant_out)
+
+ call mpas_pool_get_dimension(emission_input,'num_e_bb_in',n_e_bb_in         )
+ call mpas_pool_get_dimension(emission_input,'num_e_ant_in',n_e_ant_in         )
 
 !initialization of gmt, julian day, and alarms:
 
@@ -676,6 +706,29 @@
 !initialization local physics variables:
  num_months = nMonths
  num_soils  = nSoilLevels
+ num_landcat = nlcat
+ num_soilcat = nscat
+
+ num_chem    = nChem
+ kanthro     = nkanthro
+ kwildfire   = nkwildfire
+ kbiogenic   = nkbiogenic
+ kvolcanic   = nkvolcanic
+ kreswoodcomb= nkreswoodcomb
+
+ num_e_bb_in = n_e_bb_in
+ num_e_ant_in = n_e_ant_in
+
+ num_e_bb_out  = n_e_bb_out
+ num_e_dust_out= n_e_dust_out
+ num_e_ant_out = n_e_ant_out
+
+ if(trim(config_smoke_scheme) .eq. 'on' .or. trim(config_dust_scheme) .eq. 'on' &
+    .or. trim(config_anthro_scheme) .ne. 'off') then
+    do_chemistry = .true.
+ else
+    do_chemistry = .false.
+ endif
 
  if(trim(config_lsm_scheme) .eq. "sf_noah") sf_surface_physics = 2
 
@@ -686,11 +739,18 @@
  dt_microp = dt_dyn
  n_microp  = 1
  if(trim(config_microp_scheme)=='mp_thompson' .or. &
+    trim(config_microp_scheme)=='mp_tempo'    .or. &
     trim(config_microp_scheme)=='mp_thompson_aerosols') then
     dt_microp = 90._RKIND
     n_microp  = max(nint(dt_dyn/dt_microp),1)
     dt_microp = dt_dyn / n_microp
     if(dt_dyn <= dt_microp) dt_microp = dt_dyn
+ endif
+if( trim(config_microp_scheme)=='mp_nssl2m' ) then
+    IF ( dt_dyn > 1.25001*60._RKIND) THEN ! max 75s dt
+      n_microp  = max(nint(dt_dyn/60._RKIND),2)
+      dt_microp = dt_dyn / n_microp
+    ENDIF
  endif
  call mpas_log_write(' ')
  call mpas_log_write('--- specifics on cloud microphysics option microp_scheme = '//trim(config_microp_scheme))
@@ -749,8 +809,9 @@
  has_reqs = 0
  if(config_microp_re) then
     if(trim(config_microp_scheme)=='mp_thompson'          .or. &
+       trim(config_microp_scheme)=='mp_tempo'             .or. &
        trim(config_microp_scheme)=='mp_thompson_aerosols' .or. &
-       trim(config_microp_scheme)=='mp_wsm6') then
+       trim(config_microp_scheme)=='mp_wsm6' .or. trim(config_microp_scheme)=='mp_nssl2m') then
        if(trim(config_radt_lw_scheme)=='rrtmg_lw' .and. trim(config_radt_sw_scheme)=='rrtmg_sw') then
           has_reqc = 1
           has_reqi = 1

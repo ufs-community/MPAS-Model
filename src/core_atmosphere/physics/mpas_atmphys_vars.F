@@ -158,6 +158,13 @@
 
  integer,public:: num_months          !number of months                                         [-]
 
+ integer,public:: num_chem             !Temporary workaround for defining dimensions holding chem data
+ integer,public:: kanthro,kbiogenic,kwildfire,kvolcanic,kreswoodcomb!Number of vertical levels in input emission data
+ logical:: do_chemistry                !controls call to smoke, dust and other chemical processes
+
+ integer,public:: num_e_ant_in,num_e_bb_in,num_e_bio_in,num_e_vol_in
+ integer,public:: num_e_ant_out,num_e_bb_out,num_e_bio_out,num_e_dust_out,num_e_ss_out,num_e_vol_out
+
  real(kind=RKIND),public:: dt_dyn     !time-step for dynamics
  real(kind=RKIND),public:: dt_microp  !time-step for cloud microphysics parameterization.
  real(kind=RKIND),public:: dt_radtlw  !time-step for longwave radiation parameterization      [mns]
@@ -203,13 +210,99 @@
     qr_p,             &!rain mixing ratio                                                   [kg/kg]
     qi_p,             &!cloud ice mixing ratio                                              [kg/kg]
     qs_p,             &!snow mixing ratio                                                   [kg/kg]
-    qg_p               !graupel mixing ratio                                                [kg/kg]
+    qg_p,             &!graupel mixing ratio                                                [kg/kg]
+    qh_p               !hail mixing ratio                                                   [kg/kg]
 
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
-    nc_p,             &!cloud water droplet number concentration                             [#/kg]
-    ni_p,             &!cloud ice crystal number concentration                               [#/kg]
-    nr_p               !rain drop number concentration                                       [#/kg]
+    nc_p,             &!
+    ni_p,             &!
+    nr_p,             &!
+    ns_p, ng_p, nh_p, nccn_p, &
+    volg_p, volh_p,   &!
+    zgrid_p,          &!
+    nwfa_p,           &!
+    nifa_p,             zrw_p, zgw_p, zhw_p
 
+ real(kind=RKIND),dimension(:,:),allocatable:: &
+    muc_p,            &!
+    ntc_p,            &!
+    nifa2d_p
+
+! Array to hold just chemistry from scalars - JLS
+ real(kind=RKIND),dimension(:,:,:,:),allocatable:: &
+    chem_p
+ real(kind=RKIND),dimension(:,:,:),allocatable:: &
+    hno3_bkgd_p
+! Settling tendency from dry dep driver
+ real(kind=RKIND),dimension(:,:,:,:),allocatable:: &
+    tend_chem_settle_p
+! Dry dep velocities, resolved wetdep flux (nchem x ncells)
+ real(kind=RKIND),dimension(:,:,:),allocatable:: &
+    ddvel_p, wetdep_resolved_p, drydep_flux_p
+! PM Diags
+ real(kind=RKIND),dimension(:,:),allocatable:: &
+    vis_p
+ real(kind=RKIND),dimension(:,:,:),allocatable:: &
+    PM1_p, PM2_5_p, PM10_p
+ real(kind=RKIND),dimension(:,:,:),allocatable:: &
+    aod3d_smoke_p, aod3d_p
+ real(kind=RKIND),dimension(:,:),allocatable:: &
+    aod550_p
+ real(kind=RKIND),dimension(:,:),allocatable:: &
+    aero_emis_for_enhmix_p
+! Input/output smoke 2D fields - JLS
+ real(kind=RKIND),dimension(:,:),allocatable::  &
+    frp_in_p,          &!
+    frp_out_p,         &!
+    fre_in_p,          &!
+    fre_out_p,         &!
+    hwp_p,             &!
+    coef_bb_dc_p,      &!
+    hfx_bb_p,          &!
+    qfx_bb_p,          &!
+    frac_grid_burned_p,&!
+    fire_end_hr_p,     &!
+    totprcp_prev24_p,    &!
+    EFs_map_p,         &!JR:Estimated on module emiss
+    efs_smold_p,       &!JR
+    efs_flam_p,        &!JR
+    efs_rsmold_p,      &
+    fire_ef_out_p,     &
+    fmc_avg_p,         &
+    emis_ant_no_p
+ integer,dimension(:,:),allocatable:: &
+    eco_id_p !JR
+! RWC fields
+ real(kind=RKIND),dimension(:,:),allocatable:: &
+    RWC_denominator_p
+ real(kind=RKIND),dimension(:,:,:),allocatable:: &
+    RWC_annual_sum_p,&
+    RWC_annual_sum_smoke_fine_p,&
+    RWC_annual_sum_smoke_coarse_p,&
+    RWC_annual_sum_unspc_fine_p,&
+    RWC_annual_sum_unspc_coarse_p
+ real(kind=RKIND),dimension(:,:,:),allocatable:: &
+    fre_avg_p,         &
+    frp_avg_p,         &
+    hwp_avg_p
+ integer,dimension(:,:),allocatable:: &
+    min_bb_plume_p, &!
+    max_bb_plume_p
+! Input dust 2D fields - JLS
+ real(kind=RKIND),dimension(:,:),allocatable:: &
+    clayfrac_in_p,       &!
+    sandfrac_in_p,       &!
+    uthres_in_p,         &!
+    uthres_sg_in_p,      &!
+    albedo_drag_p,       &!
+    feff_p,              &!
+    sep_in_p              !
+! Input biomass burning emissions - JLS
+ real(kind=RKIND),dimension(:,:,:,:),allocatable:: &
+    e_ant_in_p, e_bb_in_p, e_bio_in_p, e_vol_in_p
+ real(kind=RKIND),dimension(:,:,:,:),allocatable:: &
+    e_ant_out_p, e_bb_out_p, e_bio_out_p, e_dust_out_p, e_ss_out_p, e_vol_out_p
+      
 !... arrays located at w (vertical velocity) points, or at interface between layers:
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
     w_p,              &!vertical velocity                                                     [m/s]
@@ -250,9 +343,10 @@
     f_qc,             &!parameter set to true to include the cloud water mixing ratio.
     f_qr,             &!parameter set to true to include the rain mixing ratio.
     f_qi,             &!parameter set to true to include the cloud ice mixing ratio.
-    f_qs,             &!parameter set to true to include the snow mixing ratio.
+    f_qs,             &!parameter set to true to include the snow minxg ratio.
     f_qg,             &!parameter set to true to include the graupel mixing ratio.
-    f_qoz              !parameter set to true to include the ozone mixing ratio.
+    f_qoz,            &!parameter set to true to include the ozone mixing ratio.
+    f_qh
 
  logical:: &
     f_nc,             &!parameter set to true to include the cloud water number concentration.
@@ -265,6 +359,30 @@
     f_ice,            &!fraction of cloud ice (used in WRF only).
     f_rain             !fraction of rain (used in WRF only).
 
+ logical :: &
+    f_smoke_fine,     &!parameter set to true to include the smoke mixing ratio.
+    f_smoke_coarse,   &
+    f_polp_all,       &
+    f_polp_tree,      &
+    f_polp_grass,     &
+    f_polp_weed,      &
+    f_pols_all,       &
+    f_pols_tree,      &
+    f_pols_grass,     &
+    f_pols_weed,      &
+    f_dust_fine,      &
+    f_dust_coarse,    &
+    f_unspc_fine,     &
+    f_unspc_coarse,   &
+    f_ssalt_fine,     &
+    f_ssalt_coarse,   &
+    f_so4_a_fine,     &
+    f_no3_a_fine,     &
+    f_nh4_a_fine,     &
+    f_nh3,            &
+    f_so2,            &
+    f_ch4
+
  real(kind=RKIND),dimension(:,:),allocatable:: &
     rainnc_p,         &!
     rainncv_p,        &!
@@ -272,7 +390,11 @@
     snowncv_p,        &!
     graupelnc_p,      &!
     graupelncv_p,     &!
-    sr_p
+    sr_p,             &!
+    nwfa2d_p
+
+ real(kind=RKIND),dimension(:,:),allocatable:: &
+    frainnc_p
 
  integer:: & 
     has_reqc,         &!
@@ -284,19 +406,15 @@
     evapprod_p,       &!
     recloud_p,        &!
     reice_p,          &!
+    refl10cm_p,       &!
+    refl10cm_cu_p,    &!
     resnow_p           !
 
 !... for Thompson cloud microphysics parameterization, including aerosol-aware option:
  real(kind=RKIND),dimension(:,:),allocatable:: &
-    ntc_p,            &!
-    muc_p,            &!
-    nifa2d_p,         &!surface emission of "ice-friendly" aerosols                                     [#/kg-1/s]
-    nwfa2d_p           !surface emission of "water-friendly" aerosols                                   [#/kg-1/s]
-
- real(kind=RKIND),dimension(:,:,:),allocatable:: &
-    nifa_p,           &!"ice-friendly" number concentration                                                 [#/kg]
-    nwfa_p             !"water-friendly" number concentration                                               [#/kg]
-
+    refl10cm_1km_p
+ real(kind=RKIND),dimension(:,:),allocatable:: &
+    max_hail_diameter_sfc_p, max_hail_diameter_column_p
 !=================================================================================================================
 !... variables and arrays related to parameterization of convection:
 !=================================================================================================================
@@ -340,6 +458,7 @@
     integer, parameter:: ishallow  = 1 !shallow convection used with grell scheme.
 
  integer,dimension(:,:),allocatable:: &
+    bilbc_p,          &!
     k22_shallow_p,    &!
     kbcon_shallow_p,  &!
     ktop_shallow_p,   &!
@@ -348,7 +467,9 @@
 
  real(kind=RKIND),dimension(:,:),allocatable:: &
     xmb_total_p,      &!
-    xmb_shallow_p      !
+    xmb_shallow_p,    &!
+    sigma_deep_p,     &!
+    sigma_deep_f_p     !
 
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
     rthdynten_p,      &!
@@ -363,6 +484,17 @@
     rqvdynten_p,      &!
     rqvdynblten_p,    &!
     rthdynblten_p      !
+
+ real(kind=RKIND),dimension(:,:,:),allocatable:: &
+    sub3d_rthcuten_p,        &!
+    sub3d_rqvcuten_p,        &!
+    sub3d_rucuten_p,         &!
+    sub3d_rvcuten_p           !
+
+ real(kind=RKIND),dimension(:,:),allocatable:: &
+    !wlpool_p,     &!
+    sgsgustcu_p,    &
+    vcpool_p
 
 !... ntiedtke specific arrays:
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
@@ -423,8 +555,10 @@
  real(kind=RKIND),dimension(:,:),allocatable:: &
     maxwidthbl_p,     &!max plume width                                                                        [m]
     maxmfbl_p,        &!maximum mass flux for PBL shallow convection.
-    zbl_plume_p        !height of highest penetrating plume                                                    [m]
-
+    zbl_plume_p,      &!height of highest penetrating plume                                                    [m]
+    excessh_p,        &!maximum heat excess applied to plumes                                                  [K]
+    excessq_p          !maximum moisture excess applied to plumes                                          [kg/kg]
+      
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
     dqke_p,           &!
     qbuoy_p,          &!
@@ -448,7 +582,8 @@
     detqv_p,          &!
     qcbl_p,           &!
     qibl_p,           &!
-    cldfrabl_p         !
+    cldfrabl_p,       &!
+    cldfrac_cu_p       !
 
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
     rqsblten_p,       &!tendency of snow mixing ratio due to PBL processes.
@@ -459,6 +594,14 @@
 
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
     pattern_spp_pbl    !stochastic forcing for the MYMM PBL and surface layer schemes.
+
+ real(kind=RKIND),dimension(:,:,:),allocatable:: &
+    pattern_spp_lsm, field_sf    !stochastic forcing for the RUC LSM
+
+!... MYJ PBL scheme (module_bl_myjpbl.F):
+ real(kind=RKIND),dimension(:,:),allocatable:: &
+    chlowq_p,         &!
+    mixht_p            !
 
 !=================================================================================================================
 !... variables and arrays related to parameterization of gravity wave drag over orography:
@@ -564,6 +707,7 @@
     ck_p,             &!enthalpy exchange coeff at 10 meters                                                   [?]
     cka_p,            &!enthalpy exchange coeff at the lowest model level                                      [?]
     cqs2_p,           &!
+    cqs_p,            &!
     gz1oz0_p,         &!log of z1 over z0                                                                      [-]
     flhc_p,           &!exchange coefficient for heat                                                          [-]
     flqc_p,           &!exchange coefficient for moisture                                                      [-]
@@ -588,6 +732,7 @@
     v10_p,            &!v at 10 m                                                                            [m/s]
     wspd_p,           &!wind speed                                                                           [m/s]
     znt_p,            &!time-varying roughness length                                                          [m]
+    dpt2m_p,          &!dewpoint temperature at the surface                                                    [K]
     zol_p              !
 
 !... arrays only in monin_obukohv (module_sf_sfclay.F):
@@ -615,7 +760,7 @@
     lakedepth_p,      &!depth of lakes needed to run the lake model physics.
     lakemask_p         !mask needed to detect the location of lakes to run the lake model physics.
 
-!... arrays only in mynn surface layer scheme (module_sf_mynn.F):
+!... arrays only in mynn surface layer scheme (module_sf_mynn.F): (note qcg is not needed for mynn sfclayer submodule)
  real(kind=RKIND),dimension(:,:),allocatable:: &
     ch_p,             &!surface exchange coeff for heat                                                      [m/s]
     qcg_p              !cloud water mixing ratio at the ground surface                                     [kg/kg]
@@ -628,6 +773,34 @@
     sm3d_p,           &!stability function for moisture                                                        [-]
     elpbl_p            !length scale from PBL                                                                  [m]
 
+!... arrays only in myj surface layer scheme (module_sf_myjsfc.F):
+ real(kind=RKIND),dimension(:,:),allocatable:: &
+    thz0_p,           &!potential temperature at roughness length                                              [K]
+    uz0_p,            &!u at roughness length                                                                [m/s]
+    vz0_p,            &!v at roughness length                                                                [m/s]
+    akhs_p,           &!surface exchange coefficient for heat                                                  [-]
+    akms_p,           &!surface exchange coefficient for moisture                                              [-]
+    ct_p,             &!countergradient term                                                                   [-]
+    tshltr_p,         &!shelter potential temperature                                                          [K]
+    qshltr_p,         &!shelter specific humidity                                                              [-]
+    pshltr_p,         &!shelter pressure                                                                      [Pa]
+    th10_p,           &!potential temperature at 10 m                                                          [K]
+    q10_p,            &!specific humidity at 10 m                                                              [-]
+    thz0_sea,         &!potential temperature at roughness length (ice)                                        [K]
+    qz0_sea,          &!specific humidity at roughness length (ice)                                            [-]
+    uz0_sea,          &!u at roughness length (ice)                                                          [m/s]
+    vz0_sea,          &!v at roughness length (ice)                                                          [m/s]
+    akhs_sea,         &!surface exchange coefficient for heat (ice)                                            [-]
+    akms_sea,         &!surface exchange coefficient for moisture (ice)                                        [-]
+    ct_sea,           &!countergradient term (ice)                                                             [-]
+    tshltr_sea,       &!shelter potential temperature (ice)                                                    [K]
+    qshltr_sea,       &!shelter specific humidity (ice)                                                        [-]
+    pshltr_sea,       &!shelter pressure (ice)                                                                [Pa]
+    th10_sea,         &!potential temperature at 10 m (ice)                                                    [K]
+    q10_sea            !specific humidity at 10 m (ice)                                                        [-]
+
+ integer,dimension(:,:),allocatable:: &
+  lowlyr_p            !index of lowest model layer above ground                                                [-]
 !=================================================================================================================
 !... variables and arrays related to parameterization of seaice:
 !... the options set for seaice_albedo_opt, seaice_thickness_opt, and seaicesnowdepth_opt must not be changed
@@ -838,14 +1011,18 @@
                        !albedos as functions of the land surface scheme.
 
  integer,public:: &
-    num_soils          !number of soil layers                                                                  [-]
+    num_soils,        &!number of soil layers                                                                  [-]
+    num_landcat,      &!number of landuse categories                                                           [-]
+    num_soilcat        !number of soil categories                                                              [-]
     
  integer,dimension(:,:),allocatable:: &
     isltyp_p,         &!dominant soil type category                                                            [-]
     ivgtyp_p           !dominant vegetation category                                                           [-]
 
  real(kind=RKIND),dimension(:),allocatable:: &
-    dzs_p              !thickness of soil layers                                                               [m]
+    dzs_p,            &!thickness of soil layers                                                               [m]
+    zs_p               !depth of soil layer bottom                                                             [m]
+
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
     smcrel_p,         &!soil moisture threshold below which transpiration starts to stress                     [-]
     sh2o_p,           &!unfrozen soil moisture content                                       [volumetric fraction]
@@ -906,6 +1083,26 @@
 
  type(NoahmpIO_type):: mpas_noahmp
 
+!-- arrays needed to run RUC LSM
+ real(kind=RKIND), dimension(:,:), allocatable:: &
+    rhosnf_p,           &!density of snowfall                                                             [kg m-3]
+    precipfr_p,         &!water equivalent of frozen precipitation                                            [mm]
+    qsg_p,              &!saturated mixing ratio at the surface                                          [kg kg-1]
+    qvg_p,              &!water vapor mixing ratio at the surface                                        [kg kg-1]
+    dew_p,              &!dew                                                                             [kg m-2]
+    soilt1_p,           &!snow temperature at 7.5cm depth                                                      [K]
+    tsnav_p,            &!average temperature of snowpack                                                      [C]
+    acrunoff_p,         &!run total accumulated runoff                                                    [kg m-2]
+    snowfallac_p,       &!run total accumulated snowfall taking in to account melting                         [mm] 
+    sfcexc_p,           &!Surface exhcange coefficient for heat                                            [m s-1]
+    sfcevp_p             !total evaporation                                                               [kg m-2]
+
+ real(kind=RKIND), dimension(:,:,:), allocatable:: &
+    smfr3d_p ,          &!fraction of frozen soil moisture                                                     [-]
+    landusef_p,         &!fraction of each landuse category                                                    [-]
+    soilf_p,            &!fraction of each soil category                                                       [-]
+    keepfr3d_p           !flag to keep frozen soil moisture information
+
 !=================================================================================================================
 !.. variables and arrays related to surface characteristics:
 !=================================================================================================================
@@ -931,7 +1128,7 @@
 !   is set to true. the arrays below have the same definition as the corresponding "_p" arrays:
 !=================================================================================================================
 
- real(kind=RKIND),dimension(:,:),allocatable:: br_sea,ch_sea,chs_sea,chs2_sea,cpm_sea,cqs2_sea,      &
+ real(kind=RKIND),dimension(:,:),allocatable:: br_sea,ch_sea,chs_sea,chs2_sea,cpm_sea,cqs_sea,cqs2_sea,      &
                                 flhc_sea,flqc_sea,gz1oz0_sea,hfx_sea,lh_sea,mavail_sea,mol_sea,      &
                                 psih_sea,psim_sea,fh_sea,fm_sea,qfx_sea,qgh_sea,qsfc_sea,regime_sea, &
                                 rmol_sea,ust_sea,wspd_sea,znt_sea,zol_sea,tsk_sea,xland_sea

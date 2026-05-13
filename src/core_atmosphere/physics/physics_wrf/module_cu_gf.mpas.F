@@ -3489,7 +3489,6 @@ CONTAINS
         ,intent (in  )                   ::                                   &
         dt
      real :: thresh,qmem,qmemf,qmem2,qtest,qmem1
-     integer :: i,k
 !
 ! first do check on vertical heating rate
 !

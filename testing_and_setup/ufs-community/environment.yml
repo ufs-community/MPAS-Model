@@ -1,0 +1,11 @@
+name: mpas-ci-env
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - f90nml
+  - h5py
+  - netCDF4
+  - matplotlib
+  - nccmp

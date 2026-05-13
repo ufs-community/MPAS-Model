@@ -51,16 +51,19 @@
 
 
 !=================================================================================================================
- subroutine physics_update_surface(current_date,config_sfc_albedo,mesh,sfc_input)
+ subroutine physics_update_surface(current_date,config_sfc_albedo,config_gvf_update,config_dust_scheme,mesh,sfc_input,diag_physics)
 !=================================================================================================================
 
 !input variables:
  type(mpas_pool_type),intent(in):: mesh
  character(len=*),intent(in):: current_date
  logical,intent(in):: config_sfc_albedo
+ logical,intent(in):: config_gvf_update
+ character(len=*),intent(in):: config_dust_scheme
 
 !inout variables:
  type(mpas_pool_type),intent(inout):: sfc_input
+ type(mpas_pool_type),intent(inout):: diag_physics
 
 !local pointers:
 !logical,pointer:: config_sfc_albedo
@@ -72,7 +75,14 @@
  real(kind=RKIND),dimension(:,:),pointer:: albedo12m
  real(kind=RKIND),dimension(:)  ,pointer:: vegfra,shdmin,shdmax
  real(kind=RKIND),dimension(:,:),pointer:: greenfrac
+ real(kind=RKIND),dimension(:,:),pointer:: lai12m
+ real(kind=RKIND),dimension(:)  ,pointer:: lai
  
+ real(kind=RKIND),dimension(:,:),pointer:: feff_m_in
+ real(kind=RKIND),dimension(:,:),pointer:: albedo_drag_m_in
+ real(kind=RKIND),dimension(:),pointer  :: feff
+ real(kind=RKIND),dimension(:),pointer  :: albedo_drag
+
 !local variables:
  integer:: iCell
 
@@ -88,6 +98,13 @@
  call mpas_pool_get_array(sfc_input,'vegfra'    , vegfra    )
  call mpas_pool_get_array(sfc_input,'shdmin'    , shdmin    )
  call mpas_pool_get_array(sfc_input,'shdmax'    , shdmax    )
+ call mpas_pool_get_array(sfc_input,'lai12m'    , lai12m    )
+ call mpas_pool_get_array(diag_physics,'lai   '    , lai    )
+
+ call mpas_pool_get_array(diag_physics,'feff_m_in'       , feff_m_in       )
+ call mpas_pool_get_array(diag_physics,'albedo_drag_m_in', albedo_drag_m_in)
+ call mpas_pool_get_array(diag_physics,'feff'            , feff            )
+ call mpas_pool_get_array(diag_physics,'albedo_drag'     , albedo_drag     )
 
 !updates the surface background albedo for the current date as a function of the monthly-mean
 !surface background albedo valid on the 15th day of the month, if config_sfc_albedo is true:
@@ -102,11 +119,27 @@
 
  endif
 
+! Updates the dust input data to the current month
+ if(config_dust_scheme .ne. 'off') then
+    call monthly_interp_to_date(nCellsSolve,current_date,feff_m_in,feff)
+    call monthly_interp_to_date(nCellsSolve,current_date,albedo_drag_m_in,albedo_drag)
+ endif
+
 !updates the green-ness fraction for the current date as a function of the monthly-mean green-
 !ness valid on the 15th day of the month. get the min/max for each cell for the monthly green-
 !ness fraction:
- call monthly_interp_to_date(nCellsSolve,current_date,greenfrac,vegfra)
- call monthly_min_max(nCellsSolve,greenfrac,shdmin,shdmax)
+ if(config_gvf_update) then
+    call monthly_interp_to_date(nCellsSolve,current_date,greenfrac,vegfra)
+    call monthly_min_max(nCellsSolve,greenfrac,shdmin,shdmax)
+ endif
+
+!updates the leaf area index for the current date as a function of the leaf area index
+
+ if(associated(lai12m)) then 
+
+   call monthly_interp_to_date(nCellsSolve,current_date,lai12m,lai)
+
+ end if
 
  end subroutine physics_update_surface
 

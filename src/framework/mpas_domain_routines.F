@@ -51,7 +51,6 @@ module mpas_domain_routines
       allocate(dom % clock)
       allocate(dom % streamManager)
       allocate(dom % ioContext)
-
       call mpas_pool_create_pool(dom % configs)
       call mpas_pool_create_pool(dom % packages)
 

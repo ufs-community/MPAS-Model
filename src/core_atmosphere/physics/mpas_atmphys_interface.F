@@ -78,11 +78,13 @@
 
 !local pointers:
  character(len=StrKIND),pointer:: microp_scheme,pbl_scheme
+ logical,pointer:: config_tempo_aerosolaware
 
 !-----------------------------------------------------------------------------------------------------------------
 
  call mpas_pool_get_config(configs,'config_microp_scheme',microp_scheme)
  call mpas_pool_get_config(configs,'config_pbl_scheme'   ,pbl_scheme   )
+ call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
 
  if(.not.allocated(psfc_p) ) allocate(psfc_p(ims:ime,jms:jme)         )
  if(.not.allocated(ptop_p) ) allocate(ptop_p(ims:ime,jms:jme)         )
@@ -120,6 +122,12 @@
        if(.not.allocated(nifa_p)) allocate(nifa_p(ims:ime,kms:kme,jms:jme))
        if(.not.allocated(nwfa_p)) allocate(nwfa_p(ims:ime,kms:kme,jms:jme))
 
+    case("mp_tempo")
+       if(config_tempo_aerosolaware) then
+          if(.not.allocated(nifa_p)) allocate(nifa_p(ims:ime,kms:kme,jms:jme))
+          if(.not.allocated(nwfa_p)) allocate(nwfa_p(ims:ime,kms:kme,jms:jme))
+       endif
+
     case default
  end select microp_select
 
@@ -130,6 +138,12 @@
        if(.not.allocated(nifa_p)) allocate(nifa_p(ims:ime,kms:kme,jms:jme))
        if(.not.allocated(nwfa_p)) allocate(nwfa_p(ims:ime,kms:kme,jms:jme))
 
+    case("bl_mynnedmf")
+       if(.not.allocated(nc_p)) allocate(nc_p(ims:ime,kms:kme,jms:jme))
+       if(.not.allocated(ni_p)) allocate(ni_p(ims:ime,kms:kme,jms:jme))
+       if(.not.allocated(nifa_p)) allocate(nifa_p(ims:ime,kms:kme,jms:jme))
+       if(.not.allocated(nwfa_p)) allocate(nwfa_p(ims:ime,kms:kme,jms:jme))
+       
     case default
  end select pbl_select
 
@@ -153,11 +167,13 @@
 
 !local pointers:
  character(len=StrKIND),pointer:: microp_scheme,pbl_scheme
+ logical,pointer:: config_tempo_aerosolaware
 
 !-----------------------------------------------------------------------------------------------------------------
 
  call mpas_pool_get_config(configs,'config_microp_scheme',microp_scheme)
  call mpas_pool_get_config(configs,'config_pbl_scheme'   ,pbl_scheme   )
+ call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
 
  if(allocated(psfc_p)  ) deallocate(psfc_p  )
  if(allocated(ptop_p)  ) deallocate(ptop_p  )
@@ -195,6 +211,12 @@
        if(allocated(nifa_p)) deallocate(nifa_p)
        if(allocated(nwfa_p)) deallocate(nwfa_p)
 
+    case("mp_tempo")
+       if(config_tempo_aerosolaware) then
+          if(allocated(nifa_p)) deallocate(nifa_p)
+          if(allocated(nwfa_p)) deallocate(nwfa_p)
+       endif
+
     case default
  end select microp_select
 
@@ -205,6 +227,12 @@
        if(allocated(nifa_p)) deallocate(nifa_p)
        if(allocated(nwfa_p)) deallocate(nwfa_p)
 
+    case("bl_mynnedmf")
+       if(allocated(nc_p)) deallocate(nc_p)
+       if(allocated(ni_p)) deallocate(ni_p)
+       if(allocated(nifa_p)) deallocate(nifa_p)
+       if(allocated(nwfa_p)) deallocate(nwfa_p)
+       
     case default
  end select pbl_select
 
@@ -236,6 +264,7 @@
 
 !local pointers:
  character(len=StrKIND),pointer:: microp_scheme,pbl_scheme
+ logical,pointer:: config_tempo_aerosolaware
 
  integer,pointer:: index_qv,index_qc,index_qr,index_qi,index_qs,index_qg
  integer,pointer:: index_nc,index_ni,index_nifa,index_nwfa
@@ -270,6 +299,7 @@
 !initialization:
  call mpas_pool_get_config(configs,'config_microp_scheme',microp_scheme)
  call mpas_pool_get_config(configs,'config_pbl_scheme'   ,pbl_scheme   )
+ call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
 
  call mpas_pool_get_array(mesh,'latCell',latCell)
  call mpas_pool_get_array(mesh,'lonCell',lonCell)
@@ -358,6 +388,24 @@
           enddo
        enddo
 
+    case("mp_tempo")
+       if(config_tempo_aerosolaware) then
+          nullify(nifa)
+          nullify(nwfa)
+          call mpas_pool_get_dimension(state,'index_nifa',index_nifa)
+          call mpas_pool_get_dimension(state,'index_nwfa',index_nwfa)
+          nifa => scalars(index_nifa,:,:)
+          nwfa => scalars(index_nwfa,:,:)
+          do j = jts,jte
+             do k = kts,kte
+                do i = its,ite
+                   nifa_p(i,k,j) = max(0.,nifa(k,i))
+                   nwfa_p(i,k,j) = max(0.,nwfa(k,i))
+                enddo
+             enddo
+          enddo
+       endif
+
     case default
  end select microp_select
 
@@ -408,6 +456,52 @@
           enddo
        endif
 
+    case("bl_mynnedmf")
+       do j = jts,jte
+          do k = kts,kte
+             do i = its,ite
+                nc_p(i,k,j)   = 0._RKIND
+		ni_p(i,k,j)   = 0._RKIND
+                nifa_p(i,k,j) = 0._RKIND
+                nwfa_p(i,k,j) = 0._RKIND
+             enddo
+          enddo
+       enddo
+       !initializes ni_p when running the options "mp_thompson" or "mp_thompson_aerosols":
+       if(f_ni) then
+          nullify(ni)
+          call mpas_pool_get_dimension(state,'index_ni',index_ni)
+          ni => scalars(index_ni,:,:)
+          do j = jts,jte
+             do k = kts,kte
+                do i = its,ite
+                   ni_p(i,k,j) = max(0.,ni(k,i))
+                enddo
+             enddo
+          enddo
+       endif
+       !initializes nc_p, nifa_p, and nwfa_p when running the option "mp_thompson_aerosols":
+       if(f_nc .and. f_nifa .and. f_nwfa) then
+          nullify(nc)
+          nullify(nifa)
+          nullify(nwfa)
+          call mpas_pool_get_dimension(state,'index_nc',index_nc)
+          call mpas_pool_get_dimension(state,'index_nifa',index_nifa)
+          call mpas_pool_get_dimension(state,'index_nwfa',index_nwfa)
+          nc   => scalars(index_nc,:,:)
+          nifa => scalars(index_nifa,:,:)
+          nwfa => scalars(index_nwfa,:,:)
+          do j = jts,jte
+             do k = kts,kte
+                do i = its,ite
+                   nc_p(i,k,j)   = max(0.,nc(k,i))
+                   nifa_p(i,k,j) = max(0.,nifa(k,i))
+                   nwfa_p(i,k,j) = max(0.,nwfa(k,i))
+                enddo
+             enddo
+          enddo
+       endif
+       
     case default
  end select pbl_select
 
@@ -567,13 +661,28 @@
  integer,pointer:: index_qv,index_qc,index_qr,index_qi,index_qs,index_qg
  integer,pointer:: index_nc,index_ni,index_nr,index_nifa,index_nwfa
  real(kind=RKIND),dimension(:),pointer    :: nifa2d,nwfa2d,nt_c,mu_c
+!TEMPO/NSSL
+ character(len=StrKIND),pointer:: nssl_moments
+ logical,pointer:: config_tempo_aerosolaware,config_tempo_hailaware
+ logical,pointer:: config_tempo_ml_for_bl_nc
+ integer,pointer:: index_qh
+ integer,pointer:: index_zrw,index_zgw,index_zhw
+ integer,pointer:: index_ns,index_ng,index_nh,index_nccn
+ integer,pointer:: index_volg,index_volh
+ 
  real(kind=RKIND),dimension(:,:),pointer  :: zgrid,w
  real(kind=RKIND),dimension(:,:),pointer  :: zz,exner,pressure_b
  real(kind=RKIND),dimension(:,:),pointer  :: rho_zz,theta_m,pressure_p
  real(kind=RKIND),dimension(:,:),pointer  :: qv,qc,qr,qi,qs,qg
+ real(kind=RKIND),dimension(:,:),pointer  :: qh
  real(kind=RKIND),dimension(:,:),pointer  :: nc,ni,nr,nifa,nwfa
+ real(kind=RKIND),dimension(:,:),pointer  :: ns,ng,nh,nccn
+ real(kind=RKIND),dimension(:,:),pointer  :: volg,volh,zrw,zgw,zhw
  real(kind=RKIND),dimension(:,:),pointer  :: rainprod,evapprod
+ real(kind=RKIND),dimension(:,:),pointer  :: refl10cm
+ real(kind=RKIND),dimension(:)  ,pointer  :: max_hail_diameter_sfc, max_hail_diameter_column
  real(kind=RKIND),dimension(:,:),pointer  :: re_cloud,re_ice,re_snow
+ real(kind=RKIND),dimension(:,:),pointer  :: qc_bl, cldfrac_bl
  real(kind=RKIND),dimension(:,:),pointer  :: rthmpten,rqvmpten,rqcmpten,rqrmpten,rqimpten,rqsmpten,rqgmpten
  real(kind=RKIND),dimension(:,:),pointer  :: rncmpten,rnimpten,rnrmpten,rnifampten,rnwfampten
  real(kind=RKIND),dimension(:,:,:),pointer:: scalars
@@ -584,6 +693,10 @@
 !-----------------------------------------------------------------------------------------------------------------
 
  call mpas_pool_get_config(configs,'config_microp_scheme',mp_scheme)
+ call mpas_pool_get_config(configs,'config_nssl_moments',nssl_moments)
+ call mpas_pool_get_config(configs,'config_tempo_hailaware',config_tempo_hailaware)
+ call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
+ call mpas_pool_get_config(configs,'config_tempo_ml_for_bl_nc',config_tempo_ml_for_bl_nc)
 
  call mpas_pool_get_array(mesh,'zgrid',zgrid)
  call mpas_pool_get_array(mesh,'zz'   ,zz   )
@@ -640,6 +753,7 @@
        call mpas_pool_get_array(diag_physics,'re_cloud',re_cloud)
        call mpas_pool_get_array(diag_physics,'re_ice'  ,re_ice  )
        call mpas_pool_get_array(diag_physics,'re_snow' ,re_snow )
+       call mpas_pool_get_array(diag_physics,'refl10cm',refl10cm)
 
        do j = jts, jte
        do k = kts, kte
@@ -649,10 +763,11 @@
           qg_p(i,k,j) = qg(k,i)
 
           rainprod_p(i,k,j) = rainprod(k,i)
-          evapprod_p(i,k,j) = evapprod(k,k)
+          evapprod_p(i,k,j) = evapprod(k,i)
           recloud_p(i,k,j)  = re_cloud(k,i)
           reice_p(i,k,j)    = re_ice(k,i)
           resnow_p(i,k,j)   = re_snow(k,i)
+          refl10cm_p(i,k,j) = refl10cm(k,i)
        enddo
        enddo
        enddo
@@ -709,6 +824,187 @@
 
           case default
        end select mp2_select
+
+    case("mp_tempo","mp_nssl2m")
+       call mpas_pool_get_dimension(state,'index_qi',index_qi)
+       call mpas_pool_get_dimension(state,'index_qs',index_qs)
+       call mpas_pool_get_dimension(state,'index_qg',index_qg)
+       qi => scalars(index_qi,:,:)
+       qs => scalars(index_qs,:,:)
+       qg => scalars(index_qg,:,:)
+
+       call mpas_pool_get_array(diag_physics,'rainprod',rainprod)
+       call mpas_pool_get_array(diag_physics,'evapprod',evapprod)
+       call mpas_pool_get_array(diag_physics,'re_cloud',re_cloud)
+       call mpas_pool_get_array(diag_physics,'re_ice'  ,re_ice  )
+       call mpas_pool_get_array(diag_physics,'re_snow' ,re_snow )
+       call mpas_pool_get_array(diag_physics,'refl10cm' ,refl10cm )
+
+       do j = jts, jte
+       do k = kts, kte
+       do i = its, ite
+          qi_p(i,k,j) = qi(k,i)
+          qs_p(i,k,j) = qs(k,i)
+          qg_p(i,k,j) = qg(k,i)
+
+          rainprod_p(i,k,j) = rainprod(k,i)
+          evapprod_p(i,k,j) = evapprod(k,i)
+          recloud_p(i,k,j)  = re_cloud(k,i)
+          reice_p(i,k,j)    = re_ice(k,i)
+          resnow_p(i,k,j)   = re_snow(k,i)
+          refl10cm_p(i,k,j) = refl10cm(k,i)
+       enddo
+       enddo
+       enddo
+
+       mp2a_select: select case(trim(mp_scheme))
+          case("mp_tempo")
+             call mpas_pool_get_dimension(state,'index_ni',index_ni)
+             call mpas_pool_get_dimension(state,'index_nr',index_nr)
+             call mpas_pool_get_array(diag_physics,'max_hail_diameter_sfc' ,max_hail_diameter_sfc)
+             call mpas_pool_get_array(diag_physics,'max_hail_diameter_column' ,max_hail_diameter_column)
+             ni   => scalars(index_ni,:,:)
+             nr   => scalars(index_nr,:,:)
+             do j = jts,jte
+             do i = its,ite
+                max_hail_diameter_sfc_p(i,j) = max_hail_diameter_sfc(i)
+                max_hail_diameter_column_p(i,j) = max_hail_diameter_column(i)
+             enddo
+             enddo
+
+!             call mpas_pool_get_array(diag_physics,'nt_c',nt_c)
+!             call mpas_pool_get_array(diag_physics,'mu_c',mu_c)
+!             do j = jts,jte
+!             do i = its,ite
+!                muc_p(i,j) = mu_c(i)
+!                ntc_p(i,j) = nt_c(i)
+!             enddo
+             do j = jts, jte
+             do k = kts, kte
+             do i = its, ite
+                ni_p(i,k,j) = ni(k,i)
+                nr_p(i,k,j) = nr(k,i)
+             enddo
+             enddo
+             enddo
+
+             if(config_tempo_ml_for_bl_nc) then
+                call mpas_pool_get_array(diag_physics,'qc_bl',qc_bl)
+                call mpas_pool_get_array(diag_physics,'cldfrac_bl',cldfrac_bl)
+                do j = jts, jte
+                do k = kts, kte
+                do i = its, ite
+                   qcbl_p(i,k,j) = qc_bl(k,i)
+                   cldfrac_p(i,k,j) = cldfrac_bl(k,i)
+                enddo
+                enddo
+                enddo
+             endif
+
+             if(config_tempo_aerosolaware) then
+                call mpas_pool_get_dimension(state,'index_nc'  ,index_nc  )
+                call mpas_pool_get_dimension(state,'index_nifa',index_nifa)
+                call mpas_pool_get_dimension(state,'index_nwfa',index_nwfa)
+                nc   => scalars(index_nc,:,:)
+                nifa => scalars(index_nifa,:,:)
+                nwfa => scalars(index_nwfa,:,:)
+
+                call mpas_pool_get_array(diag_physics,'nifa2d',nifa2d)
+                call mpas_pool_get_array(diag_physics,'nwfa2d',nwfa2d)
+                do j = jts,jte
+                do i = its,ite
+                   nifa2d_p(i,j) = nifa2d(i)
+                   nwfa2d_p(i,j) = nwfa2d(i)
+                enddo
+                do k = kts, kte
+                do i = its, ite
+                   nc_p(i,k,j) = nc(k,i)
+                   nifa_p(i,k,j) = nifa(k,i)
+                   nwfa_p(i,k,j) = nwfa(k,i)
+                enddo
+                enddo
+                enddo
+             endif
+
+             if (config_tempo_hailaware) then
+                call mpas_pool_get_dimension(state,'index_ng'  ,index_ng  )
+                call mpas_pool_get_dimension(state,'index_volg' ,index_volg  )
+
+                ng   => scalars(index_ng,:,:)
+                volg => scalars(index_volg,:,:)
+
+                do j = jts, jte
+                do k = kts, kte
+                do i = its, ite
+                   ng_p(i,k,j) = ng(k,i)
+                   volg_p(i,k,j) = volg(k,i)
+                enddo
+                enddo
+                enddo
+             endif
+
+          case("mp_nssl2m")
+             call mpas_pool_get_dimension(state,'index_ni',index_ni)
+             call mpas_pool_get_dimension(state,'index_nr',index_nr)
+             call mpas_pool_get_dimension(state,'index_nc'  ,index_nc  )
+             call mpas_pool_get_dimension(state,'index_qh'  ,index_qh  )
+             call mpas_pool_get_dimension(state,'index_ns'  ,index_ns  )
+             call mpas_pool_get_dimension(state,'index_ng'  ,index_ng  )
+             call mpas_pool_get_dimension(state,'index_nh'  ,index_nh  )
+             call mpas_pool_get_dimension(state,'index_nccn' ,index_nccn  )
+             call mpas_pool_get_dimension(state,'index_volg' ,index_volg  )
+             call mpas_pool_get_dimension(state,'index_volh' ,index_volh  )
+
+             ni   => scalars(index_ni,:,:)
+             nr   => scalars(index_nr,:,:)
+             nc   => scalars(index_nc,:,:)
+             qh   => scalars(index_qh,:,:)
+             ns   => scalars(index_ns,:,:)
+             ng   => scalars(index_ng,:,:)
+             nh   => scalars(index_nh,:,:)
+             nccn => scalars(index_nccn,:,:)
+             volg => scalars(index_volg,:,:)
+             volh => scalars(index_volh,:,:)
+             
+             do j = jts, jte
+             do k = kts, kte
+             do i = its, ite
+                ni_p(i,k,j) = ni(k,i)
+                nr_p(i,k,j) = nr(k,i)
+                nc_p(i,k,j) = nc(k,i)
+                qh_p(i,k,j) = qh(k,i)
+                ns_p(i,k,j) = ns(k,i)
+                ng_p(i,k,j) = ng(k,i)
+                nh_p(i,k,j) = nh(k,i)
+                nccn_p(i,k,j) = nccn(k,i)
+                volg_p(i,k,j) = volg(k,i)
+                volh_p(i,k,j) = volh(k,i)
+             enddo
+             enddo
+             enddo
+
+             if (nssl_moments == "nssl3m") then
+                call mpas_pool_get_dimension(state,'index_zrw' ,index_zrw  )
+                call mpas_pool_get_dimension(state,'index_zgw' ,index_zgw  )
+                call mpas_pool_get_dimension(state,'index_zhw' ,index_zhw  )
+                
+                zrw   => scalars(index_zrw,:,:)
+                zgw   => scalars(index_zgw,:,:)
+                zhw   => scalars(index_zhw,:,:)
+
+                do j = jts, jte
+                do k = kts, kte
+                do i = its, ite
+                   zrw_p(i,k,j) = zrw(k,i)
+                   zgw_p(i,k,j) = zgw(k,i)
+                   zhw_p(i,k,j) = zhw(k,i)
+                enddo
+                enddo
+                enddo
+             endif
+
+          case default
+       end select mp2a_select
 
     case default
  end select mp_select
@@ -768,6 +1064,65 @@
           case default
        end select mp2_tend_select
 
+    case("mp_tempo","mp_nssl2m")
+       call mpas_pool_get_array(tend_physics,'rthmpten',rthmpten)
+       call mpas_pool_get_array(tend_physics,'rqvmpten',rqvmpten)
+       call mpas_pool_get_array(tend_physics,'rqcmpten',rqcmpten)
+       call mpas_pool_get_array(tend_physics,'rqrmpten',rqrmpten)
+       call mpas_pool_get_array(tend_physics,'rqimpten',rqimpten)
+       call mpas_pool_get_array(tend_physics,'rqsmpten',rqsmpten)
+       call mpas_pool_get_array(tend_physics,'rqgmpten',rqgmpten)
+
+       do k = kts,kte
+       do i = its,ite
+          rthmpten(k,i) = theta_m(k,i)/(1._RKIND+R_v/R_d*max(0._RKIND,qv(k,i)))
+          rqvmpten(k,i) = qv(k,i)
+          rqcmpten(k,i) = qc(k,i)
+          rqrmpten(k,i) = qr(k,i)
+          rqimpten(k,i) = qi(k,i)
+          rqsmpten(k,i) = qs(k,i)
+          rqgmpten(k,i) = qg(k,i)
+       enddo
+       enddo
+
+       call mpas_pool_get_array(tend_physics,'rnimpten',rnimpten)
+       call mpas_pool_get_array(tend_physics,'rnrmpten',rnrmpten)
+
+       do k = kts,kte
+       do i = its,ite
+          rnimpten(k,i) = ni(k,i)
+          rnrmpten(k,i) = nr(k,i)
+       enddo
+       enddo
+
+       mp2a_tend_select: select case(trim(mp_scheme))
+          case("mp_tempo")
+             if(config_tempo_aerosolaware) then
+                call mpas_pool_get_array(tend_physics,'rncmpten',rncmpten)
+                call mpas_pool_get_array(tend_physics,'rnifampten',rnifampten)
+                call mpas_pool_get_array(tend_physics,'rnwfampten',rnwfampten)
+
+                do k = kts,kte
+                do i = its,ite
+                   rncmpten(k,i) = nc(k,i)
+                   rnifampten(k,i) = nifa(k,i)
+                   rnwfampten(k,i) = nwfa(k,i)
+                enddo
+                enddo
+             endif
+
+           case("mp_nssl2m")
+             call mpas_pool_get_array(tend_physics,'rncmpten',rncmpten)
+
+             do k = kts,kte
+             do i = its,ite
+                rncmpten(k,i) = nc(k,i)
+             enddo
+             enddo
+
+          case default
+       end select mp2a_tend_select
+
     case default
  end select mp_tend_select
 
@@ -794,8 +1149,16 @@
 
 !local pointers:
  character(len=StrKIND),pointer:: mp_scheme
+ character(len=StrKIND),pointer:: nssl_moments
+ logical,pointer:: config_tempo_hailaware, config_tempo_aerosolaware
  integer,pointer:: index_qv,index_qc,index_qr,index_qi,index_qs,index_qg
  integer,pointer:: index_nc,index_ni,index_nr,index_nifa,index_nwfa
+!TEMPO/NSSL
+ integer,pointer:: index_qh
+ integer,pointer:: index_zrw,index_zgw,index_zhw
+ integer,pointer:: index_ns,index_ng,index_nh,index_nccn
+ integer,pointer:: index_volg,index_volh
+ 
  real(kind=RKIND),dimension(:),pointer    :: surface_pressure,tend_sfc_pressure
  real(kind=RKIND),dimension(:),pointer    :: nifa2d,nwfa2d
  real(kind=RKIND),dimension(:,:),pointer  :: zgrid
@@ -804,7 +1167,11 @@
  real(kind=RKIND),dimension(:,:),pointer  :: rt_diabatic_tend
  real(kind=RKIND),dimension(:,:),pointer  :: dtheta_dt_mp
  real(kind=RKIND),dimension(:,:),pointer  :: qv,qc,qr,qi,qs,qg
+ real(kind=RKIND),dimension(:,:),pointer  :: qh
  real(kind=RKIND),dimension(:,:),pointer  :: nc,ni,nr,nifa,nwfa
+ real(kind=RKIND),dimension(:,:),pointer  :: ns,ng,nh,nccn
+ real(kind=RKIND),dimension(:,:),pointer  :: volg,volh,zrw,zgw,zhw
+ real(kind=RKIND),dimension(:)  ,pointer  :: max_hail_diameter_sfc, max_hail_diameter_column
  real(kind=RKIND),dimension(:,:),pointer  :: rainprod,evapprod,refl10cm
  real(kind=RKIND),dimension(:,:),pointer  :: re_cloud,re_ice,re_snow
  real(kind=RKIND),dimension(:,:),pointer  :: rthmpten,rqvmpten,rqcmpten,rqrmpten,rqimpten,rqsmpten,rqgmpten
@@ -819,6 +1186,9 @@
 !-----------------------------------------------------------------------------------------------------------------
 
  call mpas_pool_get_config(configs,'config_microp_scheme',mp_scheme)
+ call mpas_pool_get_config(configs,'config_nssl_moments',nssl_moments)
+ call mpas_pool_get_config(configs,'config_tempo_hailaware',config_tempo_hailaware)
+ call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
 
  call mpas_pool_get_array(mesh,'zz'   ,zz   )
  call mpas_pool_get_array(mesh,'zgrid',zgrid)
@@ -840,6 +1210,7 @@
  call mpas_pool_get_dimension(state,'index_qv'  ,index_qv  )
  call mpas_pool_get_dimension(state,'index_qc'  ,index_qc  )
  call mpas_pool_get_dimension(state,'index_qr'  ,index_qr  )
+
  call mpas_pool_get_array(state,'scalars',scalars,time_lev)
  qv   => scalars(index_qv,:,:)
  qc   => scalars(index_qc,:,:)
@@ -979,6 +1350,167 @@
           case default
        end select mp2_select
 
+    case("mp_tempo","mp_nssl2m")
+       call mpas_pool_get_dimension(state,'index_qi',index_qi)
+       call mpas_pool_get_dimension(state,'index_qs',index_qs)
+       call mpas_pool_get_dimension(state,'index_qg',index_qg)
+       qi => scalars(index_qi,:,:)
+       qs => scalars(index_qs,:,:)
+       qg => scalars(index_qg,:,:)
+
+       call mpas_pool_get_array(diag_physics,'rainprod',rainprod)
+       call mpas_pool_get_array(diag_physics,'evapprod',evapprod)
+       call mpas_pool_get_array(diag_physics,'re_cloud',re_cloud)
+       call mpas_pool_get_array(diag_physics,'re_ice'  ,re_ice  )
+       call mpas_pool_get_array(diag_physics,'re_snow' ,re_snow )
+       call mpas_pool_get_array(diag_physics,'refl10cm' ,refl10cm )
+
+       do j = jts,jte
+       do k = kts,kte
+       do i = its,ite
+          qi(k,i) = qi_p(i,k,j)
+          qs(k,i) = qs_p(i,k,j)
+          qg(k,i) = qg_p(i,k,j)
+
+          rainprod(k,i) = rainprod_p(i,k,j)
+          evapprod(k,i) = evapprod_p(i,k,j)
+          re_cloud(k,i) = recloud_p(i,k,j)
+          re_ice(k,i)   = reice_p(i,k,j)
+          re_snow(k,i)  = resnow_p(i,k,j)
+          refl10cm(k,i) = refl10cm_p(i,k,j)
+       enddo
+       enddo
+       enddo
+
+       mp2a_select: select case(trim(mp_scheme))
+          case("mp_tempo")
+             call mpas_pool_get_dimension(state,'index_ni',index_ni)
+             call mpas_pool_get_dimension(state,'index_nr',index_nr)
+             ni   => scalars(index_ni,:,:)
+             nr   => scalars(index_nr,:,:)
+
+             do j = jts,jte
+             do k = kts,kte
+             do i = its,ite
+                ni(k,i) = ni_p(i,k,j)
+                nr(k,i) = nr_p(i,k,j)
+             enddo
+             enddo
+             enddo
+
+             call mpas_pool_get_array(diag_physics,'max_hail_diameter_sfc' ,max_hail_diameter_sfc)
+             call mpas_pool_get_array(diag_physics,'max_hail_diameter_column' ,max_hail_diameter_column)
+             do j = jts,jte
+             do i = its,ite
+                max_hail_diameter_sfc(i) = max_hail_diameter_sfc_p(i,j)
+                max_hail_diameter_column(i) = max_hail_diameter_column_p(i,j)
+             enddo
+             enddo
+
+             if(config_tempo_aerosolaware) then
+                call mpas_pool_get_dimension(state,'index_nc'  ,index_nc  )
+                call mpas_pool_get_dimension(state,'index_nifa',index_nifa)
+                call mpas_pool_get_dimension(state,'index_nwfa',index_nwfa)
+                nc   => scalars(index_nc,:,:)
+                nifa => scalars(index_nifa,:,:)
+                nwfa => scalars(index_nwfa,:,:)
+
+                call mpas_pool_get_array(diag_physics,'nifa2d',nifa2d)
+                call mpas_pool_get_array(diag_physics,'nwfa2d',nwfa2d)
+                do j = jts,jte
+                do i = its,ite
+                   nifa2d(i) = nifa2d_p(i,j)
+                   nwfa2d(i) = nwfa2d_p(i,j)
+                enddo
+                do k = kts, kte
+                do i = its, ite
+                   nc(k,i)   = nc_p(i,k,j)
+                   nifa(k,i) = nifa_p(i,k,j)
+                   nwfa(k,i) = nwfa_p(i,k,j)
+                enddo
+                enddo
+                enddo
+             endif
+
+             if (config_tempo_hailaware) then
+                call mpas_pool_get_dimension(state,'index_ng'  ,index_ng  )
+                call mpas_pool_get_dimension(state,'index_volg' ,index_volg  )
+
+                ng   => scalars(index_ng,:,:)
+                volg => scalars(index_volg,:,:)
+
+                do j = jts, jte
+                do k = kts, kte
+                do i = its, ite
+                   ng(k,i) = ng_p(i,k,j)
+                   volg(k,i) = volg_p(i,k,j)
+                enddo
+                enddo
+                enddo
+             endif
+
+          case("mp_nssl2m")
+             call mpas_pool_get_dimension(state,'index_ni'  ,index_ni  )
+             call mpas_pool_get_dimension(state,'index_nc'  ,index_nc  )
+             call mpas_pool_get_dimension(state,'index_nr'  ,index_nr  )
+             call mpas_pool_get_dimension(state,'index_qh'  ,index_qh  )
+             call mpas_pool_get_dimension(state,'index_ns'  ,index_ns  )
+             call mpas_pool_get_dimension(state,'index_ng'  ,index_ng  )
+             call mpas_pool_get_dimension(state,'index_nh'  ,index_nh  )
+             call mpas_pool_get_dimension(state,'index_nccn'  ,index_nccn  )
+             call mpas_pool_get_dimension(state,'index_volg'  ,index_volg  )
+             call mpas_pool_get_dimension(state,'index_volh'  ,index_volh  )
+             
+             ni   => scalars(index_ni,:,:)
+             nc   => scalars(index_nc,:,:)
+             nr   => scalars(index_nr,:,:)
+             qh   => scalars(index_qh,:,:)
+             ns   => scalars(index_ns,:,:)
+             ng   => scalars(index_ng,:,:)
+             nh   => scalars(index_nh,:,:)
+             nccn => scalars(index_nccn,:,:)
+             volg => scalars(index_volg,:,:)
+             volh => scalars(index_volh,:,:)
+
+             do j = jts,jte
+             do k = kts,kte
+             do i = its,ite
+                ni(k,i) = ni_p(i,k,j)
+                nc(k,i) = nc_p(i,k,j)
+                nr(k,i) = nr_p(i,k,j)
+                qh(k,i) = qh_p(i,k,j)
+                ns(k,i) = ns_p(i,k,j)
+                ng(k,i) = ng_p(i,k,j)
+                nh(k,i) = nh_p(i,k,j)
+                nccn(k,i) = nccn_p(i,k,j)
+                volg(k,i) = volg_p(i,k,j)
+                volh(k,i) = volh_p(i,k,j)
+             enddo
+             enddo
+             enddo
+          
+             if (nssl_moments == 'nssl3m')  then
+                call mpas_pool_get_dimension(state,'index_zrw'  ,index_zrw  )
+                call mpas_pool_get_dimension(state,'index_zgw'  ,index_zgw  )
+                call mpas_pool_get_dimension(state,'index_zhw'  ,index_zhw  )
+                
+                zrw   => scalars(index_zrw,:,:)
+                zgw   => scalars(index_zgw,:,:)
+                zhw   => scalars(index_zhw,:,:)
+                do j = jts, jte
+                do k = kts, kte
+                do i = its, ite
+                   zrw(k,i) = zrw_p(i,k,j)
+                   zgw(k,i) = zgw_p(i,k,j)
+                   zhw(k,i) = zhw_p(i,k,j)
+                enddo
+                enddo
+                enddo
+             endif
+
+          case default
+       end select mp2a_select
+
     case default
  end select mp_select
 
@@ -1036,6 +1568,56 @@
 
           case default
        end select mp2_tend_select
+
+    case("mp_tempo","mp_nssl2m")
+       call mpas_pool_get_array(tend_physics,'rthmpten',rthmpten)
+       call mpas_pool_get_array(tend_physics,'rqvmpten',rqvmpten)
+       call mpas_pool_get_array(tend_physics,'rqcmpten',rqcmpten)
+       call mpas_pool_get_array(tend_physics,'rqrmpten',rqrmpten)
+       call mpas_pool_get_array(tend_physics,'rqimpten',rqimpten)
+       call mpas_pool_get_array(tend_physics,'rqsmpten',rqsmpten)
+       call mpas_pool_get_array(tend_physics,'rqgmpten',rqgmpten)
+
+       do k = kts,kte
+       do i = its,ite
+          rthmpten(k,i) = (theta_m(k,i)/(1._RKIND+R_v/R_d*max(0._RKIND,qv(k,i)))-rthmpten(k,i))/dt_dyn
+          rqvmpten(k,i) = (qv(k,i)-rqvmpten(k,i))/dt_dyn
+          rqcmpten(k,i) = (qc(k,i)-rqcmpten(k,i))/dt_dyn
+          rqrmpten(k,i) = (qr(k,i)-rqrmpten(k,i))/dt_dyn
+          rqimpten(k,i) = (qi(k,i)-rqimpten(k,i))/dt_dyn
+          rqsmpten(k,i) = (qs(k,i)-rqsmpten(k,i))/dt_dyn
+          rqgmpten(k,i) = (qg(k,i)-rqgmpten(k,i))/dt_dyn
+       enddo
+       enddo
+
+       mp2a_tend_select: select case(trim(mp_scheme))
+          case("mp_tempo")
+             call mpas_pool_get_array(tend_physics,'rnimpten',rnimpten)
+             call mpas_pool_get_array(tend_physics,'rnrmpten',rnrmpten)
+
+             do k = kts,kte
+             do i = its,ite
+                rnimpten(k,i) = (ni(k,i)-rnimpten(k,i))/dt_dyn
+                rnrmpten(k,i) = (nr(k,i)-rnrmpten(k,i))/dt_dyn
+             enddo
+             enddo
+
+             if(config_tempo_aerosolaware) then
+                call mpas_pool_get_array(tend_physics,'rncmpten',rncmpten)
+                call mpas_pool_get_array(tend_physics,'rnifampten',rnifampten)
+                call mpas_pool_get_array(tend_physics,'rnwfampten',rnwfampten)
+
+                do k = kts,kte
+                do i = its,ite
+                   rncmpten(k,i)   = (nc(k,i)-rncmpten(k,i))/dt_dyn
+                   rnifampten(k,i) = (nifa(k,i)-rnifampten(k,i))/dt_dyn
+                   rnwfampten(k,i) = (nwfa(k,i)-rnwfampten(k,i))/dt_dyn
+                enddo
+                enddo
+             endif
+
+          case default
+       end select mp2a_tend_select
 
     case default
  end select mp_tend_select

@@ -13,8 +13,21 @@ module atm_core
    use mpas_log, only : mpas_log_write, mpas_log_info
    use mpas_io_units, only : mpas_new_unit, mpas_release_unit
 
-   ! Provides definition of halo_exchange_routine
-#include "mpas_halo_interface.inc"
+   !
+   ! Abstract interface for routine used to communicate halos of fields
+   ! in a named group
+   !
+   abstract interface
+      subroutine halo_exchange_routine(domain, halo_group, ierr)
+
+         use mpas_derived_types, only : domain_type
+
+         type (domain_type), intent(inout) :: domain
+         character(len=*), intent(in) :: halo_group
+         integer, intent(out), optional :: ierr
+
+      end subroutine halo_exchange_routine
+   end interface
 
    type (MPAS_Clock_type), pointer :: clock
 
@@ -35,9 +48,6 @@ module atm_core
       use mpas_attlist, only : mpas_modify_att
       use mpas_string_utils, only : mpas_string_replace
       use mpas_atm_halos, only: atm_build_halo_groups, exchange_halo_group
-#ifdef DO_CHEMISTRY
-      use mpas_atm_chemistry, only: chemistry_init
-#endif
 
       implicit none
 
@@ -48,8 +58,9 @@ module atm_core
       real (kind=RKIND), pointer :: dt
       type (block_type), pointer :: block
 
-      logical, pointer :: config_do_restart
 
+      logical, pointer :: config_do_restart
+      logical, pointer :: config_do_DAcycling
       type (mpas_pool_type), pointer :: state
       type (mpas_pool_type), pointer :: mesh
       type (mpas_pool_type), pointer :: diag
@@ -106,6 +117,7 @@ module atm_core
       end if
 
       call mpas_pool_get_config(domain % blocklist % configs, 'config_do_restart', config_do_restart)
+      call mpas_pool_get_config(domain % blocklist % configs, 'config_do_DAcycling', config_do_DAcycling)
       call mpas_pool_get_config(domain % blocklist % configs, 'config_dt', dt)
 
       !
@@ -127,6 +139,8 @@ module atm_core
       call mpas_timer_start('read_ICs')
       if (config_do_restart) then
          init_stream_name = 'restart'
+      elseif (config_do_DAcycling) then
+         init_stream_name = 'da_state'
       else
          init_stream_name = 'input'
       end if
@@ -148,6 +162,9 @@ module atm_core
 
       call MPAS_stream_mgr_reset_alarms(domain % streamManager, streamID='input', direction=MPAS_STREAM_INPUT, ierr=ierr)
       call MPAS_stream_mgr_reset_alarms(domain % streamManager, streamID='restart', direction=MPAS_STREAM_INPUT, ierr=ierr)
+      if ( config_do_DAcycling .and. .not. config_do_restart) then
+         call MPAS_stream_mgr_reset_alarms(domain % streamManager, streamID='da_state', direction=MPAS_STREAM_INPUT, ierr=ierr)
+      end if
       call mpas_log_write(' ----- done reading initial state -----')
 
 
@@ -285,13 +302,6 @@ module atm_core
       !
       call mpas_atm_dynamics_init(domain)
 
-      !
-      ! Initialize the chemistry package
-      !
-#ifdef DO_CHEMISTRY
-      call chemistry_init(domain % blocklist % configs, domain % blocklist % dimensions)
-#endif
-
    end function atm_core_init
 
 
@@ -373,6 +383,7 @@ module atm_core
 !     use mpas_atmphys_aquaplanet
       use mpas_atmphys_control
       use mpas_atmphys_init
+      use mpas_atmphys_init_tempo
       use mpas_atmphys_manager
 #endif
 
@@ -393,6 +404,7 @@ module atm_core
       type (mpas_pool_type), pointer :: ngw_input
       type (mpas_pool_type), pointer :: atm_input
       type (mpas_pool_type), pointer :: output_noahmp
+      type (mpas_pool_type), pointer :: emission_input
 
       integer :: iCell,iEdge,iVertex,k
       
@@ -568,9 +580,10 @@ module atm_core
          call mpas_pool_get_subpool(block % structs, 'ngw_input', ngw_input)
          call mpas_pool_get_subpool(block % structs, 'atm_input', atm_input)
          call mpas_pool_get_subpool(block % structs, 'output_noahmp', output_noahmp)
+         call mpas_pool_get_subpool(block % structs, 'emission_input', emission_input)
          call physics_tables_init(dminfo, block % configs)
          call physics_registry_init(mesh, block % configs, sfc_input)
-         call physics_run_init(block % configs, mesh, state, clock, stream_manager)
+         call physics_run_init(block % configs, mesh, state, emission_input, diag_physics, clock, stream_manager)
 
          !initialization of all physics:
          call physics_init(dminfo, stream_manager, clock, block % configs, mesh, diag, tend, state, 1,       &
@@ -581,6 +594,8 @@ module atm_core
       call atm_compute_mesh_scaling(mesh, block % configs)
 
       call atm_compute_damping_coefs(mesh, block % configs)
+
+      call atm_compute_cellsOnCellsOnCell(mesh, block % configs)
 
       !
       ! Set up mask fields used in limited-area simulations
@@ -616,6 +631,7 @@ module atm_core
    
       real (kind=RKIND) :: dt
       logical, pointer :: config_do_restart
+      logical, pointer :: config_do_DAcycling
       logical, pointer :: config_apply_lbcs
       type (block_type), pointer :: block_ptr
 
@@ -643,10 +659,15 @@ module atm_core
       
       call mpas_get_timeInterval(mpas_get_clock_timestep(clock, ierr), dt=dt)
       call mpas_pool_get_config(domain % blocklist % configs, 'config_do_restart', config_do_restart)
+      call mpas_pool_get_config(domain % blocklist % configs, 'config_do_DAcycling', config_do_DAcycling)
       call mpas_pool_get_config(domain % blocklist % configs, 'config_restart_timestamp_name', config_restart_timestamp_name)
 
       ! Avoid writing a restart file at the initial time
       call MPAS_stream_mgr_reset_alarms(domain % streamManager, streamID='restart', direction=MPAS_STREAM_OUTPUT, ierr=ierr)
+      ! Avoid writing a mpasout file at the initial time
+      if ( config_do_DAcycling .and. .not. config_do_restart) then
+         call MPAS_stream_mgr_reset_alarms(domain % streamManager, streamID='da_state', direction=MPAS_STREAM_OUTPUT, ierr=ierr)
+      end if
 
       ! Also, for restart runs, avoid writing the initial history or diagnostics fields to avoid overwriting those from the preceding run
       if (config_do_restart) then
@@ -672,7 +693,7 @@ module atm_core
       end if
       call mpas_timer_start('diagnostic_fields')
       call mpas_atm_diag_reset()
-      call mpas_atm_diag_update()
+      call mpas_atm_diag_update(domain % blocklist % configs, domain % streamManager,dt)
       call mpas_atm_diag_compute()
       call mpas_timer_stop('diagnostic_fields')
 
@@ -834,7 +855,7 @@ module atm_core
          end if
 
          call mpas_timer_start('diagnostic_fields')
-         call mpas_atm_diag_update()
+         call mpas_atm_diag_update(domain % blocklist % configs, domain % streamManager,dt)
          call mpas_atm_diag_compute()
          call mpas_timer_stop('diagnostic_fields')
          call mpas_dmpar_get_time(diag_stop_time)
@@ -960,12 +981,21 @@ module atm_core
    
       type (mpas_pool_type), pointer :: diag_physics
    
-      real (kind=RKIND), dimension(:), pointer :: refl10cm_1km_max
+      real (kind=RKIND), dimension(:), pointer :: refl10cm_1km_max, max_hail_diameter_sfc_acc, &
+           max_hail_diameter_column_acc
 
 #ifdef DO_PHYSICS
       call mpas_pool_get_array(diag_physics, 'refl10cm_1km_max', refl10cm_1km_max)
+      call mpas_pool_get_array(diag_physics, 'max_hail_diameter_sfc_acc', max_hail_diameter_sfc_acc)
+      call mpas_pool_get_array(diag_physics, 'max_hail_diameter_column_acc', max_hail_diameter_column_acc)
       if(associated(refl10cm_1km_max)) then
          refl10cm_1km_max(:) = 0.
+      endif
+      if(associated(max_hail_diameter_sfc_acc)) then
+         max_hail_diameter_sfc_acc(:) = 0.
+      endif
+      if(associated(max_hail_diameter_column_acc)) then
+         max_hail_diameter_column_acc(:) = 0.
       endif
 #endif
    
@@ -983,11 +1013,8 @@ module atm_core
       use mpas_atmphys_manager
       use mpas_atmphys_update
 #endif
-#ifdef DO_CHEMISTRY
-      use mpas_atm_chemistry, only: chemistry_step
-#endif
       use mpas_atm_halos, only: exchange_halo_group
-
+   
       implicit none
    
       type (domain_type), intent(inout) :: domain 
@@ -1015,12 +1042,8 @@ module atm_core
       !proceed with physics if moist_physics is set to true:
       if(moist_physics) then
          call physics_timetracker(domain,dt,clock,itimestep,xtime_s)
-         call physics_driver(domain,itimestep,xtime_s)
+         call physics_driver(domain,itimestep,xtime_s,exchange_halo_group)
       endif
-#endif
-
-#ifdef DO_CHEMISTRY
-      call chemistry_step()
 #endif
 
       call atm_timestep(domain, dt, currTime, itimestep, exchange_halo_group)
@@ -1041,10 +1064,6 @@ module atm_core
       use mpas_atmphys_finalize
 #endif
 
-#ifdef DO_CHEMISTRY
-      use mpas_atm_chemistry, only: chemistry_finalize
-#endif
-
       implicit none
    
       type (domain_type), intent(inout) :: domain
@@ -1060,13 +1079,6 @@ module atm_core
       ! Finalize the dynamics
       !
       call mpas_atm_dynamics_finalize(domain)
-
-      !
-      ! Finalize chemistry
-      !
-#ifdef DO_CHEMISTRY
-      call chemistry_finalize()
-#endif
 
       call mpas_atm_diag_cleanup()
 
@@ -1265,6 +1277,8 @@ module atm_core
       real (kind=RKIND), pointer :: config_xnutr, config_zd
       real (kind=RKIND) :: z, zt, m1, pii
       real (kind=RKIND), dimension(:,:), pointer :: dss, zgrid
+      real (kind=RKIND), dimension(:), pointer :: meshDensity
+      real (kind=RKIND) :: dx_scale_power
 
       m1 = -1.0
       pii = acos(m1)
@@ -1272,12 +1286,14 @@ module atm_core
       call mpas_pool_get_dimension(mesh, 'nCells', nCells)
       call mpas_pool_get_dimension(mesh, 'nVertLevels', nVertLevels)
 
+      call mpas_pool_get_array(mesh, 'meshDensity', meshDensity)
       call mpas_pool_get_array(mesh, 'dss', dss)
       call mpas_pool_get_array(mesh, 'zgrid', zgrid)
 
       call mpas_pool_get_config(configs, 'config_zd', config_zd)
       call mpas_pool_get_config(configs, 'config_xnutr', config_xnutr)
 
+      dx_scale_power = 1.0
       dss(:,:) = 0.0
       do iCell=1,nCells
          zt = zgrid(nVertLevels+1,iCell)
@@ -1285,6 +1301,7 @@ module atm_core
             z = 0.5*(zgrid(k,iCell) + zgrid(k+1,iCell))
             if (z > config_zd) then
                dss(k,iCell) = config_xnutr*sin(0.5*pii*(z-config_zd)/(zt-config_zd))**2.0
+               dss(k,iCell) = dss(k,iCell) / meshDensity(iCell)**(0.25*dx_scale_power)
             end if
          end do
       end do
@@ -1461,6 +1478,110 @@ module atm_core
 
    end subroutine atm_couple_coef_3rd_order
 
+   subroutine atm_compute_cellsOnCellsOnCell(mesh, configs)
+
+      implicit none
+
+      type (mpas_pool_type), intent(inout) :: mesh
+      type (mpas_pool_type), intent(in) :: configs
+
+      integer, pointer :: nCells, nCellsSolve, maxEdges, maxEdges2
+      integer, dimension(:), pointer :: nEdgesOnCell, nCellsOnCellsOnCell
+      integer, dimension(:,:), pointer :: cellsOnCell, cellsOnCellsOnCell
+
+      real (kind=RKIND), dimension(:), pointer :: xCell, yCell, zCell
+
+      integer :: iCell, jCell, candidate, i, j, k
+      logical :: isNeighbor
+      integer :: cellGroup(50), nCellsGroup, nOuterRow, nInnerRow
+      real (kind=RKIND) :: dc
+
+      logical, parameter :: debug_print = .false.
+
+      call mpas_pool_get_array(mesh, 'nEdgesOnCell', nEdgesOnCell)
+      call mpas_pool_get_array(mesh, 'nCellsOnCellsOnCell',nCellsOnCellsOnCell)
+      call mpas_pool_get_array(mesh, 'cellsOnCell', cellsOnCell)
+      call mpas_pool_get_array(mesh, 'cellsOnCellsOnCell',cellsOnCellsOnCell)
+
+      call mpas_pool_get_array(mesh, 'xCell',xCell)
+      call mpas_pool_get_array(mesh, 'yCell',yCell)
+      call mpas_pool_get_array(mesh, 'zCell',zCell)
+
+      call mpas_pool_get_dimension(mesh, 'nCells', nCells)
+      call mpas_pool_get_dimension(mesh, 'nCellsSolve', nCellsSolve)
+      call mpas_pool_get_dimension(mesh, 'maxEdges',maxEdges)
+      call mpas_pool_get_dimension(mesh, 'maxEdges2',maxEdges2)
+
+      if(debug_print) then
+         call mpas_log_write('computing cellsOnCellsOnCell')
+         call mpas_log_write('nCells, nCellsSolve $i $i ',intArgs=(/nCells, nCellsSolve/))
+      end if
+
+      do iCell = 1, nCellsSolve  ! for each owned cell
+
+         cellGroup(:) = 0
+         nCellsGroup = 1 + nEdgesOnCell(iCell)
+         nInnerRow = nCellsGroup
+         cellGroup(1) = iCell
+         cellGroup(2:nCellsGroup) = cellsOnCell(1:nCellsGroup-1,iCell)
+
+         ! here cellGroup is a list of cells including iCell and its neighbors.
+         ! we'll add the neighbors of the neighbors next
+
+         do i = 1, nEdgesOnCell(iCell)
+
+            jCell = cellsOnCell(i,iCell)
+            do j=1,nEdgesOnCell(jCell)
+
+               candidate = cellsOnCell(j,jCell)
+               isNeighbor = .true.
+
+               do k=1,nCellsGroup
+                if(cellGroup(k) .eq. candidate) isNeighbor = .false.
+               end do
+               if(isNeighbor) then
+                  cellGroup(nCellsGroup+1) = candidate
+                  nCellsGroup = nCellsGroup +1
+               end if
+            end do
+         end do
+
+         nOuterRow = nCellsGroup - nInnerRow
+
+         if (nOuterRow .gt. maxEdges2) then
+            call mpas_log_write('MaxEdges2 < nOuterRow in CellsOnCellsOnCell ', messageType=MPAS_LOG_ERR)
+            call mpas_log_write('MaxEdges2 = $i', intArgs=(/MaxEdges2/), messageType=MPAS_LOG_ERR)
+            call mpas_log_write('nOuterRow = $i', intArgs=(/nOuterRow/), messageType=MPAS_LOG_ERR)
+            call mpas_log_write('Critical Error', messageType=MPAS_LOG_CRIT)
+         end if
+
+         do i=1,nOuterRow
+            cellsOnCellsOnCell(i,iCell) = cellGroup(i+nInnerRow)
+         end do
+
+         nCellsOnCellsOnCell(iCell) = nOuterRow
+
+         if(debug_print .and. (iCell .lt. 10)) then
+            call mpas_log_write('cellsOnCell for cell  $i $i', intArgs=(/iCell,nEdgesOnCell(iCell)/))
+            call mpas_log_write('cellsOnCell, $i $i $i $i $i $i', \
+              intArgs=(/cellsOnCell(1,iCell),cellsOnCell(2,iCell),cellsOnCell(3,iCell),cellsOnCell(4,iCell),cellsOnCell(5,iCell),cellsOnCell(6,iCell)/))
+            call mpas_log_write('cellsOnCellsOnCell for cell  $i $i', intArgs=(/iCell,nOuterRow/))
+            call mpas_log_write('cells, $i $i $i $i $i $i', \
+            intArgs=(/cellsOnCellsOnCell(1,iCell),cellsOnCellsOnCell(2,iCell),cellsOnCellsOnCell(3,iCell), \
+                      cellsOnCellsOnCell(4,iCell),cellsOnCellsOnCell(5,iCell),cellsOnCellsOnCell(6,iCell)/))
+            call mpas_log_write('cells, $i $i $i $i $i $i', \
+                       intArgs=(/cellsOnCellsOnCell(7,iCell),cellsOnCellsOnCell(8,iCell),cellsOnCellsOnCell(9,iCell), \
+                       cellsOnCellsOnCell(10,iCell),cellsOnCellsOnCell(11,iCell),cellsOnCellsOnCell(12,iCell)/))
+            do i=1, nOuterRow
+               jCell = cellsOnCellsOnCell(i,iCell)
+               dc = sqrt((xCell(iCell)-xCell(jCell))**2 + (yCell(iCell)-yCell(jCell))**2 + (zCell(iCell)-zCell(jCell))**2)
+               call mpas_log_write('distance $i $i $r',intArgs=(/iCell,jCell/),realArgs=(/dc/))
+            end do
+       end if
+
+    end do
+
+   end subroutine atm_compute_cellsOnCellsOnCell
 
    !-----------------------------------------------------------------------
    !  routine mpas_atm_run_compatibility

@@ -16,11 +16,11 @@ gnu:   # BUILDTARGET GNU Fortran, C, and C++ compilers
 	"CC_SERIAL = gcc" \
 	"CXX_SERIAL = g++" \
 	"FFLAGS_PROMOTION = -fdefault-real-8 -fdefault-double-8" \
-	"FFLAGS_OPT = -std=f2008 -fimplicit-none -O3 -ffree-line-length-none -fconvert=big-endian -ffree-form" \
+	"FFLAGS_OPT = -std=f2008 -O3 -ffree-line-length-none -fconvert=big-endian -ffree-form" \
 	"CFLAGS_OPT = -O3" \
 	"CXXFLAGS_OPT = -O3" \
 	"LDFLAGS_OPT = -O3" \
-	"FFLAGS_DEBUG = -std=f2008 -fimplicit-none -g -ffree-line-length-none -fconvert=big-endian -ffree-form -fcheck=all -fbacktrace -ffpe-trap=invalid,zero,overflow" \
+	"FFLAGS_DEBUG = -std=f2008 -g -ffree-line-length-none -fconvert=big-endian -ffree-form -fcheck=all -fbacktrace -ffpe-trap=invalid,zero,overflow" \
 	"CFLAGS_DEBUG = -g" \
 	"CXXFLAGS_DEBUG = -g" \
 	"LDFLAGS_DEBUG = -g" \
@@ -117,6 +117,57 @@ ftn:   # BUILDTARGET Cray compilers
 	"USE_PAPI = $(USE_PAPI)" \
 	"OPENMP = $(OPENMP)" \
 	"OPENACC = $(OPENACC)" \
+	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI" )
+
+ftn-wcoss2:   # wcoss2
+	( $(MAKE) all \
+	"FC_PARALLEL = ftn" \
+	"CC_PARALLEL = cc" \
+	"CXX_PARALLEL = CC" \
+	"FC_SERIAL = ftn" \
+	"CC_SERIAL = cc" \
+	"CXX_SERIAL = CC" \
+	"FFLAGS_PROMOTION = -real-size 64" \
+	"FFLAGS_OPT = -O3 -convert big_endian -free -align array64byte" \
+	"CFLAGS_OPT = -O3" \
+	"CXXFLAGS_OPT = -O3" \
+	"LDFLAGS_OPT =  -O3" \
+	"FFLAGS_OMP = -mp" \
+	"CFLAGS_OMP = -mp" \
+	"FFLAGS_ACC =" \
+	"CFLAGS_ACC =" \
+	"BUILD_TARGET = $(@)" \
+	"CORE = $(CORE)" \
+	"DEBUG = $(DEBUG)" \
+	"USE_PAPI = $(USE_PAPI)" \
+	"OPENMP = $(OPENMP)" \
+	"OPENACC = $(OPENACC)" \
+	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI" )
+
+vecna_ifort:
+	( $(MAKE) all \
+	"FC_PARALLEL = mpif90" \
+	"CC_PARALLEL = mpicc -diag-disable=10441"  \
+	"CXX_PARALLEL = mpiicpc" \
+	"FC_SERIAL = ifort" \
+	"CC_SERIAL = icx" \
+	"CXX_SERIAL = icpc" \
+	"FFLAGS_PROMOTION = -real-size 64" \
+	"FFLAGS_OPT = -O3 -convert big_endian -free -align array64byte" \
+	"CFLAGS_OPT = -O3 " \
+	"CXXFLAGS_OPT = -O3" \
+	"LDFLAGS_OPT = -O3" \
+	"LIB_HDF5=-L$(HDF5_LIBRARIES) -lhdf5_hl -lhdf5 -L${ZLIB_LIBRARIES} -lz -ldl -lm" \
+	"FFLAGS_DEBUG = -g -convert big_endian -free -CU -CB -check all -check bounds -fpe0 -traceback" \
+	"CFLAGS_DEBUG = -g -traceback" \
+	"CXXFLAGS_DEBUG = -g -traceback" \
+	"LDFLAGS_DEBUG = -g -fpe0 -traceback" \
+	"FFLAGS_OMP = -qopenmp" \
+	"CFLAGS_OMP = -qopenmp" \
+	"CORE = $(CORE)" \
+	"DEBUG = $(DEBUG)" \
+	"USE_PAPI = $(USE_PAPI)" \
+	"OPENMP = $(OPENMP)" \
 	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI" )
 
 titan-cray:   # BUILDTARGET (deprecated) Cray compilers with options for ORNL Titan
@@ -299,6 +350,60 @@ ifort:   # BUILDTARGET Intel Fortran, C, and C++ compiler suite
 	"OPENMP = $(OPENMP)" \
 	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI" )
 
+ifort_icx:   # BUILDTARGET Intel Fortran, C, and C++ compiler suite
+	( $(MAKE) all \
+	"FC_PARALLEL = mpif90" \
+	"CC_PARALLEL = mpicc" \
+	"CXX_PARALLEL = mpicxx" \
+	"FC_SERIAL = ifort" \
+	"CC_SERIAL = icx" \
+	"CXX_SERIAL = icpx" \
+	"FFLAGS_PROMOTION = -real-size 64" \
+	"FFLAGS_OPT = -O3 -convert big_endian -free -align array64byte" \
+	"CFLAGS_OPT = -O3" \
+	"CXXFLAGS_OPT = -O3" \
+	"LDFLAGS_OPT = -O3" \
+	"FFLAGS_DEBUG = -g -convert big_endian -free -check all -fpe0 -traceback" \
+	"CFLAGS_DEBUG = -g -traceback" \
+	"CXXFLAGS_DEBUG = -g -traceback" \
+	"LDFLAGS_DEBUG = -g -fpe0 -traceback" \
+	"FFLAGS_OMP = -qopenmp" \
+	"CFLAGS_OMP = -qopenmp" \
+	"PICFLAG = -fpic" \
+	"BUILD_TARGET = $(@)" \
+	"CORE = $(CORE)" \
+	"DEBUG = $(DEBUG)" \
+	"USE_PAPI = $(USE_PAPI)" \
+	"OPENMP = $(OPENMP)" \
+	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI" )
+
+jet_ifort:
+	( $(MAKE) all \
+	"FC_PARALLEL = mpiifort" \
+	"CC_PARALLEL = mpiicc" \
+	"CXX_PARALLEL = mpicpc" \
+	"FC_SERIAL = ifort" \
+	"CC_SERIAL = icc" \
+	"CXX_SERIAL = icpc" \
+	"FFLAGS_PROMOTION = -real-size 64" \
+	"FFLAGS_OPT = -O3 -convert big_endian -free -align array64byte" \
+	"CFLAGS_OPT = -O3" \
+	"CXXFLAGS_OPT = -O3" \
+	"LDFLAGS_OPT = -O3" \
+	"FFLAGS_DEBUG = -g -convert big_endian -free -check all -fpe0 -traceback" \
+	"CFLAGS_DEBUG = -g -traceback" \
+	"CXXFLAGS_DEBUG = -g -traceback" \
+	"LDFLAGS_DEBUG = -g -fpe0 -traceback" \
+	"FFLAGS_OMP = -qopenmp" \
+	"CFLAGS_OMP = -qopenmp" \
+	"PICFLAG = -fpic" \
+	"BUILD_TARGET = $(@)" \
+	"CORE = $(CORE)" \
+	"DEBUG = $(DEBUG)" \
+	"USE_PAPI = $(USE_PAPI)" \
+	"OPENMP = $(OPENMP)" \
+	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI" )
+
 ifort-scorep:   # BUILDTARGET Intel compiler suite with ScoreP profiling library
 	( $(MAKE) all \
 	"FC_PARALLEL = scorep --compiler mpif90" \
@@ -368,6 +473,60 @@ intel-mpi:   # BUILDTARGET Intel compiler suite with Intel MPI library
 	"CFLAGS_DEBUG = -g -traceback" \
 	"CXXFLAGS_DEBUG = -g -traceback" \
 	"LDFLAGS_DEBUG = -g -fpe0 -traceback" \
+	"FFLAGS_OMP = -qopenmp" \
+	"CFLAGS_OMP = -qopenmp" \
+	"PICFLAG = -fpic" \
+	"BUILD_TARGET = $(@)" \
+	"CORE = $(CORE)" \
+	"DEBUG = $(DEBUG)" \
+	"USE_PAPI = $(USE_PAPI)" \
+	"OPENMP = $(OPENMP)" \
+	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI" )
+
+intel-llvm-mpi:   # BUILDTARGET Intel LLVM compiler suite with Intel MPI library
+	( $(MAKE) all \
+	"FC_PARALLEL = mpiifx" \
+	"CC_PARALLEL = mpiicx" \
+	"CXX_PARALLEL = mpiicpx" \
+	"FC_SERIAL = ifx" \
+	"CC_SERIAL = icx" \
+	"CXX_SERIAL = icpx" \
+	"FFLAGS_PROMOTION = -real-size 64" \
+	"FFLAGS_OPT = -O3 -convert big_endian -free -align array64byte" \
+	"CFLAGS_OPT = -O3" \
+	"CXXFLAGS_OPT = -O3" \
+	"LDFLAGS_OPT = -O3" \
+	"FFLAGS_DEBUG = -g -convert big_endian -free -CU -CB -check all -fpe0 -traceback" \
+	"CFLAGS_DEBUG = -g -traceback" \
+	"CXXFLAGS_DEBUG = -g -traceback" \
+	"LDFLAGS_DEBUG = -g -fpe0 -traceback" \
+	"FFLAGS_OMP = -qopenmp" \
+	"CFLAGS_OMP = -qopenmp" \
+	"PICFLAG = -fpic" \
+	"BUILD_TARGET = $(@)" \
+	"CORE = $(CORE)" \
+	"DEBUG = $(DEBUG)" \
+	"USE_PAPI = $(USE_PAPI)" \
+	"OPENMP = $(OPENMP)" \
+	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI" )
+
+intel-mpi-ursa:   # usra
+	( $(MAKE) all \
+	"FC_PARALLEL = mpiifort" \
+	"CC_PARALLEL = mpiicc" \
+	"CXX_PARALLEL = mpiicpc" \
+	"FC_SERIAL = ifort" \
+	"CC_SERIAL = icx" \
+	"CXX_SERIAL = icpx" \
+	"FFLAGS_PROMOTION = -real-size 64" \
+	"FFLAGS_OPT = -O3 -convert big_endian -free -align array64byte" \
+	"CFLAGS_OPT = -O3" \
+	"CXXFLAGS_OPT = -O3" \
+	"LDFLAGS_OPT = -O3" \
+	"FFLAGS_DEBUG = -g -convert big_endian -free -CU -CB -check all -fpe0 -traceback" \
+	"CFLAGS_DEBUG = -g -traceback" \
+	"CXXFLAGS_DEBUG = -g -traceback" \
+	"LDFLAGS_DEBUG = -g -traceback" \
 	"FFLAGS_OMP = -qopenmp" \
 	"CFLAGS_OMP = -qopenmp" \
 	"PICFLAG = -fpic" \
@@ -872,20 +1031,6 @@ $(if $(PRECISION),$(info NOTE: PRECISION=single is unnecessary, single is the de
 	PRECISION_MESSAGE="MPAS was built with default single-precision reals."
 endif #PRECISION IF
 
-# Optional MUSICA support for chemistry
-ifeq "$(shell echo $(MUSICA) | tr '[:upper:]' '[:lower:]')" "true"
-ifeq ($(shell pkg-config --exists musica-fortran && echo yes || echo no), no)
-$(error "musica-fortran package is not installed. Please install it to proceed.")
-endif
-	MUSICA_FCINCLUDES += $(shell pkg-config --cflags musica-fortran)
-	MUSICA_LIBS += $(shell pkg-config --libs musica-fortran)
-	MUSICA_FFLAGS = -DMPAS_USE_MUSICA
-
-	FCINCLUDES += $(MUSICA_FCINCLUDES)
-	LIBS += $(MUSICA_LIBS)
-	override CPPFLAGS += $(MUSICA_FFLAGS)
-endif
-
 ifeq "$(USE_PAPI)" "true"
 	CPPINCLUDES += -I$(PAPI)/include -D_PAPI
 	FCINCLUDES += -I$(PAPI)/include
@@ -1388,32 +1533,6 @@ mpi_f08_test:
 	$(if $(findstring 1,$(MPAS_MPI_F08)), $(eval MPI_F08_MESSAGE = "Using the mpi_f08 module."), )
 	$(if $(findstring 1,$(MPAS_MPI_F08)), $(info mpi_f08 module detected.))
 
-musica_fortran_test:
-	@#
-	@# Create a Fortran test program that will link against the MUSICA library
-	@#
-	$(info Checking for a working MUSICA-Fortran library...)
-	$(eval MUSICA_FORTRAN_TEST := $(shell $\
-		printf "program test_musica_fortran\n$\
-		&   use musica_util, only : string_t\n$\
-		&   use musica_micm, only : get_micm_version\n$\
-		&   type(string_t) :: version_string\n$\
-		&   version_string = get_micm_version()\n$\
-		&   print *, \"MUSICA support is available. MICM version: \", version_string%%value_\n$\
-		end program test_musica_fortran\n" | sed 's/&/ /' > test_musica_fortran.f90; $\
-		$\
-		$(FC) $(MUSICA_FCINCLUDES) $(MUSICA_FFLAGS) test_musica_fortran.f90 -o test_musica_fortran.x $(MUSICA_LIBS) > /dev/null 2>&1; $\
-		musica_fortran_status=$$?; $\
-		rm -f test_musica_fortran.f90 test_musica_fortran.x; $\
-		if [ $$musica_fortran_status -eq 0 ]; then $\
-			printf "1"; $\
-		else $\
-			printf "0"; $\
-		fi $\
-	))
-	$(if $(findstring 0,$(MUSICA_FORTRAN_TEST)), $(error Could not build a simple test program with MUSICA-Fortran))
-	$(eval MUSICA_FORTRAN_VERSION := $(shell pkg-config --modversion musica-fortran))
-	$(if $(findstring 1,$(MUSICA_FORTRAN_TEST)), $(info Built a simple test program with MUSICA-Fortran version $(MUSICA_FORTRAN_VERSION)), )
 
 pnetcdf_test:
 	@#
@@ -1464,13 +1583,6 @@ IO_MESSAGE = "Using the SMIOL library."
 override CPPFLAGS += "-DMPAS_SMIOL_SUPPORT"
 endif
 
-ifneq "$(MUSICA_FFLAGS)" ""
-MAIN_DEPS += musica_fortran_test
-MUSICA_MESSAGE = "MPAS was linked with the MUSICA-Fortran library version $(MUSICA_FORTRAN_VERSION)."
-else
-MUSICA_MESSAGE = "MPAS was not linked with the MUSICA-Fortran library."
-endif
-
 mpas_main: $(MAIN_DEPS)
 	cd src; $(MAKE) FC="$(FC)" \
                  CC="$(CC)" \
@@ -1507,7 +1619,6 @@ mpas_main: $(MAIN_DEPS)
 	@echo $(OPENMP_MESSAGE)
 	@echo $(OPENMP_OFFLOAD_MESSAGE)
 	@echo $(OPENACC_MESSAGE)
-	@echo $(MUSICA_MESSAGE)
 	@echo $(SHAREDLIB_MESSAGE)
 ifeq "$(AUTOCLEAN)" "true"
 	@echo $(AUTOCLEAN_MESSAGE)
