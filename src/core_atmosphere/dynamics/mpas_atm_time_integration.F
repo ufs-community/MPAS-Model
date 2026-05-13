@@ -1696,7 +1696,7 @@ module atm_time_integration
       end if  ! regional_MPAS addition
 
 
-      if (config_scalar_advection .and. config_apply_lbcs) then ! adjust boundary values for regional_MPAS scalar transport
+      if (config_apply_lbcs) then  ! adjust boundary values for regional_MPAS scalar transport
 
          call exchange_halo_group(domain, 'dynamics:scalars')
 
