@@ -2,7 +2,7 @@
     config_time_integration_order = 2
     config_dt = 720.0
     config_start_time = '2023-03-10_15:00:00'
-    config_run_duration = '0_06:00:00'
+    config_run_duration = '0_01:00:00'
     config_split_dynamics_transport = true
     config_number_of_sub_steps = 2
     config_dynamics_split_steps = 3
@@ -28,7 +28,7 @@
     config_pio_stride = 1
 /
 &decomposition
-    config_block_decomp_file_prefix = 'ci_conus_120km.graph.info.part.'
+    config_block_decomp_file_prefix = 'graph.info.part.'
 /
 &restart
     config_do_restart = false
@@ -37,9 +37,9 @@
     config_print_global_minmax_vel = true
     config_print_detailed_minmax_vel = false
 /
-&iau
-    config_iau_option = 'off'
-    config_iau_window_length_s = 21600.0
+&IAU
+    config_IAU_option = 'off'
+    config_IAU_window_length_s = 21600.
 /
 &physics
     config_sst_update = false

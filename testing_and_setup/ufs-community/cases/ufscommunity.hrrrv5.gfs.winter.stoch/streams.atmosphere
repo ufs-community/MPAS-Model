@@ -44,13 +44,6 @@ Notes on xml attributes used in the input stream definition(s) below:
                   packages="limited_area"
                   />
 
-<immutable_stream name="ugwp_oro_data_in"
-                  type="input"
-                  filename_template="mpas.ugwp_oro_data.nc"
-                  input_interval="initial_only" 
-                  packages="ugwp_orog_stream"
-                  />
-
 <immutable_stream name="restart"
                   type="input;output"
                   filename_template="restart.$Y-$M-$D_$h.$m.$s.nc"
@@ -73,14 +66,14 @@ Define output streams.
 <stream name="output"
         type="output"
         filename_template="history.$Y-$M-$D_$h.$m.$s.nc"
-        output_interval="01:00:00">
+        output_interval="00:12:00">
         <file name="stream_list.atmosphere.output"/>
 </stream>
 
 <stream name="diagnostics"
         type="output"
         filename_template="diag.$Y-$M-$D_$h.$m.$s.nc"
-        output_interval="01:00:00">
+        output_interval="00:12:00">
         <file name="stream_list.atmosphere.diagnostics"/>
 </stream>
 
