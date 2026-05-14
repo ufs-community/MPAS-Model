@@ -337,23 +337,24 @@ jobs:
         pwd && ls -l
 
     ##########################################################################################
-    # Compare feature branch to baseline branch.
+    # Install the conda environment needed for comparing run output from the baseline and
+    # feature branches.
     ##########################################################################################
 
-#    # Note that the comparison script used below (cmp_rt2bl.py) is the one in the feature
-#    # branch.  Thus, the environment file used in the miniconda setup should be the one in
-#    # that branch (SRCDIR_FT).  Since the miniconda step prepends ${GITHUB_WORKSPACE} to
-#    # whatever value is provided to environment-file: below and since ${SRCDIR_FT} is set
-#    # to ${GITHUB_WORKSPACE}, the environment file used below is in fact the one in the
-#    # feature branch.
-#    - name: Setup miniconda
-#      uses: conda-incubator/setup-miniconda@v3
-#      with:
-#        python-version: ${{env.py-version}}
-#        auto-update-conda: true
-#        auto-activate: false
-#        activate-environment: mpas-ci-env
-#        environment-file: ${{env.ufs_community}}/environment.yml
+    # The following three tasks are to avoid rebuilding the conda environment on every CI
+    # run, which can take a long time.  Instead of rebuilding the conda environment from
+    # scratch on every CI run, the environment is cached and only recreated when environment.yml
+    # actually changes.  Descriptions of the three tasks are as follows:
+    #
+    # 1) Cache conda environment
+    #    Checks whether a cached copy of the environment already exists, keyed on the hash
+    #    of the environment.yml file.
+    # 2) Setup miniconda
+    #    Installs conda, but with no "environment-file:" field, so it does NOT build the
+    #    environment.
+    # 3) Create conda environment
+    #    Only runs on a cache miss (which can happen in step 1 above), and builds the
+    #    environment via "conda env update".
 
     - name: Cache conda environment
       id: cache-conda
@@ -373,6 +374,10 @@ jobs:
     - name: Create conda environment
       if: steps.cache-conda.outputs.cache-hit != 'true'
       run: conda env update --file ${SRCDIR_FT}/${{env.ufs_community}}/environment.yml --name mpas-ci-env
+
+    ##########################################################################################
+    # Compare output from feature branch run to that from baseline branch run.
+    ##########################################################################################
 
     - name: Run comparison script
       run: |
