@@ -83,34 +83,6 @@
 &physics_mp_tempo
     config_tempo_hailaware = true
 /
-&chemistry
-    rwc_emis_scale_factor = 1.0
-    num_chem = 0
-    kanthro = 1
-    kwildfire = 1
-    kbiogenic = 1
-    kvolcanic = 1
-    kreswoodcomb = 1
-    hwp_method = 1
-    hwp_alpha = 1.0
-    bb_input_prevh = 24
-    bb_beta = 1
-    wetdep_ls_opt = 0
-    wetdep_ls_alpha = 0.0
-    plumerise_opt = 0
-    plume_wind_eff = 0
-    plume_alpha = 0.0
-    bb_qv_scale_factor = 1.0
-    ebb_dcycle = 0
-    calc_bb_emis_online = false
-    bb_emis_scale_factor = 1.0
-    drydep_opt = 0
-    pm_settling = 0
-    dust_alpha = 1.0
-    dust_gamma = 1.0
-    dust_moist_correction = 1.0
-    dust_drylimit_factor = 1.0
-/
 &nam_stochy
     do_sppt = true
     do_skeb = false
