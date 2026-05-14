@@ -326,14 +326,14 @@ jobs:
       run: |
         cd ${RUNDIR_BL}
         pwd && ls -l
-        mpiexec --allow-run-as-root -np 1 ./atmosphere_model || true
+        mpiexec --allow-run-as-root -np 1 ./atmosphere_model
         pwd && ls -l
 
     - name: Run MPAS -- feature branch
       run: |
         cd ${RUNDIR_FT}
         pwd && ls -l
-        mpiexec --allow-run-as-root -np 1 ./atmosphere_model || true
+        mpiexec --allow-run-as-root -np 1 ./atmosphere_model
         pwd && ls -l
 
     ##########################################################################################
