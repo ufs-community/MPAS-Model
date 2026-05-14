@@ -41,7 +41,7 @@ jobs:
 #        season:     [summer, winter]
         season:     [winter]
         build-type: [Release]
-        physics:    [hrrrv5]
+        physics:    [convection_permitting]
         exclude:
           - ic_source: gfs
             season: summer
@@ -248,12 +248,11 @@ jobs:
         #cp ${srcdir}/${ufscmnty_cases}/ufscommunity.${{matrix.physics}}.${{matrix.ic_source}}.${{matrix.season}}.stoch/* .
         #
         # Instead, copy the MPAS configuration files from the corresponding directory for the
-        # feature branch.  Also, since the namelist file that the baseline branch cannot
-        # contain the stochastic physics namelist (called "nam_stochy", we specifically copy
-        # in a version of the namelist file without that namelist.
+        # feature branch.
         cp ${SRCDIR_FT}/${ufscmnty_cases}/ufscommunity.${{matrix.physics}}.${{matrix.ic_source}}.${{matrix.season}}.stoch/* .
-        # The following command takes the namelist.atmosphere file copied into the run directory
-        # above (and which contains the nam_stochy namelist) and removes that namelist from it.
+        # Since the namelist file that the baseline branch will use cannot yet contain the
+        # stochastic physics namelist (called "nam_stochy"), we use the following command to
+        # remove that namelist from the namelist file.
         sed -i '/^[[:space:]]*&nam_stochy/,/^[[:space:]]*\//d' namelist.atmosphere
         #
         # Create symlinks in the run directory.
