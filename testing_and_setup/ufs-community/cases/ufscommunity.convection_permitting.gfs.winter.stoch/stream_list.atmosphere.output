@@ -54,6 +54,8 @@ vorticity
 ke
 uReconstructZonal
 uReconstructMeridional
+stoch_pattern_sppt
+stoch_pattern_gg
 ertel_pv
 u_pv
 v_pv
@@ -121,6 +123,7 @@ ivgtyp
 isltyp
 lai
 sfc_albedo
+dzs
 cldfrac_bl
 snowc
 snownc
