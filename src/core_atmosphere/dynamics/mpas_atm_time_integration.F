@@ -881,7 +881,6 @@ module atm_time_integration
 #endif
 
       real (kind=RKIND)  :: time_dyn_step
-      character(len=32)  :: tend_names(4)
       integer :: ierr
       logical, parameter :: debug = .false.
 
@@ -1081,13 +1080,9 @@ module atm_time_integration
       rk_step = 1
       dynamics_substep = 1
 
-! apply random perturbation pattern to the tendency
-      tend_names(1) = "rucuten"
-      tend_names(2) = "rvcuten"
-      tend_names(3) = "rublten"
-      tend_names(4) = "rvblten"
+! apply random perturbation pattern to physics process (moist) tendencies
       if (dosppt(domain)) then
-        call stochastic_physics_pattern_apply(domain, 4, tend_names, ierr)
+        call stochastic_physics_pattern_apply(domain, 'phys', ierr)
       endif
 
       call physics_get_tend( block, mesh, state, diag, tend, tend_physics, &
@@ -1096,11 +1091,9 @@ module atm_time_integration
                              exchange_halo_group )
       call mpas_timer_stop('physics_get_tend')
 
-! apply random perturbation pattern to the tendency
-      tend_names(1) = "tend_rtheta_physics"
-!      tend_names(2) = "tend_rho_physics"
+! apply random perturbation pattern to the accumulated (dry) physics tendencies
       if (dosppt(domain)) then
-        call stochastic_physics_pattern_apply(domain, 1, tend_names, ierr)
+        call stochastic_physics_pattern_apply(domain, 'prog', ierr)
       endif
 #else
 #ifndef MPAS_CAM_DYCORE
