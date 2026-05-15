@@ -172,11 +172,11 @@ jobs:
         cd ${SRCDIR_BL}/src/core_atmosphere/physics
         ./checkout_data_files.sh
 
-    #- name: Build MPAS -- baseline branch
-    #  if: steps.cache-bl.outputs.cache-hit != 'true'
-    #  run: |
-    #    cd ${SRCDIR_BL}
-    #    make ${{matrix.bld_target}} CORE=atmosphere ${{matrix.build-type == 'Debug' && 'DEBUG=true' || ''}}
+    - name: Build MPAS -- baseline branch
+      if: steps.cache-bl.outputs.cache-hit != 'true'
+      run: |
+        cd ${SRCDIR_BL}
+        make ${{matrix.bld_target}} CORE=atmosphere ${{matrix.build-type == 'Debug' && 'DEBUG=true' || ''}}
 
     ##########################################################################################
     # Clone and build the MPAS feature branch.
@@ -321,12 +321,12 @@ jobs:
     ##########################################################################################
     # Run MPAS with both baseline and feature branches.
     ##########################################################################################
-    #- name: Run MPAS -- baseline branch
-    #  run: |
-    #    cd ${RUNDIR_BL}
-    #    pwd && ls -l
-    #    mpiexec --allow-run-as-root -np 1 ./atmosphere_model
-    #    pwd && ls -l
+    - name: Run MPAS -- baseline branch
+      run: |
+        cd ${RUNDIR_BL}
+        pwd && ls -l
+        mpiexec --allow-run-as-root -np 1 ./atmosphere_model
+        pwd && ls -l
 
     - name: Run MPAS -- feature branch
       run: |
