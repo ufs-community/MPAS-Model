@@ -1080,7 +1080,7 @@ module atm_time_integration
       rk_step = 1
       dynamics_substep = 1
 
-! apply random perturbation pattern to physics process (moist) tendencies
+! apply random perturbation pattern to physics process (hydrostatic) tendencies
       if (dosppt(domain)) then
         call stochastic_physics_pattern_apply(domain, 'phys', ierr)
       endif
@@ -1091,7 +1091,7 @@ module atm_time_integration
                              exchange_halo_group )
       call mpas_timer_stop('physics_get_tend')
 
-! apply random perturbation pattern to the accumulated (dry) physics tendencies
+! apply random perturbation pattern to the accumulated (non-hydrostatic) physics tendencies
       if (dosppt(domain)) then
         call stochastic_physics_pattern_apply(domain, 'prog', ierr)
       endif
