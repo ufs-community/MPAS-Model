@@ -171,6 +171,7 @@
        if(.not.allocated(v10_p)     ) allocate(v10_p(ims:ime,jms:jme)         )
        if(.not.allocated(exch_p)    ) allocate(exch_p(ims:ime,kms:kme,jms:jme))
        if(.not.allocated(rthraten_p)) allocate(rthraten_p(ims:ime,kms:kme,jms:jme))
+       if(.not.allocated(tkepbl_p)  ) allocate(tkepbl_p(ims:ime,kms:kme,jms:jme)    )
 
     case("bl_mynn")
        if(.not.allocated(kbl_plume_p) ) allocate(kbl_plume_p(ims:ime,jms:jme)         )
@@ -369,6 +370,7 @@
        if(allocated(v10_p)     ) deallocate(v10_p     )
        if(allocated(exch_p)    ) deallocate(exch_p    )
        if(allocated(rthraten_p)) deallocate(rthraten_p)
+       if(allocated(tkepbl_p)  ) deallocate(tkepbl_p    )
 
     case("bl_mynn")
        if(allocated(kbl_plume_p) ) deallocate(kbl_plume_p )
@@ -1606,6 +1608,9 @@
             rthblten_p(its:ite,kts:kte,jts),                          &
             rublten_p(its:ite,kts:kte,jts),                           &
             rvblten_p(its:ite,kts:kte,jts),                           &
+            rqvblten_p(its:ite,kts:kte,jts),                          &
+            rqcblten_p(its:ite,kts:kte,jts),                          &
+            rqiblten_p(its:ite,kts:kte,jts),                          &
             tke_edmf_cfg, tke_edmf_errmsg, tke_edmf_errflg)
 
        if (tke_edmf_errflg /= 0) then
