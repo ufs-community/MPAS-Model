@@ -4220,11 +4220,11 @@
                 <var name="lwupbc" type="real" dimensions="nCells Time" units="W m^{-2}"
                      description="clear-sky upward surface longwave radiation flux"/>
 
-		<var name="lwupt" type="real" dimensions="nCells Time" units="W m^{-2}"
+                <var name="lwupt" type="real" dimensions="nCells Time" units="W m^{-2}"
                      description="all-sky upward top-of-the-atmosphere longwave radiation flux"/>
 
-		<var name="lwuptc" type="real" dimensions="nCells Time" units="W m^{-2}"
-		     description="clear-sky upward top-of-the-atmosphere longwave radiation flux"/>
+                <var name="lwuptc" type="real" dimensions="nCells Time" units="W m^{-2}"
+                     description="clear-sky upward top-of-the-atmosphere longwave radiation flux"/>
 	</var_struct>
 #endif
         <var_struct name="tend_physics" time_levs="1">
@@ -4601,7 +4601,7 @@
                      packages="ugwp_orog_stream"/>
 
                 <!-- GSL GWDO fields - small-scale -->
-		<var name="var2dss" type="real" dimensions="nCells" units="m"
+                <var name="var2dss" type="real" dimensions="nCells" units="m"
                      description="standard deviation of subgrid-scale orography (small-scale GWD)"
                      packages="ugwp_orog_stream"/>
 
