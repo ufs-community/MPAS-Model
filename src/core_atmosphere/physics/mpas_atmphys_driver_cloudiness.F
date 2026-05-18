@@ -464,8 +464,8 @@
     esw = 1000. * svp1 * exp(svp2 * (t_p(i,k,j) - svpt0) / (t_p(i,k,j) - svp3))
     esi = 1000. * svp1 * exp(svpi2 * (t_p(i,k,j) - svpt0) / (t_p(i,k,j) - svpi3))
 
-    qvsw = ep_2 * esw / (pres_p(i,k,j) - esw)
-    qvsi = ep_2 * esi / (pres_p(i,k,j) - esi)
+    qvsw = ep_2 * esw / max(1.0e-6, (pres_p(i,k,j) - esw))
+    qvsi = ep_2 * esi / max(1.0e-6, (pres_p(i,k,j) - esi))
 
     qcld = qc(i,k,j) + qi(i,k,j) + qs(i,k,j)
     if(qcld .lt. qcldmin) then

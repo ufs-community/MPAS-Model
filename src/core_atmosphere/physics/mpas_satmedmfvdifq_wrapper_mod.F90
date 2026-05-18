@@ -40,6 +40,7 @@ contains
                                      z0_mpas, u10, v10, vegfra_in, rb_in, fm_in, fh_in,    &
                                      hpbl_out, kpbl_out,                 &
                                      ten_t_out, ten_u_out, ten_v_out,    &
+                                     ten_qv_out, ten_qc_out, ten_qi_out, &
                                      cfg, errmsg, errflg)
 
     integer, intent(in) :: nCells, nVertLevels, ntrac
@@ -73,6 +74,9 @@ contains
     real(kind=RKIND), intent(out) :: ten_t_out(nCells,nVertLevels)
     real(kind=RKIND), intent(out) :: ten_u_out(nCells,nVertLevels)
     real(kind=RKIND), intent(out) :: ten_v_out(nCells,nVertLevels)
+    real(kind=RKIND), intent(out) :: ten_qv_out(nCells,nVertLevels)
+    real(kind=RKIND), intent(out) :: ten_qc_out(nCells,nVertLevels)
+    real(kind=RKIND), intent(out) :: ten_qi_out(nCells,nVertLevels)
     type(mpas_satmedmfvdifq_config_type), intent(in) :: cfg
     character(len=*), intent(out) :: errmsg
     integer, intent(out) :: errflg
@@ -225,7 +229,7 @@ contains
       zorl(i) = max(z0_mpas(i), 1.0e-6_RKIND) * 100.0_RKIND
 
       tsea(i) = skin_temp(i)
-      heat(i) = shflx(i)
+      heat(i) = shflx(i)/cp
 
       ! If MPAS gives latent heat flux W m-2, convert to kg m-2 s-1.
       evap(i) = lhflx(i) / hvap
@@ -298,6 +302,10 @@ contains
         ten_t_out(i,k) = tdt(i,k)
         ten_u_out(i,k) = du(i,k)
         ten_v_out(i,k) = dv(i,k)
+        
+        ten_qv_out(i,k) = rtg(i,k,ntqv) 
+        ten_qc_out(i,k) = rtg(i,k,ntcw)
+        ten_qi_out(i,k) = rtg(i,k,ntiw)
 
         tke_mpas(i,k) = max(q1(i,k,ntke), 0.0_RKIND)
       enddo
