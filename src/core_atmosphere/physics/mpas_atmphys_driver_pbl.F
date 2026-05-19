@@ -1524,7 +1524,7 @@
        ! Conservative initial settings.  Expose these through Registry later.
        tke_edmf_cfg%sa3dtke     = .false.
        tke_edmf_cfg%tte_edmf    = .false.
-       tke_edmf_cfg%dspheat     = .false.
+       tke_edmf_cfg%dspheat     = .true.
        tke_edmf_cfg%do_canopy   = .false.
        tke_edmf_cfg%cplaqm      = .false.
        tke_edmf_cfg%gen_tend    = .false.
@@ -1536,10 +1536,10 @@
 
        tke_edmf_cfg%xkzm_m  = 1.0_RKIND
        tke_edmf_cfg%xkzm_h  = 1.0_RKIND
-       tke_edmf_cfg%xkzm_s  = 0.7_RKIND
+       tke_edmf_cfg%xkzm_s  = 1.0_RKIND
        tke_edmf_cfg%dspfac  = 1.0_RKIND
-       tke_edmf_cfg%bl_upfr = 1.0_RKIND
-       tke_edmf_cfg%bl_dnfr = 1.0_RKIND
+       tke_edmf_cfg%bl_upfr = 0.13_RKIND
+       tke_edmf_cfg%bl_dnfr = 0.1_RKIND
        tke_edmf_cfg%rlmx    = 300.0_RKIND
        tke_edmf_cfg%elmx    = 300.0_RKIND
 
