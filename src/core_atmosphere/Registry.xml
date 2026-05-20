@@ -1180,17 +1180,22 @@
 			<var name="q2"/>
 			<var name="t2m"/>
 			<var name="th2m"/>
-                        <var name="cldfrac_bl"/>
-                        <var name="qc_bl"/>
-                        <var name="qi_bl"/>
-                        <var name="maxmf"/>
-                        <var name="maxwidth"/>
-                        <var name="ztop_plume"/>
+			<var name="cldfrac_bl"/>
+			<var name="qc_bl"/>
+			<var name="qi_bl"/>
+			<var name="maxmf"/>
+			<var name="maxwidth"/>
+			<var name="ztop_plume"/>
 			<var name="excess_h"/>
 			<var name="excess_q"/>
-                        <var name="hpbl"/>
-                        <var name="cldfrac_cu"/>
-                        <var name="refl10cm_cu"/>
+			<var name="maxmf_dd"/>
+			<var name="maxwidth_dd"/>
+			<var name="maxtkeprod_dd"/>
+			<var name="cldtop_cooling"/>
+			<var name="ent_eff"/>
+			<var name="hpbl"/>
+			<var name="cldfrac_cu"/>
+			<var name="refl10cm_cu"/>
 #endif
 
                         <!-- Begin convective diagnostics defined in diagnostics/Registry_convective.xml -->
@@ -3418,6 +3423,26 @@
 
 		<var name="excess_q" type="real" dimensions="nCells Time" units="kg kg^{-1}"
                      description="Maximum excess moisture added to plumes"
+                     packages="bl_mynnedmf_in"/>
+
+		<var name="maxmf_dd" type="real" dimensions="nCells Time" units="m s^{-1}"
+                     description="Maximum mass flux in the each column from downdrafts"
+                     packages="bl_mynnedmf_in"/>
+
+		<var name="maxwidth_dd" type="real" dimensions="nCells Time" units="m"
+                     description="Maximum width of downdrafts"
+                     packages="bl_mynnedmf_in"/>
+
+		<var name="maxtkeprod_dd" type="real" dimensions="nCells Time" units="m^2 s^{-2} hr^{-1}"
+                     description="Maximum tke production in column from downdrafts"
+                     packages="bl_mynnedmf_in"/>
+
+		<var name="cldtop_cooling" type="real" dimensions="nCells Time" units="K hr^{-1}"
+                     description="Maximum cooling at boundary layer cloud top"
+                     packages="bl_mynnedmf_in"/>
+
+		<var name="ent_eff" type="real" dimensions="nCells Time" units=""
+                     description="Entrainment efficiency"
                      packages="bl_mynnedmf_in"/>
 
 		<!-- MYJ PBL SCHEME: -->
