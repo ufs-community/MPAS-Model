@@ -67,8 +67,15 @@ jobs:
       runner_ROOT:    /__w
       PNETCDF:        /opt/pnetcdf
       ufs_community:  testing_and_setup/ufs-community
-      # Github artifact name.
+      # GitHub artifact name.
       artifact:       artifact-${{matrix.f-compiler}}-${{matrix.build-type}}-${{matrix.ic_source}}-${{matrix.season}}-${{matrix.physics}}-stoch
+      # Set to 'true' to copy only a subset of the files in run directories
+      # into the GitHub artifact, e.g. only the history*.nc and diag*.nc
+      # files instead of all the files.  This is useful when the full run
+      # directory is too large and would take a long time to download from
+      # GitHub.
+      #artifact_incl_only_rundir_subset: 'false'
+      artifact_incl_only_rundir_subset: 'true'
 
     # Workflow steps
     steps:
@@ -116,7 +123,7 @@ jobs:
         echo "RUNDIR_BL=${runner_ROOT}/run_bl" >> $GITHUB_ENV
         echo "RUNDIR_FT=${runner_ROOT}/run_ft" >> $GITHUB_ENV
         #
-        # Set the absolute path to the Github artifact.
+        # Set the absolute path to the GitHub artifact.
         #
         echo "ARTIFACT_DIR=${runner_ROOT}/${artifact}" >> $GITHUB_ENV
 
@@ -395,12 +402,21 @@ jobs:
         datadir="${ARTIFACT_DIR}/data_bl"
         mkdir -p ${datadir}
         cd ${RUNDIR_BL}
-        cp ./* ${datadir}
+        if [ "${{ env.artifact_incl_only_rundir_subset }}" = "true" ]; then
+          #cp history*.nc diag*.nc ${datadir}/ || true
+          cp namelist.atmosphere history*.nc diag*.nc log.atmosphere.* ${datadir}/ || true
+        else
+          cp ./* ${datadir}
+        fi
         #
         datadir="${ARTIFACT_DIR}/data_ft"
         mkdir -p ${datadir}
         cd ${RUNDIR_FT}
-        cp ./* ${datadir}
+        if [ "${{ env.artifact_incl_only_rundir_subset }}" = "true" ]; then
+          cp namelist.atmosphere history*.nc diag*.nc log.atmosphere.* ${datadir}/ || true
+        else
+          cp ./* ${datadir}
+        fi
 
     - name: Upload MPAS runs as GitHub artifact
       uses: actions/upload-artifact@v4
