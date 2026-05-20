@@ -32,6 +32,7 @@ module atm_time_integration
    use mpas_atmphys_todynamics
    use mpas_atmphys_utilities
    use mpas_stochastic_physics, only : stochastic_physics_pattern_apply, dosppt
+   use mpas_stochastic_physics, only : tend_names   
 #endif
 
    use mpas_atm_boundaries, only : nSpecZone, nRelaxZone, nBdyZone, mpas_atm_get_bdy_state, mpas_atm_get_bdy_tend  ! regional_MPAS addition
@@ -881,7 +882,6 @@ module atm_time_integration
 #endif
 
       real (kind=RKIND)  :: time_dyn_step
-      character(len=32)  :: tend_names(4)
       integer :: ierr
       logical, parameter :: debug = .false.
 
@@ -1082,12 +1082,8 @@ module atm_time_integration
       dynamics_substep = 1
 
 ! apply random perturbation pattern to the tendency
-      tend_names(1) = "rucuten"
-      tend_names(2) = "rvcuten"
-      tend_names(3) = "rublten"
-      tend_names(4) = "rvblten"
       if (dosppt(domain)) then
-        call stochastic_physics_pattern_apply(domain, 4, tend_names, ierr)
+        call stochastic_physics_pattern_apply(domain, tend_names(1:4), ierr)
       endif
 
       call physics_get_tend( block, mesh, state, diag, tend, tend_physics, &
@@ -1097,10 +1093,8 @@ module atm_time_integration
       call mpas_timer_stop('physics_get_tend')
 
 ! apply random perturbation pattern to the tendency
-      tend_names(1) = "tend_rtheta_physics"
-!      tend_names(2) = "tend_rho_physics"
       if (dosppt(domain)) then
-        call stochastic_physics_pattern_apply(domain, 1, tend_names, ierr)
+        call stochastic_physics_pattern_apply(domain, tend_names(5), ierr)
       endif
 #else
 #ifndef MPAS_CAM_DYCORE
