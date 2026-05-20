@@ -1157,22 +1157,22 @@
 			<var name="q2"/>
 			<var name="t2m"/>
 			<var name="th2m"/>
-                        <var name="cldfrac_bl"/>
-                        <var name="qc_bl"/>
-                        <var name="qi_bl"/>
-                        <var name="maxmf"/>
-                        <var name="maxwidth"/>
-                        <var name="ztop_plume"/>
+			<var name="cldfrac_bl"/>
+			<var name="qc_bl"/>
+			<var name="qi_bl"/>
+			<var name="maxmf"/>
+			<var name="maxwidth"/>
+			<var name="ztop_plume"/>
 			<var name="excess_h"/>
 			<var name="excess_q"/>
 			<var name="maxmf_dd"/>
-                        <var name="maxwidth_dd"/>
+			<var name="maxwidth_dd"/>
 			<var name="maxtkeprod_dd"/>
-                        <var name="cldtop_cooling"/>
+			<var name="cldtop_cooling"/>
 			<var name="ent_eff"/>
-                        <var name="hpbl"/>
-                        <var name="cldfrac_cu"/>
-                        <var name="refl10cm_cu"/>
+			<var name="hpbl"/>
+			<var name="cldfrac_cu"/>
+			<var name="refl10cm_cu"/>
 #endif
 
                         <!-- Begin convective diagnostics defined in diagnostics/Registry_convective.xml -->
