@@ -18,7 +18,7 @@ on: [push, pull_request, workflow_dispatch]
 # - Run MPAS using baseline codebase/configuration.
 # - Run MPAS using feature branch.
 # - Compare results.
-# - Save output files to GitHub artifact (for comparision w/ inline/standaloen results)
+# - Save output files to GitHub artifact (for comparison w/ inline/standalone results)
 #
 # Comments:
 # - The test build/run configurations matrix is described below.
@@ -86,7 +86,7 @@ jobs:
       run: |
         #
         # Define some relative paths.  These are with respect to the root directory of the
-        # MPAS-Model clone (which may be SRCDIR_BL or SRCDIR_RF).
+        # MPAS-Model clone (which may be SRCDIR_BL or SRCDIR_FT).
         #
         # The wrf_phys_tables directory contains physics tables and other files specific to
         # WRF physics.
@@ -261,6 +261,10 @@ jobs:
         # stochastic physics namelist (called "nam_stochy"), we use the following command to
         # remove that namelist from the namelist file.
         sed -i '/^[[:space:]]*&nam_stochy/,/^[[:space:]]*\//d' namelist.atmosphere
+        # Also, the stream_list.* files cannot contain any variables with the string "stoch"
+        # in them (because we're running with stochastic physics disabled), so remove all
+        # such variables from the stream_list.* files.
+        sed -i '/stoch/d' stream_list.*
         #
         # Create symlinks in the run directory.
         #
