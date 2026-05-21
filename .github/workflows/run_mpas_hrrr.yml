@@ -1,7 +1,7 @@
 name: Run MPAS Standalone (NOAA GSL HRRRv5 tests)
 
-on: [push, pull_request, workflow_dispatch]
-#on: [workflow_dispatch]
+#on: [push, pull_request, workflow_dispatch]
+on: [workflow_dispatch]
 
 #############################################################################################
 # Testing script/workflow for ufs-community fork of MPAS-Dev/MPAS-A.
