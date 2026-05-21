@@ -1094,7 +1094,7 @@ module atm_time_integration
 
 ! apply random perturbation pattern to the tendency
       if (dosppt(domain)) then
-        call stochastic_physics_pattern_apply(domain, tend_names(5), ierr)
+        call stochastic_physics_pattern_apply(domain, tend_names(5:5), ierr)
       endif
 #else
 #ifndef MPAS_CAM_DYCORE
