@@ -271,6 +271,8 @@ jobs:
         # Links to WRF physics tables and other files that are downloaded during the call to
         # checkout_data_files.sh.
         ln -sf ${srcdir}/${wrf_phys_tables}/{*.TBL,*.DBL,*DATA} .
+        # Links to tables in the testing_and_setup directory of MPAS-Model, e.g. Thompson MP tables.
+        ln -sf ${srcdir}/{ufscmnty_data}/tables/thompson/MP_THOMPSON_* .
         # Links to UFS physics tables that are under version control, i.e. part of the MPAS-Model
         # repo or submodules.  These are not created in the build step or some other way.  They
         # are present once the repository is cloned (recursively).
@@ -285,6 +287,14 @@ jobs:
         ln -sf ${srcdir}/${mpas_ics}/ufscommunity.${{matrix.ic_source}}.${{matrix.season}}/mpas.ugwp_oro_data.nc .
         # Link to the MPAS executable.
         ln -sf ${srcdir}/atmosphere_model .
+
+#    - name: Link Thompson MP data tables to run directory -- baseline branch runs
+#      if: contains(matrix.physics, 'convection_permitting')
+#      run: |
+#        rundir=${RUNDIR_BL}
+#        srcdir=${SRCDIR_BL}
+#        cd ${rundir}
+#        cp ${srcdir}/{ufscmnty_data}/tables/thompson/* .
 
     - name: Link surface files to run directory -- baseline branch runs
       if: matrix.ic_source == 'gfs'
@@ -309,6 +319,8 @@ jobs:
         # Links to WRF physics tables and other files that are downloaded during the call to
         # checkout_data_files.sh.
         ln -sf ${srcdir}/${wrf_phys_tables}/{*.TBL,*.DBL,*DATA} .
+        # Links to tables in the testing_and_setup directory of MPAS-Model, e.g. Thompson MP tables.
+        ln -sf ${srcdir}/{ufscmnty_data}/tables/thompson/MP_THOMPSON_* .
         # Links to UFS physics tables that are under version control, i.e. part of the MPAS-Model
         # repo or submodules.  These are not created in the build step or some other way.  They
         # are present once the repository is cloned (recursively).
@@ -323,6 +335,14 @@ jobs:
         ln -sf ${srcdir}/${mpas_ics}/ufscommunity.${{matrix.ic_source}}.${{matrix.season}}/mpas.ugwp_oro_data.nc .
         # Link to the MPAS executable.
         ln -sf ${srcdir}/atmosphere_model .
+
+#    - name: Link Thompson MP data tables to run directory -- feature branch runs
+#      if: contains(matrix.physics, 'convection_permitting')
+#      run: |
+#        rundir=${RUNDIR_FT}
+#        srcdir=${SRCDIR_FT}
+#        cd ${rundir}
+#        cp ${srcdir}/{ufscmnty_data}/tables/thompson/* .
 
     - name: Link surface files to run directory -- feature branch runs
       if: matrix.ic_source == 'gfs'
