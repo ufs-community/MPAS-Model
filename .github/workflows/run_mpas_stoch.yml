@@ -41,7 +41,7 @@ jobs:
 #        season:     [summer, winter]
         season:     [winter]
         build-type: [Release]
-        physics:    [convection_permitting,hrrrv5
+        physics:    [convection_permitting,hrrrv5]
         exclude:
           - ic_source: gfs
             season: summer
