@@ -266,13 +266,12 @@ jobs:
         # such variables from the stream_list.* files.
         sed -i '/stoch/d' stream_list.*
         #
-        # Create symlinks in the run directory.
+        # Create symlinks in the run directory.  Note that not all of these may be necessary
+        # for the particular run configuration, but we link all for convenience.
         #
         # Links to WRF physics tables and other files that are downloaded during the call to
         # checkout_data_files.sh.
         ln -sf ${srcdir}/${wrf_phys_tables}/{*.TBL,*.DBL,*DATA} .
-        # Links to tables in the testing_and_setup directory of MPAS-Model, e.g. Thompson MP tables.
-        ln -sf ${srcdir}/{ufscmnty_data}/tables/thompson/MP_THOMPSON_* .
         # Links to UFS physics tables that are under version control, i.e. part of the MPAS-Model
         # repo or submodules.  These are not created in the build step or some other way.  They
         # are present once the repository is cloned (recursively).
@@ -280,6 +279,7 @@ jobs:
         ln -sf ${srcdir}/src/core_atmosphere/physics/physics_noaa/TEMPO/tables/ccn_activate.bin .
         # Links to the UFS physics tables downloaded by the get_data.sh script.
         ln -sf ${srcdir}/${ufs_phys_tables}/tempo/* .
+        ln -sf ${srcdir}/${ufs_phys_tables}/thompson/* .
         ln -sf ${srcdir}/${ufs_phys_tables}/ugw/* .
         # Links to the MPAS initial and boundary condition files and other static files.
         ln -sf ${srcdir}/${mpas_ics}/ufscommunity.${{matrix.ic_source}}.${{matrix.season}}/mpas.init.nc .
@@ -314,7 +314,8 @@ jobs:
         # Copy MPAS configuration files (namelist, stream) into run directory.
         cp ${srcdir}/${ufscmnty_cases}/ufscommunity.${{matrix.physics}}.${{matrix.ic_source}}.${{matrix.season}}.stoch/* .
         #
-        # Create symlinks in the run directory.
+        # Create symlinks in the run directory.  Note that not all of these may be necessary
+        # for the particular run configuration, but we link all for convenience.
         #
         # Links to WRF physics tables and other files that are downloaded during the call to
         # checkout_data_files.sh.
@@ -328,6 +329,7 @@ jobs:
         ln -sf ${srcdir}/src/core_atmosphere/physics/physics_noaa/TEMPO/tables/ccn_activate.bin .
         # Links to the UFS physics tables downloaded by the get_data.sh script.
         ln -sf ${srcdir}/${ufs_phys_tables}/tempo/* .
+        ln -sf ${srcdir}/${ufs_phys_tables}/thompson/* .
         ln -sf ${srcdir}/${ufs_phys_tables}/ugw/* .
         # Links to the MPAS initial and boundary condition files and other static files.
         ln -sf ${srcdir}/${mpas_ics}/ufscommunity.${{matrix.ic_source}}.${{matrix.season}}/mpas.init.nc .
