@@ -288,14 +288,6 @@ jobs:
         # Link to the MPAS executable.
         ln -sf ${srcdir}/atmosphere_model .
 
-#    - name: Link Thompson MP data tables to run directory -- baseline branch runs
-#      if: contains(matrix.physics, 'convection_permitting')
-#      run: |
-#        rundir=${RUNDIR_BL}
-#        srcdir=${SRCDIR_BL}
-#        cd ${rundir}
-#        cp ${srcdir}/{ufscmnty_data}/tables/thompson/* .
-
     - name: Link surface files to run directory -- baseline branch runs
       if: matrix.ic_source == 'gfs'
       run: |
@@ -338,14 +330,6 @@ jobs:
         # Link to the MPAS executable.
         ln -sf ${srcdir}/atmosphere_model .
 
-#    - name: Link Thompson MP data tables to run directory -- feature branch runs
-#      if: contains(matrix.physics, 'convection_permitting')
-#      run: |
-#        rundir=${RUNDIR_FT}
-#        srcdir=${SRCDIR_FT}
-#        cd ${rundir}
-#        cp ${srcdir}/{ufscmnty_data}/tables/thompson/* .
-
     - name: Link surface files to run directory -- feature branch runs
       if: matrix.ic_source == 'gfs'
       run: |
@@ -359,14 +343,14 @@ jobs:
       run: |
         cd ${RUNDIR_BL}
         pwd && ls -l
-        mpiexec --allow-run-as-root -np 1 ./atmosphere_model || true
+        mpiexec --allow-run-as-root -np 1 ./atmosphere_model
         pwd && ls -l
 
     - name: Run MPAS -- feature branch
       run: |
         cd ${RUNDIR_FT}
         pwd && ls -l
-        mpiexec --allow-run-as-root -np 1 ./atmosphere_model || true
+        mpiexec --allow-run-as-root -np 1 ./atmosphere_model
         pwd && ls -l
 
     ##########################################################################################
