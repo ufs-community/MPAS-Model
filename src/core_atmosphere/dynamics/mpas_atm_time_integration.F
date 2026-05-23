@@ -32,7 +32,6 @@ module atm_time_integration
    use mpas_atmphys_todynamics
    use mpas_atmphys_utilities
    use mpas_stochastic_physics, only : stochastic_physics_pattern_apply, dosppt
-   use mpas_stochastic_physics, only : tend_names   
 #endif
 
    use mpas_atm_boundaries, only : nSpecZone, nRelaxZone, nBdyZone, mpas_atm_get_bdy_state, mpas_atm_get_bdy_tend  ! regional_MPAS addition
@@ -1083,7 +1082,7 @@ module atm_time_integration
 
 ! apply random perturbation pattern to the tendency
       if (dosppt(domain)) then
-        call stochastic_physics_pattern_apply(domain, tend_names(1:4), ierr)
+        call stochastic_physics_pattern_apply(domain, 'phys', ierr)
       endif
 
       call physics_get_tend( block, mesh, state, diag, tend, tend_physics, &
@@ -1094,7 +1093,7 @@ module atm_time_integration
 
 ! apply random perturbation pattern to the tendency
       if (dosppt(domain)) then
-        call stochastic_physics_pattern_apply(domain, tend_names(5:5), ierr)
+        call stochastic_physics_pattern_apply(domain, 'prog', ierr)
       endif
 #else
 #ifndef MPAS_CAM_DYCORE
