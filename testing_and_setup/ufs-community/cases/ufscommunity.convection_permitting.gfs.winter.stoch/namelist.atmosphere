@@ -51,11 +51,11 @@
     config_bucket_update = 'none'
     config_physics_suite = 'convection_permitting'
 /
-&soundings
-    config_sounding_interval = 'none'
-/
 &physics_mp_tempo
     config_tempo_hailaware = true
+/
+&soundings
+    config_sounding_interval = 'none'
 /
 &nam_stochy
     do_sppt = true
