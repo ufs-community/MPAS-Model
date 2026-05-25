@@ -66,6 +66,9 @@ if(CMAKE_Fortran_COMPILER_ID MATCHES NVHPC)
     set(MPI_Fortran_COMPILER mpifort)
 endif()
 find_package(MPI REQUIRED COMPONENTS Fortran)
+# Always set the MPAS_USE_MPI_F08 macro, which entails using "use mpi_f08"
+# instead of the older "use mpi".
+add_compile_definitions(MPAS_USE_MPI_F08)
 
 find_package(PnetCDF REQUIRED COMPONENTS Fortran)
 if(MPAS_USE_PIO)
