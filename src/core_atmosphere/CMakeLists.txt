@@ -158,7 +158,7 @@ set(ATMOSPHERE_CORE_STOCHASTIC_PHYSICS_SOURCES
     stochy_nml_rec.F90
     get_stochy_pattern.F90
     lndp_apply_perts.F90
-    mpas_stochastic_physics.F
+    mpas_stochastic_physics.F90
 )
 list(TRANSFORM ATMOSPHERE_CORE_STOCHASTIC_PHYSICS_SOURCES PREPEND stochastic_physics/)
 add_library(stochastic_physics ${ATMOSPHERE_CORE_STOCHASTIC_PHYSICS_SOURCES})
