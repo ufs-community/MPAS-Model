@@ -24,4 +24,4 @@
 	url = https://github.com/NCAR/MMM-physics.git
 [submodule "src/core_atmosphere/stochastic_physics"]
 	path = src/core_atmosphere/stochastic_physics
-	url = https://github.com/dustinswales/stochastic_physics.git
+	url = https://github.com/dtcenter/stochastic_physics.git
