@@ -15,9 +15,10 @@ https://github.com/MPAS-Dev/MPAS/pull/931
 * Does this PR require updating one or more baselines for the CI tests? If so, what?
   - yes or no; if yes, provide more details
 
-### Priority Reviewers
+### Reviews
 
-* Please list the developers/collaborators you'd like to prioritize for review
-* Example:
+* Is this PR currently draft, still being worked on, or ready for review?
+  - draft, still being worked on, ready for review
+* For when this PR begins review, please list the developers/collaborators you'd like to prioritize for review; e.g.,:
   - @person1
   - @person2

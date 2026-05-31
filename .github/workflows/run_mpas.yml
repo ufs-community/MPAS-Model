@@ -29,9 +29,9 @@ on: [push, pull_request, workflow_dispatch]
 # 1/7)   MPAS-Dev:v8.3.0                       mesoscale_reference           Release/Debug
 # 2/8)   MPAS-Dev:v8.3.0                       convection_permitting         Release/Debug
 # 3/9)   MPAS-Dev:v8.3.0                       mesoscale_reference_noahmp    Release/Debug
-# 4/10)  ufs-community:gsl/develop             mesoscale_reference           Release/Debug
-# 5/11)  ufs-community:gsl/develop             convection_permitting         Release/Debug
-# 6/12)  ufs-community:gsl/develop             mesoscale_reference_noahmp    Release/Debug
+# 4/10)  ufs-community:noaa/develop            mesoscale_reference           Release/Debug
+# 5/11)  ufs-community:noaa/develop            convection_permitting         Release/Debug
+# 6/12)  ufs-community:noaa/develop            mesoscale_reference_noahmp    Release/Debug
 #
 #############################################################################################
 jobs:
@@ -43,11 +43,11 @@ jobs:
         f-compiler: [gfortran]#,ifx]
         physics:    [mesoscale_reference, convection_permitting, mesoscale_reference_noahmp]
         repo:       [ufs-community, MPAS-Dev]
-        branch:     [gsl/develop, v8.3.0]
+        branch:     [noaa/develop, v8.3.0]
         build-type: [Debug, Release]
         exclude:
           - repo: MPAS-Dev
-            branch: gsl/develop
+            branch: noaa/develop
           - repo: ufs-community
             branch: v8.3.0
         include:
@@ -183,7 +183,7 @@ jobs:
     - name: Link lateral boundary condition file for regional MPAS.
       run: |
         cd ${runner_ROOT}/run_bl
-        ln -sf ${MPAS_ROOT}/${mpas_ics}/mpas.lbc.nc.
+        ln -sf ${MPAS_ROOT}/${mpas_ics}/mpas.lbc.nc .
 
     - name: Link Thompson MP data tables to run directory
       if: contains(matrix.physics, 'convection_permitting')

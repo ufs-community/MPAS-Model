@@ -1,6 +1,7 @@
 
 ## Source files
 # physics/
+if (${DO_PHYSICS})
 set(ATMOSPHERE_CORE_PHYSICS_SOURCES
     ccpp_kind_types.F
     mpas_atmphys_camrad_init.F
@@ -458,6 +459,7 @@ set(ATMOSPHERE_CORE_PHYSICS_NOAMP_SRC_SOURCES
     WaterVarType.F90
 )
 list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_NOAMP_SRC_SOURCES PREPEND physics/physics_noahmp/src/)
+endif()
 
 # diagnostics/
 set(ATMOSPHERE_CORE_DIAGNOSTIC_SOURCES
@@ -506,23 +508,28 @@ set(ATMOSPHERE_CORE_INCLUDES
     setup_immutable_streams.inc
     structs_and_variables.inc)
 
-
-add_library(core_atmosphere ${ATMOSPHERE_CORE_SOURCES}
-            ${ATMOSPHERE_CORE_PHYSICS_NOAMP_UTILITY_SOURCES}
-            ${ATMOSPHERE_CORE_PHYSICS_NOAMP_MPAS_DRIVER_SOURCES}
-            ${ATMOSPHERE_CORE_PHYSICS_NOAMP_SRC_SOURCES}
-            ${ATMOSPHERE_CORE_PHYSICS_SOURCES}
-            ${ATMOSPHERE_CORE_PHYSICS_MMM_SOURCES}
-            ${ATMOSPHERE_CORE_PHYSICS_WRF_SOURCES}
-            ${ATMOSPHERE_CORE_PHYSICS_UGWP_SOURCES}
-            ${ATMOSPHERE_CORE_PHYSICS_TEMPO_SOURCES}
-            ${ATMOSPHERE_CORE_PHYSICS_MYNN-EDMF_SOURCES}
-	    ${ATMOSPHERE_CORE_PHYSICS_MYNN-SFC_SOURCES}
-            ${ATMOSPHERE_CORE_PHYSICS_RUCLSM_SOURCES}
-	    ${ATMOSPHERE_CORE_PHYSICS_GFL_SOURCES}
-	    ${ATMOSPHERE_CORE_PHYSICS_SMOKE_SOURCES}
-            ${ATMOSPHERE_CORE_DIAGNOSTIC_SOURCES}
-            ${ATMOSPHERE_CORE_DYNAMICS_SOURCES})
+if (${DO_PHYSICS})
+  add_library(core_atmosphere ${ATMOSPHERE_CORE_SOURCES}
+              ${ATMOSPHERE_CORE_PHYSICS_NOAMP_UTILITY_SOURCES}
+              ${ATMOSPHERE_CORE_PHYSICS_NOAMP_MPAS_DRIVER_SOURCES}
+              ${ATMOSPHERE_CORE_PHYSICS_NOAMP_SRC_SOURCES}
+              ${ATMOSPHERE_CORE_PHYSICS_SOURCES}
+              ${ATMOSPHERE_CORE_PHYSICS_MMM_SOURCES}
+              ${ATMOSPHERE_CORE_PHYSICS_WRF_SOURCES}
+              ${ATMOSPHERE_CORE_PHYSICS_UGWP_SOURCES}
+              ${ATMOSPHERE_CORE_PHYSICS_TEMPO_SOURCES}
+              ${ATMOSPHERE_CORE_PHYSICS_MYNN-EDMF_SOURCES}
+              ${ATMOSPHERE_CORE_PHYSICS_MYNN-SFC_SOURCES}
+              ${ATMOSPHERE_CORE_PHYSICS_RUCLSM_SOURCES}
+              ${ATMOSPHERE_CORE_PHYSICS_GFL_SOURCES}
+              ${ATMOSPHERE_CORE_PHYSICS_SMOKE_SOURCES}
+              ${ATMOSPHERE_CORE_DIAGNOSTIC_SOURCES}
+              ${ATMOSPHERE_CORE_DYNAMICS_SOURCES})
+else ()
+  add_library(core_atmosphere ${ATMOSPHERE_CORE_SOURCES}
+              ${ATMOSPHERE_CORE_DIAGNOSTIC_SOURCES}
+              ${ATMOSPHERE_CORE_DYNAMICS_SOURCES})
+endif()
 
 set(CORE_ATMOSPHERE_COMPILE_DEFINITIONS
     mpas=1
@@ -536,31 +543,33 @@ set_MPAS_DEBUG_flag(core_atmosphere)
 mpas_core_target(CORE atmosphere TARGET core_atmosphere INCLUDES ${ATMOSPHERE_CORE_INCLUDES})
 
 #Get physics_wrf tables from MPAS-Data
-include(FetchContent)
-if (${PROJECT_VERSION} VERSION_GREATER_EQUAL 7.0)
+if (${DO_PHYSICS})
+  include(FetchContent)
+  if (${PROJECT_VERSION} VERSION_GREATER_EQUAL 7.0)
     set(MPAS_DATA_GIT_TAG v${PROJECT_VERSION_MAJOR}.0)
-else ()
+  else ()
     set(MPAS_DATA_GIT_TAG master)
-endif ()
+  endif ()
 
-FetchContent_Declare(mpas_data
-                     GIT_REPOSITORY https://github.com/MPAS-Dev/MPAS-Data.git
-                     GIT_TAG ${MPAS_DATA_GIT_TAG}
-                     GIT_PROGRESS True
-                     GIT_SHALLOW True)
-FetchContent_Populate(mpas_data)
-message(STATUS "MPAS-Data source dir: ${mpas_data_SOURCE_DIR}")
-set(PHYSICS_WRF_DATA_DIR ${mpas_data_SOURCE_DIR}/atmosphere/physics_wrf/files)
-file(GLOB PHYSICS_WRF_DATA RELATIVE ${PHYSICS_WRF_DATA_DIR} "${PHYSICS_WRF_DATA_DIR}/*")
-file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/${PROJECT_NAME}/core_atmosphere)
-foreach (data_file IN LISTS PHYSICS_WRF_DATA)
-    execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ${PHYSICS_WRF_DATA_DIR}/${data_file}
-                    ${CMAKE_BINARY_DIR}/${PROJECT_NAME}/core_atmosphere/${data_file})
-endforeach ()
-install(DIRECTORY ${PHYSICS_WRF_DATA_DIR}/ DESTINATION ${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME}/core_atmosphere)
+  FetchContent_Declare(mpas_data
+                       GIT_REPOSITORY https://github.com/MPAS-Dev/MPAS-Data.git
+                       GIT_TAG ${MPAS_DATA_GIT_TAG}
+                       GIT_PROGRESS True
+                       GIT_SHALLOW True)
+  FetchContent_Populate(mpas_data)
+  message(STATUS "MPAS-Data source dir: ${mpas_data_SOURCE_DIR}")
+  set(PHYSICS_WRF_DATA_DIR ${mpas_data_SOURCE_DIR}/atmosphere/physics_wrf/files)
+  file(GLOB PHYSICS_WRF_DATA RELATIVE ${PHYSICS_WRF_DATA_DIR} "${PHYSICS_WRF_DATA_DIR}/*")
+  file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/${PROJECT_NAME}/core_atmosphere)
+  foreach (data_file IN LISTS PHYSICS_WRF_DATA)
+      execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ${PHYSICS_WRF_DATA_DIR}/${data_file}
+                      ${CMAKE_BINARY_DIR}/${PROJECT_NAME}/core_atmosphere/${data_file})
+  endforeach ()
+  install(DIRECTORY ${PHYSICS_WRF_DATA_DIR}/ DESTINATION ${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME}/core_atmosphere)
 
-add_executable(mpas_atmosphere_build_tables ${ATMOSPHERE_CORE_UTILS_SOURCES})
-target_link_libraries(mpas_atmosphere_build_tables PUBLIC core_atmosphere)
-mpas_fortran_target(mpas_atmosphere_build_tables)
-install(TARGETS mpas_atmosphere_build_tables EXPORT ${PROJECT_NAME}ExportsCore
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+  add_executable(mpas_atmosphere_build_tables ${ATMOSPHERE_CORE_UTILS_SOURCES})
+  target_link_libraries(mpas_atmosphere_build_tables PUBLIC core_atmosphere)
+  mpas_fortran_target(mpas_atmosphere_build_tables)
+  install(TARGETS mpas_atmosphere_build_tables EXPORT ${PROJECT_NAME}ExportsCore
+          RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+endif()
