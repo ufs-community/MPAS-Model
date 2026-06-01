@@ -15,7 +15,6 @@ module mpas_stream_manager
     use mpas_stream_list
     use mpas_sort
     use mpas_threading
-    use mpas_string_utils, only : mpas_split_string
     use mpas_output_timelevels
 
 
@@ -1896,7 +1895,7 @@ module mpas_stream_manager
                                if (present(ierr)) ierr = MPAS_STREAM_MGR_ERROR
                            end if
                        else
-                           ! Saft guard: reset timelevel_spec if output_timelevels is somehow cleared
+                            ! Safeguard: reset timelevel_spec if output_timelevels is somehow cleared
                            stream_cursor % timelevel_spec % n_segments = 0
                            stream_cursor % timelevel_spec % is_parsed = .false.
                        end if
@@ -6488,6 +6487,8 @@ subroutine stream_mgr_set_property_c(manager_c, streamID_c, propertyName_c, prop
     ! Map property name string to constant
     if (trim(propertyName) == 'output_timelevels') then
         call MPAS_stream_mgr_set_property(manager, streamID, MPAS_STREAM_PROPERTY_OUTPUT_TIMELEVELS, propertyValue, ierr=ierr)
+    else
+        ierr = 1
     end if
 
     if (ierr == MPAS_STREAM_MGR_NOERR) then
