@@ -318,6 +318,7 @@ module mpas_output_timelevels
 
         ! Check for setting mistake "start-step-stop". The correct one should be "start-stop-step"
         if ((n_parts == 3) .and. (interval_minutes > end_hour * 60.0_RKIND + 1.0e-4_RKIND)) then
+            ierr = 1
             call mpas_log_write('ERROR: output_timelevels segment '''//trim(spec)//''': ' // &
                                'expected format is start-stop-step, but appears to be start-step-stop', MPAS_LOG_ERR)
         end if
