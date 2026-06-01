@@ -312,7 +312,7 @@ jobs:
         # checkout_data_files.sh.
         ln -sf ${srcdir}/${wrf_phys_tables}/{*.TBL,*.DBL,*DATA} .
         # Links to tables in the testing_and_setup directory of MPAS-Model, e.g. Thompson MP tables.
-        ln -sf ${srcdir}/{ufscmnty_data}/tables/thompson/MP_THOMPSON_* .
+        ln -sf ${srcdir}/${ufscmnty_data}/tables/thompson/MP_THOMPSON_* .
         # Links to UFS physics tables that are under version control, i.e. part of the MPAS-Model
         # repo or submodules.  These are not created in the build step or some other way.  They
         # are present once the repository is cloned (recursively).
