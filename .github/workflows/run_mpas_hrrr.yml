@@ -167,7 +167,9 @@ jobs:
       run: |
         cd ${runner_ROOT} && mkdir run_rt && cd run_rt
         cp ${MPAS_ROOT}/testing_and_setup/ufs-community/cases/ufscommunity.${{env.physics}}.${{matrix.ic_source}}.${{matrix.season}}/* .
-        ln -snf streams.atmosphere.feature streams.atmosphere # tmp.debug
+        if [[ "${{env.physics}}.${{matrix.ic_source}}.${{matrix.season}}" == "hrrrv5.rap.summer" ]]; then
+          ln -snf streams.atmosphere.feature streams.atmosphere # tmp.debug
+        fi
         ln -sf ${MPAS_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.TBL .
         ln -sf ${MPAS_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*.DBL .
         ln -sf ${MPAS_ROOT}/src/core_atmosphere/physics/physics_wrf/files/*DATA .
