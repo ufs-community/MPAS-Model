@@ -21,7 +21,7 @@
 <stream name="diagnostics"
         type="output"
         filename_template="diag.$Y-$M-$D_$h.$m.$s.nc"
-        output_interval="0:12:00" >
+        output_timelevels="0-1-12m 2-6-2">
 
 	<file name="stream_list.atmosphere.diagnostics"/>
 </stream>
