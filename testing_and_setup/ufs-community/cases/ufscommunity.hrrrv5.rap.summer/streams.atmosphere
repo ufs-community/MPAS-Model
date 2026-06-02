@@ -13,6 +13,7 @@
 <stream name="output"
         type="output"
         filename_template="history.$Y-$M-$D_$h.$m.$s.nc"
+        output_done_marker="yes"
         output_interval="0:12:00" >
 
 	<file name="stream_list.atmosphere.output"/>
