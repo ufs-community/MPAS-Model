@@ -1613,6 +1613,15 @@ IO_MESSAGE = "Using the SMIOL library."
 override CPPFLAGS += "-DMPAS_SMIOL_SUPPORT"
 endif
 
+# In the stochastic_physics code, the build-time macro CESMCOUPLED causes 
+# the subroutine "dgemm" to be used to perform matrix multiplication instead
+# of the default "esmf_dgemm" (which is the default under the UFS, which
+# the stochastic_physics repo is part of).  When building stochastic_physics
+# with the stand-alone MPAS-Model, we don't (currently) have access to the
+# "esmf_dgemm" subroutine, so we must enable CESMCOUPLED here to build with
+# "dgemm" instead.
+override CPPFLAGS += "-DCESMCOUPLED"
+
 mpas_main: $(MAIN_DEPS)
 	cd src; $(MAKE) FC="$(FC)" \
                  CC="$(CC)" \
