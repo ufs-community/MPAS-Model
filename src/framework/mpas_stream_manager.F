@@ -6621,7 +6621,7 @@ end subroutine stream_mgr_add_variable_output_alarm_c !}}}
 !> \author Guoqing Ge
 !> \date March 2026  
 !> \details
-!>  Creates a file with .done extension after output file is closed.
+!>  Creates a file with .done extension after a successful write completes for the current output file.
 !>  Only called if output_done_marker property is true for the stream.
 !
 !-----------------------------------------------------------------------
