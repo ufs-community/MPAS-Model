@@ -6487,8 +6487,6 @@ subroutine stream_mgr_set_property_c(manager_c, streamID_c, propertyName_c, prop
     ! Map property name string to constant
     if (trim(propertyName) == 'output_timelevels') then
         call MPAS_stream_mgr_set_property(manager, streamID, MPAS_STREAM_PROPERTY_OUTPUT_TIMELEVELS, propertyValue, ierr=ierr)
-    else
-        ierr = 1
     end if
 
     if (ierr == MPAS_STREAM_MGR_NOERR) then
