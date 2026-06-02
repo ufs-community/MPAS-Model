@@ -38,6 +38,7 @@
         integer :: clobber_mode
         integer :: gattr_update = 1
         integer :: io_type
+        integer :: output_done_marker = 0
         type (MPAS_TimeInterval_type), pointer :: recordInterval => null()
         type (MPAS_stream_list_type), pointer :: alarmList_in => null()
         type (MPAS_stream_list_type), pointer :: alarmList_out => null()
