@@ -554,10 +554,15 @@
 
  real(kind=RKIND),dimension(:,:),allocatable:: &
     maxwidthbl_p,     &!max plume width                                                                        [m]
-    maxmfbl_p,        &!maximum mass flux for PBL shallow convection.
+    maxmfbl_p,        &!maximum mass flux for PBL shallow convection.                                        [m/s]
     zbl_plume_p,      &!height of highest penetrating plume                                                    [m]
     excessh_p,        &!maximum heat excess applied to plumes                                                  [K]
-    excessq_p          !maximum moisture excess applied to plumes                                          [kg/kg]
+    excessq_p,        &!maximum moisture excess applied to plumes                                          [kg/kg]
+    maxwidth_dd_p,    &!maximum downdraft plume width                                                          [m]
+    maxmf_dd_p,       &!maximum mass flux for downdrafts                                                     [m/s]
+    maxtkeprod_dd_p,  &!maximum tke prduction in column from downdrafts                                 [m2/s2/hr]
+    cldtop_cooling_p, &!maximum net cooling at boundary layer cloud top                                     [K/hr]
+    ent_eff_p          !entrainment efficiency                                                                 [-]   
       
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
     dqke_p,           &!

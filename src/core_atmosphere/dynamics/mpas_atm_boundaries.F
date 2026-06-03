@@ -43,17 +43,16 @@ module mpas_atm_boundaries
               mpas_atm_setup_bdy_masks, &
               mpas_atm_bdy_checks
 
-    public :: nBdyZone, nSpecZone, nRelaxZone
+    public :: nBdyZone, nSpecZone, nRelaxZone, LBC_intv_end
 
     interface mpas_atm_get_bdy_state
         module procedure mpas_atm_get_bdy_state_2d
         module procedure mpas_atm_get_bdy_state_3d
     end interface mpas_atm_get_bdy_state
 
-    private
-
     type (MPAS_Time_Type) :: LBC_intv_end
 
+    private
 
     contains
 
