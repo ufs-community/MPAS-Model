@@ -77,7 +77,7 @@ add_compile_definitions(MPAS_USE_MPI_F08)
 # model provides (via its ESMF-based coupling layer).
 #
 # However, the ufs-community's stand-alone MPAS-Model currently does not
-# provide access to "esmf_dgemm", so when building stochastic_physics under
+# provide access to "esmf_dgemm", so when building stochastic_physics with
 # the stand-alone MPAS-Model, we use the "dgemm" Fortran subroutine that
 # is part of the BLAS (Basic Linear Algebra Subprograms) package that is
 # commonly available.
@@ -87,12 +87,16 @@ add_compile_definitions(MPAS_USE_MPI_F08)
 # the default in the stochastic_physics Fortran code is to use "esmf_dgemm".
 # Fortunately, there is a non-default host model option in the UFS that
 # provides access to the "dgemm" subroutine.  This is the CESM (Community
-# Earth System Model), and the build-time macro CESMCOUPLED can be enabled
-# to build using the CESM instead of the UFS as the host model.  Here, we
-# are only interested in a stand-alone MPAS-Model build (and thus use of
-# "dgemm"), so we get the Fortran code to use "dgemm" by enabling CESMCOUPLED
-# (which works even though in a stand-alone MPAS-Model build, there isn't
-# really a host model to speak of).
+# Earth System Model).  To use the CESM instead of the UFS as the host 
+# model during a build, the build-time pre-processor macro CESMCOUPLED
+# must be enabled.  Since here we are only interested in a stand-alone
+# MPAS-Model build (and thus must use "dgemm", not "esmf_dgemm"), we enable
+# the CESMCOUPLED macro.  (Note that both the UFS and the CESM host model
+# coupling frameworks are ESMF based, so CESMCOUPED is not a flag to
+# choose between an ESMF-based and a non-ESMF-based coupling framework;
+# in this specific case, the CESM happens to directly use the BLAS-provided
+# "dgemm" subroutine for matrix multiplication while the UFS happens to
+# use the "esmf_dgemm" subroutine provided by the ESMF.)
 #
 add_compile_definitions(CESMCOUPLED)
 
