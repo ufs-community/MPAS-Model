@@ -13,6 +13,7 @@
 <stream name="output"
         type="output"
         filename_template="history.$Y-$M-$D_$h.$m.$s.nc"
+        output_done_marker="yes"
         output_interval="0:12:00" >
 
 	<file name="stream_list.atmosphere.output"/>
@@ -21,7 +22,7 @@
 <stream name="diagnostics"
         type="output"
         filename_template="diag.$Y-$M-$D_$h.$m.$s.nc"
-        output_interval="0:12:00" >
+        output_timelevels="0-1-12m 2-6-2">
 
 	<file name="stream_list.atmosphere.diagnostics"/>
 </stream>
@@ -48,7 +49,7 @@
                   filename_interval="input_interval"
                   packages="limited_area"
                   filename_interval="none"
-                  input_interval="3:00:00" />
+                  input_interval="12:00:00" />
 
 <immutable_stream name="ugwp_oro_data_in"
                   type="input"
