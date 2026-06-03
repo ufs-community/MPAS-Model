@@ -15,6 +15,7 @@ module mpas_stream_manager
     use mpas_stream_list
     use mpas_sort
     use mpas_threading
+    use mpas_output_timelevels
 
 
     public :: MPAS_stream_mgr_init, &
@@ -45,7 +46,9 @@ module mpas_stream_manager
               MPAS_stream_mgr_stream_exists, &
               MPAS_stream_mgr_get_stream_interval, &
               MPAS_get_stream_filename, &
-              MPAS_build_stream_filename
+              MPAS_build_stream_filename, &
+              get_output_interval_from_timelevels, &
+              get_next_timelevel_start
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !
@@ -1458,6 +1461,7 @@ module mpas_stream_manager
 
         type (MPAS_stream_list_type), pointer :: stream
         type (MPAS_stream_list_type), pointer :: alarm_cursor
+        type (MPAS_stream_list_type), pointer :: stream_cursor
         integer :: local_direction
         integer :: local_ierr, threadNum
         logical :: resetAlarms
@@ -1506,7 +1510,14 @@ module mpas_stream_manager
                         alarm_cursor => stream % alarmList_out % head
                         do while (associated(alarm_cursor))
                             if (mpas_is_alarm_ringing(manager % streamClock, alarm_cursor % name, ierr=local_ierr)) then
-                                call mpas_reset_clock_alarm(manager % streamClock, alarm_cursor % name, ierr=local_ierr) 
+                                ! For variable output streams, update_variable_output_alarm handles everything
+                                ! (removes old alarm, adds new one with correct timing)
+                                ! For regular streams, just reset the alarm
+                                if (stream % timelevel_spec % is_parsed) then
+                                    call update_variable_output_alarm(manager, stream, alarm_cursor % name, ierr=local_ierr)
+                                else
+                                    call mpas_reset_clock_alarm(manager % streamClock, alarm_cursor % name, ierr=local_ierr)
+                                end if
                             end if
                             alarm_cursor => alarm_cursor % next
                         end do
@@ -1535,7 +1546,24 @@ module mpas_stream_manager
                     alarm_cursor => manager % alarms_out % head
                     do while (associated(alarm_cursor))
                         if (mpas_is_alarm_ringing(manager % streamClock, alarm_cursor % name, ierr=local_ierr)) then
-                            call mpas_reset_clock_alarm(manager % streamClock, alarm_cursor % name, ierr=local_ierr) 
+                            ! Check if ANY associated stream uses variable output
+                            ! If so, update_variable_output_alarm handles removal/recreation
+                            ! Otherwise, use standard reset
+                            resetAlarms = .false.  ! Reuse this flag to track if any variable stream handled it
+                            stream_cursor => alarm_cursor % streamList % head
+                            do while (associated(stream_cursor))
+                                ! stream_cursor % xref points to the actual stream
+                                if (stream_cursor % xref % timelevel_spec % is_parsed) then
+                                    call update_variable_output_alarm(manager, stream_cursor % xref, alarm_cursor % name, ierr=local_ierr)
+                                    resetAlarms = .true.  ! A variable stream handled it
+                                end if
+                                stream_cursor => stream_cursor % next
+                            end do
+                            ! For non-variable streams, reset the alarm normally
+                            ! But ONLY if no variable stream already handled it
+                            if (.not. resetAlarms) then
+                                call mpas_reset_clock_alarm(manager % streamClock, alarm_cursor % name, ierr=local_ierr)
+                            end if
                         end if
                         alarm_cursor => alarm_cursor % next
                     end do
@@ -1784,6 +1812,9 @@ module mpas_stream_manager
                   case (MPAS_STREAM_PROPERTY_IOTYPE)
                       stream_cursor % io_type = propertyValue
 
+                  case (MPAS_STREAM_PROPERTY_DONE_MARKER)
+                      stream_cursor % output_done_marker = propertyValue
+
                   case default
                       STREAM_ERROR_WRITE('MPAS_stream_mgr_set_property(): No such property $i' COMMA intArgs=(/propertyName/))
                       STREAM_ERROR_WRITE('    or specified property is not of type integer.')
@@ -1856,6 +1887,21 @@ module mpas_stream_manager
 
                    case (MPAS_STREAM_PROPERTY_FILENAME_INTV)
                        stream_cursor % filename_interval = propertyValue
+
+                   case (MPAS_STREAM_PROPERTY_OUTPUT_TIMELEVELS)
+                       stream_cursor % output_timelevels = propertyValue
+                       ! Parse the timelevels string and store it
+                       if (len_trim(propertyValue) > 0) then
+                           call parse_all_timelevels(propertyValue, stream_cursor % timelevel_spec, &
+                                                     stream_cursor % name, err_local)
+                           if (err_local /= 0) then
+                               if (present(ierr)) ierr = MPAS_STREAM_MGR_ERROR
+                           end if
+                       else
+                            ! Safeguard: reset timelevel_spec if output_timelevels is somehow cleared
+                           stream_cursor % timelevel_spec % n_segments = 0
+                           stream_cursor % timelevel_spec % is_parsed = .false.
+                       end if
 
                    case (MPAS_STREAM_PROPERTY_REF_TIME)
                        call mpas_set_time(stream_cursor % referenceTime, dateTimeString=propertyValue)
@@ -2083,6 +2129,9 @@ module mpas_stream_manager
 
             case (MPAS_STREAM_PROPERTY_FILENAME_INTV)
                 propertyValue = stream_cursor % filename_interval
+
+            case (MPAS_STREAM_PROPERTY_OUTPUT_TIMELEVELS)
+                propertyValue = stream_cursor % output_timelevels
 
             case (MPAS_STREAM_PROPERTY_REF_TIME)
                 call mpas_get_time(stream_cursor % referenceTime, dateTimeString=propertyValue)
@@ -3090,8 +3139,8 @@ module mpas_stream_manager
         integer, intent(out) :: ierr
 
         type (MPAS_stream_list_type), pointer :: alarm_cursor
-        type (MPAS_Time_type) :: ref_time
-        type (MPAS_TimeInterval_type) :: temp_interval
+        type (MPAS_Time_type) :: ref_time, start_time, current_time, alarmTime_local
+        type (MPAS_TimeInterval_type) :: temp_interval, time_diff, alarmInterval_local
         type (MPAS_TimeInterval_type) :: filename_interval
         character (len=StrKIND) :: now_string, time_string
         character (len=StrKIND) :: temp_filename, actualWhen
@@ -3100,6 +3149,9 @@ module mpas_stream_manager
         logical :: clobberRecords, clobberFiles, truncateFiles
         integer :: maxRecords, tempRecord
         integer :: local_ierr, threadNum
+        integer (kind=I8KIND) :: seconds_diff
+        real (kind=RKIND) :: forecast_hour, next_start_hour
+        real (kind=RKIND) :: interval_minutes, next_interval_minutes
 
         threadNum = mpas_threading_get_thread_num()
 
@@ -3142,6 +3194,48 @@ module mpas_stream_manager
            end if
 
            !
+           ! If stream uses output_timelevels, check if current forecast hour is within defined range
+           ! This prevents output when the alarm rings but we're past the timelevels range
+           !
+           if (stream % timelevel_spec % is_parsed) then
+               ! Calculate current forecast hour
+               start_time = mpas_get_clock_time(manager % streamClock, MPAS_START_TIME, ierr=local_ierr)
+               current_time = mpas_get_clock_time(manager % streamClock, MPAS_NOW, ierr=local_ierr)
+               time_diff = current_time - start_time
+               call mpas_get_timeInterval(time_diff, S_i8=seconds_diff, ierr=local_ierr)
+               forecast_hour = real(seconds_diff, RKIND) / 3600.0_RKIND
+
+               ! Check if forecast hour is within any defined timelevel range
+               call get_output_interval_from_timelevels(stream % timelevel_spec, forecast_hour, interval_minutes, local_ierr)
+               if (local_ierr /= MPAS_STREAM_MGR_NOERR) then
+                   ! Outside defined timelevels range - check if there's a future range to schedule
+                   call get_next_timelevel_start(stream % timelevel_spec, forecast_hour, next_start_hour, next_interval_minutes, local_ierr)
+                   
+                   alarm_cursor => stream % alarmList_out % head
+                   do while (associated(alarm_cursor))
+                       if (mpas_is_alarm_ringing(manager % streamClock, alarm_cursor % name, ierr=local_ierr)) then
+                           call mpas_reset_clock_alarm(manager % streamClock, alarm_cursor % name, ierr=local_ierr)
+                           call mpas_remove_clock_alarm(manager % streamClock, alarm_cursor % name, ierr=local_ierr)
+                           
+                           ! If there's a future range, schedule alarm for when it starts
+                           if (next_start_hour > 0.0_RKIND) then
+                               STREAM_DEBUG_WRITE('-- Stream '//trim(stream % name)//' rescheduling alarm for next timelevel range.')
+                               call mpas_set_timeInterval(time_diff, dt=next_start_hour * 3600.0_RKIND, ierr=local_ierr)
+                               alarmTime_local = start_time + time_diff
+                               call mpas_set_timeInterval(alarmInterval_local, dt=next_interval_minutes * 60.0_RKIND, ierr=local_ierr)
+                               call mpas_add_clock_alarm(manager % streamClock, alarm_cursor % name, alarmTime_local, &
+                                                        alarmTimeInterval=alarmInterval_local, ierr=local_ierr)
+                           else
+                               STREAM_DEBUG_WRITE('-- Stream '//trim(stream % name)//' output complete: past all output_timelevels ranges.')
+                           end if
+                       end if
+                       alarm_cursor => alarm_cursor % next
+                   end do
+                   return
+               end if
+           end if
+
+           !
            ! Work out file clobbering options
            !
            if (stream % clobber_mode == MPAS_STREAM_CLOBBER_OVERWRITE) then
@@ -3169,7 +3263,11 @@ module mpas_stream_manager
            ! stream, in which case we create the stream from scratch
            !
            if (.not. stream % valid) then
-               if ( stream % filename_interval /= 'none' ) then
+               if ( stream % filename_interval == 'output' ) then
+                   ! Use actual write time for filename (each output gets unique file)
+                   call mpas_get_time(writeTime, dateTimeString=time_string)
+                   call mpas_expand_string(time_string, blockID, stream % filename_template, stream % filename)
+               else if ( stream % filename_interval /= 'none' ) then
                    call mpas_set_timeInterval(filename_interval, timeString=stream % filename_interval)
                    call mpas_build_stream_filename(stream % referenceTime, writeTime, filename_interval, stream % filename_template, blockID, stream % filename, ierr=local_ierr)
                else
@@ -3244,7 +3342,11 @@ module mpas_stream_manager
 
                stream % valid = .true.
            else
-               if ( stream % filename_interval /= 'none' ) then
+               if ( stream % filename_interval == 'output' ) then
+                   ! Use actual write time for filename (each output gets unique file)
+                   call mpas_get_time(writeTime, dateTimeString=time_string)
+                   call mpas_expand_string(time_string, blockID, stream % filename_template, temp_filename)
+               else if ( stream % filename_interval /= 'none' ) then
                    call mpas_set_timeInterval(filename_interval, timeString=stream % filename_interval)
                    call mpas_build_stream_filename(stream % referenceTime, writeTime, filename_interval, stream % filename_template, blockID, temp_filename, ierr=local_ierr)
                else
@@ -3416,6 +3518,11 @@ module mpas_stream_manager
 
            if ( swapRecords ) then
                stream % nRecords = tempRecord
+           end if
+
+           ! Write done marker file if enabled for this stream
+           if (stream % output_done_marker == 1) then
+               call write_done_marker(stream % filename, manager % ioContext % dminfo, stream % blockWrite)
            end if
         end if
 
@@ -3675,7 +3782,10 @@ module mpas_stream_manager
            !
            ! First we need to build the filename for the current read time.
            !
-           if ( stream % filename_interval /= 'none' ) then
+           if ( stream % filename_interval == 'output' ) then
+               ! Use actual read time for filename
+               call mpas_expand_string(when, blockID_local, stream % filename_template, temp_filename)
+           else if ( stream % filename_interval /= 'none' ) then
                call mpas_set_time(now_time, dateTimeString=when, ierr=local_ierr)
                call mpas_set_timeInterval(filename_interval, timeString=stream % filename_interval)
                
@@ -3774,7 +3884,9 @@ module mpas_stream_manager
            end if
 
            retestFile = .false.
-           if ( trim(stream % filename_interval) /= 'none' .and. whence /= MPAS_STREAM_EXACT_TIME ) then
+           if ( trim(stream % filename_interval) /= 'none' .and. &
+                trim(stream % filename_interval) /= 'output' .and. &
+                whence /= MPAS_STREAM_EXACT_TIME ) then
               currentTime = mpas_get_clock_time(manager % streamClock, MPAS_NOW, ierr=local_ierr)
               call mpas_set_timeInterval(filenameInterval, timeString=stream % filename_interval, ierr=local_ierr)
 
@@ -3846,9 +3958,13 @@ module mpas_stream_manager
               STREAM_DEBUG_WRITE(' --- Retesting file... ')
               call mpas_get_time(filenameTime, dateTimeString=test_when)
 
-              call mpas_set_timeInterval(filename_interval, timeString=stream % filename_interval)
-              
-              call mpas_build_stream_filename(stream % referenceTime, filenameTime, filename_interval, stream % filename_template, blockID_local, test_filename, ierr=local_ierr)
+              if ( stream % filename_interval == 'output' ) then
+                  ! Use actual time for filename
+                  call mpas_expand_string(test_when, blockID_local, stream % filename_template, test_filename)
+              else
+                  call mpas_set_timeInterval(filename_interval, timeString=stream % filename_interval)
+                  call mpas_build_stream_filename(stream % referenceTime, filenameTime, filename_interval, stream % filename_template, blockID_local, test_filename, ierr=local_ierr)
+              end if
 
               STREAM_DEBUG_WRITE(' --- Retesting filename is ' // trim(test_filename))
 
@@ -4079,7 +4195,11 @@ module mpas_stream_manager
            !
            ! First we need to build the filename for the current read time.
            !
-           if ( streamCursor % filename_interval /= 'none' ) then
+           if ( streamCursor % filename_interval == 'output' ) then
+               ! Use actual time for filename
+               call mpas_get_time(now_time, dateTimeString=when_string, ierr=err_local)
+               call mpas_expand_string(when_string, blockID_local, streamCursor % filename_template, filename)
+           else if ( streamCursor % filename_interval /= 'none' ) then
                call mpas_set_timeInterval(filename_interval, timeString=streamCursor % filename_interval)
                call mpas_build_stream_filename(streamCursor % referenceTime, now_time, filename_interval, streamCursor % filename_template, blockID_local, filename, ierr=err_local)
            else
@@ -4302,7 +4422,7 @@ module mpas_stream_manager
             !
             ! Write output_interval to stream
             !
-            IF (stream %filename_interval(1:4) /= "none") THEN
+            IF (stream %filename_interval(1:4) /= "none" .and. stream %filename_interval /= "output") THEN
                 call mpas_set_timeInterval(filename_interval, timeString=stream %filename_interval)
                 call mpas_get_timeInterval(filename_interval,M=output_interval)
                 call mpas_writeStreamAtt(stream%stream, 'output_interval',output_interval,syncVal=.true., ierr=local_ierr)
@@ -6341,3 +6461,197 @@ subroutine stream_mgr_add_pkg_c(manager_c, streamID_c, package_c, ierr_c) bind(c
     end if
 
 end subroutine stream_mgr_add_pkg_c !}}}
+
+
+subroutine stream_mgr_set_property_c(manager_c, streamID_c, propertyName_c, propertyValue_c, ierr_c) bind(c) !{{{
+
+    use mpas_c_interfacing, only : mpas_c_to_f_string
+    use iso_c_binding, only : c_char, c_int, c_ptr, c_f_pointer
+    use mpas_derived_types, only : MPAS_streamManager_type, MPAS_STREAM_MGR_NOERR, &
+                                   MPAS_STREAM_PROPERTY_OUTPUT_TIMELEVELS, MPAS_STREAM_PROPERTY_DONE_MARKER
+    use mpas_stream_manager, only : MPAS_stream_mgr_set_property
+    use mpas_kind_types, only : StrKIND
+
+    implicit none
+
+    type (c_ptr) :: manager_c
+    character(kind=c_char) :: streamID_c(*)
+    character(kind=c_char) :: propertyName_c(*)
+    character(kind=c_char) :: propertyValue_c(*)
+    integer(kind=c_int) :: ierr_c
+
+    type (MPAS_streamManager_type), pointer :: manager
+    character(len=StrKIND) :: streamID, propertyName, propertyValue
+    integer :: ierr
+
+
+    ierr = 0
+
+    call c_f_pointer(manager_c, manager)
+    call mpas_c_to_f_string(streamID_c, streamID)
+    call mpas_c_to_f_string(propertyName_c, propertyName)
+    call mpas_c_to_f_string(propertyValue_c, propertyValue)
+
+    ! Map property name string to constant
+    if (trim(propertyName) == 'output_timelevels') then
+        call MPAS_stream_mgr_set_property(manager, streamID, MPAS_STREAM_PROPERTY_OUTPUT_TIMELEVELS, propertyValue, ierr=ierr)
+    else if (trim(propertyName) == 'output_done_marker') then
+        call MPAS_stream_mgr_set_property(manager, streamID, MPAS_STREAM_PROPERTY_DONE_MARKER, 1, ierr=ierr)
+    end if
+
+    if (ierr == MPAS_STREAM_MGR_NOERR) then
+        ierr_c = 0
+    else
+        ierr_c = 1
+    end if
+
+end subroutine stream_mgr_set_property_c !}}}
+
+
+subroutine stream_mgr_add_variable_output_alarm_c(manager_c, streamID_c, ierr_c) bind(c) !{{{
+
+    use mpas_c_interfacing, only : mpas_c_to_f_string
+    use iso_c_binding, only : c_char, c_int, c_ptr, c_f_pointer
+    use mpas_derived_types, only : MPAS_streamManager_type, MPAS_Clock_type, MPAS_Time_type, MPAS_TimeInterval_type, &
+                                   MPAS_STREAM_MGR_NOERR, MPAS_STREAM_OUTPUT, MPAS_START_TIME, &
+                                   MPAS_STREAM_PROPERTY_REF_TIME, MPAS_stream_list_type
+    use mpas_stream_manager, only : MPAS_stream_mgr_get_clock, MPAS_stream_mgr_add_alarm, &
+                                    MPAS_stream_mgr_get_property
+    use mpas_output_timelevels, only : get_output_interval_from_timelevels, &
+                                       get_next_timelevel_start
+    use mpas_stream_list, only : MPAS_stream_list_query
+    use mpas_kind_types, only : StrKIND, RKIND
+    use mpas_timekeeping, only : mpas_add_clock_alarm, mpas_get_clock_time, mpas_set_time, mpas_set_timeInterval, &
+                                 mpas_get_timeInterval, operator(-), operator(+)
+
+    implicit none
+
+    type (c_ptr) :: manager_c
+    character(kind=c_char) :: streamID_c(*)
+    integer(kind=c_int) :: ierr_c
+
+    type (MPAS_streamManager_type), pointer :: manager
+    type (MPAS_stream_list_type), pointer :: stream
+    type (MPAS_Clock_type), pointer :: clock
+    character(len=StrKIND) :: streamID, alarmID, ref_time_str
+    type (MPAS_Time_type) :: alarmTime_local, ref_time, current_time, start_time
+    type (MPAS_TimeInterval_type) :: alarmInterval_local, time_since_ref, time_offset
+    integer :: ierr, ierr_tmp, err_local
+    real(kind=RKIND) :: forecast_hour, next_start_hour
+    real(kind=RKIND) :: interval_minutes, next_interval_minutes
+
+
+    ierr = 0
+    ierr_tmp = 0
+
+    call c_f_pointer(manager_c, manager)
+    call mpas_c_to_f_string(streamID_c, streamID)
+    write(alarmID, '(a)') trim(streamID)//'_output'
+
+    ! Look up the stream to get its pre-parsed timelevel_spec
+    nullify(stream)
+    if (.not. MPAS_stream_list_query(manager % streams, streamID, stream, ierr=err_local)) then
+        ierr_c = 1
+        return
+    end if
+
+    ! Check if timelevel_spec is parsed
+    if (.not. stream % timelevel_spec % is_parsed) then
+        ierr_c = 1
+        return
+    end if
+
+    call MPAS_stream_mgr_get_clock(manager, clock)
+
+    ! Get reference time for the stream
+    call MPAS_stream_mgr_get_property(manager, streamID, MPAS_STREAM_PROPERTY_REF_TIME, ref_time_str, ierr=ierr_tmp)
+    ierr = ior(ierr, ierr_tmp)
+    call mpas_set_time(ref_time, dateTimeString=ref_time_str, ierr=ierr_tmp)
+    ierr = ior(ierr, ierr_tmp)
+
+    ! For initial alarm, get start time
+    start_time = mpas_get_clock_time(clock, MPAS_START_TIME, ierr=ierr_tmp)
+    ierr = ior(ierr, ierr_tmp)
+
+    ! Get interval for first output (at forecast hour 0) using pre-parsed timelevel_spec
+    forecast_hour = 0.0_RKIND
+    call get_output_interval_from_timelevels(stream % timelevel_spec, forecast_hour, interval_minutes, ierr_tmp)
+    
+    if (ierr_tmp /= MPAS_STREAM_MGR_NOERR .or. interval_minutes <= 0.0_RKIND) then
+        ! Hour 0 not in any range - find the first range's start time
+        call get_next_timelevel_start(stream % timelevel_spec, forecast_hour, next_start_hour, next_interval_minutes, ierr_tmp)
+        if (ierr_tmp /= MPAS_STREAM_MGR_NOERR .or. next_start_hour < 0.0_RKIND) then
+            ! No valid ranges at all
+            ierr_c = 1
+            return
+        end if
+        ! Schedule alarm for when the first range starts
+        call mpas_set_timeInterval(time_offset, dt=next_start_hour * 3600.0_RKIND, ierr=ierr_tmp)
+        alarmTime_local = start_time + time_offset
+        call mpas_set_timeInterval(alarmInterval_local, dt=next_interval_minutes * 60.0_RKIND, ierr=ierr_tmp)
+    else
+        ! Hour 0 is in a valid range - start alarm at start time
+        alarmTime_local = start_time
+        call mpas_set_timeInterval(alarmInterval_local, dt=interval_minutes * 60.0_RKIND, ierr=ierr_tmp)
+    end if
+    ierr = ior(ierr, ierr_tmp)
+
+    ! Add the alarm
+    call mpas_add_clock_alarm(clock, alarmID, alarmTime_local, alarmTimeInterval=alarmInterval_local, ierr=ierr_tmp)
+    ierr = ior(ierr, ierr_tmp)
+
+    ! Register alarm with stream manager
+    call MPAS_stream_mgr_add_alarm(manager, streamID, alarmID, MPAS_STREAM_OUTPUT, ierr=ierr_tmp)
+    ierr = ior(ierr, ierr_tmp)
+
+    if (ierr == MPAS_STREAM_MGR_NOERR) then
+        ierr_c = 0
+    else
+        ierr_c = 1
+    end if
+
+end subroutine stream_mgr_add_variable_output_alarm_c !}}}
+
+
+!|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+!
+!  subroutine write_done_marker
+!
+!> \brief Write a done marker file to indicate output file completion
+!> \author Guoqing Ge
+!> \date March 2026  
+!> \details
+!>  Creates a file with .done extension after a successful write completes for the current output file.
+!>  Only called if output_done_marker property is true for the stream.
+!
+!-----------------------------------------------------------------------
+subroutine write_done_marker(filename, dminfo, blockWrite)!{{{
+
+    use mpas_derived_types, only : dm_info
+    use mpas_dmpar, only : IO_NODE
+
+    implicit none
+
+    character(len=*), intent(in) :: filename
+    type (dm_info), intent(in) :: dminfo
+    logical, intent(in) :: blockWrite
+
+    character(len=1024) :: marker_filename
+    character(len=8) :: date_str
+    character(len=10) :: time_str
+    integer :: unit_num
+
+    ! For the blockWrite mode, each rank writes its own file so each creates a marker
+    ! For normal parallel I/O, all ranks write same file so only rank 0 creates marker
+    if (blockWrite .or. dminfo % my_proc_id == IO_NODE) then
+        marker_filename = trim(filename) // '.done'
+        unit_num = 99
+        call date_and_time(date=date_str, time=time_str)
+        open(unit=unit_num, file=trim(marker_filename), status='replace', action='write')
+        ! Write timestamp: YYYY-MM-DD HH:MM:SS
+        write(unit_num, '(A)') date_str(1:4)//'-'//date_str(5:6)//'-'//date_str(7:8)//' '// &
+                               time_str(1:2)//':'//time_str(3:4)//':'//time_str(5:6)
+        close(unit_num)
+    end if
+
+end subroutine write_done_marker!}}}
