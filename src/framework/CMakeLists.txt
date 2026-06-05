@@ -27,6 +27,7 @@ set(MPAS_FRAMEWORK_SOURCES
         mpas_io_streams.F
         mpas_log.F
         mpas_stream_inquiry.F
+        mpas_output_timelevels.F
         mpas_stream_manager.F
         mpas_string_utils.F
         mpas_timekeeping.F

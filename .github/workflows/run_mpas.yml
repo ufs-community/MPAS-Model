@@ -177,7 +177,6 @@ jobs:
         ln -sf ${mpas_bl_ROOT}/atmosphere_model .
         ln -sf ${MPAS_ROOT}/${mpas_ics}/mpas.init.nc .
         ln -sf ${MPAS_ROOT}/${mpas_ics}/mpas.ugwp_oro_data.nc .
-        ln -sf ${MPAS_ROOT}/${mpas_ics}/graph.info.part.2 .
         ln -sf namelist.atmosphere.${{env.nml_suffix}} namelist.atmosphere
 
     - name: Link lateral boundary condition file for regional MPAS.
@@ -205,7 +204,6 @@ jobs:
         ln -sf ${MPAS_ROOT}/atmosphere_model .
         ln -sf ${MPAS_ROOT}/${mpas_ics}/mpas.init.nc .
         ln -sf ${MPAS_ROOT}/${mpas_ics}/mpas.ugwp_oro_data.nc .
-        ln -sf ${MPAS_ROOT}/${mpas_ics}/graph.info.part.2 .
         ln -sf namelist.atmosphere.gsl namelist.atmosphere
 
     - name: Link lateral boundary condition file for regional MPAS.

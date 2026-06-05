@@ -2,7 +2,7 @@
     config_time_integration_order = 2
     config_dt = 720.0
     config_start_time               = '2024-08-15_18:00:00'
-    config_run_duration = '0_01:00:00'
+    config_run_duration = '0_06:00:00'
     config_split_dynamics_transport = true
     config_number_of_sub_steps = 4
     config_dynamics_split_steps = 3
