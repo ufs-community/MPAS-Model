@@ -537,6 +537,7 @@ intel-mpi-ursa:   # usra
 	"DEBUG = $(DEBUG)" \
 	"USE_PAPI = $(USE_PAPI)" \
 	"OPENMP = $(OPENMP)" \
+	"LAPACK_LIBS = -lmkl_intel_lp64 -lmkl_core -lmkl_sequential" \
 	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI" )
 
 gfortran:   # BUILDTARGET GNU Fortran, C, and C++ compilers
