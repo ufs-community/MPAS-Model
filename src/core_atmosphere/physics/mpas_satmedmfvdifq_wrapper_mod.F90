@@ -22,8 +22,8 @@ module mpas_satmedmfvdifq_wrapper_mod
     real(kind=RKIND) :: xkzm_h = 1.0_RKIND
     real(kind=RKIND) :: xkzm_s = 1.0_RKIND
     real(kind=RKIND) :: dspfac = 1.0_RKIND
-    real(kind=RKIND) :: bl_upfr = 0.13_RKIND
-    real(kind=RKIND) :: bl_dnfr = 0.1_RKIND
+    real(kind=RKIND) :: bl_upfr = 0.05_RKIND
+    real(kind=RKIND) :: bl_dnfr = 0.03_RKIND
     real(kind=RKIND) :: rlmx = 300.0_RKIND
     real(kind=RKIND) :: elmx = 300.0_RKIND
   end type mpas_satmedmfvdifq_config_type
@@ -250,8 +250,11 @@ contains
       ! psk is surface Exner. Use lowest layer as fallback.
       psk(i) = prslk(i,1)
 
-      ! Need real mappings later from vegetation/roughness data.
-      sigmaf(i) = vegfra_in(i)
+! MPAS vegfra_in is percent (0-100).
+! GFS TKE-EDMF expects sigmaf as fraction (0-1).
+      sigmaf(i) = 0.01_RKIND * vegfra_in(i)
+      sigmaf(i) = max(0.0_RKIND, min(1.0_RKIND, sigmaf(i)))
+
 !     zvfun(i) = 1.0_RKIND
       !-------------------------------------------------------
 ! Compute zvfun: function of surface roughness and vegetation

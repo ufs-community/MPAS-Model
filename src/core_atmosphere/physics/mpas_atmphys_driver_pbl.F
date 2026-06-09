@@ -170,6 +170,9 @@
        if(.not.allocated(u10_p)     ) allocate(u10_p(ims:ime,jms:jme)         )
        if(.not.allocated(v10_p)     ) allocate(v10_p(ims:ime,jms:jme)         )
        if(.not.allocated(exch_p)    ) allocate(exch_p(ims:ime,kms:kme,jms:jme))
+       if(.not.allocated(kzh_p)     ) allocate(kzh_p(ims:ime,kms:kme,jms:jme))
+       if(.not.allocated(kzm_p)     ) allocate(kzm_p(ims:ime,kms:kme,jms:jme))
+       if(.not.allocated(kzq_p)     ) allocate(kzq_p(ims:ime,kms:kme,jms:jme))
        if(.not.allocated(rthraten_p)) allocate(rthraten_p(ims:ime,kms:kme,jms:jme))
        if(.not.allocated(tkepbl_p)  ) allocate(tkepbl_p(ims:ime,kms:kme,jms:jme)    )
 
@@ -369,6 +372,9 @@
        if(allocated(u10_p)     ) deallocate(u10_p     )
        if(allocated(v10_p)     ) deallocate(v10_p     )
        if(allocated(exch_p)    ) deallocate(exch_p    )
+       if(allocated(kzh_p)     ) deallocate(kzh_p     )
+       if(allocated(kzm_p)     ) deallocate(kzm_p     )
+       if(allocated(kzq_p)     ) deallocate(kzq_p     )
        if(allocated(rthraten_p)) deallocate(rthraten_p)
        if(allocated(tkepbl_p)  ) deallocate(tkepbl_p    )
 
@@ -534,6 +540,10 @@
  real(kind=RKIND),dimension(:,:),pointer:: cldfrac_bl,qc_bl,qi_bl
  real(kind=RKIND),dimension(:,:),pointer:: edmf_a,edmf_ent,edmf_qc,edmf_qt,edmf_thl,edmf_w
  real(kind=RKIND),dimension(:,:),pointer:: sub_thl,sub_qv,det_thl,det_qv
+
+!local pointers for tke_edmf
+real(kind=RKIND),dimension(:,:),pointer:: tke
+real (kind=RKIND), pointer :: scalars_3d(:,:,:)
 
 !local pointers for chemistry
  integer,pointer                           :: chemistry_start,chemistry_end
@@ -720,6 +730,21 @@
        call mpas_pool_get_array(diag_physics,'v10'       ,v10       )
        call mpas_pool_get_array(tend_physics,'rthratenlw',rthratenlw)
        call mpas_pool_get_array(tend_physics,'rthratensw',rthratensw)
+!      call mpas_pool_get_array(scalars,'tke'   ,tke   )
+! =================================================================
+! FIXED PROGNOSTIC TKE ARRAY EXTRACT FOR GFS-EDMF
+! Fetches the parent tracer array block and slices out the TKE index.
+! =================================================================
+       call mpas_pool_get_array(scalars, 'tke', scalars_3d)
+! Allocate or point your local physics 'tke' dummy array buffer
+! so it is filled with the true historical values from the tracer pool:
+       if (associated(scalars_3d)) then
+       do i = 1, its,ite
+          do k = kts,kte
+             tke(k, i) = scalars_3d(k, i,1)
+          enddo
+       enddo
+       endif
 
        do j = jts,jte
        do i = its,ite
@@ -736,6 +761,12 @@
        do i = its,ite
           rthraten_p(i,k,j) = rthratensw(k,i)
           exch_p(i,k,j)     = rthratenlw(k,i)
+! Do not read tke_pbl from MPAS here.  In some MPAS builds this
+! diagnostic is not allocated before the TKE-EDMF call, and reading
+! tke_pbl(k,i) causes the SIGSEGV seen near this block.  The wrapper
+! will update tkepbl_p and pbl_to_MPAS will write it back afterward.
+!         tkepbl_p(i,k,j)   = 0.0_RKIND
+          tkepbl_p(i,k,j)   = tke(k,i)
        enddo
        enddo
        enddo
@@ -1027,6 +1058,10 @@
  real(kind=RKIND),dimension(:,:),pointer:: edmf_a,edmf_ent,edmf_qc,edmf_qt,edmf_thl,edmf_w
  real(kind=RKIND),dimension(:,:),pointer:: sub_thl,sub_qv,det_thl,det_qv
 
+!local pointers for tke_edmf
+real(kind=RKIND),dimension(:,:),pointer:: tke
+real (kind=RKIND), pointer :: scalars_3d(:,:,:,:)
+
 !local pointers for chemistry
  real(kind=RKIND),dimension(:,:,:),pointer:: scalars
  real(kind=RKIND),dimension(:,:,:),pointer:: chem
@@ -1071,9 +1106,18 @@
     rqcblten(k,i) = rqcblten_p(i,k,j)
     rqiblten(k,i) = rqiblten_p(i,k,j)
 
-    kzh(k,i) = kzh_p(i,k,j)
-    kzm(k,i) = kzm_p(i,k,j)
-    kzq(k,i) = kzh_p(i,k,j)
+!   kzh(k,i) = kzh_p(i,k,j)
+!   kzm(k,i) = kzm_p(i,k,j)
+!   kzq(k,i) = kzh_p(i,k,j)
+     ! For bl_tke_edmf, do not touch MPAS K-diagnostic fields here.
+! The TKE-EDMF wrapper used in this branch does not return a native
+! MPAS-safe exch_h/kzh/kzm/kzq diagnostic.  Writing these fields caused
+! a later crash in mpas_halo.  Keep only the physical tendencies.
+if (trim(pbl_scheme) /= "bl_tke_edmf") then
+   kzh(k,i) = kzh_p(i,k,j)
+   kzm(k,i) = kzm_p(i,k,j)
+   kzq(k,i) = kzh_p(i,k,j)
+endif
  enddo
  enddo
  enddo
@@ -1098,15 +1142,27 @@
 
 
     case("bl_tke_edmf")
-       call mpas_pool_get_array(diag_physics,'tke_pbl',tke_pbl)
+       call mpas_pool_get_array(scalars,'tke',tke)
 
+!      do j = jts,jte
+!      do k = kts,kte
+!      do i = its,ite
+!         tke(k,i) = tkepbl_p(i,k,j)
+!      enddo
+!      enddo
+!      enddo
+! Fetch the parent tracer block and write updated physics values back
+       call mpas_pool_get_array(scalars, 'tke', scalars_3d)
+
+       if (associated(scalars_3d)) then
        do j = jts,jte
        do k = kts,kte
        do i = its,ite
-          tke_pbl(k,i) = tkepbl_p(i,k,j)
+          scalars_3d(k, i,1) = tkepbl_p(i,k,j)
        enddo
        enddo
        enddo
+       endif
 
     case("bl_ysu")
        call mpas_pool_get_array(diag_physics,'delta',delta  )
@@ -1538,8 +1594,8 @@
        tke_edmf_cfg%xkzm_h  = 1.0_RKIND
        tke_edmf_cfg%xkzm_s  = 1.0_RKIND
        tke_edmf_cfg%dspfac  = 1.0_RKIND
-       tke_edmf_cfg%bl_upfr = 0.13_RKIND
-       tke_edmf_cfg%bl_dnfr = 0.1_RKIND
+       tke_edmf_cfg%bl_upfr = 0.05_RKIND
+       tke_edmf_cfg%bl_dnfr = 0.03_RKIND
        tke_edmf_cfg%rlmx    = 300.0_RKIND
        tke_edmf_cfg%elmx    = 300.0_RKIND
 
@@ -1573,6 +1629,7 @@
        enddo
        enddo
        enddo
+       !---------------------------------------------------------------
 
        call mpas_call_satmedmfvdifq(                                  &
             (ite-its+1), (kte-kts+1), 4, dt_pbl,                      &
@@ -1612,6 +1669,7 @@
             rqcblten_p(its:ite,kts:kte,jts),                          &
             rqiblten_p(its:ite,kts:kte,jts),                          &
             tke_edmf_cfg, tke_edmf_errmsg, tke_edmf_errflg)
+
 
        if (tke_edmf_errflg /= 0) then
           write(*,*) 'FATAL in bl_tke_edmf: ', trim(tke_edmf_errmsg)

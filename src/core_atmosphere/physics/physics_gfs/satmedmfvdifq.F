@@ -1508,7 +1508,12 @@
              else             ! stable regime
                dkt(i,k) = ch1 * tem
                prnum = pr0 + 2.1 * ri
-               prnum = min(prnum,prmax)
+!      =======================================================
+!      MOMENTUM MIXING ADJUSTMENT TO SMOOTH LOW-LEVEL JET SHEAR
+!      Prevents severe momentum trapping above the PBL top.
+!      =======================================================
+!              prnum = min(prnum,prmax)
+               prnum = min(prnum, 2.5_kind_phys)
                dku(i,k) = dkt(i,k) * prnum
              endif
            endif
@@ -1534,6 +1539,23 @@
            dkq(i,k) = max(dkq(i,k),xkzo(i,k))
            dku(i,k) = min(dku(i,k),dkmax)
            dku(i,k) = max(dku(i,k),xkzmo(i,k))
+ 
+!
+!          =======================================================
+!          HIGH-RESOLUTION VERTICAL GRID DAMPING FOR 2-DELTA Z
+!          Respects column-72 rule and handles parameter scoping.
+!          =======================================================
+!          dz = zi(i,k+1) - zi(i,k)
+!          ptem = 0.25_kind_phys * (dz * dz) /
+!    &            max(delt, 1.0_kind_phys)
+!          ptem = min(dkmax, max(10.0_kind_phys, ptem))
+
+!          dkt(i,k) = min(dkt(i,k), ptem)
+!          dkt(i,k) = max(dkt(i,k), xkzo(i,k))
+!          dkq(i,k) = min(dkq(i,k), ptem)
+!          dkq(i,k) = max(dkq(i,k), xkzo(i,k))
+!          dku(i,k) = min(dku(i,k), ptem)
+!          dku(i,k) = max(dku(i,k), xkzmo(i,k))
 !
         enddo
       enddo
@@ -2050,9 +2072,44 @@
            te(i,k) = te(i,k) + dtn * (prod(i,k)-disste+tem)
 !          te(i,k) = max(te(i,k), tkmin)
            te(i,k) = max(te(i,k), tkmnz(i,k))
+!          =======================================================
+!          DIAGNOSTIC TKE PROFILE PRINT FOR HIGH-RES MPAS RUN
+!          =======================================================
+!          if (i == 1 .and. n == ndt) then
+!             write(*,*) '=== DEBUG TKE PROFILE AT THIS STEP ==='
+!             do kk = 1, min(35, km)
+!                write(*,fmt='(A,I3,A,F10.2,A,F12.6)')
+!    &           'Layer: ', kk, ' Height: ', zl(i,kk),
+!    &           ' TKE (m2/s2): ', te(i,kk)
+!             enddo
+!          endif
+
         enddo
        enddo
        enddo
+!     =======================================================
+!     HIGH-RESOLUTION 2-DELTA Z VERTICAL FILTER FOR TKE
+!     Smooths grid-scale decoupling across hyper-dense layers.
+!     =======================================================
+!     do k = 2, km1 - 1
+!        do i = 1, im
+!           if (zl(i,k) <= 2500.0_kind_phys) then
+!              tkeh(i,k) = 0.25_kind_phys * te(i,k-1) +
+!    &                     0.50_kind_phys * te(i,k)   +
+!    &                     0.25_kind_phys * te(i,k+1)
+!           else
+!              tkeh(i,k) = te(i,k)
+!           endif
+!        enddo
+!     enddo
+!     do k = 2, km1 - 1
+!        do i = 1, im
+!           if (zl(i,k) <= 2500.0_kind_phys) then
+!              te(i,k) = max(tkeh(i,k), tkmnz(i,k))
+!           endif
+!        enddo
+!     enddo
+
       else
        dtn = dt2 / float(ndt)
        do n = 1, ndt
@@ -2067,6 +2124,17 @@
            te(i,k) = te(i,k) + dtn * (prod(i,k)-disste)
            te(i,k) = max(te(i,k), tkmnz(i,k))
 !          te(i,k) = max(te(i,k), tkmin)
+!          =======================================================
+!          DIAGNOSTIC TKE PROFILE PRINT FOR HIGH-RES MPAS RUN
+!          =======================================================
+           if (i == 1 .and. n == ndt) then
+              write(*,*) '=== DEBUG TKE PROFILE AT THIS STEP ==='
+              do kk = 1, min(35, km)
+                 write(*,fmt='(A,I3,A,F10.2,A,F12.6)')
+     &           'Layer: ', kk, ' Height: ', zl(i,kk),
+     &           ' TKE (m2/s2): ', te(i,kk)
+              enddo
+           endif
         enddo
        enddo
        enddo

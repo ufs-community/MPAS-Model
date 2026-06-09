@@ -2010,6 +2010,9 @@
                         <var name="qi" array_group="moist" units="kg kg^{-1}"
                              description="Ice mixing ratio"
                              packages="bl_mynn_in;bl_mynnedmf_in;bl_tke_edmf_in;bl_ysu_in;bl_myj_in;cu_ntiedtke_in;mp_thompson_in;mp_thompson_aers_in;mp_wsm6_in;mp_nssl2m_in;mp_tempo_in"/>
+			<var name="tke" array_group="other" units="m2 s^{-2}"
+                             description="Turbulent Kinetic Energy"
+                             packages="bl_tke_edmf_in"/>
 
                         <var name="qs" array_group="moist" units="kg kg^{-1}"
                              description="Snow mixing ratio"
