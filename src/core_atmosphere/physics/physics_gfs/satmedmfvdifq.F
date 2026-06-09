@@ -1512,8 +1512,8 @@
 !      MOMENTUM MIXING ADJUSTMENT TO SMOOTH LOW-LEVEL JET SHEAR
 !      Prevents severe momentum trapping above the PBL top.
 !      =======================================================
-!              prnum = min(prnum,prmax)
-               prnum = min(prnum, 2.5_kind_phys)
+               prnum = min(prnum,prmax)
+!              prnum = min(prnum, 2.5_kind_phys)
                dku(i,k) = dkt(i,k) * prnum
              endif
            endif
@@ -2127,14 +2127,14 @@
 !          =======================================================
 !          DIAGNOSTIC TKE PROFILE PRINT FOR HIGH-RES MPAS RUN
 !          =======================================================
-           if (i == 1 .and. n == ndt) then
-              write(*,*) '=== DEBUG TKE PROFILE AT THIS STEP ==='
-              do kk = 1, min(35, km)
-                 write(*,fmt='(A,I3,A,F10.2,A,F12.6)')
-     &           'Layer: ', kk, ' Height: ', zl(i,kk),
-     &           ' TKE (m2/s2): ', te(i,kk)
-              enddo
-           endif
+!          if (i == 1 .and. n == ndt) then
+!             write(*,*) '=== DEBUG TKE PROFILE AT THIS STEP ==='
+!             do kk = 1, min(35, km)
+!                write(*,fmt='(A,I3,A,F10.2,A,F12.6)')
+!    &           'Layer: ', kk, ' Height: ', zl(i,kk),
+!    &           ' TKE (m2/s2): ', te(i,kk)
+!             enddo
+!          endif
         enddo
        enddo
        enddo

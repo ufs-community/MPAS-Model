@@ -542,8 +542,7 @@
  real(kind=RKIND),dimension(:,:),pointer:: sub_thl,sub_qv,det_thl,det_qv
 
 !local pointers for tke_edmf
-real(kind=RKIND),dimension(:,:),pointer:: tke
-real (kind=RKIND), pointer :: scalars_3d(:,:,:)
+! tke is stored as scalars(5,k,i) for bl_tke_edmf_in.
 
 !local pointers for chemistry
  integer,pointer                           :: chemistry_start,chemistry_end
@@ -730,21 +729,15 @@ real (kind=RKIND), pointer :: scalars_3d(:,:,:)
        call mpas_pool_get_array(diag_physics,'v10'       ,v10       )
        call mpas_pool_get_array(tend_physics,'rthratenlw',rthratenlw)
        call mpas_pool_get_array(tend_physics,'rthratensw',rthratensw)
-!      call mpas_pool_get_array(scalars,'tke'   ,tke   )
-! =================================================================
-! FIXED PROGNOSTIC TKE ARRAY EXTRACT FOR GFS-EDMF
-! Fetches the parent tracer array block and slices out the TKE index.
-! =================================================================
-       call mpas_pool_get_array(scalars, 'tke', scalars_3d)
-! Allocate or point your local physics 'tke' dummy array buffer
-! so it is filled with the true historical values from the tracer pool:
-       if (associated(scalars_3d)) then
-       do i = 1, its,ite
-          do k = kts,kte
-             tke(k, i) = scalars_3d(k, i,1)
-          enddo
-       enddo
-       endif
+! ------------------------------------------------------------------
+! Prognostic TKE for GFS TKE-EDMF
+!
+! In the Registry, tke is a member of var_array scalars:
+!   qv, qc, qr, qi, tke, ...
+! Therefore it cannot be retrieved with mpas_pool_get_array(scalars,'tke',...).
+! Get the parent state scalar array and use scalar index 5 for tke.
+! ------------------------------------------------------------------
+       call mpas_pool_get_array(state,'scalars',scalars,1)
 
        do j = jts,jte
        do i = its,ite
@@ -766,7 +759,7 @@ real (kind=RKIND), pointer :: scalars_3d(:,:,:)
 ! tke_pbl(k,i) causes the SIGSEGV seen near this block.  The wrapper
 ! will update tkepbl_p and pbl_to_MPAS will write it back afterward.
 !         tkepbl_p(i,k,j)   = 0.0_RKIND
-          tkepbl_p(i,k,j)   = tke(k,i)
+          tkepbl_p(i,k,j)   = max(1.0e-9_RKIND, scalars(5,k,i))
        enddo
        enddo
        enddo
@@ -1059,8 +1052,7 @@ real (kind=RKIND), pointer :: scalars_3d(:,:,:)
  real(kind=RKIND),dimension(:,:),pointer:: sub_thl,sub_qv,det_thl,det_qv
 
 !local pointers for tke_edmf
-real(kind=RKIND),dimension(:,:),pointer:: tke
-real (kind=RKIND), pointer :: scalars_3d(:,:,:,:)
+! tke is stored as scalars(5,k,i) for bl_tke_edmf_in.
 
 !local pointers for chemistry
  real(kind=RKIND),dimension(:,:,:),pointer:: scalars
@@ -1142,27 +1134,22 @@ endif
 
 
     case("bl_tke_edmf")
-       call mpas_pool_get_array(scalars,'tke',tke)
+! ------------------------------------------------------------------
+! Copy updated prognostic TKE back to MPAS state scalars.
+!
+! Registry order in var_array scalars for this configuration is:
+!   1=qv, 2=qc, 3=qr, 4=qi, 5=tke
+! This path is only active for bl_tke_edmf, so other PBL schemes are unchanged.
+! ------------------------------------------------------------------
+       call mpas_pool_get_array(state,'scalars',scalars,1)
 
-!      do j = jts,jte
-!      do k = kts,kte
-!      do i = its,ite
-!         tke(k,i) = tkepbl_p(i,k,j)
-!      enddo
-!      enddo
-!      enddo
-! Fetch the parent tracer block and write updated physics values back
-       call mpas_pool_get_array(scalars, 'tke', scalars_3d)
-
-       if (associated(scalars_3d)) then
        do j = jts,jte
        do k = kts,kte
        do i = its,ite
-          scalars_3d(k, i,1) = tkepbl_p(i,k,j)
+          scalars(5,k,i) = max(1.0e-9_RKIND, tkepbl_p(i,k,j))
        enddo
        enddo
        enddo
-       endif
 
     case("bl_ysu")
        call mpas_pool_get_array(diag_physics,'delta',delta  )
