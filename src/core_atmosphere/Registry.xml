@@ -3684,6 +3684,10 @@
                      description="surface exchange coefficient for heat"
                      packages="sfclayer"/>
 
+                <var name="qcg" type="real" dimensions="nCells Time" units="kg kg^{-1}"
+                     description="cloud water mixing ratio at the ground surface"
+                     packages="bl_mynn_in;bl_mynnedmf_in;lsm_ruc_in"/>
+
                 <var name="sh3d" type="real" dimensions="nVertLevels nCells Time" units="unitless"
                      description="stability function for heat"
                      packages="bl_mynn_in;bl_mynnedmf_in"/>
