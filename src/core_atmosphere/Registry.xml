@@ -1002,6 +1002,8 @@
 			<var name="ke"/>
 			<var name="uReconstructZonal"/>
 			<var name="uReconstructMeridional"/>
+			<var name="stoch_pattern_sppt"/>
+			<var name="stoch_pattern_gg"/>
 
                         <!-- Begin Ertel PV diagnostics defined in diagnostics/Registry_pv.xml -->
 			<var name="ertel_pv"/>
@@ -4277,7 +4279,12 @@
                 <var name="tend_umerid" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1} s^{-1}"
                      description="Total cell-centered meridional wind tendency from physics"
                      persistence="scratch" />
- 
+
+		<var name="stoch_pattern_sppt" type="real" dimensions="nVertLevels nCells Time" units="%"
+                     description="Perturbation pattern for stochastic physics SPPT scheme" />
+
+		<var name="stoch_pattern_gg" type="real" dimensions="lon_for lat_leg Time" units="%"
+                     description="Perturbation pattern for stochastic physics, on Gaussian grid" />
 #ifdef DO_PHYSICS
                 <!-- ================================================================================================== -->
                 <!-- TENDENCIES FROM PARAMETERIZATION OF CLOUD MICROPHYSICS:                                            -->
