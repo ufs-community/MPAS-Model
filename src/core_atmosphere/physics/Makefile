@@ -57,7 +57,8 @@ OBJS = \
 	mpas_atmphys_update_surface.o      \
 	mpas_atmphys_update.o              \
 	mpas_atmphys_vars.o                \
-	mpas_satmedmfvdifq_wrapper_mod.o
+	mpas_satmedmfvdifq_wrapper_mod.o \
+	mpas_gfs_convection_wrapper_mod.o
 
 lookup_tables:
 	./checkout_data_files.sh
@@ -146,7 +147,8 @@ mpas_atmphys_driver_cloudiness.o: \
 mpas_atmphys_driver_convection.o: \
 	mpas_atmphys_constants.o \
 	mpas_atmphys_utilities.o \
-	mpas_atmphys_vars.o
+	mpas_atmphys_vars.o \
+	mpas_gfs_convection_wrapper_mod.o
 
 mpas_atmphys_driver_gwdo.o: \
 	mpas_atmphys_vars.o \
@@ -183,6 +185,14 @@ mpas_satmedmfvdifq_wrapper_mod.o: \
 	mpas_atmphys_constants.o \
 	mpas_atmphys_vars.o \
 	mpas_atmphys_utilities.o
+
+# GFS SAS convection wrapper dependencies for MPAS application.
+# GFS/UFS SAS science objects are built in physics_gfs/.
+mpas_gfs_convection_wrapper_mod.o: \
+	mpas_atmphys_constants.o \
+	mpas_atmphys_vars.o \
+	mpas_atmphys_utilities.o
+
 
 mpas_atmphys_driver_pbl.o: \
 	mpas_atmphys_constants.o \

@@ -29,6 +29,7 @@ set(ATMOSPHERE_CORE_PHYSICS_SOURCES
     mpas_atmphys_driver_gwdo.F
     mpas_atmphys_driver_lsm.F
     mpas_satmedmfvdifq_wrapper_mod.F90
+    mpas_gfs_convection_wrapper_mod.F90
     mpas_atmphys_driver_pbl.F
     mpas_atmphys_driver_radiation_lw.F
     mpas_atmphys_driver_radiation_sw.F
@@ -116,6 +117,8 @@ set(ATMOSPHERE_CORE_PHYSICS_GFS_SOURCES
     mfscuq_mod.F
     canopy_utils_mod.F
     satmedmfvdifq.F
+    sascnvn.F
+    shalcnv.F
 )
 list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_GFS_SOURCES PREPEND physics/physics_gfs/)
 set_source_files_properties(${ATMOSPHERE_CORE_PHYSICS_GFS_SOURCES}

@@ -21,6 +21,7 @@
  use module_cu_kfeta
  use module_cu_tiedtke
  use module_cu_ntiedtke,only: cu_ntiedtke_driver
+ use mpas_gfs_convection_wrapper_mod, only: mpas_call_gfs_convection
  use mpas_atm_dimensions, only : nVertLevels
  use mpas_dmpar, only : IO_NODE
 
@@ -287,6 +288,35 @@
        enddo
        enddo
 
+
+    case ("cu_gfs_sas")
+       if(.not.allocated(cubot_p)      ) allocate(cubot_p(ims:ime,jms:jme)              )
+       if(.not.allocated(cutop_p)      ) allocate(cutop_p(ims:ime,jms:jme)              )
+       if(.not.allocated(hfx_p)        ) allocate(hfx_p(ims:ime,jms:jme)                )
+       if(.not.allocated(qfx_p)        ) allocate(qfx_p(ims:ime,jms:jme)                )
+       if(.not.allocated(xland_p)      ) allocate(xland_p(ims:ime,jms:jme)              )
+       if(.not.allocated(rucuten_p)    ) allocate(rucuten_p(ims:ime,kms:kme,jms:jme)    )
+       if(.not.allocated(rvcuten_p)    ) allocate(rvcuten_p(ims:ime,kms:kme,jms:jme)    )
+
+       do i = its,ite
+       do j = jts,jte
+          cubot_p(i,j) = DBLE(kte+1)
+          cutop_p(i,j) = DBLE(kts)
+          hfx_p(i,j)   = 0._RKIND
+          qfx_p(i,j)   = 0._RKIND
+          xland_p(i,j) = 0._RKIND
+       enddo
+       enddo
+
+       do i = its,ite
+       do k = kts,kte
+       do j = jts,jte
+          rucuten_p(i,k,j) = 0._RKIND
+          rvcuten_p(i,k,j) = 0._RKIND
+       enddo
+       enddo
+       enddo
+
     case ("cu_tiedtke","cu_ntiedtke")
        if(.not.allocated(hfx_p)        ) allocate(hfx_p(ims:ime,jms:jme)                )
        if(.not.allocated(qfx_p)        ) allocate(qfx_p(ims:ime,jms:jme)                )
@@ -463,6 +493,16 @@
        if(allocated(rqrcuten_p)   ) deallocate(rqrcuten_p   )
        if(allocated(rqscuten_p)   ) deallocate(rqscuten_p   )
 
+
+    case ("cu_gfs_sas")
+       if(allocated(cubot_p)      ) deallocate(cubot_p      )
+       if(allocated(cutop_p)      ) deallocate(cutop_p      )
+       if(allocated(hfx_p)        ) deallocate(hfx_p        )
+       if(allocated(qfx_p)        ) deallocate(qfx_p        )
+       if(allocated(xland_p)      ) deallocate(xland_p      )
+       if(allocated(rucuten_p)    ) deallocate(rucuten_p    )
+       if(allocated(rvcuten_p)    ) deallocate(rvcuten_p    )
+
     case ("cu_tiedtke","cu_ntiedtke")
        if(allocated(hfx_p)        ) deallocate(hfx_p        )
        if(allocated(qfx_p)        ) deallocate(qfx_p        )
@@ -565,10 +605,11 @@
 !local variables and arrays:
  logical:: log_convection
 
- integer:: i,j
+ integer:: i,j,k
  integer:: icount,initflag,sub3d
 
  real(kind=RKIND):: dx
+ real(kind=RKIND),allocatable:: z_int_sas(:,:)
 
 !local pointers:
  logical,pointer:: config_do_restart
@@ -576,6 +617,7 @@
  character(len=StrKIND),pointer:: convection_scheme
  character(len=StrKIND),pointer:: pbl_scheme
  real(kind=RKIND),pointer:: len_disp
+ real(kind=RKIND),dimension(:),pointer:: hpbl
 
 !variables specific to Kain_Fritsch parameterization:
  logical:: warm_rain,adapt_step_flag
@@ -748,6 +790,57 @@
                         )
        call mpas_timer_stop('Kain-Fritsch')
 
+
+   case("cu_gfs_sas")
+      call mpas_timer_start('GFS scale-aware SAS')
+      call mpas_pool_get_array(diag_physics,'hpbl',hpbl)
+
+      ! The GFS SAS wrapper expects interface height, z_int(im,km+1).
+      ! MPAS convection local arrays provide layer thickness dz_p(im,km,j),
+      ! so build a simple column interface-height array here for each j-slab.
+      if (.not. allocated(z_int_sas)) allocate(z_int_sas(its:ite,kts:kte+1))
+
+      do j = jts, jte
+         do i = its, ite
+            z_int_sas(i,kts) = 0.0_RKIND
+            do k = kts, kte
+               z_int_sas(i,k+1) = z_int_sas(i,k) + max(dz_p(i,k,j),0.0_RKIND)
+            enddo
+         enddo
+
+         call mpas_call_gfs_convection(                                      &
+            im       = ite-its+1, km       = kte-kts+1, dt       = dt_dyn,   &
+            pres_mid = pres_hyd_p(its:ite,kts:kte,j),                       &
+            pres_int = pres2_hyd_p(its:ite,kts:kte+1,j),                    &
+            z_int    = z_int_sas(its:ite,kts:kte+1),                        &
+            u        = u_p(its:ite,kts:kte,j),                              &
+            v        = v_p(its:ite,kts:kte,j),                              &
+            t        = t_p(its:ite,kts:kte,j),                              &
+            qv       = qv_p(its:ite,kts:kte,j),                             &
+            qc       = qc_p(its:ite,kts:kte,j),                             &
+            qi       = qi_p(its:ite,kts:kte,j),                             &
+            w        = w_p(its:ite,kts:kte,j),                              &
+            hpbl     = hpbl(its:ite),                                       &
+            hfx      = hfx_p(its:ite,j),                                    &
+            qfx      = qfx_p(its:ite,j),                                    &
+            xland    = xland_p(its:ite,j),                                  &
+            rthcuten = rthcuten_p(its:ite,kts:kte,j),                       &
+            rqvcuten = rqvcuten_p(its:ite,kts:kte,j),                       &
+            rqccuten = rqccuten_p(its:ite,kts:kte,j),                       &
+            rqicuten = rqicuten_p(its:ite,kts:kte,j),                       &
+            rucuten  = rucuten_p(its:ite,kts:kte,j),                        &
+            rvcuten  = rvcuten_p(its:ite,kts:kte,j),                        &
+            raincv   = raincv_p(its:ite,j),                                 &
+            pratec   = pratec_p(its:ite,j),                                 &
+            cubot    = cubot_p(its:ite,j),                                  &
+            cutop    = cutop_p(its:ite,j),                                  &
+            ierr     = errflg, errmsg = errmsg )
+         if (errflg /= 0) call physics_error_fatal(trim(errmsg))
+      enddo
+
+      if (allocated(z_int_sas)) deallocate(z_int_sas)
+      call mpas_timer_stop('GFS scale-aware SAS')
+
     case("cu_tiedtke")
        call mpas_timer_start('Tiedtke')
        call cu_tiedtke( &
@@ -857,6 +950,7 @@
  integer:: i,j,k,n
  integer:: iEdge
  real(kind=RKIND),pointer:: len_disp
+ real(kind=RKIND),dimension(:),pointer:: hpbl
  integer,pointer:: config_gfl_sub3d
  logical result
 
@@ -1091,6 +1185,34 @@
           do k = kts,kte
              w0avg_p(i,k,j) = w0avg(k,i)
           enddo
+       enddo
+       enddo
+
+
+    case ("cu_gfs_sas")
+       call mpas_pool_get_array(sfc_input,'xland',xland)
+       call mpas_pool_get_array(diag_physics,'hfx',hfx)
+       call mpas_pool_get_array(diag_physics,'qfx',qfx)
+       call mpas_pool_get_array(diag_physics,'cubot',cubot)
+       call mpas_pool_get_array(diag_physics,'cutop',cutop)
+
+       call mpas_pool_get_array(tend_physics,'rucuten',rucuten)
+       call mpas_pool_get_array(tend_physics,'rvcuten',rvcuten)
+
+       do j = jts,jte
+       do i = its,ite
+          xland_p(i,j) = xland(i)
+          hfx_p(i,j)   = hfx(i)
+          qfx_p(i,j)   = qfx(i)
+          cubot_p(i,j) = cubot(i)
+          cutop_p(i,j) = cutop(i)
+       enddo
+
+       do k = kts,kte
+       do i = its,ite
+          rucuten_p(i,k,j) = rucuten(k,i)
+          rvcuten_p(i,k,j) = rvcuten(k,i)
+       enddo
        enddo
        enddo
 
@@ -1451,6 +1573,25 @@
              rqrcuten(k,i) = rqrcuten_p(i,k,j)
              rqscuten(k,i) = rqscuten_p(i,k,j)
           enddo                          
+       enddo
+       enddo
+
+    case ("cu_gfs_sas")
+       call mpas_pool_get_array(diag_physics,'cubot',cubot)
+       call mpas_pool_get_array(diag_physics,'cutop',cutop)
+       call mpas_pool_get_array(tend_physics,'rucuten',rucuten)
+       call mpas_pool_get_array(tend_physics,'rvcuten',rvcuten)
+
+       do j = jts,jte
+       do i = its,ite
+          cubot(i) = cubot_p(i,j)
+          cutop(i) = cutop_p(i,j)
+       enddo
+       do k = kts,kte
+       do i = its,ite
+          rucuten(k,i) = rucuten_p(i,k,j)
+          rvcuten(k,i) = rvcuten_p(i,k,j)
+       enddo
        enddo
        enddo
 

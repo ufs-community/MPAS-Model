@@ -6,7 +6,9 @@ OBJS = \
 	mfpbltq_mod.o         \
 	mfscuq_mod.o          \
 	canopy_utils_mod.o    \
-	satmedmfvdifq.o
+	satmedmfvdifq.o       \
+	sascnvn.o             \
+	shalcnv.o
 
 all: $(OBJS)
 	ar -ru libphys_gfs.a $(OBJS)
@@ -26,6 +28,12 @@ mfpbltq_mod.o: \
 mfscuq_mod.o: \
 	gfs_tke_edmf_compat.o
 
+sascnvn.o: \
+	gfs_tke_edmf_compat.o
+
+shalcnv.o: \
+	gfs_tke_edmf_compat.o
+
 canopy_utils_mod.o: \
 	gfs_tke_edmf_compat.o
 
@@ -35,6 +43,12 @@ satmedmfvdifq.o: \
 	mfpbltq_mod.o \
 	mfscuq_mod.o \
 	canopy_utils_mod.o
+
+sascnvn.o: \
+	gfs_tke_edmf_compat.o
+
+shalcnv.o: \
+	gfs_tke_edmf_compat.o
 
 clean:
 	$(RM) *.o *.mod *.f90 *.i libphys_gfs.a

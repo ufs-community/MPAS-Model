@@ -208,7 +208,8 @@
            config_convection_scheme .eq. 'cu_grell_freitas_li' .or. &
            config_convection_scheme .eq. 'cu_kain_fritsch'  .or. &
            config_convection_scheme .eq. 'cu_tiedtke'       .or. &
-           config_convection_scheme .eq. 'cu_ntiedtke')) then
+           config_convection_scheme .eq. 'cu_ntiedtke'      .or. &
+           config_convection_scheme .eq. 'cu_gfs_sas')) then
 
     write(mpas_err_message,'(A,A20)') 'illegal value for config_convection_scheme: ', &
           trim(config_convection_scheme)
@@ -599,4 +600,3 @@
 !=================================================================================================================
  end module mpas_atmphys_control
 !=================================================================================================================
-
