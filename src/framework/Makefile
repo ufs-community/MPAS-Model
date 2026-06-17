@@ -22,6 +22,7 @@ OBJS = mpas_kind_types.o \
        mpas_bootstrapping.o \
        mpas_io_units.o \
        mpas_stream_manager.o \
+       mpas_output_timelevels.o \
        mpas_stream_list.o \
        mpas_forcing.o \
        mpas_c_interfacing.o \
@@ -101,7 +102,9 @@ mpas_threading.o: mpas_kind_types.o
 
 mpas_stream_list.o: mpas_derived_types.o mpas_kind_types.o mpas_io_streams.o mpas_timekeeping.o regex_matching.o mpas_log.o
 
-mpas_stream_manager.o: mpas_io_streams.o mpas_timekeeping.o mpas_derived_types.o mpas_kind_types.o mpas_c_interfacing.o mpas_stream_list.o mpas_dmpar.o mpas_io.o mpas_threading.o mpas_log.o
+mpas_output_timelevels.o: mpas_kind_types.o mpas_derived_types.o mpas_timekeeping.o mpas_log.o mpas_string_utils.o
+
+mpas_stream_manager.o: mpas_io_streams.o mpas_timekeeping.o mpas_derived_types.o mpas_kind_types.o mpas_c_interfacing.o mpas_stream_list.o mpas_dmpar.o mpas_io.o mpas_threading.o mpas_log.o mpas_output_timelevels.o
 
 mpas_forcing.o: mpas_derived_types.o mpas_timekeeping.o mpas_stream_manager.o mpas_log.o mpas_io_units.o
 
