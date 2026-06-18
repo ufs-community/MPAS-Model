@@ -82,7 +82,7 @@ contains
     integer, intent(out) :: errflg
 
     integer :: im, km
-    integer :: i, k
+    integer :: i, k, kk
     integer :: ntqv, ntcw, ntiw, ntrw, ntke
     integer :: index_of_temperature, index_of_x_wind
     integer :: index_of_y_wind, index_of_process_pbl
@@ -120,12 +120,25 @@ contains
     real(kind=RKIND), allocatable :: claie(:), cfch(:), cfrt(:), cclu(:), cpopu(:)
     real(kind=RKIND) :: rho1,tem1, tem2
     integer, allocatable :: kpbl(:), kinver(:), dtidx(:,:)
+    integer, allocatable :: surf_k(:), kmap(:,:)
 
     im = nCells
     km = nVertLevels
 
     errmsg = ''
     errflg = 0
+
+    ! Initialize all returned MPAS PBL tendencies for this call.
+    ! This matches the GFS-SAS-style convention: the wrapper returns
+    ! this scheme's own tendency contribution, not an accumulation onto
+    ! any incoming tendency.  It also prevents undefined values if the
+    ! UFS routine exits early or skips a column.
+    ten_t_out  = 0.0_RKIND
+    ten_u_out  = 0.0_RKIND
+    ten_v_out  = 0.0_RKIND
+    ten_qv_out = 0.0_RKIND
+    ten_qc_out = 0.0_RKIND
+    ten_qi_out = 0.0_RKIND
 
     ! Tracer layout for the UFS routine.
     ntqv = 1
@@ -156,6 +169,7 @@ contains
     allocate(ten_t(im,km), ten_u(im,km), ten_v(im,km))
     allocate(dv(im,km), du(im,km), tdt(im,km))
     allocate(kpbl(im), kinver(im))
+    allocate(surf_k(im), kmap(im,km))
     allocate(dtidx(3,1), dtend(im,km,3))
     allocate(claie(im), cfch(im), cfrt(im), cclu(im), cpopu(im))
 
@@ -183,25 +197,38 @@ contains
     cclu  = 0.0_RKIND
     cpopu = 0.0_RKIND
 
+    ! Build the vertical mapping fresh every call.  For the current
+    ! MPAS/TKE-EDMF path we keep bottom-up ordering: k=1 is the lowest
+    ! model layer.  Using kmap consistently avoids relying on stale
+    ! assumptions from a previous call.
+    do i = 1, im
+      surf_k(i) = 1
+      do k = 1, km
+        kmap(i,k) = k
+      enddo
+    enddo
+
     do k = 1, km
       do i = 1, im
-        u1(i,k) = u_mpas(i,k)
-        v1(i,k) = v_mpas(i,k)
-        t1(i,k) = t_mpas(i,k)
+        kk = kmap(i,k)
 
-        q1(i,k,ntqv) = max(qv_mpas(i,k), 1.0e-12_RKIND)
-        q1(i,k,ntcw) = max(qc_mpas(i,k), 0.0_RKIND)
-        q1(i,k,ntiw) = max(qi_mpas(i,k), 0.0_RKIND)
-        q1(i,k,ntke) = max(tke_mpas(i,k), 1.0e-9_RKIND)
+        u1(i,k) = u_mpas(i,kk)
+        v1(i,k) = v_mpas(i,kk)
+        t1(i,k) = t_mpas(i,kk)
 
-        prsl(i,k)  = p_mid(i,k)
-        prslk(i,k) = exner_mid(i,k)
+        q1(i,k,ntqv) = max(qv_mpas(i,kk), 1.0e-12_RKIND)
+        q1(i,k,ntcw) = max(qc_mpas(i,kk), 0.0_RKIND)
+        q1(i,k,ntiw) = max(qi_mpas(i,kk), 0.0_RKIND)
+        q1(i,k,ntke) = max(tke_mpas(i,kk), 1.0e-9_RKIND)
+
+        prsl(i,k)  = p_mid(i,kk)
+        prslk(i,k) = exner_mid(i,kk)
 
         ! UFS routine expects geopotential, not geometric height.
-        phil(i,k) = grav * z_mid(i,k)
+        phil(i,k) = grav * z_mid(i,kk)
 
-        swh(i,k) = sw_heat(i,k)
-        hlw(i,k) = lw_heat(i,k)
+        swh(i,k) = sw_heat(i,kk)
+        hlw(i,k) = lw_heat(i,kk)
       enddo
     enddo
 
@@ -227,7 +254,8 @@ contains
 
       ! UFS code uses z0 = 0.01*zorl, so zorl is in cm.
       zorl(i) = max(z0_mpas(i), 1.0e-6_RKIND) * 100.0_RKIND
-      rho1 = prsl(i,1) / (rd * max(t1(i,1), 180.0_RKIND))
+      kk = surf_k(i)
+      rho1 = prsl(i,kk) / (rd * max(t1(i,kk), 180.0_RKIND))
 
       tsea(i) = skin_temp(i)
       heat(i) = shflx(i)/(rho1*cp)
@@ -236,7 +264,7 @@ contains
       evap(i) = lhflx(i) / (rho1*hvap)
 
       stress(i) = max(stress_in(i), 0.0_RKIND)
-      spd1(i) = max(sqrt(u1(i,1)**2 + v1(i,1)**2), 0.1_RKIND)
+      spd1(i) = max(sqrt(u1(i,kk)**2 + v1(i,kk)**2), 0.1_RKIND)
 
       u10m(i) = u10(i)
       v10m(i) = v10(i)
@@ -248,7 +276,7 @@ contains
 !     rbsoil(i) = 0.0_RKIND
 
       ! psk is surface Exner. Use lowest layer as fallback.
-      psk(i) = prslk(i,1)
+      psk(i) = prslk(i,kk)
 
 ! MPAS vegfra_in is percent (0-100).
 ! GFS TKE-EDMF expects sigmaf as fraction (0-1).
@@ -303,15 +331,17 @@ contains
 
     do k = 1, km
       do i = 1, im
-        ten_t_out(i,k) = tdt(i,k)/exner_mid(i,k)
-        ten_u_out(i,k) = du(i,k)
-        ten_v_out(i,k) = dv(i,k)
-        
-        ten_qv_out(i,k) = rtg(i,k,ntqv) 
-        ten_qc_out(i,k) = rtg(i,k,ntcw)
-        ten_qi_out(i,k) = rtg(i,k,ntiw)
+        kk = kmap(i,k)
 
-        tke_mpas(i,k) = max(q1(i,k,ntke), 0.0_RKIND)
+        ten_t_out(i,kk) = tdt(i,k)/exner_mid(i,kk)
+        ten_u_out(i,kk) = du(i,k)
+        ten_v_out(i,kk) = dv(i,k)
+
+        ten_qv_out(i,kk) = rtg(i,k,ntqv)
+        ten_qc_out(i,kk) = rtg(i,k,ntcw)
+        ten_qi_out(i,kk) = rtg(i,k,ntiw)
+
+        tke_mpas(i,kk) = max(q1(i,k,ntke), 0.0_RKIND)
       enddo
     enddo
 

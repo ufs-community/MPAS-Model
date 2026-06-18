@@ -610,6 +610,7 @@
 
  real(kind=RKIND):: dx
  real(kind=RKIND),allocatable:: z_int_sas(:,:)
+ integer,allocatable:: kbot_sas(:), ktop_sas(:)
 
 !local pointers:
  logical,pointer:: config_do_restart
@@ -670,6 +671,57 @@
 !... initialization of initflag needed in the calls cu_tiedtke and cu_ntiedtke:
  initflag = 1
  if(config_do_restart .or. itimestep > 1) initflag = 0
+
+ ! Diagnose hydrostatic interface pressure before any convection-scheme branch.
+ ! This is outside cu_gfs_sas so KF/GF/Tiedtke/SAS all check the same field.
+ ! For bottom-up MPAS columns, pressure should decrease with k:
+ ! pres2_hyd_p(k) > pres2_hyd_p(k+1).
+ icount = 0
+ do j = jts, jte
+ do i = its, ite
+    do k = kts, kte
+       if (pres2_hyd_p(i,k,j) <= pres2_hyd_p(i,k+1,j)) then
+          icount = icount + 1
+          if (icount <= 20) then
+             write(0,*) 'BAD DRIVER PRES2_HYD_P MONOTONICITY before convection select'
+             write(0,*) 'convection_scheme = ', trim(convection_scheme)
+             write(0,*) 'global i,j,k      = ', i, j, k
+             write(0,*) 'pres2_hyd_p(k)    = ', pres2_hyd_p(i,k,j)
+             write(0,*) 'pres2_hyd_p(k+1)  = ', pres2_hyd_p(i,k+1,j)
+             write(0,*) 'pres_hyd_p(k)     = ', pres_hyd_p(i,k,j)
+             if (k > kts) write(0,*) 'pres2_hyd_p(k-1)  = ', pres2_hyd_p(i,k-1,j)
+             if (k < kte) write(0,*) 'pres_hyd_p(k+1)   = ', pres_hyd_p(i,k+1,j)
+             write(0,*) 'psfc candidate pres2_hyd_p(kts) = ', pres2_hyd_p(i,kts,j)
+             write(0,*) 'top  candidate pres2_hyd_p(kte+1)= ', pres2_hyd_p(i,kte+1,j)
+             write(0,*) 'dz_p(k)           = ', dz_p(i,k,j)
+             if (k < kte) write(0,*) 'dz_p(k+1)         = ', dz_p(i,k+1,j)
+             call flush(0)
+          endif
+       endif
+
+       if ( (pres_hyd_p(i,k,j) > max(pres2_hyd_p(i,k,j),pres2_hyd_p(i,k+1,j))) .or. &
+            (pres_hyd_p(i,k,j) < min(pres2_hyd_p(i,k,j),pres2_hyd_p(i,k+1,j))) ) then
+          icount = icount + 1
+          if (icount <= 20) then
+             write(0,*) 'BAD DRIVER PRES_HYD_P NOT BETWEEN INTERFACES before convection select'
+             write(0,*) 'convection_scheme = ', trim(convection_scheme)
+             write(0,*) 'global i,j,k      = ', i, j, k
+             write(0,*) 'pres2_hyd_p(k)    = ', pres2_hyd_p(i,k,j)
+             write(0,*) 'pres2_hyd_p(k+1)  = ', pres2_hyd_p(i,k+1,j)
+             write(0,*) 'pres_hyd_p(k)     = ', pres_hyd_p(i,k,j)
+             call flush(0)
+          endif
+       endif
+    enddo
+ enddo
+ enddo
+
+ if (icount > 0) then
+    write(0,*) 'TOTAL BAD DRIVER PRESSURE COUNT before convection select = ', icount
+    write(0,*) 'convection_scheme = ', trim(convection_scheme)
+    call flush(0)
+    call physics_error_fatal('bad pres2_hyd_p/pres_hyd_p before convection select')
+ endif
 
  convection_select: select case(convection_scheme)
 
@@ -808,6 +860,24 @@
             enddo
          enddo
 
+         ! Initialize MPAS cloud-base/cloud-top diagnostics before the wrapper.
+         if (allocated(cubot_p)) cubot_p(its:ite,j) = real(kte+1, RKIND)
+         if (allocated(cutop_p)) cutop_p(its:ite,j) = real(kts,   RKIND)
+
+         ! GFS SAS wrapper returns tendencies for this call only.
+         ! Do not allow tendencies copied from tend_physics or a previous scheme
+         ! to be accumulated by the wrapper.
+         do k = kts, kte
+         do i = its, ite
+            rthcuten_p(i,k,j) = 0._RKIND
+            rqvcuten_p(i,k,j) = 0._RKIND
+            rqccuten_p(i,k,j) = 0._RKIND
+            rqicuten_p(i,k,j) = 0._RKIND
+            rucuten_p(i,k,j)  = 0._RKIND
+            rvcuten_p(i,k,j)  = 0._RKIND
+         enddo
+         enddo
+
          call mpas_call_gfs_convection(                                      &
             im       = ite-its+1, km       = kte-kts+1, dt       = dt_dyn,   &
             pres_mid = pres_hyd_p(its:ite,kts:kte,j),                       &
@@ -836,6 +906,46 @@
             cutop    = cutop_p(its:ite,j),                                  &
             ierr     = errflg, errmsg = errmsg )
          if (errflg /= 0) call physics_error_fatal(trim(errmsg))
+
+         !---------------------------------------------------------------
+         ! DEBUG: Check GFS SAS tendencies immediately after wrapper returns.
+         ! If this fails, SAS/wrapper produced bad tendencies before MPAS
+         ! time integration applies them.
+         !---------------------------------------------------------------
+         do k = kts, kte
+         do i = its, ite
+            if ( rthcuten_p(i,k,j) /= rthcuten_p(i,k,j) .or. &
+                 rqvcuten_p(i,k,j) /= rqvcuten_p(i,k,j) .or. &
+                 rucuten_p(i,k,j)  /= rucuten_p(i,k,j)  .or. &
+                 rvcuten_p(i,k,j)  /= rvcuten_p(i,k,j)  .or. &
+                 abs(rthcuten_p(i,k,j)) > 5.0e-2_RKIND .or. &
+                 abs(rqvcuten_p(i,k,j)) > 1.0e-4_RKIND .or. &
+                 abs(rucuten_p(i,k,j))  > 5.0_RKIND    .or. &
+                 abs(rvcuten_p(i,k,j))  > 5.0_RKIND ) then
+
+               write(0,*) 'BAD GFS SAS TENDENCY AFTER WRAPPER'
+               write(0,*) 'global i,j,k = ', i, j, k
+               write(0,*) 'rthcuten_p   = ', rthcuten_p(i,k,j)
+               write(0,*) 'rqvcuten_p   = ', rqvcuten_p(i,k,j)
+               write(0,*) 'rucuten_p    = ', rucuten_p(i,k,j)
+               write(0,*) 'rvcuten_p    = ', rvcuten_p(i,k,j)
+               write(0,*) 'rqccuten_p   = ', rqccuten_p(i,k,j)
+               write(0,*) 'rqicuten_p   = ', rqicuten_p(i,k,j)
+               write(0,*) 'state t,qv,u,v = ', &
+                           t_p(i,k,j), qv_p(i,k,j), u_p(i,k,j), v_p(i,k,j)
+               write(0,*) 'pressure mid,int(k),int(k+1) = ', &
+                           pres_hyd_p(i,k,j), pres2_hyd_p(i,k,j), &
+                           pres2_hyd_p(i,k+1,j)
+               write(0,*) 'raincv,pratec = ', raincv_p(i,j), pratec_p(i,j)
+               call flush(0)
+               call physics_error_fatal('bad GFS SAS tendency after wrapper')
+            endif
+         enddo
+         enddo
+         !---------------------------------------------------------------
+
+         ! cubot_p/cutop_p were set inside the wrapper from SAS kbot/ktop.
+         cu_act_flag(its:ite,j) = raincv_p(its:ite,j) > 0._RKIND
       enddo
 
       if (allocated(z_int_sas)) deallocate(z_int_sas)
