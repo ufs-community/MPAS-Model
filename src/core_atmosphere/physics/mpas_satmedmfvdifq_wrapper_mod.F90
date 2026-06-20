@@ -22,8 +22,8 @@ module mpas_satmedmfvdifq_wrapper_mod
     real(kind=RKIND) :: xkzm_h = 1.0_RKIND
     real(kind=RKIND) :: xkzm_s = 1.0_RKIND
     real(kind=RKIND) :: dspfac = 1.0_RKIND
-    real(kind=RKIND) :: bl_upfr = 0.05_RKIND
-    real(kind=RKIND) :: bl_dnfr = 0.03_RKIND
+    real(kind=RKIND) :: bl_upfr = 0.07_RKIND
+    real(kind=RKIND) :: bl_dnfr = 0.05_RKIND
     real(kind=RKIND) :: rlmx = 300.0_RKIND
     real(kind=RKIND) :: elmx = 300.0_RKIND
   end type mpas_satmedmfvdifq_config_type

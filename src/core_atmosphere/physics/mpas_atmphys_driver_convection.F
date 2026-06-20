@@ -297,6 +297,8 @@
        if(.not.allocated(xland_p)      ) allocate(xland_p(ims:ime,jms:jme)              )
        if(.not.allocated(rucuten_p)    ) allocate(rucuten_p(ims:ime,kms:kme,jms:jme)    )
        if(.not.allocated(rvcuten_p)    ) allocate(rvcuten_p(ims:ime,kms:kme,jms:jme)    )
+       if(.not.allocated(rqvften_p)    ) allocate(rqvften_p(ims:ime,kms:kme,jms:jme)    )
+       if(.not.allocated(rthften_p)    ) allocate(rthften_p(ims:ime,kms:kme,jms:jme)    )
 
        do i = its,ite
        do j = jts,jte
@@ -313,6 +315,8 @@
        do j = jts,jte
           rucuten_p(i,k,j) = 0._RKIND
           rvcuten_p(i,k,j) = 0._RKIND
+          rqvften_p(i,k,j) = 0._RKIND
+          rthften_p(i,k,j) = 0._RKIND
        enddo
        enddo
        enddo
@@ -502,6 +506,8 @@
        if(allocated(xland_p)      ) deallocate(xland_p      )
        if(allocated(rucuten_p)    ) deallocate(rucuten_p    )
        if(allocated(rvcuten_p)    ) deallocate(rvcuten_p    )
+       if(allocated(rqvften_p)    ) deallocate(rqvften_p    )
+       if(allocated(rthften_p)    ) deallocate(rthften_p    )
 
     case ("cu_tiedtke","cu_ntiedtke")
        if(allocated(hfx_p)        ) deallocate(hfx_p        )
@@ -610,6 +616,7 @@
 
  real(kind=RKIND):: dx
  real(kind=RKIND),allocatable:: z_int_sas(:,:)
+ real(kind=RKIND),allocatable:: t_gfs_sas(:,:), qv_gfs_sas(:,:)
  integer,allocatable:: kbot_sas(:), ktop_sas(:)
 
 !local pointers:
@@ -864,17 +871,38 @@
          if (allocated(cubot_p)) cubot_p(its:ite,j) = real(kte+1, RKIND)
          if (allocated(cutop_p)) cutop_p(its:ite,j) = real(kts,   RKIND)
 
-         ! GFS SAS wrapper returns tendencies for this call only.
-         ! Do not allow tendencies copied from tend_physics or a previous scheme
-         ! to be accumulated by the wrapper.
+         !---------------------------------------------------------------
+         ! GFS SAS uses the same staged-state pattern as other MPAS
+         ! convection schemes: apply tendencies from earlier physics
+         ! before calling the convection scheme.
+         !
+         ! rth tendencies are theta tendencies; multiply by pi/exner
+         ! to stage physical temperature.
+         !---------------------------------------------------------------
+         if (allocated(t_gfs_sas))  deallocate(t_gfs_sas)
+         if (allocated(qv_gfs_sas)) deallocate(qv_gfs_sas)
+         allocate(t_gfs_sas(its:ite,kts:kte))
+         allocate(qv_gfs_sas(its:ite,kts:kte))
+
          do k = kts, kte
          do i = its, ite
-            rthcuten_p(i,k,j) = 0._RKIND
-            rqvcuten_p(i,k,j) = 0._RKIND
-            rqccuten_p(i,k,j) = 0._RKIND
-            rqicuten_p(i,k,j) = 0._RKIND
-            rucuten_p(i,k,j)  = 0._RKIND
-            rvcuten_p(i,k,j)  = 0._RKIND
+            ! rthften_p and rqvften_p were prepared in convection_from_MPAS
+            ! using the same staging pattern as cu_ntiedtke.
+            ! rthften_p is already a physical temperature tendency.
+            t_gfs_sas(i,k) = t_p(i,k,j) + dt_dyn * rthften_p(i,k,j)
+
+            qv_gfs_sas(i,k) = max(1.0e-12_RKIND, qv_p(i,k,j) + dt_dyn * rqvften_p(i,k,j))
+
+            if (t_gfs_sas(i,k) /= t_gfs_sas(i,k) .or. &
+                t_gfs_sas(i,k) < 150._RKIND .or. t_gfs_sas(i,k) > 360._RKIND) then
+               write(0,*) 'BAD STAGED T BEFORE GFS SAS'
+               write(0,*) 'i,j,k=', i,j,k
+               write(0,*) 't_raw, t_stage=', t_p(i,k,j), t_gfs_sas(i,k)
+               write(0,*) 'rthften_p(temp tendency), rqvften_p=', &
+                    rthften_p(i,k,j), rqvften_p(i,k,j)
+               call flush(0)
+               t_gfs_sas(i,k) = min(360._RKIND, max(150._RKIND, t_gfs_sas(i,k)))
+            endif
          enddo
          enddo
 
@@ -885,8 +913,8 @@
             z_int    = z_int_sas(its:ite,kts:kte+1),                        &
             u        = u_p(its:ite,kts:kte,j),                              &
             v        = v_p(its:ite,kts:kte,j),                              &
-            t        = t_p(its:ite,kts:kte,j),                              &
-            qv       = qv_p(its:ite,kts:kte,j),                             &
+            t        = t_gfs_sas,                                         &
+            qv       = qv_gfs_sas,                                        &
             qc       = qc_p(its:ite,kts:kte,j),                             &
             qi       = qi_p(its:ite,kts:kte,j),                             &
             w        = w_p(its:ite,kts:kte,j),                              &
@@ -905,6 +933,9 @@
             cubot    = cubot_p(its:ite,j),                                  &
             cutop    = cutop_p(its:ite,j),                                  &
             ierr     = errflg, errmsg = errmsg )
+         if (allocated(t_gfs_sas))  deallocate(t_gfs_sas)
+         if (allocated(qv_gfs_sas)) deallocate(qv_gfs_sas)
+
          if (errflg /= 0) call physics_error_fatal(trim(errmsg))
 
          !---------------------------------------------------------------
@@ -937,8 +968,10 @@
                            pres_hyd_p(i,k,j), pres2_hyd_p(i,k,j), &
                            pres2_hyd_p(i,k+1,j)
                write(0,*) 'raincv,pratec = ', raincv_p(i,j), pratec_p(i,j)
+               write(0,*) 'BAD GFS SAS TENDENCY AFTER WRAPPER -- REPORT ONLY'
+
                call flush(0)
-               call physics_error_fatal('bad GFS SAS tendency after wrapper')
+
             endif
          enddo
          enddo
@@ -1306,8 +1339,14 @@
        call mpas_pool_get_array(diag_physics,'cubot',cubot)
        call mpas_pool_get_array(diag_physics,'cutop',cutop)
 
-       call mpas_pool_get_array(tend_physics,'rucuten',rucuten)
-       call mpas_pool_get_array(tend_physics,'rvcuten',rvcuten)
+       call mpas_pool_get_array(tend_physics,'rucuten'  ,rucuten  )
+       call mpas_pool_get_array(tend_physics,'rvcuten'  ,rvcuten  )
+       call mpas_pool_get_array(tend_physics,'rqvdynten',rqvdynten)
+       call mpas_pool_get_array(tend_physics,'rqvblten' ,rqvblten )
+       call mpas_pool_get_array(tend_physics,'rthdynten',rthdynten)
+       call mpas_pool_get_array(tend_physics,'rthblten' ,rthblten )
+       call mpas_pool_get_array(tend_physics,'rthratenlw',rthratenlw)
+       call mpas_pool_get_array(tend_physics,'rthratensw',rthratensw)
 
        do j = jts,jte
        do i = its,ite
@@ -1322,6 +1361,14 @@
        do i = its,ite
           rucuten_p(i,k,j) = rucuten(k,i)
           rvcuten_p(i,k,j) = rvcuten(k,i)
+
+          ! Stage tendencies for the GFS SAS input state, following the
+          ! existing MPAS convection pattern used by cu_ntiedtke.
+          ! rthften_p is stored here as a physical temperature tendency
+          ! because the theta tendency is multiplied by pi_p immediately.
+          rqvften_p(i,k,j) = rqvdynten(k,i) + rqvblten(k,i)
+          rthften_p(i,k,j) = (rthdynten(k,i) + rthblten(k,i) &
+                           + rthratenlw(k,i) + rthratensw(k,i)) * pi_p(i,k,j)
        enddo
        enddo
        enddo

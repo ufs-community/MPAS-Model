@@ -1581,8 +1581,8 @@ endif
        tke_edmf_cfg%xkzm_h  = 1.0_RKIND
        tke_edmf_cfg%xkzm_s  = 1.0_RKIND
        tke_edmf_cfg%dspfac  = 1.0_RKIND
-       tke_edmf_cfg%bl_upfr = 0.05_RKIND
-       tke_edmf_cfg%bl_dnfr = 0.03_RKIND
+       tke_edmf_cfg%bl_upfr = 0.07_RKIND
+       tke_edmf_cfg%bl_dnfr = 0.05_RKIND
        tke_edmf_cfg%rlmx    = 300.0_RKIND
        tke_edmf_cfg%elmx    = 300.0_RKIND
 

@@ -20,6 +20,8 @@
 !>   * MPAS input t is physical temperature in K, not potential temperature.
 !>     SAS receives t directly.
 !>   * SAS dT/dt is converted to MPAS potential-temperature tendency for rthcuten.
+!>   * Least-artificial dt=300 test: no artificial heat/moisture/momentum caps.
+!>     Keep only NaN/bad-column protection and GFS deep/shallow parameter split.
 !>   * No arbitrary tendency caps are applied. Columns with nonphysical
 !>     temperature inputs are skipped rather than aborting the run.
 
@@ -56,8 +58,8 @@ contains
       real(kind=RKIND), intent(in) :: pres_int(im,km+1)    ! Pa, MPAS interface pressure
       real(kind=RKIND), intent(in) :: z_int(im,km+1)       ! m, interface height
       real(kind=RKIND), intent(in) :: u(im,km), v(im,km)   ! m s-1
-      real(kind=RKIND), intent(in) :: t(im,km)             ! physical temperature, K
-      real(kind=RKIND), intent(in) :: qv(im,km)            ! kg kg-1
+      real(kind=RKIND), intent(in) :: t(im,km)             ! physical temperature, K; staged by MPAS driver
+      real(kind=RKIND), intent(in) :: qv(im,km)            ! kg kg-1; staged by MPAS driver
       real(kind=RKIND), intent(in) :: qc(im,km), qi(im,km) ! kg kg-1
       real(kind=RKIND), intent(in) :: w(im,km)             ! m s-1
       real(kind=RKIND), intent(in) :: hpbl(im)             ! m
@@ -378,7 +380,7 @@ contains
             endif
 
             if (abs(rth_test) > 5.0e-2_RKIND) then
-               write(0,*) 'LARGE RTHCUTEN SOURCE IN GFS SAS WRAPPER -- CAPPING FOR TEST'
+               write(0,*) 'LARGE RTHCUTEN SOURCE IN GFS SAS WRAPPER -- REPORT ONLY'
                write(0,*) 'i,k,kk             = ', i, k, kk
                write(0,*) 'dt                 = ', dt
                write(0,*) 'prslp,psp,delp     = ', prslp(i,k), psp(i), delp(i,k)
@@ -401,8 +403,7 @@ contains
                enddo
                call flush(0)
 
-               ! Stability-only test cap.  This is not a final science fix.
-               rth_test = max(-1.0e-2_RKIND, min(1.0e-2_RKIND, rth_test))
+               ! Least-artificial dt=300 test: report only; do NOT cap rth_test.
             endif
 
             rqv_raw = (q1(i,k)  - q1_old(i,k))  / dt
@@ -414,7 +415,7 @@ contains
             if (abs(rqv_raw) > 2.0e-5_RKIND .or. abs(rqc_raw) > 2.0e-5_RKIND .or. &
                 abs(rqi_raw) > 2.0e-5_RKIND .or. abs(ru_raw)  > 5.0e-3_RKIND .or. &
                 abs(rv_raw)  > 5.0e-3_RKIND) then
-               write(0,*) 'LARGE NONHEAT GFS SAS TENDENCY -- CAPPING FOR TEST'
+               write(0,*) 'LARGE NONHEAT GFS SAS TENDENCY -- REPORT ONLY'
                write(0,*) 'i,k,kk             = ', i, k, kk
                write(0,*) 'rqv_raw,rqc_raw,rqi_raw = ', rqv_raw, rqc_raw, rqi_raw
                write(0,*) 'ru_raw,rv_raw      = ', ru_raw, rv_raw
@@ -428,14 +429,15 @@ contains
                call flush(0)
             endif
 
+            ! Least-artificial dt=300 test:
+            ! overwrite this convection call's tendencies with raw SAS increments.
+            ! No artificial heat/moisture/momentum caps are applied here.
             rthcuten(i,kk) = rth_test
-            rqvcuten(i,kk) = max(-2.0e-5_RKIND, min(2.0e-5_RKIND, rqv_raw))
-            rqccuten(i,kk) = max(-2.0e-5_RKIND, min(2.0e-5_RKIND, rqc_raw))
-            rqicuten(i,kk) = max(-2.0e-5_RKIND, min(2.0e-5_RKIND, rqi_raw))
-
+            rqvcuten(i,kk) = rqv_raw
+            rqccuten(i,kk) = rqc_raw
+            rqicuten(i,kk) = rqi_raw
             rucuten(i,kk)  = ru_raw
             rvcuten(i,kk)  = rv_raw
-
          endif
 
          if (rthcuten(i,kk) /= rthcuten(i,kk)) rthcuten(i,kk) = 0._RKIND
@@ -465,14 +467,16 @@ contains
             pratec(i) = 1000._RKIND * (rn_deep(i) + rn_shal(i)) / dt
          endif
 
-         if (kbot(i) > 0) then
-            ! Convert SAS kbot/ktop to the current MPAS diagnostic index.
+         ! Convert SAS local kbot/ktop back to MPAS diagnostic cubot/cutop.
+         ! SAS may return km+1 or other sentinel values when no valid cloud
+         ! base/top exists. Never index kmap outside 1:km.
+         if (kbot(i) >= 1 .and. kbot(i) <= km) then
             cubot(i) = real(kmap(i,kbot(i)), RKIND)
          else
             cubot(i) = real(km+1, RKIND)
          endif
 
-         if (ktop(i) > 0) then
+         if (ktop(i) >= 1 .and. ktop(i) <= km) then
             cutop(i) = real(kmap(i,ktop(i)), RKIND)
          else
             cutop(i) = 1._RKIND
