@@ -22,8 +22,8 @@ module mpas_satmedmfvdifq_wrapper_mod
     real(kind=RKIND) :: xkzm_h = 1.0_RKIND
     real(kind=RKIND) :: xkzm_s = 1.0_RKIND
     real(kind=RKIND) :: dspfac = 1.0_RKIND
-    real(kind=RKIND) :: bl_upfr = 0.07_RKIND
-    real(kind=RKIND) :: bl_dnfr = 0.05_RKIND
+    real(kind=RKIND) :: bl_upfr = 0.05_RKIND
+    real(kind=RKIND) :: bl_dnfr = 0.03_RKIND
     real(kind=RKIND) :: rlmx = 300.0_RKIND
     real(kind=RKIND) :: elmx = 300.0_RKIND
   end type mpas_satmedmfvdifq_config_type
@@ -34,7 +34,7 @@ contains
                                      z_mid, z_int, areaCell,             &
                                      u_mpas, v_mpas, t_mpas,             &
                                      qv_mpas, qc_mpas, qi_mpas, tke_mpas,&
-                                     p_mid, p_int, exner_mid,            &
+                                     p_hyd_mid, p_hyd_int, exner_hyd_mid, &
                                      sw_heat, lw_heat, coszen,           &
                                      skin_temp, shflx, lhflx, stress_in, &
                                      z0_mpas, u10, v10, vegfra_in, rb_in, fm_in, fh_in,    &
@@ -55,9 +55,9 @@ contains
     real(kind=RKIND), intent(in) :: qc_mpas(nCells,nVertLevels)
     real(kind=RKIND), intent(in) :: qi_mpas(nCells,nVertLevels)
     real(kind=RKIND), intent(inout) :: tke_mpas(nCells,nVertLevels)
-    real(kind=RKIND), intent(in) :: p_mid(nCells,nVertLevels)
-    real(kind=RKIND), intent(in) :: p_int(nCells,nVertLevels+1)
-    real(kind=RKIND), intent(in) :: exner_mid(nCells,nVertLevels)
+    real(kind=RKIND), intent(in) :: p_hyd_mid(nCells,nVertLevels)
+    real(kind=RKIND), intent(in) :: p_hyd_int(nCells,nVertLevels+1)
+    real(kind=RKIND), intent(in) :: exner_hyd_mid(nCells,nVertLevels)
     real(kind=RKIND), intent(in) :: sw_heat(nCells,nVertLevels)
     real(kind=RKIND), intent(in) :: lw_heat(nCells,nVertLevels)
     real(kind=RKIND), intent(in) :: coszen(nCells)
@@ -221,8 +221,9 @@ contains
         q1(i,k,ntiw) = max(qi_mpas(i,kk), 0.0_RKIND)
         q1(i,k,ntke) = max(tke_mpas(i,kk), 1.0e-9_RKIND)
 
-        prsl(i,k)  = p_mid(i,kk)
-        prslk(i,k) = exner_mid(i,kk)
+        prsl(i,k)  = max(p_hyd_mid(i,kk), 1.0_RKIND)
+        ! Hydrostatic Exner from MPAS driver. Keep this consistent with pres_hyd_p.
+        prslk(i,k) = max(exner_hyd_mid(i,kk), 1.0e-6_RKIND)
 
         ! UFS routine expects geopotential, not geometric height.
         phil(i,k) = grav * z_mid(i,kk)
@@ -234,7 +235,7 @@ contains
 
     do k = 1, km+1
       do i = 1, im
-        prsi(i,k) = p_int(i,k)
+        prsi(i,k) = max(p_hyd_int(i,k), 1.0_RKIND)
 
         ! UFS routine internally does zi=phii/grav, so pass geopotential.
         phii(i,k) = grav * z_int(i,k)
@@ -333,7 +334,7 @@ contains
       do i = 1, im
         kk = kmap(i,k)
 
-        ten_t_out(i,kk) = tdt(i,k)/exner_mid(i,kk)
+        ten_t_out(i,kk) = tdt(i,k)/max(prslk(i,k), 1.0e-6_RKIND)
         ten_u_out(i,kk) = du(i,k)
         ten_v_out(i,kk) = dv(i,k)
 
