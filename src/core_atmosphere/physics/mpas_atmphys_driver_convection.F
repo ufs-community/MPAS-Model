@@ -621,8 +621,16 @@
 
  integer:: i,j,k
  integer:: icount,initflag,sub3d
+ integer:: nbad_sas_after
+ logical:: bad_sas_tend_col
 
  real(kind=RKIND):: dx
+ real(kind=RKIND):: qv_after_sas
+ real(kind=RKIND),parameter:: qv_floor_sas = 1.0e-12_RKIND
+ real(kind=RKIND),parameter:: max_rth_sas  = 5.0e-2_RKIND
+ real(kind=RKIND),parameter:: max_rqv_sas  = 1.0e-4_RKIND
+ real(kind=RKIND),parameter:: max_ru_sas   = 5.0_RKIND
+ real(kind=RKIND),parameter:: max_rv_sas   = 5.0_RKIND
  real(kind=RKIND),allocatable:: z_int_sas(:,:)
  real(kind=RKIND),allocatable:: t_gfs_sas(:,:), qv_gfs_sas(:,:)
 real(kind=RKIND),allocatable:: pres_mid_gfs_sas(:,:), pres_int_gfs_sas(:,:)
@@ -1074,40 +1082,81 @@ real(kind=RKIND) :: p_sfc_safe, p_top_safe, frac_safe
          if (errflg /= 0) call physics_error_fatal(trim(errmsg))
 
          !---------------------------------------------------------------
-         ! DEBUG: Check GFS SAS tendencies immediately after wrapper returns.
-         ! If this fails, SAS/wrapper produced bad tendencies before MPAS
-         ! time integration applies them.
+         ! SAFETY: Check GFS SAS tendencies immediately after wrapper returns.
+         !
+         ! Previous code called physics_error_fatal here.  That made one bad
+         ! SAS column abort the full MPAS job.  For real testing, keep the
+         ! existing check but handle it locally: if any level in a column has
+         ! NaN, excessively large tendency, or would drive qv negative during
+         ! this physics step, zero convection tendencies/precip for that column
+         ! only and continue the integration.
          !---------------------------------------------------------------
-         do k = kts, kte
+         nbad_sas_after = 0
+
          do i = its, ite
             if (gfs_sas_bad_col(i,j)) cycle
-            if ( rthcuten_p(i,k,j) /= rthcuten_p(i,k,j) .or. &
-                 rqvcuten_p(i,k,j) /= rqvcuten_p(i,k,j) .or. &
-                 rucuten_p(i,k,j)  /= rucuten_p(i,k,j)  .or. &
-                 rvcuten_p(i,k,j)  /= rvcuten_p(i,k,j)  .or. &
-                 abs(rthcuten_p(i,k,j)) > 5.0e-2_RKIND .or. &
-                 abs(rqvcuten_p(i,k,j)) > 1.0e-4_RKIND .or. &
-                 abs(rucuten_p(i,k,j))  > 5.0_RKIND    .or. &
-                 abs(rvcuten_p(i,k,j))  > 5.0_RKIND ) then
 
-               write(0,*) 'BAD GFS SAS TENDENCY AFTER WRAPPER'
-               write(0,*) 'global i,j,k = ', i, j, k
-               write(0,*) 'rthcuten_p   = ', rthcuten_p(i,k,j)
-               write(0,*) 'rqvcuten_p   = ', rqvcuten_p(i,k,j)
-               write(0,*) 'rucuten_p    = ', rucuten_p(i,k,j)
-               write(0,*) 'rvcuten_p    = ', rvcuten_p(i,k,j)
-               write(0,*) 'rqccuten_p   = ', rqccuten_p(i,k,j)
-               write(0,*) 'rqicuten_p   = ', rqicuten_p(i,k,j)
-               write(0,*) 'state t,qv,u,v = ', &
-                           t_p(i,k,j), qv_p(i,k,j), u_p(i,k,j), v_p(i,k,j)
-               write(0,*) 'pressure mid,int(k),int(k+1) = ', &
-                           pres_hyd_p(i,k,j), pres2_hyd_p(i,k,j), &
-                           pres2_hyd_p(i,k+1,j)
-               write(0,*) 'raincv,pratec = ', raincv_p(i,j), pratec_p(i,j)
-               call flush(0)
-               call physics_error_fatal('bad GFS SAS tendency after wrapper')
+            bad_sas_tend_col = .false.
+
+            do k = kts, kte
+
+               qv_after_sas = qv_p(i,k,j) + dt_dyn * rqvcuten_p(i,k,j)
+
+               if ( rthcuten_p(i,k,j) /= rthcuten_p(i,k,j) .or. &
+                    rqvcuten_p(i,k,j) /= rqvcuten_p(i,k,j) .or. &
+                    rqccuten_p(i,k,j) /= rqccuten_p(i,k,j) .or. &
+                    rqicuten_p(i,k,j) /= rqicuten_p(i,k,j) .or. &
+                    rucuten_p(i,k,j)  /= rucuten_p(i,k,j)  .or. &
+                    rvcuten_p(i,k,j)  /= rvcuten_p(i,k,j)  .or. &
+                    abs(rthcuten_p(i,k,j)) > max_rth_sas .or. &
+                    abs(rqvcuten_p(i,k,j)) > max_rqv_sas .or. &
+                    abs(rucuten_p(i,k,j))  > max_ru_sas  .or. &
+                    abs(rvcuten_p(i,k,j))  > max_rv_sas  .or. &
+                    qv_after_sas /= qv_after_sas          .or. &
+                    qv_after_sas < qv_floor_sas ) then
+
+                  if (.not. bad_sas_tend_col) then
+                     nbad_sas_after = nbad_sas_after + 1
+                     write(0,*) 'BAD GFS SAS TENDENCY AFTER WRAPPER -- ZERO COLUMN ONLY'
+                     write(0,*) 'global i,j,k = ', i, j, k
+                     write(0,*) 'rthcuten_p   = ', rthcuten_p(i,k,j)
+                     write(0,*) 'rqvcuten_p   = ', rqvcuten_p(i,k,j)
+                     write(0,*) 'rucuten_p    = ', rucuten_p(i,k,j)
+                     write(0,*) 'rvcuten_p    = ', rvcuten_p(i,k,j)
+                     write(0,*) 'rqccuten_p   = ', rqccuten_p(i,k,j)
+                     write(0,*) 'rqicuten_p   = ', rqicuten_p(i,k,j)
+                     write(0,*) 'qv_before_after = ', qv_p(i,k,j), qv_after_sas
+                     write(0,*) 'state t,qv,u,v = ', &
+                                 t_p(i,k,j), qv_p(i,k,j), u_p(i,k,j), v_p(i,k,j)
+                     write(0,*) 'pressure mid,int(k),int(k+1) = ', &
+                                 pres_hyd_p(i,k,j), pres2_hyd_p(i,k,j), &
+                                 pres2_hyd_p(i,k+1,j)
+                     write(0,*) 'raincv,pratec before zero = ', raincv_p(i,j), pratec_p(i,j)
+                     call flush(0)
+                  endif
+
+                  bad_sas_tend_col = .true.
+               endif
+            enddo
+
+            if (bad_sas_tend_col) then
+               gfs_sas_bad_col(i,j) = .true.
+
+               do k = kts, kte
+                  rthcuten_p(i,k,j) = 0._RKIND
+                  rqvcuten_p(i,k,j) = 0._RKIND
+                  rqccuten_p(i,k,j) = 0._RKIND
+                  rqicuten_p(i,k,j) = 0._RKIND
+                  rucuten_p(i,k,j)  = 0._RKIND
+                  rvcuten_p(i,k,j)  = 0._RKIND
+               enddo
+
+               raincv_p(i,j) = 0._RKIND
+               pratec_p(i,j) = 0._RKIND
+               cubot_p(i,j)  = 0._RKIND
+               cutop_p(i,j)  = 0._RKIND
+               cu_act_flag(i,j) = .false.
             endif
-         enddo
          enddo
          !---------------------------------------------------------------
 
