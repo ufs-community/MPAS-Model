@@ -24,6 +24,8 @@
      &     con_eps - 1.0_kind_phys
       real(kind=kind_phys), parameter :: con_fvirt =
      &     con_rv / con_rd - 1.0_kind_phys
+!> minimum aerosol concentration
+      real(kind=kind_phys),parameter:: qamin = 1.e-16_kind_phys
       end module physcons
 
       module funcphys

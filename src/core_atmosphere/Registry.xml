@@ -431,7 +431,7 @@
                 <package name="cu_grell_freitas_li_in" description="parameterization of Grell-Freitas-Li convection."/>
                 <package name="cu_kain_fritsch_in" description="parameterization of Kain-Fritsch convection."/>
                 <package name="cu_ntiedtke_in" description="parameterization of Tiedtke convection."/>
-                <package name="cu_gfs_sas_in" description="parameterization of GFS scale-aware SAS deep and shallow convection."/>
+                <package name="cu_gfs_sas_in" description="parameterization of GFS SAMF scale-aware deep and shallow convection."/>
                 <package name="bl_ysu_in" description="parameterization of YSU Planetary Boundary Layer."/>
                 <package name="bl_mynn_in" description="parameterization of MYNN Planetary Boundary Layer."/>
                 <package name="bl_mynnedmf_in" description="parameterization of MYNN-EDMF Planetary Boundary Layer."/>

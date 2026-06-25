@@ -25,7 +25,8 @@
 !>   * No arbitrary tendency caps are applied. Columns with nonphysical
 !>     temperature inputs are skipped rather than aborting the run.
 
-! TEST CONFIG: deep SAS + shallow SAS enabled, real dot, all caps ON, overwrite tendencies, separate GFS deep/shallow constants.
+! TEST CONFIG: latest SAMF deep+shallow, driver-staged T/qv,
+! TKE-EDMF coupling through tkeh/maxMF/do_mynnedmf, kbot/ktop guard.
 module mpas_gfs_convection_wrapper_mod
 
    use mpas_kind_types, only: RKIND
@@ -41,13 +42,14 @@ module mpas_gfs_convection_wrapper_mod
 contains
 
    subroutine mpas_call_gfs_convection(im, km, dt,                              &
-        pres_mid, pres_int, z_int, u, v, t, qv, qc, qi, w,                      &
+        pres_mid, pres_int, z_int, dx, u, v, t, qv, qc, qi, w,                      &
         hpbl, hfx, qfx, xland,                                                  &
+        tkeh_in, maxmf_in, do_mynnedmf_in,                                      &
         rthcuten, rqvcuten, rqccuten, rqicuten, rucuten, rvcuten,               &
         raincv, pratec, cubot, cutop, ierr, errmsg)
 
-      use sascnvn, only: sascnvn_run
-      use shalcnv, only: shalcnv_run
+      use samfdeepcnv, only: samfdeepcnv_run
+      use samfshalcnv, only: samfshalcnv_run
 
       implicit none
 
@@ -57,6 +59,7 @@ contains
       real(kind=RKIND), intent(in) :: pres_mid(im,km)      ! Pa, MPAS layer pressure
       real(kind=RKIND), intent(in) :: pres_int(im,km+1)    ! Pa, MPAS interface pressure
       real(kind=RKIND), intent(in) :: z_int(im,km+1)       ! m, interface height
+      real(kind=RKIND), intent(in) :: dx(im)              ! cell length scale, m
       real(kind=RKIND), intent(in) :: u(im,km), v(im,km)   ! m s-1
       real(kind=RKIND), intent(in) :: t(im,km)             ! physical temperature, K; staged by MPAS driver
       real(kind=RKIND), intent(in) :: qv(im,km)            ! kg kg-1; staged by MPAS driver
@@ -65,6 +68,9 @@ contains
       real(kind=RKIND), intent(in) :: hpbl(im)             ! m
       real(kind=RKIND), intent(in) :: hfx(im), qfx(im)     ! W m-2, kg m-2 s-1
       real(kind=RKIND), intent(in) :: xland(im)            ! MPAS/WRF convention: 1 land, 2 water
+      real(kind=RKIND), intent(in) :: tkeh_in(im,km+1)     ! interface TKE from TKE-EDMF, m2 s-2
+      real(kind=RKIND), intent(in) :: maxmf_in(im)         ! max EDMF mass flux from PBL; 0 if unavailable
+      logical, intent(in) :: do_mynnedmf_in                ! true when coupled to TKE-EDMF/MYNN-EDMF PBL
 
       real(kind=RKIND), intent(inout) :: rthcuten(im,km)   ! theta tendency, K s-1
       real(kind=RKIND), intent(inout) :: rqvcuten(im,km)   ! kg kg-1 s-1
@@ -114,6 +120,27 @@ contains
       real(kind=RKIND) :: cnv_fice(im,km), cnv_ndrop(im,km), cnv_nice(im,km)
 
       real(kind=RKIND) :: heat(im), evap(im)
+      ! Latest CCPP SAMF deep/shallow interface work arrays.
+      integer :: nn_samf, itc_samf, ntc_samf, ntk_samf, ntr_samf
+      logical :: first_time_step_samf, restart_samf
+      logical :: hwrf_samfdeep, hwrf_samfshal
+      logical :: progsigma_samf, progomega_samf
+      logical :: do_ca, ca_closure, ca_entr, ca_trigger
+      logical :: do_mynnedmf, sigmab_coldstart
+      real(kind=RKIND) :: asolfac, cscale, nthresh
+      real(kind=RKIND) :: betadcu, betamcu, betascu
+      real(kind=RKIND) :: cat_adj_deep, cat_adj_shal
+      real(kind=RKIND) :: garea(im), fscav(1), maxMF(im), ca_deep(im), rainevap(im)
+      real(kind=RKIND) :: tmf(im,km,1), qmicro(im,km), prevsq(im,km)
+      real(kind=RKIND) :: sigmain(im,km), sigmaout(im,km)
+      real(kind=RKIND) :: omegain(im,km), omegaout(im,km)
+      real(kind=RKIND) :: qtr(im,km,2), qtr_sh(im,km,2)
+      real(kind=RKIND) :: dqtr_deep(im,km,2), dqtr_shal(im,km,2)
+      real(kind=RKIND) :: ten_t_deep(im,km), ten_u_deep(im,km), ten_v_deep(im,km)
+      real(kind=RKIND) :: ten_t_shal(im,km), ten_u_shal(im,km), ten_v_shal(im,km)
+      real(kind=RKIND) :: ten_q_deep(im,km,1), ten_q_shal(im,km,1)
+      real(kind=RKIND) :: t1_sh(im,km), q1_sh(im,km), u1_sh(im,km), v1_sh(im,km)
+      real(kind=RKIND) :: tkeh(im,km+1)
 
       ierr = 0
       errmsg = ' '
@@ -170,6 +197,73 @@ contains
       pgcon_shal   = 0.55_RKIND
       evef_shal    = 0.09_RKIND
 
+      ! Latest SAMF interface controls.  Disable optional aerosol/prognostic
+      ! sigma/omega/TKE pathways for this MPAS bridge test; provide valid
+      ! arrays anyway because the CCPP routines use assumed-shape dummies.
+      nn_samf = 2
+      itc_samf = 0
+      ntc_samf = 0
+      ntk_samf = 0
+      ntr_samf = 0
+      first_time_step_samf = .false.
+      restart_samf = .false.
+      hwrf_samfdeep = .false.
+      hwrf_samfshal = .false.
+      progsigma_samf = .false.
+      progomega_samf = .false.
+      do_ca = .false.
+      ca_closure = .false.
+      ca_entr = .false.
+      ca_trigger = .false.
+      do_mynnedmf = do_mynnedmf_in
+      sigmab_coldstart = .false.
+      asolfac = 0.958_RKIND
+      cscale  = 1.0_RKIND
+      nthresh = 0.0_RKIND
+      betadcu = 2.0_RKIND
+      betamcu = 1.0_RKIND
+      betascu = 8.0_RKIND
+      cat_adj_deep = 1.0_RKIND
+      cat_adj_shal = 1.0_RKIND
+      fscav(1) = 0.0_RKIND
+      do i = 1, im
+         maxMF(i) = max(0.0_RKIND, maxmf_in(i))
+      enddo
+      ca_deep(:) = 0.0_RKIND
+      rainevap(:) = 0.0_RKIND
+      tmf(:,:,:) = 0.0_RKIND
+      qmicro(:,:) = 0.0_RKIND
+      prevsq(:,:) = 0.0_RKIND
+      sigmain(:,:) = 0.0_RKIND
+      sigmaout(:,:) = 0.0_RKIND
+      omegain(:,:) = 0.0_RKIND
+      omegaout(:,:) = 0.0_RKIND
+      qtr(:,:,:) = 0.0_RKIND
+      qtr_sh(:,:,:) = 0.0_RKIND
+      dqtr_deep(:,:,:) = 0.0_RKIND
+      dqtr_shal(:,:,:) = 0.0_RKIND
+      ten_t_deep(:,:) = 0.0_RKIND
+      ten_u_deep(:,:) = 0.0_RKIND
+      ten_v_deep(:,:) = 0.0_RKIND
+      ten_q_deep(:,:,:) = 0.0_RKIND
+      ten_t_shal(:,:) = 0.0_RKIND
+      ten_u_shal(:,:) = 0.0_RKIND
+      ten_v_shal(:,:) = 0.0_RKIND
+      ten_q_shal(:,:,:) = 0.0_RKIND
+      t1_sh(:,:) = 0.0_RKIND
+      q1_sh(:,:) = 0.0_RKIND
+      u1_sh(:,:) = 0.0_RKIND
+      v1_sh(:,:) = 0.0_RKIND
+      do k = 1, km+1
+      do i = 1, im
+         if (tkeh_in(i,k) == tkeh_in(i,k)) then
+            tkeh(i,k) = max(0.0_RKIND, tkeh_in(i,k))
+         else
+            tkeh(i,k) = 0.0_RKIND
+         endif
+      enddo
+      enddo
+
       ! Build current-call vertical mapping every call.
       ! Do not carry any k identity from previous calls.
       ! MPAS and GFS SAS/shalcnv are both treated as bottom-up:
@@ -202,6 +296,7 @@ contains
          else
             islimsk(i) = 0       ! ocean; add sea-ice category later when available
          endif
+         garea(i) = max(1.0_RKIND, dx(i)*dx(i))
 
          ! Surface density for shallow-convection flux conversion.
          ! The driver must pass physical temperature t_phy_p, not potential temperature.
@@ -277,6 +372,10 @@ contains
          qli(i,k) = max(0._RKIND, qi(i,kk))
          qlc_old(i,k) = qlc(i,k)
          qli_old(i,k) = qli(i,k)
+         qtr(i,k,1) = qli(i,k)
+         qtr(i,k,2) = qlc(i,k)
+         qtr_sh(i,k,1) = qtr(i,k,1)
+         qtr_sh(i,k,2) = qtr(i,k,2)
 
          q1(i,k) = max(qmin, qv(i,kk))
          u1(i,k) = u(i,kk)
@@ -308,42 +407,77 @@ contains
       enddo
       enddo
 
-      call sascnvn_run(                                                        &
-           gravity, cp, hvap, R_v, fv, t0, R_d, cvap, cliq, eps, epsm1,        &
-           im, km, jcap, dt, delp, prslp, psp, phil, qlc, qli,                 &
-           q1, t1, u1, v1, cldwrk, rn_deep, kbot, ktop, kcnv, islimsk,         &
-           dot, ncloud, ud_mf, dd_mf, dt_mf, cnvw, cnvc,                       &
-           qlcn, qicn, w_upi, cf_upi, cnv_mfd, cnv_dqldt, clcn,                &
-           cnv_fice, cnv_ndrop, cnv_nice, mp_phys, mp_phys_mg,                 &
-           clam_deep, c0_deep, c1_deep, betal_deep, betas_deep,                 &
-           evfact_deep, evfactl_deep, pgcon_deep,                                      &
+      !-----------------------------------------------------------------
+      ! Latest CCPP SAMF deep convection interface.
+      ! The latest scheme returns tendencies (ten_t/ten_q/ten_u/ten_v)
+      ! rather than updating t1/q1/u1/v1 in place.
+      !-----------------------------------------------------------------
+      call samfdeepcnv_run(                                                   &
+           im, km, nn_samf, first_time_step_samf, restart_samf,               &
+           tmf, qmicro, itc_samf, ntc_samf, cliq, cp, cvap,                  &
+           eps, epsm1, fv, gravity, hvap, R_d, R_v,                           &
+           t0, dt, ntk_samf, ntr_samf, delp,                                  &
+           ten_t_deep, ten_u_deep, ten_v_deep, ten_q_deep,                    &
+           prslp, psp, phil, tkeh, qtr, dqtr_deep, prevsq,                    &
+           q1, q1, t1, u1, v1, fscav,                                         &
+           hwrf_samfdeep, progsigma_samf, progomega_samf,                    &
+           cldwrk, rn_deep, kbot, ktop, kcnv,                                 &
+           islimsk, garea, dot, ncloud, hpbl, ud_mf, dd_mf, dt_mf,            &
+           cnvw, cnvc, qlcn, qicn, w_upi, cf_upi, cnv_mfd,                   &
+           cnv_dqldt, clcn, cnv_fice, cnv_ndrop, cnv_nice,                   &
+           mp_phys, mp_phys_mg,                                               &
+           clam_deep, c0_deep, c1_deep, betal_deep, betas_deep,               &
+           evfact_deep, pgcon_deep, asolfac, cscale,                         &
+           do_ca, ca_closure, ca_entr, ca_trigger, nthresh, ca_deep,          &
+           rainevap, sigmain, sigmaout, omegain, omegaout,                    &
+           betadcu, betamcu, betascu, maxMF,                                  &
+           do_mynnedmf, sigmab_coldstart, cat_adj_deep,                      &
            emsg_deep, errflg_deep)
 
       if (errflg_deep /= 0) then
          ierr = errflg_deep
-         errmsg = 'sascnvn_run failed: '//trim(emsg_deep)
+         errmsg = 'samfdeepcnv_run failed: '//trim(emsg_deep)
          return
       endif
 
-      ! NOTE: CCPP/GFS also has evef_shal=0.09, but the current standalone
-      ! shalcnv_run interface does not expose an evef argument. To test evef_shal
-      ! exactly, shalcnv.F itself must be updated to accept/use it.
-      call shalcnv_run(                                                        &
-           gravity, cp, hvap, R_v, fv, t0, R_d, cvap, cliq, eps, epsm1,        &
-           im, km, jcap, dt, delp, prslp, psp, phil, qlc, qli,                 &
-           q1, t1, u1, v1, rn_shal, kbot, ktop, kcnv, islimsk,                 &
-           dot, ncloud, hpbl, heat, evap, ud_mf_sh, dt_mf_sh, cnvw, cnvc,      &
-           clam_shal, c0_shal, c1_shal, pgcon_shal, emsg_shal, errflg_shal)
+      ! Stage the input to shallow convection with deep-convection tendencies,
+      ! matching the CCPP sequence behavior where shallow sees the updated state.
+      do k = 1, km
+      do i = 1, im
+         t1_sh(i,k) = t1(i,k) + dt * ten_t_deep(i,k)
+         q1_sh(i,k) = max(qmin, q1(i,k) + dt * ten_q_deep(i,k,1))
+         u1_sh(i,k) = u1(i,k) + dt * ten_u_deep(i,k)
+         v1_sh(i,k) = v1(i,k) + dt * ten_v_deep(i,k)
+         qtr_sh(i,k,1) = qtr(i,k,1) + dt * dqtr_deep(i,k,1)
+         qtr_sh(i,k,2) = qtr(i,k,2) + dt * dqtr_deep(i,k,2)
+      enddo
+      enddo
+
+      call samfshalcnv_run(                                                  &
+           im, km, nn_samf, itc_samf, ntc_samf, cliq, cp, cvap,             &
+           eps, epsm1, fv, gravity, hvap, R_d, R_v,                          &
+           t0, dt, ntk_samf, ntr_samf, delp,                                 &
+           first_time_step_samf, restart_samf,                               &
+           tmf, qmicro, progsigma_samf, progomega_samf,                     &
+           prslp, psp, phil, tkeh, qtr_sh, dqtr_shal, prevsq,                &
+           q1_sh, q1_sh, t1_sh, u1_sh, v1_sh, fscav,                         &
+           rn_shal, kbot, ktop, kcnv, islimsk, garea, cscale,                &
+           ten_t_shal, ten_u_shal, ten_v_shal, ten_q_shal,                   &
+           dot, ncloud, hpbl, ud_mf_sh, dt_mf_sh, cnvw, cnvc,                &
+           clam_shal, c0_shal, c1_shal, evef_shal, pgcon_shal,               &
+           asolfac, hwrf_samfshal,                                           &
+           sigmain, sigmaout, omegain, omegaout,                             &
+           betadcu, betamcu, betascu, cat_adj_shal,                          &
+           emsg_shal, errflg_shal)
 
       if (errflg_shal /= 0) then
          ierr = errflg_shal
-         errmsg = 'shalcnv_run failed: '//trim(emsg_shal)
+         errmsg = 'samfshalcnv_run failed: '//trim(emsg_shal)
          return
       endif
 
       do k = 1, km
       do i = 1, im
-         ! Unpack SAS/shalcnv index back to the current MPAS index used in packing.
          kk = kmap(i,k)
 
          if (bad_col(i)) then
@@ -354,84 +488,38 @@ contains
             rucuten(i,kk)  = 0._RKIND
             rvcuten(i,kk)  = 0._RKIND
          else
-            q1(i,k) = max(qmin, q1(i,k))
             theta_fac = (100000._RKIND / prslp(i,k)) ** kappa
 
-            ! SAS updates physical temperature t1; MPAS expects theta tendency,
-            ! so dT/dt is multiplied by theta_fac = 1/exner.
-            ! These output tendencies are for this convection call only; overwrite
-            ! rather than accumulating onto any incoming tendency array.
-            dtemp_sas = t1(i,k) - t1_old(i,k)
-            dtdt_test = dtemp_sas / dt
-            rth_test  = dtdt_test * theta_fac
+            rth_test = (ten_t_deep(i,k) + ten_t_shal(i,k)) * theta_fac
+            rqv_raw  =  ten_q_deep(i,k,1) + ten_q_shal(i,k,1)
+            rqc_raw  =  dqtr_deep(i,k,2) + dqtr_shal(i,k,2)
+            rqi_raw  =  dqtr_deep(i,k,1) + dqtr_shal(i,k,1)
+            ru_raw   =  ten_u_deep(i,k) + ten_u_shal(i,k)
+            rv_raw   =  ten_v_deep(i,k) + ten_v_shal(i,k)
 
-            if (rth_test /= rth_test) then
-               write(0,*) 'BAD RTHCUTEN SOURCE: NaN IN GFS SAS WRAPPER'
-               write(0,*) 'i,k,kk             = ', i, k, kk
-               write(0,*) 'dt                 = ', dt
-               write(0,*) 'prslp,psp,delp     = ', prslp(i,k), psp(i), delp(i,k)
-               write(0,*) 'theta_fac          = ', theta_fac
-               write(0,*) 't_old,t_after_sas  = ', t1_old(i,k), t1(i,k)
-               write(0,*) 'dtemp_sas,dT/dt    = ', dtemp_sas, dtdt_test
+            if (rth_test /= rth_test .or. rqv_raw /= rqv_raw .or.             &
+                rqc_raw /= rqc_raw .or. rqi_raw /= rqi_raw .or.              &
+                ru_raw /= ru_raw .or. rv_raw /= rv_raw) then
+               write(0,*) 'NaN tendency from latest SAMF GFS convection'
+               write(0,*) 'i,k,kk=', i,k,kk
                call flush(0)
                ierr = 99
-               write(errmsg,'(a,2i8)') 'NaN rthcuten source in GFS SAS wrapper at i,k=', i, kk
+               errmsg = 'NaN tendency from latest SAMF GFS convection'
                return
             endif
 
-            if (abs(rth_test) > 5.0e-2_RKIND) then
-               write(0,*) 'LARGE RTHCUTEN SOURCE IN GFS SAS WRAPPER -- REPORT ONLY'
+            if (abs(rth_test) > 5.0e-2_RKIND .or. abs(rqv_raw) > 2.0e-5_RKIND .or. &
+                abs(rqc_raw) > 2.0e-5_RKIND .or. abs(rqi_raw) > 2.0e-5_RKIND .or. &
+                abs(ru_raw)  > 5.0e-3_RKIND .or. abs(rv_raw)  > 5.0e-3_RKIND) then
+               write(0,*) 'LARGE LATEST SAMF GFS SAS TENDENCY -- REPORT ONLY'
                write(0,*) 'i,k,kk             = ', i, k, kk
-               write(0,*) 'dt                 = ', dt
-               write(0,*) 'prslp,psp,delp     = ', prslp(i,k), psp(i), delp(i,k)
-               write(0,*) 'theta_fac=1/exner  = ', theta_fac
-               write(0,*) 'exner              = ', 1.0_RKIND / theta_fac
-               write(0,*) 't_old,t_after_sas  = ', t1_old(i,k), t1(i,k)
-               write(0,*) 'dtemp_sas          = ', dtemp_sas
-               write(0,*) 'dT/dt              = ', dtdt_test
-               write(0,*) 'dtheta/dt raw      = ', rth_test
-               write(0,*) 'q_old,q_after_sas  = ', q1_old(i,k), q1(i,k)
-               write(0,*) 'rn_deep,rn_shal    = ', rn_deep(i), rn_shal(i)
-               write(0,*) 'kbot,ktop,kcnv     = ', kbot(i), ktop(i), kcnv(i)
-               write(0,*) 'cldwrk             = ', cldwrk(i)
-               write(0,*) '---- SAS COLUMN DUMP FOR THIS i ----'
-               do kkdbg = 1, km
-                  write(0,*) 'SASCOL k,p,delp,Told,Tnew,Qold,Qnew,qlc,qli = ', &
-                       kkdbg, prslp(i,kkdbg), delp(i,kkdbg),                    &
-                       t1_old(i,kkdbg), t1(i,kkdbg), q1_old(i,kkdbg),           &
-                       q1(i,kkdbg), qlc(i,kkdbg), qli(i,kkdbg)
-               enddo
-               call flush(0)
-
-               ! Least-artificial dt=300 test: report only; do NOT cap rth_test.
-            endif
-
-            rqv_raw = (q1(i,k)  - q1_old(i,k))  / dt
-            rqc_raw = (qlc(i,k) - qlc_old(i,k)) / dt
-            rqi_raw = (qli(i,k) - qli_old(i,k)) / dt
-            ru_raw  = (u1(i,k)  - u1_old(i,k))  / dt
-            rv_raw  = (v1(i,k)  - v1_old(i,k))  / dt
-
-            if (abs(rqv_raw) > 2.0e-5_RKIND .or. abs(rqc_raw) > 2.0e-5_RKIND .or. &
-                abs(rqi_raw) > 2.0e-5_RKIND .or. abs(ru_raw)  > 5.0e-3_RKIND .or. &
-                abs(rv_raw)  > 5.0e-3_RKIND) then
-               write(0,*) 'LARGE NONHEAT GFS SAS TENDENCY -- REPORT ONLY'
-               write(0,*) 'i,k,kk             = ', i, k, kk
-               write(0,*) 'rqv_raw,rqc_raw,rqi_raw = ', rqv_raw, rqc_raw, rqi_raw
-               write(0,*) 'ru_raw,rv_raw      = ', ru_raw, rv_raw
-               write(0,*) 'q_old,q_after_sas  = ', q1_old(i,k), q1(i,k)
-               write(0,*) 'qc_old,qlc_after   = ', qlc_old(i,k), qlc(i,k)
-               write(0,*) 'qi_old,qli_after   = ', qli_old(i,k), qli(i,k)
-               write(0,*) 'u_old,u_after_sas  = ', u1_old(i,k), u1(i,k)
-               write(0,*) 'v_old,v_after_sas  = ', v1_old(i,k), v1(i,k)
-               write(0,*) 'rn_deep,rn_shal    = ', rn_deep(i), rn_shal(i)
+               write(0,*) 'rth,rqv,rqc,rqi    = ', rth_test, rqv_raw, rqc_raw, rqi_raw
+               write(0,*) 'ru,rv              = ', ru_raw, rv_raw
+               write(0,*) 'deep rn,shal rn    = ', rn_deep(i), rn_shal(i)
                write(0,*) 'kbot,ktop,kcnv     = ', kbot(i), ktop(i), kcnv(i)
                call flush(0)
             endif
 
-            ! Least-artificial dt=300 test:
-            ! overwrite this convection call's tendencies with raw SAS increments.
-            ! No artificial heat/moisture/momentum caps are applied here.
             rthcuten(i,kk) = rth_test
             rqvcuten(i,kk) = rqv_raw
             rqccuten(i,kk) = rqc_raw
@@ -467,9 +555,6 @@ contains
             pratec(i) = 1000._RKIND * (rn_deep(i) + rn_shal(i)) / dt
          endif
 
-         ! Convert SAS local kbot/ktop back to MPAS diagnostic cubot/cutop.
-         ! SAS may return km+1 or other sentinel values when no valid cloud
-         ! base/top exists. Never index kmap outside 1:km.
          if (kbot(i) >= 1 .and. kbot(i) <= km) then
             cubot(i) = real(kmap(i,kbot(i)), RKIND)
          else

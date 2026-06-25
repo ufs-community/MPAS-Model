@@ -186,8 +186,9 @@ mpas_satmedmfvdifq_wrapper_mod.o: \
 	mpas_atmphys_vars.o \
 	mpas_atmphys_utilities.o
 
-# GFS SAS convection wrapper dependencies for MPAS application.
-# GFS/UFS SAS science objects are built in physics_gfs/.
+# GFS SAMF convection wrapper dependencies for MPAS application.
+# Latest GFS/UFS SAMF science objects/modules are built in physics_gfs/
+# before this wrapper is compiled.  Keep -I./physics_gfs in the compile rule.
 mpas_gfs_convection_wrapper_mod.o: \
 	mpas_atmphys_constants.o \
 	mpas_atmphys_vars.o \
@@ -330,7 +331,7 @@ ifeq "$(GEN_F90)" "true"
 	$(CPP) $(CPPFLAGS) $(COREDEF) $(HYDROSTATIC) $(CPPINCLUDES) $< > $*.f90
 	$(FC) $(FFLAGS) -c $*.f90 $(FCINCLUDES) -I./physics_mmm -I./physics_wrf -I./physics_gfs -I./physics_noahmp -I./physics_noahmp/utility -I./physics_noahmp/drivers/mpas -I./physics_noahmp/src -I./physics_noaa/TEMPO -I./physics_noaa/UGWP -I./physics_noaa/MYNN-EDMF -I./physics_noaa/MYNN-SFC -I./physics_noaa/RUCLSM -I./physics_noaa/GFL -I./physics_noaa/SMOKE -I.. -I../../framework -I../../external/esmf_time_f90
 else
-	$(FC) $(CPPFLAGS) $(COREDEF) $(HYDROSATIC) $(FFLAGS) -c $*.F $(CPPINCLUDES) $(FCINCLUDES) -I./physics_mmm -I./physics_wrf -I./physics_gfs -I./physics_noahmp -I./physics_noahmp/utility -I./physics_noahmp/drivers/mpas -I./physics_noahmp/src -I./physics_noaa/TEMPO -I./physics_noaa/UGWP -I./physics_noaa/MYNN-EDMF -I./physics_noaa/MYNN-SFC -I./physics_noaa/RUCLSM -I./physics_noaa/GFL -I./physics_noaa/SMOKE -I.. -I../../framework -I../../external/esmf_time_f90
+	$(FC) $(CPPFLAGS) $(COREDEF) $(HYDROSTATIC) $(FFLAGS) -c $*.F $(CPPINCLUDES) $(FCINCLUDES) -I./physics_mmm -I./physics_wrf -I./physics_gfs -I./physics_noahmp -I./physics_noahmp/utility -I./physics_noahmp/drivers/mpas -I./physics_noahmp/src -I./physics_noaa/TEMPO -I./physics_noaa/UGWP -I./physics_noaa/MYNN-EDMF -I./physics_noaa/MYNN-SFC -I./physics_noaa/RUCLSM -I./physics_noaa/GFL -I./physics_noaa/SMOKE -I.. -I../../framework -I../../external/esmf_time_f90
 endif
 
 .F90.o:
@@ -339,5 +340,5 @@ ifeq "$(GEN_F90)" "true"
 	$(CPP) $(CPPFLAGS) $(COREDEF) $(HYDROSTATIC) $(CPPINCLUDES) $< > $*.f90
 	$(FC) $(FFLAGS) -c $*.f90 $(FCINCLUDES) -I./physics_mmm -I./physics_wrf -I./physics_gfs -I./physics_noaa/TEMPO -I./physics_noaa/UGWP -I./physics_noaa/MYNN-EDMF -I./physics_noaa/MYNN-SFC -I./physics_noaa/RUCLSM -I./physics_noaa/GFL -I./physics_noaa/SMOKE -I.. -I../../framework -I../../external/esmf_time_f90
 else
-	$(FC) $(CPPFLAGS) $(COREDEF) $(HYDROSATIC) $(FFLAGS) -c $*.F90 $(CPPINCLUDES) $(FCINCLUDES) -I./physics_mmm -I./physics_wrf -I./physics_gfs -I./physics_noaa/TEMPO -I./physics_noaa/UGWP -I./physics_noaa/MYNN-EDMF -I./physics_noaa/MYNN-SFC -I./physics_noaa/RUCLSM -I./physics_noaa/GFL -I./physics_noaa/SMOKE -I.. -I../../framework -I../../external/esmf_time_f90
+	$(FC) $(CPPFLAGS) $(COREDEF) $(HYDROSTATIC) $(FFLAGS) -c $*.F90 $(CPPINCLUDES) $(FCINCLUDES) -I./physics_mmm -I./physics_wrf -I./physics_gfs -I./physics_noaa/TEMPO -I./physics_noaa/UGWP -I./physics_noaa/MYNN-EDMF -I./physics_noaa/MYNN-SFC -I./physics_noaa/RUCLSM -I./physics_noaa/GFL -I./physics_noaa/SMOKE -I.. -I../../framework -I../../external/esmf_time_f90
 endif
