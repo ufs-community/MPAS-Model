@@ -305,7 +305,7 @@ module atm_core
       ! 
       ! init stochastic pattern generation
       if (dosppt(domain)) then
-        call stochastic_physics_pattern_init (domain, ierr)
+        call stochastic_physics_pattern_init (domain)
       endif
 
    end function atm_core_init
@@ -1054,7 +1054,7 @@ module atm_core
 #endif
 
       if (dosppt(domain)) then
-        call stochastic_physics_pattern_adv(domain, itimestep, ierr)
+        call stochastic_physics_pattern_adv(domain, itimestep)
       endif
       call atm_timestep(domain, dt, currTime, itimestep, exchange_halo_group)
 

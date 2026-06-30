@@ -1082,7 +1082,7 @@ module atm_time_integration
 
 ! apply random perturbation pattern to physics process (hydrostatic) tendencies
       if (dosppt(domain)) then
-        call stochastic_physics_pattern_apply(domain, 'phys', ierr)
+        call stochastic_physics_pattern_apply(domain, 'phys')
       endif
 
       call physics_get_tend( block, mesh, state, diag, tend, tend_physics, &
@@ -1093,7 +1093,7 @@ module atm_time_integration
 
 ! apply random perturbation pattern to the accumulated (non-hydrostatic) physics tendencies
       if (dosppt(domain)) then
-        call stochastic_physics_pattern_apply(domain, 'prog', ierr)
+        call stochastic_physics_pattern_apply(domain, 'prog')
       endif
 #else
 #ifndef MPAS_CAM_DYCORE
