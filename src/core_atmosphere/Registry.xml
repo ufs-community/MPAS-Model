@@ -38,10 +38,6 @@
 		<dim name="nMonths"            definition="namelist:months"
                      description="The number of months in a year"/>
 #endif
-                <dim name="lon_for"      definition="504"
-                     description="The number of longitude points for the Gaussian grid"/>
-                <dim name="lat_leg"      definition="248"
-                     description="The number of latitude points for the Gaussian grid"/>
 
 #ifdef DO_PHYSICS
                 <dim name="nMonths"            definition="namelist:months"
@@ -1008,7 +1004,6 @@
 			<var name="uReconstructZonal"/>
 			<var name="uReconstructMeridional"/>
                         <var name="stoch_pattern_sppt"/>
-                        <var name="stoch_pattern_gg"/>
 
                         <!-- Begin Ertel PV diagnostics defined in diagnostics/Registry_pv.xml -->
 			<var name="ertel_pv"/>
@@ -4288,8 +4283,6 @@
                 <var name="stoch_pattern_sppt" type="real" dimensions="nVertLevels nCells Time" units="%"
                      description="Perturbation pattern for stochastic physics SPPT scheme" />
 
-                <var name="stoch_pattern_gg" type="real" dimensions="lon_for lat_leg Time" units="%"
-                     description="Perturbation pattern for stochastic physics, on Gaussian grid" />
 #ifdef DO_PHYSICS
                 <!-- ================================================================================================== -->
                 <!-- TENDENCIES FROM PARAMETERIZATION OF CLOUD MICROPHYSICS:                                            -->
