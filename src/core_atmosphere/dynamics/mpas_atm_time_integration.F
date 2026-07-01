@@ -881,7 +881,6 @@ module atm_time_integration
 #endif
 
       real (kind=RKIND)  :: time_dyn_step
-      integer :: ierr
       logical, parameter :: debug = .false.
 
 
