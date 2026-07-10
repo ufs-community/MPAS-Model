@@ -508,17 +508,9 @@ contains
                return
             endif
 
-            if (abs(rth_test) > 5.0e-2_RKIND .or. abs(rqv_raw) > 2.0e-5_RKIND .or. &
-                abs(rqc_raw) > 2.0e-5_RKIND .or. abs(rqi_raw) > 2.0e-5_RKIND .or. &
-                abs(ru_raw)  > 5.0e-3_RKIND .or. abs(rv_raw)  > 5.0e-3_RKIND) then
-               write(0,*) 'LARGE LATEST SAMF GFS SAS TENDENCY -- REPORT ONLY'
-               write(0,*) 'i,k,kk             = ', i, k, kk
-               write(0,*) 'rth,rqv,rqc,rqi    = ', rth_test, rqv_raw, rqc_raw, rqi_raw
-               write(0,*) 'ru,rv              = ', ru_raw, rv_raw
-               write(0,*) 'deep rn,shal rn    = ', rn_deep(i), rn_shal(i)
-               write(0,*) 'kbot,ktop,kcnv     = ', kbot(i), ktop(i), kcnv(i)
-               call flush(0)
-            endif
+            ! Quiet test: suppress the report-only large-tendency output.
+            ! The values are still returned unchanged and the driver safety
+            ! check remains active.
 
             rthcuten(i,kk) = rth_test
             rqvcuten(i,kk) = rqv_raw

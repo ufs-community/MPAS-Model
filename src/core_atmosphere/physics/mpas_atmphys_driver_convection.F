@@ -986,13 +986,12 @@ real(kind=RKIND) :: p_sfc_safe, p_top_safe, frac_safe
 
             if (t_gfs_sas(i,k) /= t_gfs_sas(i,k) .or. &
                 t_gfs_sas(i,k) < 150._RKIND .or. t_gfs_sas(i,k) > 360._RKIND) then
-               write(0,*) 'BAD STAGED T BEFORE GFS SAS'
-               write(0,*) 'i,j,k=', i,j,k
-               write(0,*) 't_raw, t_stage=', t_p(i,k,j), t_gfs_sas(i,k)
-               write(0,*) 'rthften_p(temp tendency), rqvften_p=', &
-                    rthften_p(i,k,j), rqvften_p(i,k,j)
-               call flush(0)
-               t_gfs_sas(i,k) = min(360._RKIND, max(150._RKIND, t_gfs_sas(i,k)))
+               ! Quiet test: retain the safety clamp but suppress diagnostics.
+               if (t_gfs_sas(i,k) /= t_gfs_sas(i,k)) then
+                  t_gfs_sas(i,k) = min(360._RKIND, max(150._RKIND, t_p(i,k,j)))
+               else
+                  t_gfs_sas(i,k) = min(360._RKIND, max(150._RKIND, t_gfs_sas(i,k)))
+               endif
             endif
          enddo
          enddo
@@ -1116,23 +1115,9 @@ real(kind=RKIND) :: p_sfc_safe, p_top_safe, frac_safe
                     qv_after_sas < qv_floor_sas ) then
 
                   if (.not. bad_sas_tend_col) then
+                     ! Quiet test: count and zero unsafe SAS columns without
+                     ! printing per-column diagnostics.
                      nbad_sas_after = nbad_sas_after + 1
-                     write(0,*) 'BAD GFS SAS TENDENCY AFTER WRAPPER -- ZERO COLUMN ONLY'
-                     write(0,*) 'global i,j,k = ', i, j, k
-                     write(0,*) 'rthcuten_p   = ', rthcuten_p(i,k,j)
-                     write(0,*) 'rqvcuten_p   = ', rqvcuten_p(i,k,j)
-                     write(0,*) 'rucuten_p    = ', rucuten_p(i,k,j)
-                     write(0,*) 'rvcuten_p    = ', rvcuten_p(i,k,j)
-                     write(0,*) 'rqccuten_p   = ', rqccuten_p(i,k,j)
-                     write(0,*) 'rqicuten_p   = ', rqicuten_p(i,k,j)
-                     write(0,*) 'qv_before_after = ', qv_p(i,k,j), qv_after_sas
-                     write(0,*) 'state t,qv,u,v = ', &
-                                 t_p(i,k,j), qv_p(i,k,j), u_p(i,k,j), v_p(i,k,j)
-                     write(0,*) 'pressure mid,int(k),int(k+1) = ', &
-                                 pres_hyd_p(i,k,j), pres2_hyd_p(i,k,j), &
-                                 pres2_hyd_p(i,k+1,j)
-                     write(0,*) 'raincv,pratec before zero = ', raincv_p(i,j), pratec_p(i,j)
-                     call flush(0)
                   endif
 
                   bad_sas_tend_col = .true.

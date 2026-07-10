@@ -10,6 +10,7 @@
  use mpas_kind_types
  use mpas_pool_routines
  use mpas_timer,only: mpas_timer_start,mpas_timer_stop
+ use, intrinsic :: ieee_arithmetic, only : ieee_is_finite
 
  use mpas_atmphys_constants
  use mpas_atmphys_vars
@@ -1509,6 +1510,38 @@ endif
  real(kind=RKIND), allocatable :: zmid_tkeedmf_p(:,:,:)
  real(kind=RKIND), allocatable :: zint_tkeedmf_p(:,:,:)
 
+! Rare-column TKE-EDMF safeguard. Use actual MPAS cell connectivity
+! to replace only invalid PBL outputs with neighboring valid PBL outputs.
+ integer, dimension(:), pointer :: nEdgesOnCell
+ integer, dimension(:,:), pointer :: cellsOnCell
+ logical, allocatable :: pbl_col_valid(:), pbl_col_bad(:)
+ logical, allocatable :: pbl_press_valid(:), pbl_press_bad(:)
+ real(kind=RKIND), allocatable :: p_mid_tkeedmf(:,:), p_int_tkeedmf(:,:)
+ integer :: n, nbr, ngood, nbad_pbl, nbad_press, bad_reason
+ integer, save :: pbl_repair_total_local = 0
+ integer, save :: pbl_repair_window_local = 0
+ integer, save :: pbl_pressure_total_local = 0
+ integer, save :: pbl_pressure_window_local = 0
+ integer, save :: nbad_nan_window  = 0
+ integer, save :: nbad_hpbl_window = 0
+ integer, save :: nbad_t_window    = 0
+ integer, save :: nbad_qv_window   = 0
+ integer, save :: nqv_limited_window = 0
+ integer, save :: nqv_limited_total  = 0
+ integer, save :: nqc_limited_window = 0
+ integer, save :: nqc_limited_total  = 0
+ integer, save :: nqi_limited_window = 0
+ integer, save :: nqi_limited_total  = 0
+ integer, save :: nbad_qc_window   = 0
+ integer, save :: nbad_qi_window   = 0
+ integer, save :: nbad_uv_window   = 0
+ integer, save :: nbad_tke_window  = 0
+ real(kind=RKIND) :: t_after, qv_after, qc_after, qi_after
+ real(kind=RKIND) :: min_dp_press, p_lower, p_upper
+ real(kind=RKIND) :: u_after, v_after
+ real(kind=RKIND) :: sum_hpbl
+ integer :: sum_kpbl
+
 !-----------------------------------------------------------------------------------------------------------------
 !call mpas_log_write('')
 !call mpas_log_write('--- enter subroutine driver_pbl:')
@@ -1564,6 +1597,19 @@ endif
     case("bl_tke_edmf")
        call mpas_timer_start('bl_tke_edmf')
 
+       call mpas_pool_get_array(mesh,'nEdgesOnCell',nEdgesOnCell)
+       call mpas_pool_get_array(mesh,'cellsOnCell' ,cellsOnCell )
+
+       allocate(pbl_col_valid(ims:ime), pbl_col_bad(ims:ime))
+       allocate(pbl_press_valid(ims:ime), pbl_press_bad(ims:ime))
+       allocate(p_mid_tkeedmf(its:ite,kts:kte))
+       allocate(p_int_tkeedmf(its:ite,kts:kte+1))
+       pbl_col_valid   = .false.
+       pbl_col_bad     = .false.
+       pbl_press_valid = .false.
+       pbl_press_bad   = .false.
+       min_dp_press    = 1.0_RKIND
+
        ! Conservative initial settings.  Expose these through Registry later.
        tke_edmf_cfg%sa3dtke     = .false.
        tke_edmf_cfg%tte_edmf    = .false.
@@ -1617,6 +1663,101 @@ endif
        enddo
        enddo
        !---------------------------------------------------------------
+       ! TEST: repair a pressure column before TKE-EDMF only when the
+       ! interface pressure is non-finite, non-positive, or fails to
+       ! decrease upward.  The repair uses actual MPAS cellsOnCell
+       ! neighbors.  The MPAS pressure state itself is not overwritten;
+       ! only these temporary arrays are passed to the PBL wrapper.
+       !---------------------------------------------------------------
+       p_mid_tkeedmf(:,:) = pres_hyd_p(its:ite,kts:kte,jts)
+       p_int_tkeedmf(:,:) = pres2_hyd_p(its:ite,kts:kte+1,jts)
+
+       ! Determine valid pressure profiles for owned and halo cells so
+       ! that a bad owned cell can use valid physical neighbors.
+       do i = ims, ime
+          pbl_press_valid(i) = .true.
+          do k = kts, kte
+             if (.not. ieee_is_finite(pres_hyd_p(i,k,jts)) .or. &
+                 .not. ieee_is_finite(pres2_hyd_p(i,k,jts)) .or. &
+                 .not. ieee_is_finite(pres2_hyd_p(i,k+1,jts))) then
+                pbl_press_valid(i) = .false.
+                exit
+             endif
+             if (pres2_hyd_p(i,k,jts) <= 0.0_RKIND .or. &
+                 pres2_hyd_p(i,k+1,jts) <= 0.0_RKIND .or. &
+                 pres2_hyd_p(i,k+1,jts) >= pres2_hyd_p(i,k,jts) .or. &
+                 pres_hyd_p(i,k,jts) >= pres2_hyd_p(i,k,jts) .or. &
+                 pres_hyd_p(i,k,jts) <= pres2_hyd_p(i,k+1,jts)) then
+                pbl_press_valid(i) = .false.
+                exit
+             endif
+          enddo
+       enddo
+
+       do i = its, ite
+          pbl_press_bad(i) = .not. pbl_press_valid(i)
+       enddo
+       nbad_press = count(pbl_press_bad(its:ite))
+       pbl_pressure_total_local  = pbl_pressure_total_local  + nbad_press
+       pbl_pressure_window_local = pbl_pressure_window_local + nbad_press
+
+       do i = its, ite
+          if (.not. pbl_press_bad(i)) cycle
+
+          p_mid_tkeedmf(i,kts:kte)   = 0.0_RKIND
+          p_int_tkeedmf(i,kts:kte+1) = 0.0_RKIND
+          ngood = 0
+
+          do n = 1, nEdgesOnCell(i)
+             nbr = cellsOnCell(n,i)
+             if (nbr < ims .or. nbr > ime) cycle
+             if (.not. pbl_press_valid(nbr)) cycle
+
+             ngood = ngood + 1
+             p_mid_tkeedmf(i,kts:kte) = p_mid_tkeedmf(i,kts:kte) + &
+                  pres_hyd_p(nbr,kts:kte,jts)
+             p_int_tkeedmf(i,kts:kte+1) = p_int_tkeedmf(i,kts:kte+1) + &
+                  pres2_hyd_p(nbr,kts:kte+1,jts)
+          enddo
+
+          if (ngood > 0) then
+             p_mid_tkeedmf(i,kts:kte) = p_mid_tkeedmf(i,kts:kte) / &
+                  real(ngood,RKIND)
+             p_int_tkeedmf(i,kts:kte+1) = p_int_tkeedmf(i,kts:kte+1) / &
+                  real(ngood,RKIND)
+          else
+             ! Emergency fallback when no valid neighbor is locally
+             ! available.  Preserve the original surface interface and
+             ! force a minimally monotonic profile only for this PBL call.
+             p_int_tkeedmf(i,kts) = max(100.0_RKIND, &
+                  pres2_hyd_p(i,kts,jts))
+             do k = kts, kte
+                p_int_tkeedmf(i,k+1) = min(p_int_tkeedmf(i,k)-min_dp_press, &
+                     max(1.0_RKIND,pres2_hyd_p(i,k+1,jts)))
+                p_mid_tkeedmf(i,k) = 0.5_RKIND * &
+                     (p_int_tkeedmf(i,k)+p_int_tkeedmf(i,k+1))
+             enddo
+          endif
+
+          ! Final strict monotonicity and midpoint check after averaging.
+          do k = kts, kte
+             p_lower = p_int_tkeedmf(i,k)
+             p_upper = p_int_tkeedmf(i,k+1)
+             if (p_upper >= p_lower-min_dp_press) then
+                p_upper = max(1.0_RKIND,p_lower-min_dp_press)
+                p_int_tkeedmf(i,k+1) = p_upper
+             endif
+             if (p_mid_tkeedmf(i,k) >= p_lower .or. &
+                 p_mid_tkeedmf(i,k) <= p_upper .or. &
+                 .not. ieee_is_finite(p_mid_tkeedmf(i,k))) then
+                p_mid_tkeedmf(i,k) = 0.5_RKIND*(p_lower+p_upper)
+             endif
+          enddo
+       enddo
+
+       ! Quiet test: pressure repair remains active, but its routine
+       ! per-step diagnostic is suppressed.  Only the post-PBL neighbor
+       ! repair count is printed below.
 
        call mpas_call_satmedmfvdifq(                                  &
             (ite-its+1), (kte-kts+1), 4, dt_pbl,                      &
@@ -1630,8 +1771,8 @@ endif
             qc_p(its:ite,kts:kte,jts),                                &
             qi_p(its:ite,kts:kte,jts),                                &
             tkepbl_p(its:ite,kts:kte,jts),                            &
-            pres_hyd_p(its:ite,kts:kte,jts),                          &
-            pres2_hyd_p(its:ite,kts:kte+1,jts),                       &
+            p_mid_tkeedmf(its:ite,kts:kte),                            &
+            p_int_tkeedmf(its:ite,kts:kte+1),                         &
             pi_p(its:ite,kts:kte,jts),                                &
             rthraten_p(its:ite,kts:kte,jts),                          &
             exch_p(its:ite,kts:kte,jts),                              &
@@ -1657,6 +1798,260 @@ endif
             rqiblten_p(its:ite,kts:kte,jts),                          &
             tke_edmf_cfg, tke_edmf_errmsg, tke_edmf_errflg)
 
+       !-----------------------------------------------------------------
+       ! TEST: identify columns for which the returned TKE-EDMF tendency
+       ! would produce a non-finite or clearly unphysical one-step state.
+       ! Do not modify valid columns.  For a bad column, replace the full
+       ! PBL tendency profile with the mean from valid cellsOnCell neighbors.
+       ! This keeps the atmospheric state unchanged and repairs only the
+       ! faulty PBL contribution.
+       !-----------------------------------------------------------------
+       if (tke_edmf_errflg == 0) then
+          do i = its, ite
+             pbl_col_valid(i) = .true.
+             bad_reason = 0
+
+             if (.not. ieee_is_finite(hpbl_p(i,jts))) then
+                bad_reason = 1
+             else if (hpbl_p(i,jts) < 0.0_RKIND .or. &
+                      hpbl_p(i,jts) > 10000.0_RKIND) then
+                bad_reason = 2
+             endif
+
+             if (bad_reason == 0) then
+                do k = kts, kte
+                   if (.not. ieee_is_finite(rthblten_p(i,k,jts)) .or. &
+                       .not. ieee_is_finite(rqvblten_p(i,k,jts)) .or. &
+                       .not. ieee_is_finite(rqcblten_p(i,k,jts)) .or. &
+                       .not. ieee_is_finite(rqiblten_p(i,k,jts)) .or. &
+                       .not. ieee_is_finite(rublten_p (i,k,jts)) .or. &
+                       .not. ieee_is_finite(rvblten_p (i,k,jts)) .or. &
+                       .not. ieee_is_finite(tkepbl_p  (i,k,jts))) then
+                      bad_reason = 1
+                      exit
+                   endif
+
+                   ! rthblten is potential-temperature tendency. Convert the
+                   ! one-step impact to physical temperature with Exner pi_p.
+                   t_after  = t_p(i,k,jts)  + dt_pbl*pi_p(i,k,jts)*rthblten_p(i,k,jts)
+                   qv_after = qv_p(i,k,jts) + dt_pbl*rqvblten_p(i,k,jts)
+                   qc_after = qc_p(i,k,jts) + dt_pbl*rqcblten_p(i,k,jts)
+                   qi_after = qi_p(i,k,jts) + dt_pbl*rqiblten_p(i,k,jts)
+                   u_after  = u_p(i,k,jts)  + dt_pbl*rublten_p(i,k,jts)
+                   v_after  = v_p(i,k,jts)  + dt_pbl*rvblten_p(i,k,jts)
+
+                   if (.not. ieee_is_finite(t_after)  .or. &
+                       .not. ieee_is_finite(qv_after) .or. &
+                       .not. ieee_is_finite(qc_after) .or. &
+                       .not. ieee_is_finite(qi_after) .or. &
+                       .not. ieee_is_finite(u_after)  .or. &
+                       .not. ieee_is_finite(v_after)) then
+                      bad_reason = 1
+                      exit
+                   endif
+
+                   ! Remove harmless roundoff before deciding that the full
+                   ! column requires neighbor repair.
+                   if (tkepbl_p(i,k,jts) < 0.0_RKIND .and. &
+                       tkepbl_p(i,k,jts) >= -1.0e-8_RKIND) then
+                      tkepbl_p(i,k,jts) = 0.0_RKIND
+                   endif
+
+                   if (t_after < 140.0_RKIND .or. t_after > 400.0_RKIND) then
+                      bad_reason = 3
+                      exit
+                   else if (qv_after < 0.0_RKIND) then
+                      ! Positivity limiter: modify only the vapor tendency at
+                      ! this level so that qv after the PBL update is exactly
+                      ! zero.  Do not replace the entire PBL column.
+                      rqvblten_p(i,k,jts) = -qv_p(i,k,jts) / &
+                           max(dt_pbl, tiny(1.0_RKIND))
+                      qv_after = qv_p(i,k,jts) + dt_pbl*rqvblten_p(i,k,jts)
+                      nqv_limited_window = nqv_limited_window + 1
+                      nqv_limited_total  = nqv_limited_total  + 1
+
+                      ! Only a nonfinite or materially positive-overflow state
+                      ! remains a reason for whole-column neighbor repair.
+                      if (.not. ieee_is_finite(qv_after)) then
+                         bad_reason = 1
+                         exit
+                      endif
+                   else if (qv_after > 0.10_RKIND) then
+                      bad_reason = 4
+                      exit
+                   else if (qc_after < 0.0_RKIND) then
+                      ! Positivity limiter for cloud water: modify only the
+                      ! cloud-water tendency at this level so qc_after = 0.
+                      rqcblten_p(i,k,jts) = -qc_p(i,k,jts) / &
+                           max(dt_pbl, tiny(1.0_RKIND))
+                      qc_after = qc_p(i,k,jts) + dt_pbl*rqcblten_p(i,k,jts)
+                      nqc_limited_window = nqc_limited_window + 1
+                      nqc_limited_total  = nqc_limited_total  + 1
+                      if (.not. ieee_is_finite(qc_after)) then
+                         bad_reason = 1
+                         exit
+                      endif
+                   else if (qi_after < 0.0_RKIND) then
+                      ! Positivity limiter for cloud ice: modify only the
+                      ! cloud-ice tendency at this level so qi_after = 0.
+                      rqiblten_p(i,k,jts) = -qi_p(i,k,jts) / &
+                           max(dt_pbl, tiny(1.0_RKIND))
+                      qi_after = qi_p(i,k,jts) + dt_pbl*rqiblten_p(i,k,jts)
+                      nqi_limited_window = nqi_limited_window + 1
+                      nqi_limited_total  = nqi_limited_total  + 1
+                      if (.not. ieee_is_finite(qi_after)) then
+                         bad_reason = 1
+                         exit
+                      endif
+                   else if (abs(u_after) > 250.0_RKIND .or. &
+                            abs(v_after) > 250.0_RKIND) then
+                      bad_reason = 7
+                      exit
+                   else if (tkepbl_p(i,k,jts) < -1.0e-8_RKIND .or. &
+                            tkepbl_p(i,k,jts) > 1000.0_RKIND) then
+                      bad_reason = 8
+                      exit
+                   endif
+                enddo
+             endif
+
+             pbl_col_valid(i) = (bad_reason == 0)
+             pbl_col_bad(i)   = .not. pbl_col_valid(i)
+
+             ! Count only the first failure reason for each repaired column.
+             select case (bad_reason)
+             case (1)
+                nbad_nan_window = nbad_nan_window + 1
+             case (2)
+                nbad_hpbl_window = nbad_hpbl_window + 1
+             case (3)
+                nbad_t_window = nbad_t_window + 1
+             case (4)
+                nbad_qv_window = nbad_qv_window + 1
+             case (5)
+                nbad_qc_window = nbad_qc_window + 1
+             case (6)
+                nbad_qi_window = nbad_qi_window + 1
+             case (7)
+                nbad_uv_window = nbad_uv_window + 1
+             case (8)
+                nbad_tke_window = nbad_tke_window + 1
+             end select
+          enddo
+
+          nbad_pbl = count(pbl_col_bad(its:ite))
+          pbl_repair_total_local  = pbl_repair_total_local  + nbad_pbl
+          pbl_repair_window_local = pbl_repair_window_local + nbad_pbl
+
+          do i = its, ite
+             if (.not. pbl_col_bad(i)) cycle
+
+             ! First zero the bad-column outputs.  Valid neighboring columns
+             ! are accumulated below.
+             rthblten_p(i,kts:kte,jts) = 0.0_RKIND
+             rqvblten_p(i,kts:kte,jts) = 0.0_RKIND
+             rqcblten_p(i,kts:kte,jts) = 0.0_RKIND
+             rqiblten_p(i,kts:kte,jts) = 0.0_RKIND
+             rublten_p (i,kts:kte,jts) = 0.0_RKIND
+             rvblten_p (i,kts:kte,jts) = 0.0_RKIND
+             tkepbl_p  (i,kts:kte,jts) = 0.0_RKIND
+             sum_hpbl = 0.0_RKIND
+             sum_kpbl = 0
+             ngood = 0
+
+             do n = 1, nEdgesOnCell(i)
+                nbr = cellsOnCell(n,i)
+                if (nbr < its .or. nbr > ite) cycle
+                if (.not. pbl_col_valid(nbr)) cycle
+
+                ngood = ngood + 1
+                rthblten_p(i,kts:kte,jts) = rthblten_p(i,kts:kte,jts) + &
+                                             rthblten_p(nbr,kts:kte,jts)
+                rqvblten_p(i,kts:kte,jts) = rqvblten_p(i,kts:kte,jts) + &
+                                             rqvblten_p(nbr,kts:kte,jts)
+                rqcblten_p(i,kts:kte,jts) = rqcblten_p(i,kts:kte,jts) + &
+                                             rqcblten_p(nbr,kts:kte,jts)
+                rqiblten_p(i,kts:kte,jts) = rqiblten_p(i,kts:kte,jts) + &
+                                             rqiblten_p(nbr,kts:kte,jts)
+                rublten_p(i,kts:kte,jts)  = rublten_p(i,kts:kte,jts) + &
+                                             rublten_p(nbr,kts:kte,jts)
+                rvblten_p(i,kts:kte,jts)  = rvblten_p(i,kts:kte,jts) + &
+                                             rvblten_p(nbr,kts:kte,jts)
+                tkepbl_p(i,kts:kte,jts)   = tkepbl_p(i,kts:kte,jts) + &
+                                             tkepbl_p(nbr,kts:kte,jts)
+                sum_hpbl = sum_hpbl + hpbl_p(nbr,jts)
+                sum_kpbl = sum_kpbl + kpbl_p(nbr,jts)
+             enddo
+
+             if (ngood > 0) then
+                rthblten_p(i,kts:kte,jts) = rthblten_p(i,kts:kte,jts) / real(ngood,RKIND)
+                rqvblten_p(i,kts:kte,jts) = rqvblten_p(i,kts:kte,jts) / real(ngood,RKIND)
+                rqcblten_p(i,kts:kte,jts) = rqcblten_p(i,kts:kte,jts) / real(ngood,RKIND)
+                rqiblten_p(i,kts:kte,jts) = rqiblten_p(i,kts:kte,jts) / real(ngood,RKIND)
+                rublten_p(i,kts:kte,jts)  = rublten_p(i,kts:kte,jts)  / real(ngood,RKIND)
+                rvblten_p(i,kts:kte,jts)  = rvblten_p(i,kts:kte,jts)  / real(ngood,RKIND)
+                tkepbl_p(i,kts:kte,jts)   = max(1.0e-9_RKIND, &
+                     tkepbl_p(i,kts:kte,jts) / real(ngood,RKIND))
+                hpbl_p(i,jts) = sum_hpbl / real(ngood,RKIND)
+                kpbl_p(i,jts) = nint(real(sum_kpbl,RKIND) / real(ngood,RKIND))
+             else
+                ! No valid owned neighbor was available (for example at a
+                ! partition boundary).  Return zero PBL tendencies rather
+                ! than sending an invalid update to the rest of physics.
+                tkepbl_p(i,kts:kte,jts) = max(1.0e-9_RKIND, tkepbl_p(i,kts:kte,jts))
+                hpbl_p(i,jts) = max(0.0_RKIND, hpbl_p(i,jts))
+                kpbl_p(i,jts) = max(kts, min(kte, kpbl_p(i,jts)))
+             endif
+          enddo
+
+          ! Print one compact LOCAL reason summary every 100 model steps.
+          ! Each repaired column contributes to exactly one reason category.
+          if (mod(itimestep,1000) == 0) then
+             if (pbl_pressure_window_local + pbl_repair_window_local + &
+                 nqv_limited_window + nqc_limited_window + &
+                 nqi_limited_window > 0) then
+                write(0,'(A,I7,16(A,I7))') &
+                     'TKE-EDMF REPAIR REASONS step=', itimestep, &
+                     ' press=', pbl_pressure_window_local, &
+                     ' total=', pbl_repair_window_local, &
+                     ' nan=', nbad_nan_window, &
+                     ' hpbl=', nbad_hpbl_window, &
+                     ' t=', nbad_t_window, &
+                     ' qvbad=', nbad_qv_window, &
+                     ' qvlim=', nqv_limited_window, &
+                     ' qvlim_total=', nqv_limited_total, &
+                     ' qclim=', nqc_limited_window, &
+                     ' qclim_total=', nqc_limited_total, &
+                     ' qilim=', nqi_limited_window, &
+                     ' qilim_total=', nqi_limited_total, &
+                     ' qcbad=', nbad_qc_window, &
+                     ' qibad=', nbad_qi_window, &
+                     ' uv=', nbad_uv_window, &
+                     ' tke=', nbad_tke_window
+             endif
+
+             pbl_pressure_window_local = 0
+             pbl_repair_window_local   = 0
+             nbad_nan_window  = 0
+             nbad_hpbl_window = 0
+             nbad_t_window    = 0
+             nbad_qv_window   = 0
+             nqv_limited_window = 0
+             nqc_limited_window = 0
+             nqi_limited_window = 0
+             nbad_qc_window   = 0
+             nbad_qi_window   = 0
+             nbad_uv_window   = 0
+             nbad_tke_window  = 0
+          endif
+       endif
+
+       if (allocated(pbl_col_valid))   deallocate(pbl_col_valid)
+       if (allocated(pbl_col_bad))     deallocate(pbl_col_bad)
+       if (allocated(pbl_press_valid)) deallocate(pbl_press_valid)
+       if (allocated(pbl_press_bad))   deallocate(pbl_press_bad)
+       if (allocated(p_mid_tkeedmf))   deallocate(p_mid_tkeedmf)
+       if (allocated(p_int_tkeedmf))   deallocate(p_int_tkeedmf)
 
        if (tke_edmf_errflg /= 0) then
           write(*,*) 'FATAL in bl_tke_edmf: ', trim(tke_edmf_errmsg)
