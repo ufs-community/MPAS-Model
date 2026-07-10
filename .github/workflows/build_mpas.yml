@@ -28,7 +28,7 @@ jobs:
     steps:
 
     - name: Checkout code (into ${driver_ROOT})
-      uses: actions/checkout@v3
+      uses: actions/checkout@v6
 
     - name: Initialize submodules
       run: |
@@ -41,7 +41,7 @@ jobs:
 
     - name: Cache openmpi
       id: cache-openmpi
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: /home/runner/ompi-4.1.6
         key: cache-openmpi-${{matrix.fortran-compiler}}-key
@@ -64,7 +64,7 @@ jobs:
 
     - name: Cache GNU autotools
       id: cache-AUTOTOOLS
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: /home/runner/AUTOTOOLS
         key: cache-AUTOTOOLS-${{matrix.fortran-compiler}}-key
@@ -109,7 +109,7 @@ jobs:
 
     - name: Cache PnetCDF
       id: cache-pnetcdf
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: /home/runner/PnetCDF
         key: cache-PnetCDF-${{matrix.fortran-compiler}}-key
