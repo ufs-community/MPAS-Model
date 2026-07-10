@@ -625,7 +625,7 @@
  logical:: bad_sas_tend_col
 
  real(kind=RKIND):: dx
- real(kind=RKIND):: qv_after_sas
+ real(kind=RKIND):: qv_after_sas, qc_after_sas, qi_after_sas
  real(kind=RKIND),parameter:: qv_floor_sas = 1.0e-12_RKIND
  real(kind=RKIND),parameter:: max_rth_sas  = 5.0e-2_RKIND
  real(kind=RKIND),parameter:: max_rqv_sas  = 1.0e-4_RKIND
@@ -986,12 +986,13 @@ real(kind=RKIND) :: p_sfc_safe, p_top_safe, frac_safe
 
             if (t_gfs_sas(i,k) /= t_gfs_sas(i,k) .or. &
                 t_gfs_sas(i,k) < 150._RKIND .or. t_gfs_sas(i,k) > 360._RKIND) then
-               ! Quiet test: retain the safety clamp but suppress diagnostics.
-               if (t_gfs_sas(i,k) /= t_gfs_sas(i,k)) then
-                  t_gfs_sas(i,k) = min(360._RKIND, max(150._RKIND, t_p(i,k,j)))
-               else
-                  t_gfs_sas(i,k) = min(360._RKIND, max(150._RKIND, t_gfs_sas(i,k)))
-               endif
+               write(0,*) 'BAD STAGED T BEFORE GFS SAS'
+               write(0,*) 'i,j,k=', i,j,k
+               write(0,*) 't_raw, t_stage=', t_p(i,k,j), t_gfs_sas(i,k)
+               write(0,*) 'rthften_p(temp tendency), rqvften_p=', &
+                    rthften_p(i,k,j), rqvften_p(i,k,j)
+               call flush(0)
+               t_gfs_sas(i,k) = min(360._RKIND, max(150._RKIND, t_gfs_sas(i,k)))
             endif
          enddo
          enddo
@@ -1081,14 +1082,13 @@ real(kind=RKIND) :: p_sfc_safe, p_top_safe, frac_safe
          if (errflg /= 0) call physics_error_fatal(trim(errmsg))
 
          !---------------------------------------------------------------
-         ! SAFETY: Check GFS SAS tendencies immediately after wrapper returns.
+         ! GFS SAS post-processing.
          !
-         ! Previous code called physics_error_fatal here.  That made one bad
-         ! SAS column abort the full MPAS job.  For real testing, keep the
-         ! existing check but handle it locally: if any level in a column has
-         ! NaN, excessively large tendency, or would drive qv negative during
-         ! this physics step, zero convection tendencies/precip for that column
-         ! only and continue the integration.
+         ! Preserve valid convection tendencies.  If a moisture tendency
+         ! would make qv, qc, or qi negative over this physics step, limit
+         ! only that species tendency at that level so the updated mixing
+         ! ratio is exactly zero.  Zero an entire convection column only for
+         ! a genuine non-finite or extreme tendency failure.
          !---------------------------------------------------------------
          nbad_sas_after = 0
 
@@ -1100,7 +1100,21 @@ real(kind=RKIND) :: p_sfc_safe, p_top_safe, frac_safe
             do k = kts, kte
 
                qv_after_sas = qv_p(i,k,j) + dt_dyn * rqvcuten_p(i,k,j)
+               qc_after_sas = qc_p(i,k,j) + dt_dyn * rqccuten_p(i,k,j)
+               qi_after_sas = qi_p(i,k,j) + dt_dyn * rqicuten_p(i,k,j)
 
+               ! Local positivity limiters: do not discard the full column.
+               if (qv_after_sas < 0._RKIND .and. qv_after_sas == qv_after_sas) then
+                  rqvcuten_p(i,k,j) = -qv_p(i,k,j) / max(dt_dyn,tiny(1._RKIND))
+               endif
+               if (qc_after_sas < 0._RKIND .and. qc_after_sas == qc_after_sas) then
+                  rqccuten_p(i,k,j) = -qc_p(i,k,j) / max(dt_dyn,tiny(1._RKIND))
+               endif
+               if (qi_after_sas < 0._RKIND .and. qi_after_sas == qi_after_sas) then
+                  rqicuten_p(i,k,j) = -qi_p(i,k,j) / max(dt_dyn,tiny(1._RKIND))
+               endif
+
+               ! Whole-column protection is retained only for genuine failure.
                if ( rthcuten_p(i,k,j) /= rthcuten_p(i,k,j) .or. &
                     rqvcuten_p(i,k,j) /= rqvcuten_p(i,k,j) .or. &
                     rqccuten_p(i,k,j) /= rqccuten_p(i,k,j) .or. &
@@ -1110,21 +1124,15 @@ real(kind=RKIND) :: p_sfc_safe, p_top_safe, frac_safe
                     abs(rthcuten_p(i,k,j)) > max_rth_sas .or. &
                     abs(rqvcuten_p(i,k,j)) > max_rqv_sas .or. &
                     abs(rucuten_p(i,k,j))  > max_ru_sas  .or. &
-                    abs(rvcuten_p(i,k,j))  > max_rv_sas  .or. &
-                    qv_after_sas /= qv_after_sas          .or. &
-                    qv_after_sas < qv_floor_sas ) then
-
-                  if (.not. bad_sas_tend_col) then
-                     ! Quiet test: count and zero unsafe SAS columns without
-                     ! printing per-column diagnostics.
-                     nbad_sas_after = nbad_sas_after + 1
-                  endif
+                    abs(rvcuten_p(i,k,j))  > max_rv_sas ) then
 
                   bad_sas_tend_col = .true.
+                  exit
                endif
             enddo
 
             if (bad_sas_tend_col) then
+               nbad_sas_after = nbad_sas_after + 1
                gfs_sas_bad_col(i,j) = .true.
 
                do k = kts, kte
