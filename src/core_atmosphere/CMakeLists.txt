@@ -152,7 +152,7 @@ if(NOT EXISTS ${ATMOSPHERE_CORE_PHYSICS_MMM_DIR})
     endif()
 
 else()
-    message(STATUS "Directory ${DIR_TO_CHECK} already exists, skipping clone")
+    message( STATUS "Finished checking out external repos via manage_externals" )
 endif()
 
 set(ATMOSPHERE_CORE_PHYSICS_MMM_SOURCES
@@ -478,6 +478,7 @@ list(TRANSFORM ATMOSPHERE_CORE_DIAGNOSTIC_SOURCES PREPEND diagnostics/)
 # dynamics/
 set(ATMOSPHERE_CORE_DYNAMICS_SOURCES
     mpas_atm_boundaries.F
+    mpas_atm_dissipation_models.F
     mpas_atm_iau.F
     mpas_atm_time_integration.F)
 list(TRANSFORM ATMOSPHERE_CORE_DYNAMICS_SOURCES PREPEND dynamics/)
