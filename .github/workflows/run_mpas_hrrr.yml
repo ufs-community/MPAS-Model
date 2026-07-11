@@ -106,7 +106,7 @@ jobs:
     # Step 2b: Clone MPAS and build (feature branch)
     ##########################################################################################
     - name: Checkout MPAS codebase for testing.
-      uses: actions/checkout@v3
+      uses: actions/checkout@v6
 
     - name: Initialize any submodules from testing codebase.
       run: |
@@ -205,7 +205,7 @@ jobs:
     # Step 6: Compare feature branch to baseline branch.
     ##########################################################################################
     - name: Setup Miniconda
-      uses: conda-incubator/setup-miniconda@v3.2.0
+      uses: conda-incubator/setup-miniconda@v4
       with:
         python-version: ${{env.py-version}}
         auto-update-conda: true

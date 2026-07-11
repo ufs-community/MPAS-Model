@@ -14,7 +14,7 @@
         type="output"
         filename_template="history.$Y-$M-$D_$h.$m.$s.nc"
         output_done_marker="yes"
-        output_interval="0:12:00" >
+        output_interval="0:10:00" >
 
 	<file name="stream_list.atmosphere.output"/>
 </stream>
@@ -22,7 +22,7 @@
 <stream name="diagnostics"
         type="output"
         filename_template="diag.$Y-$M-$D_$h.$m.$s.nc"
-        output_timelevels="0-1-12m 2-6-2">
+        output_timelevels="0-1-10m 2-6-2">
 
 	<file name="stream_list.atmosphere.diagnostics"/>
 </stream>
