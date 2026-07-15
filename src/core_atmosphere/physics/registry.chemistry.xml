@@ -194,8 +194,8 @@
             possbile_values=".true. or .false."/>
        <nml_option name="config_mp_aero_emission" type="logical" default_value="false" in_defaults="false"
             units="-"
-            description="Flag that controls aerosol emissions for Tempo microphysics"
-            possbile_values=".true. or .false."/>
+            description="Flag that controls aerosol emissions for TEMPO microphysics"
+            possible_values=".true. or .false."/>
    </nml_record>
 
 <!-- **************************************************************************************** -->
