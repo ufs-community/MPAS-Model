@@ -7289,8 +7289,8 @@ call mpas_log_write('Done with soil consistency check')
          if (associated(index_smoke_fine  ) ) sorted_arrQ11(:,:) = -999.0
          if (associated(index_dust_fine   ) ) sorted_arrQ12(:,:) = -999.0
          if (associated(index_dust_coarse ) ) sorted_arrQ13(:,:) = -999.0
-         if (index_nwfa > 0) scalars(index_nwfa,:,iCell) = 0._RKIND
-         if (index_nifa > 0) scalars(index_nifa,:,iCell) = 0._RKIND
+         scalars(index_nwfa,:,iCell) = 0._RKIND
+         scalars(index_nifa,:,iCell) = 0._RKIND
          scalars(index_qc,:,iCell) = 0._RKIND
          scalars(index_qr,:,iCell) = 0._RKIND
          scalars(index_qi,:,iCell) = 0._RKIND
@@ -7375,9 +7375,9 @@ call mpas_log_write('Done with soil consistency check')
 
          do k = nVertLevels, 1, -1
             target_z = 0.5 * (zgrid(k,iCell) + zgrid(k+1,iCell))
-            if (index_nwfa > 0) scalars(index_nwfa,k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
+            scalars(index_nwfa,k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
                                         sorted_arrQ9(:,1:nfglevels_actual-1), order=1, extrap=0)
-            if (index_nifa > 0) scalars(index_nifa,k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
+            scalars(index_nifa,k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
                                         sorted_arrQ10(:,1:nfglevels_actual-1), order=1, extrap=0)
             scalars(index_qc,k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
                                         sorted_arrQ1(:,1:nfglevels_actual-1), order=1, extrap=0)
@@ -8601,6 +8601,15 @@ call mpas_log_write('Done with soil consistency check')
          if (associated(index_smoke_fine  )) sorted_arrQ11(:,:) = -999.0
          if (associated(index_dust_fine   )) sorted_arrQ12(:,:) = -999.0
          if (associated(index_dust_coarse )) sorted_arrQ13(:,:) = -999.0
+         if (associated(index_nwfa)) then
+            if (index_nwfa > 0) scalars(index_nwfa,:,iCell) = 0._RKIND
+         end if
+         if (associated(index_nifa)) then
+            if (index_nifa > 0) scalars(index_nifa,:,iCell) = 0._RKIND
+         end if
+         if (associated(index_nc)) then
+            if (index_nc > 0) scalars(index_nc,:,iCell) = 0._RKIND
+         end if
          if (associated(index_qc)) then
             if (index_qc > 0) scalars(index_qc,:,iCell) = 0._RKIND
          end if
@@ -8615,15 +8624,6 @@ call mpas_log_write('Done with soil consistency check')
          end if
          if (associated(index_qg)) then
             if (index_qg > 0) scalars(index_qg,:,iCell) = 0._RKIND
-         end if
-         if (associated(index_nwfa)) then
-            if (index_nwfa > 0) scalars(index_nwfa,:,iCell) = 0._RKIND
-         end if
-         if (associated(index_nifa)) then
-            if (index_nifa > 0) scalars(index_nifa,:,iCell) = 0._RKIND
-         end if
-         if (associated(index_nc)) then
-            if (index_nc > 0) scalars(index_nc,:,iCell) = 0._RKIND
          end if
          if (associated(index_ni)) then
             if (index_ni > 0) scalars(index_ni,:,iCell) = 0._RKIND
