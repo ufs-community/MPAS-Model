@@ -8607,9 +8607,6 @@ call mpas_log_write('Done with soil consistency check')
          if (associated(index_nifa)) then
             if (index_nifa > 0) scalars(index_nifa,:,iCell) = 0._RKIND
          end if
-         if (associated(index_nc)) then
-            if (index_nc > 0) scalars(index_nc,:,iCell) = 0._RKIND
-         end if
          if (associated(index_qc)) then
             if (index_qc > 0) scalars(index_qc,:,iCell) = 0._RKIND
          end if
@@ -8624,6 +8621,9 @@ call mpas_log_write('Done with soil consistency check')
          end if
          if (associated(index_qg)) then
             if (index_qg > 0) scalars(index_qg,:,iCell) = 0._RKIND
+         end if
+         if (associated(index_nc)) then
+            if (index_nc > 0) scalars(index_nc,:,iCell) = 0._RKIND
          end if
          if (associated(index_ni)) then
             if (index_ni > 0) scalars(index_ni,:,iCell) = 0._RKIND
@@ -8765,6 +8765,12 @@ call mpas_log_write('Done with soil consistency check')
                                         sorted_arrQ13(:,1:nfglevels_actual-1), order=1, extrap=0)
             endif
             if (target_z < z_fg(1,iCell) .and. k < nVertLevels) then
+                if (associated(index_nwfa)) then
+                   if (index_nwfa > 0) scalars(index_nwfa,k,iCell) = scalars(index_nwfa,k+1,iCell)
+                end if
+                if (associated(index_nifa)) then
+                   if (index_nifa > 0) scalars(index_nifa,k,iCell) = scalars(index_nifa,k+1,iCell)
+                end if
                 if (associated(index_qc)) then
                    if (index_qc > 0) scalars(index_qc,k,iCell) = scalars(index_qc,k+1,iCell)
                 end if
@@ -8779,12 +8785,6 @@ call mpas_log_write('Done with soil consistency check')
                 end if
                 if (associated(index_qg)) then
                    if (index_qg > 0) scalars(index_qg,k,iCell) = scalars(index_qg,k+1,iCell)
-                end if
-                if (associated(index_nwfa)) then
-                   if (index_nwfa > 0) scalars(index_nwfa,k,iCell) = scalars(index_nwfa,k+1,iCell)
-                end if
-                if (associated(index_nifa)) then
-                   if (index_nifa > 0) scalars(index_nifa,k,iCell) = scalars(index_nifa,k+1,iCell)
                 end if
                 if (associated(index_nc)) then
                    if (index_nc > 0) scalars(index_nc,k,iCell) = scalars(index_nc,k+1,iCell)
