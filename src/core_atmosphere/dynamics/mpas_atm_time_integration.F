@@ -2155,13 +2155,13 @@ module atm_time_integration
                              tend_ru_physics, tend_rtheta_physics, tend_rho_physics, &
                              exchange_halo_group )
       call mpas_timer_stop('physics_get_tend')
+      call post_physics_get_tend(block % configs, state, diag, tend)
 
 ! apply random perturbation pattern to the accumulated (non-hydrostatic) physics tendencies
       if (dosppt(domain)) then
         call stochastic_physics_pattern_apply(domain, 'prog')
       endif
 
-      call post_physics_get_tend(block % configs, state, diag, tend)
 #else
 #ifndef MPAS_CAM_DYCORE
       !
