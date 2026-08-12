@@ -1,7 +1,6 @@
 name: Run MPAS Standalone with Stochastic Physics (NOAA GSL HRRRv5 tests)
 
-#on: [push, pull_request, workflow_dispatch]
-on: [workflow_dispatch]
+on: [push, pull_request, workflow_dispatch]
 
 #############################################################################################
 # Testing script/workflow for ufs-community fork of MPAS-Dev/MPAS-A.
