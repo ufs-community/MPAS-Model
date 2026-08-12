@@ -1621,7 +1621,8 @@ module atm_time_integration
       call mpas_pool_get_array(state, 'scalars', scalars_2, 2)
 
       if(config_convection_scheme == 'cu_grell_freitas' .or. &
-         config_convection_scheme == 'cu_ntiedtke') then
+         config_convection_scheme == 'cu_ntiedtke'      .or. &
+         config_convection_scheme == 'cu_gfs_sas') then
 
          call mpas_pool_get_array(tend_physics, 'rqvdynten', rqvdynten)
          call mpas_pool_get_array(state, 'theta_m', theta_m, 2)
