@@ -48,7 +48,7 @@ jobs:
       uses: actions/cache@v5
       with:
         path: /opt/intel/oneapi/mpi/2021.10.0
-        key: cache-AUTOTOOLS-${{matrix.fortran-compiler}}-key
+        key: cache-Intel-MPI-${{matrix.fortran-compiler}}-${{matrix.build-system}}-key
 
     - name: Install NetCDF-C library
       run: |
@@ -60,14 +60,14 @@ jobs:
       uses: actions/cache@v4
       with:
         path: /home/runner/NetCDF
-        key: cache-NetCDF-Fortran-${{matrix.fortran-compiler}}-key
+        key: cache-NetCDF-Fortran-${{matrix.fortran-compiler}}-${{matrix.build-system}}-key
 
     - name: Cache GNU autotools
       id: cache-AUTOTOOLS
       uses: actions/cache@v5
       with:
         path: /home/runner/AUTOTOOLS
-        key: cache-AUTOTOOLS-${{matrix.fortran-compiler}}-key
+        key: cache-AUTOTOOLS-${{matrix.fortran-compiler}}-${{matrix.build-system}}-key
 
     - name: Build GNU autotools
       if: steps.cache-AUTOTOOLS.outputs.cache-hit != 'true'
@@ -107,7 +107,7 @@ jobs:
       uses: actions/cache@v5
       with:
         path: /home/runner/PnetCDF
-        key: cache-PnetCDF-${{matrix.fortran-compiler}}-key
+        key: cache-PnetCDF-${{matrix.fortran-compiler}}-${{matrix.build-system}}-key
 
     - name: Install PnetCDF
       if: steps.cache-pnetcdf.outputs.cache-hit != 'true'
