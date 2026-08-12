@@ -774,6 +774,7 @@
 			<var name="max_hail_diameter_column"/>
 			<var name="max_hail_diameter_column_acc"/>
 			<var name="refl10cm_max"/>
+			<var name="refl10cm_compref_max"/>
 			<var name="i_rainnc"/>
 			<var name="rainncv"/>
 			<var name="rainnc"/>
@@ -1222,6 +1223,7 @@
                         <var name="swupt"/>
 			<var name="rainc"/>
 			<var name="rainnc"/>
+			<var name="prate_max"/>
 			<var name="vcpool"/>
 			<var name="refl10cm"/>
 			<var name="max_hail_diameter_sfc"/>
@@ -1229,6 +1231,7 @@
 			<var name="max_hail_diameter_column"/>
 			<var name="max_hail_diameter_column_acc"/>
 			<var name="refl10cm_max"/>
+			<var name="refl10cm_compref_max"/>
 			<var name="refl10cm_1km"/>
 			<var name="refl10cm_1km_max"/>
 			<var name="precipw"/>
@@ -3134,6 +3137,10 @@
                      units="s"
                      description="Relaxation time to initial values in 1-d OML"
                      possible_values="Non-negative real values"/>
+
+                <nml_option name="calc_prate_max" type="logical" default_value="false" in_defaults="false" units="-"
+                     description="switch for calculating time-maximum precipitation rate for instantaneous, 1-minute, 5-minute, and 10-minute periods"
+                     possible_values=".true. or .false."/>
         </nml_record>
 
         <var_struct name="diag_physics" time_levs="1">
@@ -3189,6 +3196,10 @@
                      description="10 cm maximum radar reflectivity"
                      packages="mp_thompson_in;mp_thompson_aers_in;mp_wsm6_in;mp_nssl2m_in;mp_tempo_in"/>
 
+                <var name="refl10cm_compref_max" type="real" dimensions="nCells Time" units="dBZ"
+                     description="maximum composite 10 cm radar reflectivity since last output time"
+                     packages="mp_thompson_in;mp_thompson_aers_in;mp_nssl2m_in;mp_tempo_in"/>
+
                 <var name="refl10cm_1km" type="real" dimensions="nCells Time" units="dBZ"
                      description="diagnosed 10 cm radar reflectivity at 1 km AGL"
                      packages="mp_thompson_in;mp_thompson_aers_in;mp_wsm6_in;mp_nssl2m_in;mp_tempo_in"/>
@@ -3221,6 +3232,18 @@
                      description="accumulated total grid-scale precipitation"
                      packages="mp_kessler_in;mp_thompson_in;mp_thompson_aers_in;mp_wsm6_in;mp_nssl2m_in;mp_tempo_in"/>
 
+                <var name="ave_prate_1min" type="real" dimensions="nCells Time" units="mm s^{-1}"
+                     description="maximum 1-minute precipitation rate since last output time"
+                     packages="mp_kessler_in;mp_thompson_in;mp_thompson_aers_in;mp_wsm6_in;mp_nssl2m_in;mp_tempo_in"/>
+
+                <var name="ave_prate_5min" type="real" dimensions="nCells Time" units="mm s^{-1}"
+                     description="maximum 5-minute precipitation rate since last output time"
+                     packages="mp_kessler_in;mp_thompson_in;mp_thompson_aers_in;mp_wsm6_in;mp_nssl2m_in;mp_tempo_in"/>
+
+                <var name="ave_prate_10min" type="real" dimensions="nCells Time" units="mm s^{-1}"
+                     description="maximum 10-minute precipitation rate since last output time"
+                     packages="mp_kessler_in;mp_thompson_in;mp_thompson_aers_in;mp_wsm6_in;mp_nssl2m_in;mp_tempo_in"/>
+
                 <var name="frainnc" type="real" dimensions="nCells Time" units="mm"
                      description="accumulated total grid-scale freezing rain"
                      packages="mp_tempo_in"/>
@@ -3232,6 +3255,10 @@
                 <var name="graupelnc" type="real" dimensions="nCells Time" units="mm"
                      description="accumulated grid-scale precipitation of graupel"
                      packages="mp_thompson_in;mp_thompson_aers_in;mp_wsm6_in;mp_nssl2m_in;mp_tempo_in"/>
+
+                <var name="prate_max" type="real" dimensions="nCells Time" units="mm s^{-1}"
+                     description="maximum instantaneous precipitation rate since last output time"
+                     packages="mp_thompson_in;mp_thompson_aers_in;mp_nssl2m_in;mp_tempo_in"/>
 
                 <var name="rainprod" type="real" dimensions="nVertLevels nCells Time" units="s^{-1}"
                      description="rain production rate"
