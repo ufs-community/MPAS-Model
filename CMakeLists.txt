@@ -66,6 +66,39 @@ if(CMAKE_Fortran_COMPILER_ID MATCHES NVHPC)
     set(MPI_Fortran_COMPILER mpifort)
 endif()
 find_package(MPI REQUIRED COMPONENTS Fortran)
+#
+# Always set the MPAS_USE_MPI_F08 macro, which entails using "use mpi_f08"
+# instead of the older "use mpi" in Fortran source code.
+#
+add_compile_definitions(MPAS_USE_MPI_F08)
+#
+# When building stochastic_physics under the UFS, by default we use the
+# "esmf_dgemm" Fortran matrix multiplication subroutine that the UFS host
+# model provides (via its ESMF-based coupling layer).
+#
+# However, the ufs-community's stand-alone MPAS-Model currently does not
+# provide access to "esmf_dgemm", so when building stochastic_physics with
+# the stand-alone MPAS-Model, we use the "dgemm" Fortran subroutine that
+# is part of the BLAS (Basic Linear Algebra Subprograms) package that is
+# commonly available.
+#
+# Since the NOAA-PSL/stochastic_physics repo is under the purview of the
+# UFS, by default it must use the UFS host model's coupling framework, so
+# the default in the stochastic_physics Fortran code is to use "esmf_dgemm".
+# Fortunately, there is a non-default host model option in the UFS that
+# provides access to the "dgemm" subroutine.  This is the CESM (Community
+# Earth System Model).  To use the CESM instead of the UFS as the host 
+# model during a build, the build-time pre-processor macro CESMCOUPLED
+# must be enabled.  Since here we are only interested in a stand-alone
+# MPAS-Model build (and thus must use "dgemm", not "esmf_dgemm"), we enable
+# the CESMCOUPLED macro.  (Note that both the UFS and the CESM host model
+# coupling frameworks are ESMF based, so CESMCOUPED is not a flag to
+# choose between an ESMF-based and a non-ESMF-based coupling framework;
+# in this specific case, the CESM happens to directly use the BLAS-provided
+# "dgemm" subroutine for matrix multiplication while the UFS happens to
+# use the "esmf_dgemm" subroutine provided by the ESMF.)
+#
+add_compile_definitions(CESMCOUPLED)
 
 find_package(PnetCDF REQUIRED COMPONENTS Fortran)
 if(MPAS_USE_PIO)
