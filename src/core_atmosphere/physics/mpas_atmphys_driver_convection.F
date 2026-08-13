@@ -941,8 +941,8 @@ real(kind=RKIND) :: p_sfc_safe, p_top_safe, frac_safe
          allocate(pres_mid_gfs_sas(its:ite,kts:kte))
          allocate(pres_int_gfs_sas(its:ite,kts:kte+1))
 
-         do_mynnedmf_gfs_sas = (trim(pbl_scheme) == 'bl_tke_edmf' .or. &
-                                trim(pbl_scheme) == 'bl_mynnedmf')
+         ! GFS v17 configuration: no optional EDMF-to-SAMF coupling.
+         do_mynnedmf_gfs_sas = .false.
          maxmf_gfs_sas(:) = 0._RKIND
          tkeh_gfs_sas(:,:) = 0._RKIND
 
@@ -984,15 +984,33 @@ real(kind=RKIND) :: p_sfc_safe, p_top_safe, frac_safe
 
             qv_gfs_sas(i,k) = max(1.0e-12_RKIND, qv_p(i,k,j) + dt_dyn * rqvften_p(i,k,j))
 
-            if (t_gfs_sas(i,k) /= t_gfs_sas(i,k) .or. &
-                t_gfs_sas(i,k) < 150._RKIND .or. t_gfs_sas(i,k) > 360._RKIND) then
-               write(0,*) 'BAD STAGED T BEFORE GFS SAS'
+            ! Very cold temperatures near the MPAS model top are valid.
+            ! Do not flag or clip values such as 140-150 K simply because
+            ! they occur at the highest model levels.  Only protect SAS
+            ! from NaN or truly nonphysical staged temperatures.
+            if (t_gfs_sas(i,k) /= t_gfs_sas(i,k)) then
+               write(0,*) 'BAD STAGED T BEFORE GFS SAS: NaN'
                write(0,*) 'i,j,k=', i,j,k
                write(0,*) 't_raw, t_stage=', t_p(i,k,j), t_gfs_sas(i,k)
                write(0,*) 'rthften_p(temp tendency), rqvften_p=', &
                     rthften_p(i,k,j), rqvften_p(i,k,j)
                call flush(0)
-               t_gfs_sas(i,k) = min(360._RKIND, max(150._RKIND, t_gfs_sas(i,k)))
+
+               ! NaN only: fall back to the unstaged MPAS temperature.
+               t_gfs_sas(i,k) = t_p(i,k,j)
+
+            else if (t_gfs_sas(i,k) < 100._RKIND .or. &
+                     t_gfs_sas(i,k) > 400._RKIND) then
+               write(0,*) 'BAD STAGED T BEFORE GFS SAS: extreme'
+               write(0,*) 'i,j,k=', i,j,k
+               write(0,*) 't_raw, t_stage=', t_p(i,k,j), t_gfs_sas(i,k)
+               write(0,*) 'rthften_p(temp tendency), rqvften_p=', &
+                    rthften_p(i,k,j), rqvften_p(i,k,j)
+               call flush(0)
+
+               ! Only guard truly extreme values.
+               t_gfs_sas(i,k) = min(400._RKIND, max(100._RKIND, &
+                                      t_gfs_sas(i,k)))
             endif
          enddo
          enddo
@@ -1018,11 +1036,8 @@ real(kind=RKIND) :: p_sfc_safe, p_top_safe, frac_safe
             do_mynnedmf_gfs_sas = .false.
          endif
 
-         if (allocated(maxmfbl_p)) then
-            do i = its, ite
-               maxmf_gfs_sas(i) = max(0._RKIND, maxmfbl_p(i,j))
-            enddo
-         endif
+         ! GFS v17: maxmf is unused when EDMF-to-SAMF coupling is off.
+         maxmf_gfs_sas(:) = 0._RKIND
 
          call mpas_call_gfs_convection(                                      &
             im       = ite-its+1, km       = kte-kts+1, dt       = dt_dyn,   &
