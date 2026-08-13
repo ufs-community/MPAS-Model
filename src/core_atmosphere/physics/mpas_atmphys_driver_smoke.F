@@ -42,6 +42,8 @@
  character(len=StrKIND),pointer :: config_dust_scheme
  character(len=StrKIND),pointer :: config_anthro_scheme
  character(len=StrKIND),pointer :: config_rwc_scheme
+ character(len=StrKIND),pointer :: config_microp_scheme
+ logical, pointer :: config_tempo_aerosolaware
 
  integer, pointer :: ebb_dcycle
  integer, pointer :: wetdep_ls_opt
@@ -55,6 +57,8 @@
  call mpas_pool_get_config(configs,'config_dust_scheme', config_dust_scheme)
  call mpas_pool_get_config(configs,'config_anthro_scheme',config_anthro_scheme)
  call mpas_pool_get_config(configs,'config_rwc_scheme',config_rwc_scheme)
+ call mpas_pool_get_config(configs,'config_microp_scheme',config_microp_scheme)
+ call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
 
  call mpas_pool_get_config(configs,'ebb_dcycle', ebb_dcycle)
  call mpas_pool_get_config(configs,'plumerise_opt',plumerise_opt)
@@ -149,10 +153,8 @@
     if(.not.allocated(clayfrac_in_p))        allocate(clayfrac_in_p(ims:ime,jms:jme))
     if(.not.allocated(sandfrac_in_p))        allocate(sandfrac_in_p(ims:ime,jms:jme))
     if(.not.allocated(uthres_in_p))          allocate(uthres_in_p(ims:ime,jms:jme))
-    if(.not.allocated(uthres_sg_in_p))       allocate(uthres_sg_in_p(ims:ime,jms:jme))
-    if(.not.allocated(albedo_drag_p))        allocate(albedo_drag_p(ims:ime,jms:jme))
-    if(.not.allocated(sep_in_p))             allocate(sep_in_p(ims:ime,jms:jme))
-    if(.not.allocated(feff_p))               allocate(feff_p(ims:ime,jms:jme))
+    if(.not.allocated(rdrag_p))              allocate(rdrag_p(ims:ime,jms:jme))
+    if(.not.allocated(ssm_in_p))             allocate(ssm_in_p(ims:ime,jms:jme))
  endif
 
  if ( wetdep_ls_opt .ne. 0 ) then
@@ -190,6 +192,11 @@
     if(.not.allocated(RWC_annual_sum_smoke_coarse_p))   allocate(RWC_annual_sum_smoke_coarse_p(ims:ime,1:kreswoodcomb,jms:jme))
     if(.not.allocated(RWC_annual_sum_unspc_fine_p))     allocate(RWC_annual_sum_unspc_fine_p(ims:ime,1:kreswoodcomb,jms:jme))
     if(.not.allocated(RWC_annual_sum_unspc_coarse_p))   allocate(RWC_annual_sum_unspc_coarse_p(ims:ime,1:kreswoodcomb,jms:jme))
+ endif
+
+ if ((config_microp_scheme .eq. 'mp_tempo') .and. config_tempo_aerosolaware ) then
+    if(.not.allocated(nwfa2d_p))            allocate(nwfa2d_p(ims:ime,jms:jme))
+    if(.not.allocated(nifa2d_p))            allocate(nifa2d_p(ims:ime,jms:jme))
  endif
 
  end subroutine allocate_smoke
@@ -260,10 +267,8 @@
  if(allocated(clayfrac_in_p)    )     deallocate(clayfrac_in_p    )
  if(allocated(sandfrac_in_p)    )     deallocate(sandfrac_in_p    )
  if(allocated(uthres_in_p)      )     deallocate(uthres_in_p      )
- if(allocated(uthres_sg_in_p)   )     deallocate(uthres_sg_in_p   )
- if(allocated(albedo_drag_p)    )     deallocate(albedo_drag_p    )
- if(allocated(feff_p)           )     deallocate(feff_p           )
- if(allocated(sep_in_p)         )     deallocate(sep_in_p         )
+ if(allocated(rdrag_p)          )     deallocate(rdrag_p          )
+ if(allocated(ssm_in_p)         )     deallocate(ssm_in_p         )
 
  if(allocated(ddvel_p)          )     deallocate(ddvel_p          )
  if(allocated(wetdep_resolved_p))     deallocate(wetdep_resolved_p)
@@ -283,6 +288,9 @@
  if(allocated(e_bb_out_p)   )         deallocate(e_bb_out_p   )
  if(allocated(e_dust_out_p) )         deallocate(e_dust_out_p )
  if(allocated(e_ant_out_p)  )         deallocate(e_ant_out_p  )
+
+ if(allocated(nwfa2d_p)     )         deallocate(nwfa2d_p     )
+ if(allocated(nifa2d_p)     )         deallocate(nifa2d_p     )
  
 !-----------------------------------------------------------------------------------------------------------------
 
@@ -330,8 +338,8 @@
       integer,dimension(:),pointer               :: eco_id
       real(kind=RKIND),dimension(:),pointer      :: hfx_bb, qfx_bb, frac_grid_burned
       integer,dimension(:),pointer               :: min_bb_plume, max_bb_plume
-      real(kind=RKIND),dimension(:),pointer      :: sandfrac_in, clayfrac_in, uthres_in, uthres_sg_in, &
-                                                    sep_in, albedo_drag,feff
+      real(kind=RKIND),dimension(:),pointer      :: sandfrac_in, clayfrac_in, uthres_in, &
+                                                    ssm_in, rdrag
       real(kind=RKIND),dimension(:),pointer      :: RWC_denominator
       real(kind=RKIND),dimension(:,:), pointer   :: RWC_annual_sum, RWC_annual_sum_smoke_fine, &
                                                     RWC_annual_sum_smoke_coarse,RWC_annual_sum_unspc_fine, &
@@ -348,6 +356,8 @@
       character(len=StrKIND),pointer :: config_anthro_scheme
       character(len=StrKIND),pointer :: config_rwc_scheme
       character(len=StrKIND),pointer :: config_convection_scheme
+      character(len=StrKIND),pointer :: config_microp_scheme
+      logical,pointer:: config_tempo_aerosolaware
       integer, pointer :: wetdep_ls_opt
       integer, pointer :: drydep_opt
       integer, pointer :: plumerise_opt
@@ -356,6 +366,7 @@
       real(kind=RKIND),dimension(:,:,:),pointer :: scalars
       real(kind=RKIND),dimension(:,:,:),pointer :: chem
       integer, pointer :: bb_input_prevh !JR
+      real(kind=RKIND),dimension(:),pointer :: nwfa2d, nifa2d
      
       integer:: i,j,k,n,h,t
       integer:: nblocks, blk !JR
@@ -374,6 +385,8 @@
       call mpas_pool_get_config(configs,'wetdep_ls_opt',wetdep_ls_opt)
       call mpas_pool_get_config(configs,'drydep_opt',drydep_opt)
       call mpas_pool_get_config(configs,'config_convection_scheme',config_convection_scheme)
+      call mpas_pool_get_config(configs,'config_microp_scheme',config_microp_scheme)
+      call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
 
       call mpas_pool_get_config(configs,'plumerise_opt',plumerise_opt)
       call mpas_pool_get_config(configs,'add_fire_heat_flux',add_fire_heat_flux)
@@ -429,10 +442,8 @@
          call mpas_pool_get_array(diag_physics, 'clayfrac_in',clayfrac_in)
          call mpas_pool_get_array(diag_physics, 'sandfrac_in',sandfrac_in)
          call mpas_pool_get_array(diag_physics, 'uthres_in',uthres_in)
-         call mpas_pool_get_array(diag_physics, 'uthres_sg_in',uthres_sg_in)
-         call mpas_pool_get_array(diag_physics, 'albedo_drag',albedo_drag) ! these have been updated to select
-         call mpas_pool_get_array(diag_physics, 'feff',feff)               ! the correct month
-         call mpas_pool_get_array(diag_physics, 'sep_in',sep_in)
+         call mpas_pool_get_array(diag_physics, 'rdrag',rdrag)
+         call mpas_pool_get_array(diag_physics, 'ssm_in',ssm_in)
       endif
 
       if (config_smoke_scheme .ne. 'off' .and. num_e_bb_in .gt. 0 ) then
@@ -493,6 +504,11 @@
       endif
       if ( num_e_ant_out .gt. 0 .and. config_anthro_scheme .ne. 'off') then
          call mpas_pool_get_array(diag_physics, 'e_ant_out',e_ant_out)
+      endif
+
+      if ((config_microp_scheme .eq. 'mp_tempo') .and. config_tempo_aerosolaware ) then
+         call mpas_pool_get_array(diag_physics,'nifa2d',nifa2d)
+         call mpas_pool_get_array(diag_physics,'nwfa2d',nwfa2d)
       endif
      
       chem => scalars(chemistry_start:chemistry_end,:,:)
@@ -693,6 +709,10 @@
          rainncv_p(i,j) = rainncv(i)
          dpt2m_p(i,j)   = 280. !dewpoint_surface(i)
          mavail_p(i,j)  = mavail(i)
+         if ((config_microp_scheme .eq. 'mp_tempo') .and. config_tempo_aerosolaware ) then
+          nifa2d_p(i,j) = nifa2d(i)
+          nwfa2d_p(i,j) = nwfa2d(i)
+         endif
       enddo
       enddo
       !
@@ -704,10 +724,8 @@
             sandfrac_in_p(i,j)    = sandfrac_in(i)
             clayfrac_in_p(i,j)    = clayfrac_in(i)
             uthres_in_p(i,j)      = uthres_in(i)
-            uthres_sg_in_p(i,j)   = uthres_sg_in(i)
-            albedo_drag_p(i,j)    = albedo_drag(i)
-            feff_p(i,j)           = feff(i)
-            sep_in_p(i,j)         = sep_in(i)
+            rdrag_p(i,j)          = rdrag(i)
+            ssm_in_p(i,j)         = ssm_in(i)
         enddo
         enddo
       endif
@@ -803,12 +821,15 @@
  real(kind=RKIND),dimension(:,:,:),pointer:: e_bb_out, e_dust_out, e_ant_out
  real(kind=RKIND),dimension(:),pointer :: aero_emis_for_enhmix
  integer,dimension(:),pointer:: min_bb_plume, max_bb_plume
+ real(kind=RKIND),dimension(:),  pointer:: nwfa2d, nifa2d
  
  integer,pointer :: chemistry_start,chemistry_end
  integer,pointer                :: ebb_dcycle
  character(len=StrKIND),pointer :: config_smoke_scheme
  character(len=StrKIND),pointer :: config_dust_scheme
  character(len=StrKIND),pointer :: config_anthro_scheme
+ character(len=StrKIND),pointer :: config_microp_scheme
+ logical,pointer:: config_tempo_aerosolaware
  integer, pointer :: wetdep_ls_opt
  integer, pointer :: drydep_opt
  integer, pointer :: plumerise_opt
@@ -838,6 +859,8 @@
  call mpas_pool_get_config(configs,'config_smoke_scheme', config_smoke_scheme)
  call mpas_pool_get_config(configs,'config_dust_scheme', config_dust_scheme)
  call mpas_pool_get_config(configs,'config_anthro_scheme',config_anthro_scheme)
+ call mpas_pool_get_config(configs,'config_microp_scheme',config_microp_scheme)
+ call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
  call mpas_pool_get_config(configs,'ebb_dcycle', ebb_dcycle)
  call mpas_pool_get_config(configs,'wetdep_ls_opt',wetdep_ls_opt)
  call mpas_pool_get_config(configs,'drydep_opt',drydep_opt)
@@ -874,6 +897,11 @@
     if (add_fire_moist_flux) then
        call mpas_pool_get_array(diag_physics,'qfx_bb',qfx_bb)
     endif
+ endif
+
+ if ((config_microp_scheme .eq. 'mp_tempo') .and. config_tempo_aerosolaware ) then
+    call mpas_pool_get_array(diag_physics,'nifa2d',nifa2d)
+    call mpas_pool_get_array(diag_physics,'nwfa2d',nwfa2d)
  endif
 
  chem => scalars(chemistry_start:chemistry_end,:,:)
@@ -989,6 +1017,10 @@
                qfx_bb(i)           = qfx_bb_p(i,j)
             endif
          endif
+         if ((config_microp_scheme .eq. 'mp_tempo') .and. config_tempo_aerosolaware ) then
+             nifa2d(i) = nifa2d_p(i,j)
+             nwfa2d(i) = nwfa2d_p(i,j)
+         endif
      enddo
      enddo
 
@@ -1063,6 +1095,7 @@
  logical,pointer                :: calc_bb_emis_online
  logical,pointer                :: add_fire_heat_flux
  logical,pointer                :: add_fire_moist_flux
+ logical,pointer                :: config_mp_aero_emission
  integer,pointer                :: plumerisefire_frq
  real(kind=RKIND),pointer       :: dust_alpha, dust_gamma
  real(kind=RKIND),pointer       :: dust_drylimit_factor, dust_moist_correction
@@ -1100,7 +1133,9 @@
  call mpas_pool_get_config(configs,'bb_beta',bb_beta)
  call mpas_pool_get_config(configs,'bb_qv_scale_factor',bb_qv_scale_factor)
  call mpas_pool_get_config(configs,'config_rwc_scheme',config_rwc_scheme)
-  call mpas_pool_get_config(configs,'rwc_emis_scale_factor',rwc_emis_scale_factor)
+ call mpas_pool_get_config(configs,'rwc_emis_scale_factor',rwc_emis_scale_factor)
+! Namelist: aerosol emission for tempo mp
+ call mpas_pool_get_config(configs,'config_mp_aero_emission',config_mp_aero_emission)
 ! Namelist: Wet/dry deposition
  call mpas_pool_get_config(configs,'wetdep_ls_opt',wetdep_ls_opt)
  call mpas_pool_get_config(configs,'wetdep_ls_alpha',wetdep_ls_alpha) 
@@ -1199,10 +1234,9 @@
            frac_grid_burned = frac_grid_burned_p,                                        &
            min_bb_plume   = min_bb_plume_p, max_bb_plume = max_bb_plume_p,               &
            coef_bb_dc     = coef_bb_dc_p, nblocks = nblocks,                             &
-! --- Dust related arrays
+! --- (FENGSHA) Dust related arrays
            sandfrac_in    = sandfrac_in_p, clayfrac_in    = clayfrac_in_p,               &
-           uthres_in      = uthres_in_p,   uthres_sg_in   = uthres_sg_in_p,              &
-           albedo_drag_in = albedo_drag_p, feff_in        = feff_p, sep_in = sep_in_p,   &
+           uthres_in      = uthres_in_p,  rdrag_in = rdrag_p, ssm_in = ssm_in_p,         &
 ! --- Dry/Wet deposition, settling
            wetdep_ls_opt = wetdep_ls_opt,         drydep_flux = drydep_flux_p,           &
            tend_chem_settle = tend_chem_settle_p,       ddvel = ddvel_p,                 &
@@ -1239,16 +1273,17 @@
            v_phy   = v_p         , qv       = qv_p       , vvel     = w_p        ,       &
            qc_vis  = qc_p, qr_vis = qr_p, qi_vis = qi_p, qs_vis = qs_p, qg_vis = qg_p,   &
            blcldw_vis = qcbl_p, blcldi_vis = qibl_p,                                     &
-           coszen = coszr_p,                                                             &
+           coszen = coszr_p      , config_mp_aero_emission = config_mp_aero_emission,    &
            aod3d_smoke = aod3d_smoke_p, aod3d = aod3d_p, vis    = vis_p          ,       &
            pi_phy  = pi_p        , rho_phy  = rho_p      , kpbl     = kpbl_p     ,       &
            nsoil   = num_soils   , smois    = smois_p    , tslb     = tslb_p     ,       &
            ivgtyp  = ivgtyp_p    , isltyp   = isltyp_p   , nlcat    = num_landcat,       &
            swdown  = swdown_p    , z0       = z0_p       , snowh    = snowh_p    ,       &
            julian  = curr_julday , rmol     = rmol_p     , raincv   = raincv_p   ,       &
-           rainncv = rainncv_p   , dpt2m    = dpt2m_p    , znt      = znt_p      ,       &                              
+           rainncv = rainncv_p   , dpt2m    = dpt2m_p    , znt      = znt_p      ,       &
            mavail  = mavail_p    , g        = gravity    , vegfra   = vegfra_p   ,       &
            landusef = landusef_p , cldfrac  = cldfrac_p  , ktop_deep= ktop_deep_p,       &
+           nwfa2d  = nwfa2d_p    , nifa2d   = nifa2d_p   ,                               &
            cp      = cp          , rd       = R_d        , gmt      = gmt        ,       &
            ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde ,       &
            ims = ims , ime = ime , jms = jms , jme = jme , kms = kds , kme = kme ,       &
