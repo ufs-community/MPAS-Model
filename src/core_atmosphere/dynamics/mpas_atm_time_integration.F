@@ -32,6 +32,7 @@ module atm_time_integration
    use mpas_atmphys_interface, only: pre_microphysics, post_microphysics
    use mpas_atmphys_todynamics
    use mpas_atmphys_utilities
+   use mpas_stochastic_physics, only : stochastic_physics_pattern_apply, dosppt
 #endif
 
    use mpas_atm_boundaries, only : nSpecZone, nRelaxZone, nBdyZone, mpas_atm_get_bdy_state, mpas_atm_get_bdy_tend  ! regional_MPAS addition
@@ -2143,12 +2144,24 @@ module atm_time_integration
       call mpas_timer_start('physics_get_tend')
       rk_step = 1
       dynamics_substep = 1
+
+! apply random perturbation pattern to physics process (hydrostatic) tendencies
+      if (dosppt(domain)) then
+        call stochastic_physics_pattern_apply(domain, 'phys')
+      endif
+
       call physics_get_tend( block, mesh, state, diag, tend, tend_physics, &
                              block % configs, rk_step, dynamics_substep, &
                              tend_ru_physics, tend_rtheta_physics, tend_rho_physics, &
                              exchange_halo_group )
       call mpas_timer_stop('physics_get_tend')
       call post_physics_get_tend(block % configs, state, diag, tend)
+
+! apply random perturbation pattern to the accumulated (non-hydrostatic) physics tendencies
+      if (dosppt(domain)) then
+        call stochastic_physics_pattern_apply(domain, 'prog')
+      endif
+
 #else
 #ifndef MPAS_CAM_DYCORE
       !

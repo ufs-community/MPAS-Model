@@ -39,6 +39,7 @@ module atm_core
 #ifdef DO_CHEMISTRY
       use mpas_atm_chemistry, only: chemistry_init
 #endif
+      use mpas_stochastic_physics, only : stochastic_physics_pattern_init, dosppt
 
       implicit none
 
@@ -299,6 +300,12 @@ module atm_core
 #ifdef DO_CHEMISTRY
       call chemistry_init(domain % blocklist % configs, domain % blocklist % dimensions)
 #endif
+
+      ! 
+      ! init stochastic pattern generation
+      if (dosppt(domain)) then
+        call stochastic_physics_pattern_init (domain)
+      endif
 
    end function atm_core_init
 
@@ -1052,7 +1059,8 @@ module atm_core
       use mpas_atm_chemistry, only: chemistry_step
 #endif
       use mpas_atm_halos, only: exchange_halo_group
-
+      use mpas_stochastic_physics, only : stochastic_physics_pattern_adv, dosppt
+   
       implicit none
    
       type (domain_type), intent(inout) :: domain 
@@ -1088,6 +1096,9 @@ module atm_core
       call chemistry_step()
 #endif
 
+      if (dosppt(domain)) then
+        call stochastic_physics_pattern_adv(domain, itimestep)
+      endif
       call atm_timestep(domain, dt, currTime, itimestep, exchange_halo_group)
 
    end subroutine atm_do_timestep

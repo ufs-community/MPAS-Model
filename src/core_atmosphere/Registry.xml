@@ -4415,7 +4415,7 @@
                      description="Total cell-centered meridional wind tendency from physics"
                      persistence="scratch" />
 
-                <var name="stoch_pattern_sppt" type="real" dimensions="nVertLevels nCells Time" units="%"
+                <var name="stoch_pattern_sppt" type="real" dimensions="nVertLevels nCells Time" units="unitless"
                      description="Perturbation pattern for stochastic physics SPPT scheme" />
 
 #ifdef DO_PHYSICS
@@ -5135,6 +5135,7 @@
 #include "physics/Registry_noahmp.xml"
 #include "physics/Registry_tempo.xml"
 #include "physics/registry.chemistry.xml"
+#include "stochastic_physics/Registry_stoch_physics.xml"
 #endif
 
 #ifdef MPAS_UFS_DYCORE
