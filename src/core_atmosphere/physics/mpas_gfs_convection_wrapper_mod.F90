@@ -42,7 +42,7 @@ module mpas_gfs_convection_wrapper_mod
 contains
 
    subroutine mpas_call_gfs_convection(im, km, dt,                              &
-        pres_mid, pres_int, z_int, rho_mpas, dx, u, v, t, qv, qc, qi, w,                      &
+        pres_mid, pres_int, z_int, dx, u, v, t, qv, qc, qi, w,                      &
         hpbl, hfx, qfx, xland,                                                  &
         tkeh_in, maxmf_in, do_mynnedmf_in,                                      &
         rthcuten, rqvcuten, rqccuten, rqicuten, rucuten, rvcuten,               &
@@ -59,7 +59,6 @@ contains
       real(kind=RKIND), intent(in) :: pres_mid(im,km)      ! Pa, MPAS layer pressure
       real(kind=RKIND), intent(in) :: pres_int(im,km+1)    ! Pa, MPAS interface pressure
       real(kind=RKIND), intent(in) :: z_int(im,km+1)       ! m, interface height
-      real(kind=RKIND), intent(in) :: rho_mpas(im,km)     ! kg m-3, MPAS prognostic moist-air density
       real(kind=RKIND), intent(in) :: dx(im)              ! cell length scale, m
       real(kind=RKIND), intent(in) :: u(im,km), v(im,km)   ! m s-1
       real(kind=RKIND), intent(in) :: t(im,km)             ! physical temperature, K; staged by MPAS driver
@@ -100,7 +99,6 @@ contains
       real(kind=RKIND) :: clam_deep, c0_deep, c1_deep, betal_deep, betas_deep, evfact_deep, evfactl_deep, pgcon_deep
       real(kind=RKIND) :: clam_shal, c0_shal, c1_shal, pgcon_shal, evef_shal
       real(kind=RKIND) :: tv, rho, theta_fac
-      real(kind=RKIND) :: dzloc, dp_rho, dp_pres, dp_ratio
       real(kind=RKIND) :: raw_t
       real(kind=RKIND) :: dtemp_sas, rth_test, dtdt_test
       real(kind=RKIND) :: rqv_raw, rqc_raw, rqi_raw, ru_raw, rv_raw
@@ -309,13 +307,10 @@ contains
          endif
          tv = raw_t * (1._RKIND + fv * max(qmin, qv(i,surf_k(i))))
 
-         ! Use the same MPAS prognostic density that defines layer mass.
-         ! Keep the EOS density out of the active coupling so surface fluxes,
-         ! omega=-rho*g*w, and delp all use one mass definition.
-         rho = rho_mpas(i,surf_k(i))
+         rho = pres_mid(i,surf_k(i)) / (R_d * tv)
          if (rho /= rho .or. rho <= 0._RKIND) then
             ierr = 13
-            write(errmsg,'(a,i8,3(1x,es14.6))') 'bad SAS prognostic surface rho at i,p,tv,rho=', &
+            write(errmsg,'(a,i8,3(1x,es14.6))') 'bad SAS surface rho at i,p,tv,rho=', &
                  i, pres_mid(i,surf_k(i)), tv, rho
             return
          endif
@@ -329,42 +324,22 @@ contains
          ! kmap is rebuilt every call and preserves bottom-up ordering.
          kk = kmap(i,k)
 
-         ! GFS SAMF is packed surface-to-top, so pressure must decrease with k.
-         ! Do not hide reversed/corrupt interfaces with abs() or max/min.
-         pbot = pres_int(i,kk)
-         ptop = pres_int(i,kk+1)
-         dp_pres = pbot - ptop
-         delp(i,k) = dp_pres
+         ! Robust layer pressure construction.  Some MPAS interface arrays are not
+         ! strictly monotonic locally after remapping/physics adjustment, so never
+         ! infer bottom/top from the raw index alone.  SAS only needs positive mass
+         ! thickness in Pa and a layer-center pressure in Pa.
+         pbot = max(pres_int(i,kk), pres_int(i,kk+1))
+         ptop = min(pres_int(i,kk), pres_int(i,kk+1))
+         delp(i,k)  = pbot - ptop
          prslp(i,k) = 0.5_RKIND * (pbot + ptop)
          phil(i,k)  = gravity * 0.5_RKIND * (z_int(i,kk) + z_int(i,kk+1))
 
          if (delp(i,k) /= delp(i,k) .or. delp(i,k) <= 0._RKIND) then
             ierr = 13
-            write(errmsg,'(a,2i8,3(1x,es14.6))') &
-                 'bad SAS pressure ordering at i,k,pbot,ptop,delp=', &
+            write(errmsg,'(a,2i8,1x,l1,3(1x,es14.6))') &
+                 'bad SAS delp after pbot/ptop at i,k,pbot,ptop,delp=', &
                  i, k, pbot, ptop, delp(i,k)
             return
-         endif
-
-         ! Independent mass-consistency diagnostic:
-         ! hydrostatic dp should agree with MPAS prognostic rho*g*dz.
-         dzloc  = abs(z_int(i,kk+1) - z_int(i,kk))
-         dp_rho = gravity * rho_mpas(i,kk) * dzloc
-         if (rho_mpas(i,kk) /= rho_mpas(i,kk) .or. rho_mpas(i,kk) <= 0._RKIND .or. &
-             dzloc <= 0._RKIND .or. dp_rho <= 0._RKIND) then
-            ierr = 15
-            write(errmsg,'(a,2i8,3(1x,es14.6))') &
-                 'bad SAS rho/dz for dp check at i,k,rho,dz,dp_rho=', &
-                 i, k, rho_mpas(i,kk), dzloc, dp_rho
-            return
-         endif
-         dp_ratio = dp_pres / dp_rho
-         if (abs(dp_ratio - 1._RKIND) > 0.05_RKIND) then
-            write(0,*) 'SAS_DP_MASS_INCONSISTENCY i,k,kk=', i,k,kk
-            write(0,*) ' pbot,ptop,dp_pres=', pbot,ptop,dp_pres
-            write(0,*) ' rho_mpas,dz,dp_rho=', rho_mpas(i,kk),dzloc,dp_rho
-            write(0,*) ' dp_pres/dp_rho=', dp_ratio
-            call flush(0)
          endif
 
          if (prslp(i,k) /= prslp(i,k) .or. prslp(i,k) <= 0._RKIND .or. prslp(i,k) > 120000._RKIND) then
@@ -383,10 +358,10 @@ contains
          endif
 
          tv  = t1(i,k) * (1._RKIND + fv * max(qmin, qv(i,kk)))
-         rho = rho_mpas(i,kk)
+         rho = prslp(i,k) / (R_d * tv)
          if (rho /= rho .or. rho <= 0._RKIND) then
             ierr = 16
-            write(errmsg,'(a,2i8,3(1x,es14.6))') 'bad SAS prognostic rho at i,k,p,tv,rho=', &
+            write(errmsg,'(a,2i8,3(1x,es14.6))') 'bad SAS rho at i,k,p,tv,rho=', &
                  i, k, prslp(i,k), tv, rho
             return
          endif

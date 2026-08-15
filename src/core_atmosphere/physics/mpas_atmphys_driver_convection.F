@@ -1045,7 +1045,6 @@ real(kind=RKIND) :: p_sfc_safe, p_top_safe, frac_safe
             pres_mid = pres_mid_gfs_sas,                       &
             pres_int = pres_int_gfs_sas,                    &
             z_int    = z_int_sas(its:ite,kts:kte+1),                        &
-            rho_mpas = rho_p(its:ite,kts:kte,j),                             &
             u        = u_p(its:ite,kts:kte,j),                              &
             v        = v_p(its:ite,kts:kte,j),                              &
             t        = t_gfs_sas,                                         &

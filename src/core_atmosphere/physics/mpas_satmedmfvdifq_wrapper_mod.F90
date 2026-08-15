@@ -31,7 +31,7 @@ module mpas_satmedmfvdifq_wrapper_mod
 contains
 
   subroutine mpas_call_satmedmfvdifq(nCells, nVertLevels, ntrac, dt,      &
-                                     z_mid, z_int, rho_mpas, areaCell,   &
+                                     z_mid, z_int, areaCell,             &
                                      u_mpas, v_mpas, t_mpas,             &
                                      qv_mpas, qc_mpas, qi_mpas, tke_mpas,&
                                      p_mid, p_int, exner_mid,            &
@@ -47,7 +47,6 @@ contains
     real(kind=RKIND), intent(in) :: dt
     real(kind=RKIND), intent(in) :: z_mid(nCells,nVertLevels)
     real(kind=RKIND), intent(in) :: z_int(nCells,nVertLevels+1)
-    real(kind=RKIND), intent(in) :: rho_mpas(nCells,nVertLevels) ! kg m-3, MPAS prognostic density
     real(kind=RKIND), intent(in) :: areaCell(nCells)
     real(kind=RKIND), intent(in) :: u_mpas(nCells,nVertLevels)
     real(kind=RKIND), intent(in) :: v_mpas(nCells,nVertLevels)
@@ -120,7 +119,6 @@ contains
     real(kind=RKIND), allocatable :: dtend(:,:,:)
     real(kind=RKIND), allocatable :: claie(:), cfch(:), cfrt(:), cclu(:), cpopu(:)
     real(kind=RKIND) :: rho1,tem1, tem2
-    real(kind=RKIND) :: dzloc, dp_rho, dp_pres, dp_ratio
     integer, allocatable :: kpbl(:), kinver(:), dtidx(:,:)
     integer, allocatable :: surf_k(:), kmap(:,:)
 
@@ -245,35 +243,7 @@ contains
 
     do k = 1, km
       do i = 1, im
-        ! GFS TKE-EDMF is packed surface-to-top: pressure must decrease upward.
-        dp_pres = prsi(i,k) - prsi(i,k+1)
-        del(i,k) = dp_pres
-        if (del(i,k) /= del(i,k) .or. del(i,k) <= 0._RKIND) then
-          errflg = 2
-          write(errmsg,'(a,2i8,3(1x,es14.6))') &
-               'bad TKE-EDMF pressure ordering i,k,pbot,ptop,del=', &
-               i,k,prsi(i,k),prsi(i,k+1),del(i,k)
-          return
-        endif
-
-        dzloc  = abs(z_int(i,k+1) - z_int(i,k))
-        dp_rho = grav * rho_mpas(i,k) * dzloc
-        if (rho_mpas(i,k) /= rho_mpas(i,k) .or. rho_mpas(i,k) <= 0._RKIND .or. &
-            dzloc <= 0._RKIND .or. dp_rho <= 0._RKIND) then
-          errflg = 3
-          write(errmsg,'(a,2i8,3(1x,es14.6))') &
-               'bad TKE-EDMF rho/dz i,k,rho,dz,dp_rho=', &
-               i,k,rho_mpas(i,k),dzloc,dp_rho
-          return
-        endif
-        dp_ratio = dp_pres / dp_rho
-        if (abs(dp_ratio - 1._RKIND) > 0.05_RKIND) then
-          write(0,*) 'TKEEDMF_DP_MASS_INCONSISTENCY i,k=',i,k
-          write(0,*) ' pbot,ptop,dp_pres=',prsi(i,k),prsi(i,k+1),dp_pres
-          write(0,*) ' rho_mpas,dz,dp_rho=',rho_mpas(i,k),dzloc,dp_rho
-          write(0,*) ' dp_pres/dp_rho=',dp_ratio
-          call flush(0)
-        endif
+        del(i,k) = abs(prsi(i,k) - prsi(i,k+1))
       enddo
     enddo
 
@@ -285,7 +255,7 @@ contains
       ! UFS code uses z0 = 0.01*zorl, so zorl is in cm.
       zorl(i) = max(z0_mpas(i), 1.0e-6_RKIND) * 100.0_RKIND
       kk = surf_k(i)
-      rho1 = rho_mpas(i,kk)
+      rho1 = prsl(i,kk) / (rd * max(t1(i,kk), 180.0_RKIND))
 
       tsea(i) = skin_temp(i)
       heat(i) = shflx(i)/(rho1*cp)

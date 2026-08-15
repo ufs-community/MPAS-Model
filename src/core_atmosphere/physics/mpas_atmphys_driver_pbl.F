@@ -1789,7 +1789,6 @@ endif
             (ite-its+1), (kte-kts+1), 4, dt_pbl,                      &
             zmid_tkeedmf_p(its:ite,kts:kte,jts),                                &
             zint_tkeedmf_p(its:ite,kts:kte+1,jts),                              &
-            rho_p(its:ite,kts:kte,jts),                                         &
             dx_p(its:ite,jts),                                        &
             u_p(its:ite,kts:kte,jts),                                 &
             v_p(its:ite,kts:kte,jts),                                 &

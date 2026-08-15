@@ -407,12 +407,6 @@
              enddo
           endif
 
-       case('bl_tke_edmf')
-          ! GFS TKE-EDMF tendencies for theta, qv, qc, qi and momentum
-          ! are already added in the generic PBL block above.
-          ! No MYNN-specific qs/number/aerosol tendencies are added here.
-          ! Prognostic TKE is copied back to the scalar state in pbl_to_MPAS.
-
        case default
     end select pbl_select
  endif
@@ -438,9 +432,7 @@
           enddo
           enddo
 
-       case('cu_tiedtke','cu_ntiedtke','cu_gfs_sas')
-          ! These convection schemes return horizontal momentum tendencies.
-          ! Convert cell-centered (u,v) tendencies to MPAS edge-normal tendency.
+       case('cu_tiedtke','cu_ntiedtke')
           if(rk_step == 1 .and. dynamics_substep == 1) then
              call exchange_halo_group(block%domain,'physics:cuten')
              call tend_toEdges(block,mesh,rucuten,rvcuten,rucuten_Edge)
