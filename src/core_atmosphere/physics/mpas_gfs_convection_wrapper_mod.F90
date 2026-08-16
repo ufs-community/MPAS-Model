@@ -279,8 +279,14 @@ contains
          bad_col(i) = .false.
 
          if (psp(i) /= psp(i) .or. psp(i) <= 1000._RKIND .or. psp(i) > 120000._RKIND) then
+            ! Do not clamp a real SAS column here.  The driver is responsible
+            ! for masking known-bad MPAS columns and supplying a safe placeholder.
+            ! Reaching this check means an unmasked coupling error remains.
             ierr = 11
-            write(errmsg,'(a,i8,1x,es14.6)') 'bad SAS surface pressure psp at i=', i, psp(i)
+            write(errmsg,'(a,i8,3(a,es14.6))') &
+                 'bad SAS surface pressure psp at i=', i, &
+                 ' psp=', psp(i), ' pbot_mid=', pres_mid(i,surf_k(i)), &
+                 ' ptop_int=', pres_int(i,km+1)
             return
          endif
 

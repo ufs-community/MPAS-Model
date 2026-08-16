@@ -855,6 +855,31 @@ real(kind=RKIND) :: p_sfc_safe, p_top_safe, frac_safe
          icount = 0
          do i = its, ite
             gfs_sas_bad_col(i,j) = .false.
+
+            !------------------------------------------------------------
+            ! GFS SAS requires a physically meaningful surface pressure.
+            ! A monotonic pressure column can still be invalid if the
+            ! bottom interface itself is non-finite or unrealistically high.
+            ! Mark such a column bad here so it never reaches SAS as real
+            ! atmospheric input.  The wrapper retains its own hard check as
+            ! a final protection against coupling errors.
+            !------------------------------------------------------------
+            if (pres2_hyd_p(i,kts,j) /= pres2_hyd_p(i,kts,j) .or. &
+                pres2_hyd_p(i,kts,j) <= 30000._RKIND .or.       &
+                pres2_hyd_p(i,kts,j) > 120000._RKIND) then
+               icount = icount + 1
+               gfs_sas_bad_col(i,j) = .true.
+               if (icount <= 20) then
+                  write(0,*) 'WARNING: skip GFS SAS bad surface-pressure column'
+                  write(0,*) 'global i,j         = ', i, j
+                  write(0,*) 'psfc hydrostatic   = ', pres2_hyd_p(i,kts,j)
+                  write(0,*) 'pmid bottom        = ', pres_hyd_p(i,kts,j)
+                  write(0,*) 'ptop hydrostatic   = ', pres2_hyd_p(i,kte+1,j)
+                  write(0,*) 'ACTION: use synthetic safe pressure only for SAS call; zero SAS output'
+                  call flush(0)
+               endif
+            endif
+
             do k = kts, kte
                if (pres2_hyd_p(i,k,j) <= pres2_hyd_p(i,k+1,j)) then
                   icount = icount + 1
@@ -932,8 +957,6 @@ real(kind=RKIND) :: p_sfc_safe, p_top_safe, frac_safe
          if (allocated(maxmf_gfs_sas)) deallocate(maxmf_gfs_sas)
          if (allocated(pres_mid_gfs_sas)) deallocate(pres_mid_gfs_sas)
          if (allocated(pres_int_gfs_sas)) deallocate(pres_int_gfs_sas)
-         if (allocated(pres_mid_gfs_sas)) deallocate(pres_mid_gfs_sas)
-         if (allocated(pres_int_gfs_sas)) deallocate(pres_int_gfs_sas)
          allocate(t_gfs_sas(its:ite,kts:kte))
          allocate(qv_gfs_sas(its:ite,kts:kte))
          allocate(tkeh_gfs_sas(its:ite,kts:kte+1))
@@ -951,8 +974,17 @@ real(kind=RKIND) :: p_sfc_safe, p_top_safe, frac_safe
          ! still needs safe monotonic pressure input to avoid a crash.
          do i = its, ite
             if (gfs_sas_bad_col(i,j)) then
-               p_sfc_safe = max(pres2_hyd_p(i,kts,j), pres_hyd_p(i,kts,j), 1000._RKIND)
-               p_top_safe = max(1._RKIND, min(pres2_hyd_p(i,kte+1,j), p_sfc_safe - 1._RKIND))
+               ! This pressure column is only a numerically safe placeholder
+               ! required because the wrapper operates on the complete i-slab.
+               ! Its SAS tendencies/rain are explicitly zeroed after the call.
+               ! Never propagate the original bad psfc into this placeholder.
+               p_sfc_safe = pres_hyd_p(i,kts,j)
+               if (p_sfc_safe /= p_sfc_safe) p_sfc_safe = 100000._RKIND
+               p_sfc_safe = min(110000._RKIND, max(30000._RKIND, p_sfc_safe))
+
+               p_top_safe = pres2_hyd_p(i,kte+1,j)
+               if (p_top_safe /= p_top_safe) p_top_safe = 100._RKIND
+               p_top_safe = max(1._RKIND, min(p_top_safe, p_sfc_safe - 1._RKIND))
                do k = kts, kte+1
                   frac_safe = real(k-kts,RKIND) / real(kte+1-kts,RKIND)
                   pres_int_gfs_sas(i,k) = p_sfc_safe - frac_safe * (p_sfc_safe - p_top_safe)
