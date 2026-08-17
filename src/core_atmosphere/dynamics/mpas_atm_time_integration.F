@@ -9143,7 +9143,7 @@ module atm_time_integration
          latMax = 0.0
          lonMax = 0.0
          !$acc parallel default(present)
-         !$acc loop collapse(2) gang vector reduction(min:scalar_min)
+         !$acc loop gang vector reduction(min:scalar_min)
          do iCell = 1, nCellsSolve
             scalar_min = min(scalar_min, tend_sfc_pressure(iCell))
          end do
@@ -9152,7 +9152,7 @@ module atm_time_integration
          ! This second loop using offset_1d ensures the same (indexMax) are reported with the scalar_min
          ! Especially when using OpenACC
          !$acc parallel default(present)
-         !$acc loop collapse(2) gang vector reduction(min:offset_1d)
+         !$acc loop gang vector reduction(min:offset_1d)
          do iCell = 1, nCellsSolve
             if (tend_sfc_pressure(iCell) == scalar_min) then
                ! In case 2 locations tie, only save the minimum value
@@ -9190,14 +9190,14 @@ module atm_time_integration
          latMax = 0.0
          lonMax = 0.0
          !$acc parallel default(present)
-         !$acc loop collapse(2) gang vector reduction(max:scalar_max)
+         !$acc loop gang vector reduction(max:scalar_max)
          do iCell = 1, nCellsSolve
             scalar_max = max(scalar_max, tend_sfc_pressure(iCell))
          end do
          !$acc end parallel
 
          !$acc parallel default(present)
-         !$acc loop collapse(2) gang vector reduction(min:offset_1d)
+         !$acc loop gang vector reduction(min:offset_1d)
          do iCell = 1, nCellsSolve
             if (tend_sfc_pressure(iCell) == scalar_max) then
                offset_1d = min(offset_1d, iCell-1)
@@ -9236,7 +9236,7 @@ module atm_time_integration
          scalar_min = 0.0
          scalar_max = 0.0
          !$acc parallel default(present)
-         !$acc loop gang vector collapse(2) reduction(min:scalar_min) reduction(max:scalar_max)
+         !$acc loop gang vector reduction(min:scalar_min) reduction(max:scalar_max)
          do iCell = 1, nCellsSolve
             scalar_min = min(scalar_min, tend_sfc_pressure(iCell))
             scalar_max = max(scalar_max, tend_sfc_pressure(iCell))
