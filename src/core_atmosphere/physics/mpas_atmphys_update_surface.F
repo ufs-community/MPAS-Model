@@ -78,10 +78,8 @@
  real(kind=RKIND),dimension(:,:),pointer:: lai12m
  real(kind=RKIND),dimension(:)  ,pointer:: lai
  
- real(kind=RKIND),dimension(:,:),pointer:: feff_m_in
- real(kind=RKIND),dimension(:,:),pointer:: albedo_drag_m_in
- real(kind=RKIND),dimension(:),pointer  :: feff
- real(kind=RKIND),dimension(:),pointer  :: albedo_drag
+ real(kind=RKIND),dimension(:,:),pointer:: rdrag_m_in
+ real(kind=RKIND),dimension(:),pointer  :: rdrag
 
 !local variables:
  integer:: iCell
@@ -101,10 +99,8 @@
  call mpas_pool_get_array(sfc_input,'lai12m'    , lai12m    )
  call mpas_pool_get_array(diag_physics,'lai   '    , lai    )
 
- call mpas_pool_get_array(diag_physics,'feff_m_in'       , feff_m_in       )
- call mpas_pool_get_array(diag_physics,'albedo_drag_m_in', albedo_drag_m_in)
- call mpas_pool_get_array(diag_physics,'feff'            , feff            )
- call mpas_pool_get_array(diag_physics,'albedo_drag'     , albedo_drag     )
+ call mpas_pool_get_array(diag_physics,'rdrag_m_in', rdrag_m_in)
+ call mpas_pool_get_array(diag_physics,'rdrag'     , rdrag     )
 
 !updates the surface background albedo for the current date as a function of the monthly-mean
 !surface background albedo valid on the 15th day of the month, if config_sfc_albedo is true:
@@ -121,8 +117,7 @@
 
 ! Updates the dust input data to the current month
  if(config_dust_scheme .ne. 'off') then
-    call monthly_interp_to_date(nCellsSolve,current_date,feff_m_in,feff)
-    call monthly_interp_to_date(nCellsSolve,current_date,albedo_drag_m_in,albedo_drag)
+    call monthly_interp_to_date(nCellsSolve,current_date,rdrag_m_in,rdrag)
  endif
 
 !updates the green-ness fraction for the current date as a function of the monthly-mean green-

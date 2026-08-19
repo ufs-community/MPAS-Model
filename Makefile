@@ -375,6 +375,7 @@ ifort_icx:   # BUILDTARGET Intel Fortran, C, and C++ compiler suite
 	"DEBUG = $(DEBUG)" \
 	"USE_PAPI = $(USE_PAPI)" \
 	"OPENMP = $(OPENMP)" \
+	"LAPACK_LIBS = -lmkl_intel_lp64 -lmkl_core -lmkl_sequential" \
 	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI" )
 
 jet_ifort:
@@ -481,6 +482,7 @@ intel-mpi:   # BUILDTARGET Intel compiler suite with Intel MPI library
 	"DEBUG = $(DEBUG)" \
 	"USE_PAPI = $(USE_PAPI)" \
 	"OPENMP = $(OPENMP)" \
+	"LAPACK_LIBS = -lmkl_intel_lp64 -lmkl_core -lmkl_sequential" \
 	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI" )
 
 intel-llvm-mpi:   # BUILDTARGET Intel LLVM compiler suite with Intel MPI library
@@ -535,6 +537,7 @@ intel-mpi-ursa:   # usra
 	"DEBUG = $(DEBUG)" \
 	"USE_PAPI = $(USE_PAPI)" \
 	"OPENMP = $(OPENMP)" \
+	"LAPACK_LIBS = -lmkl_intel_lp64 -lmkl_core -lmkl_sequential" \
 	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI" )
 
 gfortran:   # BUILDTARGET GNU Fortran, C, and C++ compilers
@@ -565,6 +568,7 @@ gfortran:   # BUILDTARGET GNU Fortran, C, and C++ compilers
 	"USE_PAPI = $(USE_PAPI)" \
 	"OPENMP = $(OPENMP)" \
 	"OPENACC = $(OPENACC)" \
+	"LAPACK_LIBS = -llapack -lblas" \
 	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI" )
 
 gfortran-clang:   # BUILDTARGET GNU Fortran compiler with LLVM clang/clang++ compilers
@@ -1694,6 +1698,14 @@ SCOTCH_MESSAGE = "MPAS has been linked with the Scotch graph partitioning librar
 else
 SCOTCH_MESSAGE = "MPAS was NOT linked with the Scotch graph partitioning library."
 endif
+
+# Enable the build-time pre-processor macro CESMCOUPLED in order to use
+# the subroutine "dgemm" to perform matrix multiplication instead of the
+# subroutine "esmf_dgemm" that is the default in the UFS.  This is necessary
+# because currently (as of 20260603), the ufs-community's stand-alone
+# MPAS-Model does not provide access to "esmf_dgemm".  For further details,
+# see the more thorough explanation of this issue in CMakeLists.txt.
+override CPPFLAGS += "-DCESMCOUPLED"
 
 mpas_main: $(MAIN_DEPS)
 	cd src; $(MAKE) FC="$(FC)" \

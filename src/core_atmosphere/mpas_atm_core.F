@@ -39,6 +39,7 @@ module atm_core
 #ifdef DO_CHEMISTRY
       use mpas_atm_chemistry, only: chemistry_init
 #endif
+      use mpas_stochastic_physics, only : stochastic_physics_pattern_init, dosppt
 
       implicit none
 
@@ -299,6 +300,12 @@ module atm_core
 #ifdef DO_CHEMISTRY
       call chemistry_init(domain % blocklist % configs, domain % blocklist % dimensions)
 #endif
+
+      ! 
+      ! init stochastic pattern generation
+      if (dosppt(domain)) then
+        call stochastic_physics_pattern_init (domain)
+      endif
 
    end function atm_core_init
 
@@ -996,13 +1003,33 @@ module atm_core
    
       type (mpas_pool_type), pointer :: diag_physics
    
-      real (kind=RKIND), dimension(:), pointer :: refl10cm_1km_max, max_hail_diameter_sfc_acc, &
-           max_hail_diameter_column_acc
+      real (kind=RKIND), dimension(:), pointer :: refl10cm_1km_max, max_hail_diameter_sfc_acc, prate_max, &
+                       refl10cm_compref_max, ave_prate_1min, ave_prate_5min, ave_prate_10min, max_hail_diameter_column_acc
 
 #ifdef DO_PHYSICS
+      call mpas_pool_get_array(diag_physics, 'prate_max', prate_max)
       call mpas_pool_get_array(diag_physics, 'refl10cm_1km_max', refl10cm_1km_max)
+      call mpas_pool_get_array(diag_physics, 'refl10cm_compref_max', refl10cm_compref_max)
+      call mpas_pool_get_array(diag_physics, 'ave_prate_1min', ave_prate_1min)
+      call mpas_pool_get_array(diag_physics, 'ave_prate_5min', ave_prate_5min)
+      call mpas_pool_get_array(diag_physics, 'ave_prate_10min', ave_prate_10min)
       call mpas_pool_get_array(diag_physics, 'max_hail_diameter_sfc_acc', max_hail_diameter_sfc_acc)
       call mpas_pool_get_array(diag_physics, 'max_hail_diameter_column_acc', max_hail_diameter_column_acc)
+      if(associated(prate_max)) then
+         prate_max(:) = 0.
+      endif
+      if(associated(refl10cm_compref_max)) then
+         refl10cm_compref_max(:) = -35.
+      endif
+      if(associated(ave_prate_1min)) then
+         ave_prate_1min(:) = 0.
+      endif
+      if(associated(ave_prate_5min)) then
+         ave_prate_5min(:) = 0.
+      endif
+      if(associated(ave_prate_10min)) then
+         ave_prate_10min(:) = 0.
+      endif
       if(associated(refl10cm_1km_max)) then
          refl10cm_1km_max(:) = 0.
       endif
@@ -1032,7 +1059,8 @@ module atm_core
       use mpas_atm_chemistry, only: chemistry_step
 #endif
       use mpas_atm_halos, only: exchange_halo_group
-
+      use mpas_stochastic_physics, only : stochastic_physics_pattern_adv, dosppt
+   
       implicit none
    
       type (domain_type), intent(inout) :: domain 
@@ -1068,6 +1096,9 @@ module atm_core
       call chemistry_step()
 #endif
 
+      if (dosppt(domain)) then
+        call stochastic_physics_pattern_adv(domain, itimestep)
+      endif
       call atm_timestep(domain, dt, currTime, itimestep, exchange_halo_group)
 
    end subroutine atm_do_timestep

@@ -136,10 +136,44 @@ set(ATMOSPHERE_CORE_PHYSICS_SMOKE_SOURCES
     seas_ngac_mod.F90
     ssalt_mod.F90
     module_anthro_emissions.F90
+    module_mp_aero_emissions.F90
 )
 list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_SMOKE_SOURCES PREPEND physics/physics_noaa/SMOKE/)
 
 set(ATMOSPHERE_CORE_PHYSICS_MMM_DIR ${CMAKE_CURRENT_SOURCE_DIR}/physics/physics_mmm)
+
+# build stochastic_physics as a library
+set(ATMOSPHERE_CORE_STOCHASTIC_PHYSICS_SOURCES
+    kinddef.F90
+    mpi_wrapper.F90
+    plumes.F90
+    mersenne_twister.F90
+    random_numbers.F90
+    stochy_namelist_def.F90
+    compns_stochy.F90
+    stochy_internal_state_mod.F90
+    spectral_transforms.F90
+    stochastic_physics_m.F90
+    stochy_patterngenerator.F90
+    stochy_data_mod.F90
+    stochy_nml_rec.F90
+    get_stochy_pattern.F90
+    lndp_apply_perts.F90
+    mpas_stochastic_physics.F90
+)
+list(TRANSFORM ATMOSPHERE_CORE_STOCHASTIC_PHYSICS_SOURCES PREPEND stochastic_physics/)
+add_library(stochastic_physics ${ATMOSPHERE_CORE_STOCHASTIC_PHYSICS_SOURCES})
+mpas_fortran_target(stochastic_physics)
+target_compile_definitions(stochastic_physics PRIVATE INTERNAL_FILE_NML MPAS)
+if(NOT MPAS_DOUBLE_PRECISION)
+  target_compile_definitions(stochastic_physics PRIVATE CCPP_32BIT)
+endif()
+find_package(BLAS REQUIRED)
+find_package(NetCDF REQUIRED COMPONENTS Fortran C)
+target_link_libraries(stochastic_physics PUBLIC MPI::MPI_Fortran framework ${BLAS_LIBRARIES} NetCDF::NetCDF_Fortran NetCDF::NetCDF_C)
+install(TARGETS stochastic_physics EXPORT ${PROJECT_NAME}ExportsCore
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 if(NOT EXISTS ${ATMOSPHERE_CORE_PHYSICS_MMM_DIR})
     set(PHYSICS_MMM_REPO_URL "https://github.com/NCAR/MMM-physics")
@@ -540,6 +574,7 @@ if (${DO_PHYSICS})
     list(APPEND CORE_ATMOSPHERE_COMPILE_DEFINITIONS DO_PHYSICS)
 endif ()
 target_compile_definitions(core_atmosphere PRIVATE ${CORE_ATMOSPHERE_COMPILE_DEFINITIONS})
+target_link_libraries(core_atmosphere PUBLIC stochastic_physics)
 set_MPAS_DEBUG_flag(core_atmosphere)
 mpas_core_target(CORE atmosphere TARGET core_atmosphere INCLUDES ${ATMOSPHERE_CORE_INCLUDES})
 
