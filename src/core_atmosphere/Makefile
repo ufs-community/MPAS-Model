@@ -109,6 +109,7 @@ clean:
 	( cd ../..; rm -f *TBL )
 	( cd ../..; rm -f *DATA* )
 	$(RM) -r libphys
+	$(RM) -r libchem
 	$(RM) *.o *.mod *.f90 libdycore.a
 	$(RM) Registry_processed.xml
 	@# Certain systems with intel compilers generate *.i files
