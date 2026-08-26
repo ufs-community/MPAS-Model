@@ -504,6 +504,11 @@
    !if(config_nsoillevels .ne. 9) &
    !   call physics_error_fatal('RUC lsm uses 9 soil layers. Correct config_nsoillevels.')
    call init_soil_properties_ruc(mesh, fg, dminfo, dims, configs)
+ case ( 10 )
+  ! if(config_nsoillevels .ne. 10) &
+  !    call physics_error_fatal('This version of Noah-MP lsm uses 10 soil layers. Correct config_nsoillevels.')
+   call init_soil_properties_noah(mesh, fg, dminfo, dims, configs)
+
 
  case ( 10 )
   ! if(config_nsoillevels .ne. 10) &
@@ -578,9 +583,6 @@ end subroutine init_soil_layers_properties
        sm_input(ifgSoil+1,iCell) = sm_fg(ifgSoil,iCell)
     enddo
 
-!... block to determine max depth (based on 2-m for Noah and 5-m for NoahMP)
-!    can get away without an else block because this subroutine is only
-!    called if nSoilLevels is either 4 or 10
     if(nSoilLevels .eq. 4) then
        zhave(nFGSoilLevels+2,iCell) = 300._RKIND/100._RKIND
     elseif(nSoilLevels .eq. 10) then
