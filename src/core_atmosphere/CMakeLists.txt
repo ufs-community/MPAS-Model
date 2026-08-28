@@ -246,9 +246,9 @@ else()
 endif()
 
 set(ATMOSPHERE_CORE_PHYSICS_MYNN-EDMF_SOURCES
-    module_bl_mynnedmf.F90
-    MPAS/module_bl_mynnedmf_common.F90
-    MPAS/module_bl_mynnedmf_driver.F90
+    src/module_bl_mynnedmf.F90
+    src/MPAS/module_bl_mynnedmf_common.F90
+    src/module_bl_mynnedmf_driver.F90
 )
 list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_MYNN-EDMF_SOURCES PREPEND physics/physics_noaa/MYNN-EDMF/)
 

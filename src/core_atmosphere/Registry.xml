@@ -504,6 +504,8 @@
                 <package name="bl_ysu_in" description="parameterization of YSU Planetary Boundary Layer."/>
                 <package name="bl_mynn_in" description="parameterization of MYNN Planetary Boundary Layer."/>
                 <package name="bl_mynnedmf_in" description="parameterization of MYNN-EDMF Planetary Boundary Layer."/>
+                <package name="bl_mynnedmf_tkebudget_in" description="TKE budget variables for output in MYNN-EDMF."/>
+                <package name="bl_mynnedmf_output_in" description="additional diagnostic variables output in MYNN-EDMF."/>
                 <package name="sf_noahmp_in" description="parameterization of NOAH-MP land surface scheme."/>
 		<package name="bl_myj_in" description="parameterization of MYJ Planetary Boundary Layer."/>
                 <package name="lsm_ruc_in" description="parameterization of the RUC land surface."/>
@@ -2975,7 +2977,7 @@
                      units="-"
                      description="=configuration option for the calculation of z0, zt and zq over water"
                      possible_values="0:COARE3.0, 1:COARE3.5, 2:Davis/COARE3.5 ,3:Davis/Garratt, 4:Taylor-Yelland"/>
-		
+
                 <nml_option name="config_radt_cld_overlap" type="character" default_value="maximum_random" in_defaults="false"
                      description="cloud overlapping option in the RRTMG lw and sw radiation schemes"
                      possible_values="`none',`random',`maximum_random',`maximum',`exponential',`'exponential_random'"/>
@@ -3006,8 +3008,8 @@
 
                 <nml_option name="config_mynn_closure" type="real" default_value="2.6" in_defaults="false"
                      units="-"
-                     description="closure level for the MYNN TKE turbulence closure"
-                     possible_values="2.5,2.6,3.0"/>
+                     description="closure level for the MYNN-EDMF scheme"
+                     possible_values="2.5,2.6,2.7,3.0"/>
 
                 <nml_option name="config_mynn_cloudpdf" type="integer" default_value="2" in_defaults="false"
                      units="-"
@@ -3016,7 +3018,7 @@
 
                 <nml_option name="config_mynn_mixlength" type="integer" default_value="1" in_defaults="false"
                      units="-"
-                     description="mixing length in the MYNN PBL scheme"
+                     description="mixing length option in the MYNN-EDMF scheme"
                      possible_values="`0: orig',`1: operational',`2: research'"/>
 
                 <nml_option name="config_mynn_stfunc" type="integer" default_value="1" in_defaults="false"
@@ -3060,8 +3062,8 @@
 
                 <nml_option name="config_mynn_edmf_output" type="integer" default_value="0" in_defaults="false"
                      units="-"
-                     description="=0:suppress the allocation of variables needed in the EDMF option of the MYNN PBL scheme"
-                     possible_values="0,1:updrafts,2:downdrafts"/>
+                     description="=control the allocation/output of variables used in the MF component of the MYNN-EDMF scheme"
+                     possible_values="0:do not allocate/output,1:updrafts,2:downdrafts"/>
 
                 <nml_option name="config_mynn_mixscalars" type="integer" default_value="0" in_defaults="false"
                      units="-"
@@ -3073,11 +3075,11 @@
                      description="=1:activate mixing of aerosols in the MYNN PBL scheme (=0 otherwise)"
                      possible_values="0,1"/>
 
-		<nml_option name="config_mynn_mixnumcon" type="integer" default_value="1" in_defaults="false"
+                <nml_option name="config_mynn_mixnumcon" type="integer" default_value="1" in_defaults="false"
                      units="-"
                      description="=1:activate mixing of number concentrations in the MYNN PBL scheme (=0 otherwise)"
                      possible_values="0,1"/>
-		
+
                 <nml_option name="config_mynn_mixclouds" type="integer" default_value="1" in_defaults="false"
                      units="-"
                      description="1:activate mixing of cloud condensates in the MYNN PBL scheme"
@@ -3086,17 +3088,12 @@
                 <nml_option name="config_mynn_mixqt" type="integer" default_value="0" in_defaults="false"
                      units="-"
                      description="=0:activatevmixing of moisture species separately;= 1:activate mixing of total water in the mynn PBL scheme"
-                     possible_values="0,1"/>
+                     possible_values="0(keep=0),1"/>
 
-		<nml_option name="config_mynn_ess" type="integer" default_value="1" in_defaults="false"
+		<nml_option name="config_mynn_ess" type="integer" default_value="0" in_defaults="false"
                      units="-"
                      description="=0:use buoyancy-flux functions;= 1:use O-Gorman (2011)"
                      possible_values="0,1"/>
-
-                <nml_option name="config_icloud_bl" type="integer" default_value="1" in_defaults="false"
-                     units="-"
-                     description="configuration for MYNN subgrid cloud coupling to radiation"
-                     possible_values="`0: uncoupled',`1: coupled'"/>
 
                 <nml_option name="config_spp_pbl" type="integer" default_value="0" in_defaults="false"
                      units="-"
@@ -3481,63 +3478,63 @@
 
                 <var name="dqke" type="real" dimensions="nVertLevels nCells Time" units="m^{2} s^{-2}"
                      description="TKE change"
-                     packages="bl_mynn_in;bl_mynnedmf_in"/>
+                     packages="bl_mynn_in;bl_mynnedmf_tkebudget_in"/>
 
                 <var name="qbuoy" type="real" dimensions="nVertLevels nCells Time" units="m^{2} s^{-2}"
                      description="TKE production - buoyancy"
-                     packages="bl_mynn_in;bl_mynnedmf_in"/>
+                     packages="bl_mynn_in;bl_mynnedmf_tkebudget_in"/>
 
                 <var name="qdiss" type="real" dimensions="nVertLevels nCells Time" units="m^{2} s^{-2}"
                      description="TKE dissipation"
-                     packages="bl_mynn_in;bl_mynnedmf_in"/>
+                     packages="bl_mynn_in;bl_mynnedmf_tkebudget_in"/>
 
                 <var name="qshear" type="real" dimensions="nVertLevels nCells Time" units="m^{2} s^{-2}"
                      description="TKE production - shear"
-                     packages="bl_mynn_in;bl_mynnedmf_in"/>
+                     packages="bl_mynn_in;bl_mynnedmf_tkebudget_in"/>
 
                 <var name="qwt" type="real" dimensions="nVertLevels nCells Time" units="m^{2} s^{-2}"
                      description="TKE vertical distribution"
-                     packages="bl_mynn_in;bl_mynnedmf_in"/>
+                     packages="bl_mynn_in;bl_mynnedmf_tkebudget_in"/>
 
                 <var name="edmf_a" type="real" dimensions="nVertLevels nCells Time" units="unitless"
                      description="EDMF relative updraft area of moist updrafts in the MYNN PBL scheme"
-                     packages="bl_mynn_in;bl_mynnedmf_in"/>
+                     packages="bl_mynn_in;bl_mynnedmf_output_in"/>
 
                 <var name="edmf_w" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1}"
                      description="EDMF vertical velocity of  moist updrafts in the MYNN PBL scheme"
-                     packages="bl_mynn_in;bl_mynnedmf_in"/>
+                     packages="bl_mynn_in;bl_mynnedmf_output_in"/>
 
                 <var name="edmf_qt" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1}"
                      description="EDMF total water mixing ratio in moist updrafts in the MYNN PBL scheme"
-                     packages="bl_mynn_in;bl_mynnedmf_in"/>
+                     packages="bl_mynn_in;bl_mynnedmf_output_in"/>
 
                 <var name="edmf_qc" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1}"
                      description="EDMF liquid water mixing ratio in moist updrafts in the MYNN PBL scheme"
-                     packages="bl_mynn_in;bl_mynnedmf_in"/>
+                     packages="bl_mynn_in;bl_mynnedmf_output_in"/>
 
                 <var name="edmf_thl" type="real" dimensions="nVertLevels nCells Time" units="K"
                      description="EDMF liquid-ice water potential temperature in moist updrafts in the MYNN PBL scheme"
-                     packages="bl_mynn_in;bl_mynnedmf_in"/>
+                     packages="bl_mynn_in;bl_mynnedmf_output_in"/>
 
                 <var name="edmf_ent" type="real" dimensions="nVertLevels nCells Time" units="m^{-1}"
                      description="EDMF entrainment rate in moist updrafts in the MYNN PBL scheme"
-                     packages="bl_mynn_in;bl_mynnedmf_in"/>
+                     packages="bl_mynn_in;bl_mynnedmf_output_in"/>
 
                 <var name="sub_thl" type="real" dimensions="nVertLevels nCells Time" units="K s^{-1}"
                      description="EDMF subsidence of liquid-ice potential temperature in the MYNN PBL scheme"
-                     packages="bl_mynn_in;bl_mynnedmf_in"/>
+                     packages="bl_mynn_in;bl_mynnedmf_output_in"/>
 
                 <var name="sub_qv" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1} s^{-1}"
                      description="EDMF subsidence of water vapor mixing ratio in the MYNN PBL scheme"
-                     packages="bl_mynn_in;bl_mynnedmf_in"/>
+                     packages="bl_mynn_in;bl_mynnedmf_output_in"/>
 
                 <var name="det_thl" type="real" dimensions="nVertLevels nCells Time" units="K s^{-1}"
                      description="EDMF detrainment of liquid-ice potential temperature in the MYNN PBL scheme"
-                     packages="bl_mynn_in;bl_mynnedmf_in"/>
+                     packages="bl_mynn_in;bl_mynnedmf_output_in"/>
 
                 <var name="det_qv" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1} s^{-1}"
                      description="EDMF detrainment of water vapor mixing ratio in the MYNN PBL scheme"
-                     packages="bl_mynn_in;bl_mynnedmf_in"/>
+                     packages="bl_mynn_in;bl_mynnedmf_output_in"/>
 
 		<var name="maxmf" type="real" dimensions="nCells Time" units="m s^{-1}"
                      description="Maximum mass flux in the each column"
@@ -3640,16 +3637,16 @@
                      description="surface exchange coefficient for heat and moisture"
                      packages="sfclayer"/>
 
+		<var name="cqs" type="real" dimensions="nCells Time" units="m s^{-1}"
+                     description="surface exchange coefficient for moisture (mynn/ruc)"
+                     packages="sfclayer"/>
+
                 <var name="chs2" type="real" dimensions="nCells Time" units="m s^{-1}"
                      description="surface exchange coefficient for heat at 2-meter"
                      packages="sfclayer"/>
 
                 <var name="cqs2" type="real" dimensions="nCells Time" units="m s^{-1}"
                      description="surface exchange coefficient for moisture at 2-meter"
-                     packages="sfclayer"/>
-
-                <var name="cqs" type="real" dimensions="nCells Time" units="m s^{-1}"
-                     description="surface exchange coefficient for moisture"
                      packages="sfclayer"/>
 
                 <var name="ck" type="real" dimensions="nCells Time" units="unitless"
@@ -3722,12 +3719,12 @@
 
                 <var name="qcg" type="real" dimensions="nCells Time" units="kg kg^{-1}"
                      description="cloud water mixing ratio at the ground surface"
-                     packages="bl_mynn_in;bl_mynnedmf_in;lsm_ruc_in"/>
+                     packages="sfclayer"/>
 
                 <var name="sh3d" type="real" dimensions="nVertLevels nCells Time" units="unitless"
                      description="stability function for heat"
                      packages="bl_mynn_in;bl_mynnedmf_in"/>
-	
+
                 <var name="sm3d" type="real" dimensions="nVertLevels nCells Time" units="unitless"
                      description="stability function for moisture"
                      packages="bl_mynn_in;bl_mynnedmf_in"/>
