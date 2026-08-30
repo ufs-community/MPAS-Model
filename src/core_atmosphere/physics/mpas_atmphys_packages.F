@@ -233,15 +233,17 @@
  endif
 
  bl_mynn_in = .false.
- bl_mynnedmf_in = .false. 
+ bl_mynnedmf_in = .false.
+ bl_mynnedmf_output_in = .false.
+ bl_mynnedmf_tkebudget_in = .false.
  bl_ysu_in  = .false.
  bl_myj_in = .false.
  if(config_pbl_scheme=='bl_mynn') then
     bl_mynn_in = .true.
  elseif(config_pbl_scheme == 'bl_mynnedmf') then
     bl_mynnedmf_in = .true.
-    if(config_mynn_edmf_output ==1) bl_mynnedmf_output_in = .true.
-    if(config_mynn_tkebudget ==1) bl_mynnedmf_tkebudget_in = .true.
+    if(config_mynn_edmf_output >0) bl_mynnedmf_output_in = .true.
+    if(config_mynn_tkebudget >0) bl_mynnedmf_tkebudget_in = .true.
  elseif(config_pbl_scheme == 'bl_ysu') then
     bl_ysu_in = .true.
  elseif(config_pbl_scheme == 'bl_myj') then

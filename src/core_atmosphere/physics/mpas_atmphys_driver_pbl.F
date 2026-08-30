@@ -786,7 +786,7 @@
        call mpas_pool_get_array(diag_physics,'cldfrac_bl',cldfrac_bl)
        call mpas_pool_get_array(diag_physics,'qc_bl'     ,qc_bl     )
        call mpas_pool_get_array(diag_physics,'qi_bl'     ,qi_bl     )
-       if(config_mynn_edmf_output == 1) then
+       if(config_mynn_edmf_output > 0) then
           call mpas_pool_get_array(diag_physics,'edmf_a'    ,edmf_a    )
           call mpas_pool_get_array(diag_physics,'edmf_ent'  ,edmf_ent  )
           call mpas_pool_get_array(diag_physics,'edmf_qc'   ,edmf_qc   )
@@ -835,7 +835,7 @@
        enddo
        enddo
 
-       if(config_mynn_edmf_output == 1)then
+       if(config_mynn_edmf_output > 0)then
          do j = jts,jte
          do k = kts,kte
          do i = its,ite
@@ -1202,7 +1202,7 @@
        call mpas_pool_get_array(diag_physics,'cldfrac_bl'    ,cldfrac_bl    )
        call mpas_pool_get_array(diag_physics,'qc_bl'         ,qc_bl         )
        call mpas_pool_get_array(diag_physics,'qi_bl'         ,qi_bl         )
-       if(config_mynn_edmf_output == 1) then
+       if(config_mynn_edmf_output > 0) then
           call mpas_pool_get_array(diag_physics,'edmf_a'     ,edmf_a        )
           call mpas_pool_get_array(diag_physics,'edmf_ent'   ,edmf_ent      )
           call mpas_pool_get_array(diag_physics,'edmf_qc'    ,edmf_qc       )
@@ -1250,7 +1250,7 @@
        enddo
        enddo
 
-       if(config_mynn_edmf_output == 1)then
+       if(config_mynn_edmf_output > 0)then
           do j = jts,jte
           do k = kts,kte
           do i = its,ite

@@ -71,7 +71,7 @@ core_SMOKE: core_physics_init
 	(cd physics_noaa/SMOKE; cp ./MPAS/Makefile .; cp ./MPAS/mpas_smoke_wrapper.F90 .; $(MAKE) all)
 
 core_mynnedmf: core_physics_init
-	(cd physics_noaa/MYNN-EDMF/src; ln -s ./MPAS/Makefile; ln -s ./MPAS/module_bl_mynnedmf_common.F90; $(MAKE) all COREDEF="$(COREDEF)")
+	(cd physics_noaa/MYNN-EDMF/src; ln -sf ./MPAS/Makefile Makefile; ln -sf ./MPAS/module_bl_mynnedmf_common.F90 module_bl_mynnedmf_common.F90; $(MAKE) all COREDEF="$(COREDEF)")
 
 core_mynnsfc: core_physics_init
 	(cd physics_noaa/MYNN-SFC; cp ./MPAS/Makefile .; cp ./MPAS/module_sf_mynnsfc_driver.F90 .; cp ./MPAS/module_sf_mynnsfc_common.F90 .; $(MAKE) all COREDEF="$(COREDEF)")
