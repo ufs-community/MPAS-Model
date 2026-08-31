@@ -917,15 +917,15 @@ else # Not using PIO, using SMIOL
 	FCINCLUDES += -I$(PWD)/src/external/SMIOL
 endif
 
-# Auto-detect NetCDF_C_ROOT / NetCDF_FORTRAN_ROOT if NETCDF / NETCDFF are not set
+# Auto-detect NETCDF_C_ROOT / NETCDF_FORTRAN_ROOT if NETCDF / NETCDFF are not set
 ifeq "$(NETCDF)" ""
-ifneq "$(NetCDF_C_ROOT)" ""
-	NETCDF := $(NetCDF_C_ROOT)
+ifneq "$(NETCDF_C_ROOT)" ""
+	NETCDF := $(NETCDF_C_ROOT)
 endif
 endif
 ifeq "$(NETCDFF)" ""
-ifneq "$(NetCDF_FORTRAN_ROOT)" ""
-	NETCDFF := $(NetCDF_FORTRAN_ROOT)
+ifneq "$(NETCDF_FORTRAN_ROOT)" ""
+	NETCDFF := $(NETCDF_FORTRAN_ROOT)
 endif
 endif
 
