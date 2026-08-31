@@ -544,7 +544,7 @@
       do k = 1, kwildfire
       do i = its, ite
       do n = 1, num_e_bb_in
-         e_bb_in_p(i,k,j,n) = e_bb_in(n,k,i)
+         e_bb_in_p(i,k,j,n) = max(e_bb_in(n,k,i),0._RKIND)
       enddo
       enddo
       enddo
