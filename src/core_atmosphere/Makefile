@@ -21,7 +21,7 @@ ifdef CHEMISTRY
     CHEM_OBJS = libchem/*.o
 endif
 
-ifeq ($(findstring STOCHASTIC_PHYSICS,$(CPPFLAGS)),STOCHASTIC_PHYSICS)
+ifeq "$(STOCHASTIC_PHYSICS)" "true"
     STOCH = true
 endif
 
@@ -111,7 +111,7 @@ clean:
 	@# the latter for MPAS.  The default for "make" is to use "makefile", but
 	@# here, we want to use the one for MPAS (with an upper case "M").  Indicate
 	@# that using the -f flag.
-ifdef STOCH
+ifneq ($(wildcard stochastic_physics/Makefile),)
 	( cd stochastic_physics; $(MAKE) -f Makefile clean )
 endif
 	( cd diagnostics; $(MAKE) clean )

@@ -8,7 +8,7 @@ COMPILER="${COMPILER:-intel}"
 usage() {
   set +x
   echo
-  echo "Usage: $0 -j <num> -h"
+  echo "Usage: $0 [-j <num>] [-s] [-c <cmake_opts>] [-f] [-h]"
   echo
   echo "  -j  number of build jobs               DEFAULT: 8"
   echo "  -s  build with stochastic_physics"
