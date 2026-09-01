@@ -17,6 +17,7 @@ if(MPAS_CORES MATCHES " ") #Convert strings separated with spaces to CMake list 
     set(MPAS_CORES ${MPAS_CORES} CACHE STRING "MPAS cores to build. Options: ${MPAS_ALL_CORES}" FORCE)
 endif()
 option(DO_PHYSICS "Use built-in physics schemes." TRUE)
+option(STOCHASTIC_PHYSICS "Build with stochastic physics support." FALSE)
 option(MPAS_DOUBLE_PRECISION "Use double precision 64-bit Floating point." TRUE)
 option(MPAS_PROFILE "Enable GPTL profiling" OFF)
 option(MPAS_OPENMP "Enable OpenMP" OFF)

@@ -142,7 +142,8 @@ list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_SMOKE_SOURCES PREPEND physics/physics_noa
 
 set(ATMOSPHERE_CORE_PHYSICS_MMM_DIR ${CMAKE_CURRENT_SOURCE_DIR}/physics/physics_mmm)
 
-# build stochastic_physics as a library
+# build stochastic_physics as a library (optional)
+if (${STOCHASTIC_PHYSICS})
 set(ATMOSPHERE_CORE_STOCHASTIC_PHYSICS_SOURCES
     kinddef.F90
     mpi_wrapper.F90
@@ -174,6 +175,7 @@ target_link_libraries(stochastic_physics PUBLIC MPI::MPI_Fortran framework ${BLA
 install(TARGETS stochastic_physics EXPORT ${PROJECT_NAME}ExportsCore
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
+endif()
 
 if(NOT EXISTS ${ATMOSPHERE_CORE_PHYSICS_MMM_DIR})
     set(PHYSICS_MMM_REPO_URL "https://github.com/NCAR/MMM-physics")
@@ -573,8 +575,13 @@ set(CORE_ATMOSPHERE_COMPILE_DEFINITIONS
 if (${DO_PHYSICS})
     list(APPEND CORE_ATMOSPHERE_COMPILE_DEFINITIONS DO_PHYSICS)
 endif ()
+if (${STOCHASTIC_PHYSICS})
+    list(APPEND CORE_ATMOSPHERE_COMPILE_DEFINITIONS STOCHASTIC_PHYSICS)
+endif()
 target_compile_definitions(core_atmosphere PRIVATE ${CORE_ATMOSPHERE_COMPILE_DEFINITIONS})
-target_link_libraries(core_atmosphere PUBLIC stochastic_physics)
+if (${STOCHASTIC_PHYSICS})
+    target_link_libraries(core_atmosphere PUBLIC stochastic_physics)
+endif()
 set_MPAS_DEBUG_flag(core_atmosphere)
 mpas_core_target(CORE atmosphere TARGET core_atmosphere INCLUDES ${ATMOSPHERE_CORE_INCLUDES})
 
