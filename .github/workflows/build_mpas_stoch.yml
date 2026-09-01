@@ -1,4 +1,4 @@
-name: Build (GNU) MPAS Standalone
+name: Build (GNU) MPAS Stochastic
 
 on: [pull_request,workflow_dispatch]
 

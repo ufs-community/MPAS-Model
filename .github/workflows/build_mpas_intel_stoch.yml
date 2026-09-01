@@ -1,4 +1,4 @@
-name: Build (Intel) MPAS Standalone
+name: Build (Intel) MPAS Stochastic
 
 on: [pull_request,workflow_dispatch]
 
