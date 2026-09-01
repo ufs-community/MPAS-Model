@@ -41,6 +41,7 @@ jobs:
         install-mpi: true
         install-oneapi: false
         mpi-wrapper-setup: classic
+        install-mkl: true
 
     - name: Cache Intel
       id: cache-INTEL
@@ -48,6 +49,18 @@ jobs:
       with:
         path: /opt/intel/oneapi/mpi/2021.10.0
         key: cache-Intel-MPI-${{matrix.fortran-compiler}}-${{matrix.build-system}}-key
+
+    - name: Install NetCDF-C library
+      run: |
+        sudo apt-get update
+        sudo apt-get install libnetcdf-dev
+
+    - name: Cache NetCDF-Fortran
+      id: cache-netcdf-fortran
+      uses: actions/cache@v4
+      with:
+        path: /home/runner/NetCDF
+        key: cache-NetCDF-Fortran-${{matrix.fortran-compiler}}-${{matrix.build-system}}-key
 
     - name: Cache GNU autotools
       id: cache-AUTOTOOLS
@@ -126,12 +139,28 @@ jobs:
         echo "LD_LIBRARY_PATH=${PNETCDF}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
         echo "NETCDF=/home/runner/NetCDF" >> $GITHUB_ENV
 
+    - name: Build NetCDF-Fortran
+      if: steps.cache-netcdf-fortran.outputs.cache-hit != 'true'
+      run: |
+        NETCDF_F_VERSION=4.6.1
+        wget -q https://github.com/Unidata/netcdf-fortran/archive/refs/tags/v${NETCDF_F_VERSION}.tar.gz
+        tar -xf v${NETCDF_F_VERSION}.tar.gz
+        cd netcdf-fortran-${NETCDF_F_VERSION}
+        autoreconf -i
+        FC=mpiifort CC=mpiicc \
+          CPPFLAGS="-I$(nc-config --includedir)" \
+          LDFLAGS="-L$(nc-config --libdir)" \
+          ./configure --prefix=/home/runner/NetCDF
+        make -j 8 install
+        NCLIBDIR=$(nc-config --libdir)
+        ln -sf ${NCLIBDIR}/libnetcdf.so /home/runner/NetCDF/lib/libnetcdf.so
+
     - name: Build MPAS Standalone (make)
       if: matrix.build-system == 'make'
       run: |
         cd ${driver_ROOT}/MPAS-Model/MPAS-Model
         make intel-mpi CORE=init_atmosphere
-        make intel-mpi CORE=atmosphere
+        make intel-mpi CORE=atmosphere STOCHASTIC_PHYSICS=true
 
     - name: Build MPAS Standalone (cmake)
       if: matrix.build-system == 'cmake'
@@ -139,5 +168,5 @@ jobs:
         cd ${driver_ROOT}/MPAS-Model/MPAS-Model
         mkdir build
         cd build
-        cmake -DMPAS_DOUBLE_PRECISION=OFF -DMPAS_CORES="init_atmosphere;atmosphere" ..
+        cmake -DMPAS_DOUBLE_PRECISION=OFF -DSTOCHASTIC_PHYSICS=ON -DMPAS_CORES="init_atmosphere;atmosphere" ..
         make -j8
