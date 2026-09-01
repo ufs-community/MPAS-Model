@@ -19,13 +19,14 @@ usage() {
   exit 1
 }
 
+STOCHASTIC=""
 while getopts "c:j:hfs" opt; do
   case ${opt} in
     c)
       CMAKE_OPTS=${OPTARG}
       ;;
     s)
-      CMAKE_OPTS="${CMKAE_OPT} -DSTOCHASTIC_PHYSICS=ON"
+      STOCHASTIC="-DSTOCHASTIC_PHYSICS=ON"
       ;;
     j)
       BUILD_JOBS=${OPTARG}
@@ -67,5 +68,5 @@ cd ${BUILD_DIR} || exit 1
 
 BUILD_JOBS=${BUILD_JOBS:-8}
 CMAKE_OPTS+=' -DMPAS_DOUBLE_PRECISION=OFF'
-cmake ${CMAKE_OPTS} -DMPAS_CORES="init_atmosphere;atmosphere" ..
+cmake ${CMAKE_OPTS} ${STOCHASTIC} -DMPAS_CORES="init_atmosphere;atmosphere" ..
 make -j $BUILD_JOBS
