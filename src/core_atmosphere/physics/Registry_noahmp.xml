@@ -44,6 +44,10 @@
                 description="soil texture class level 4 needed as input for the NOAH-MP land surface model"
                 packages="sf_noahmp_in"/>
 
+      <var name="soil_color" type="real" dimensions="nCells" units="unitless"
+                description="soil color class"
+                packages="sf_noahmp_in"/>
+
  </var_struct>
 
 

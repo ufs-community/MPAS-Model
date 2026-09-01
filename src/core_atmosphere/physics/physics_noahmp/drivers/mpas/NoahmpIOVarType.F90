@@ -117,6 +117,7 @@ module NoahmpIOVarType
     real(kind=kind_noahmp), allocatable, dimension(:)      ::  soilcl2             ! Soil texture class with depth
     real(kind=kind_noahmp), allocatable, dimension(:)      ::  soilcl3             ! Soil texture class with depth
     real(kind=kind_noahmp), allocatable, dimension(:)      ::  soilcl4             ! Soil texture class with depth
+    real(kind=kind_noahmp), allocatable, dimension(:)      ::  soil_color          ! Soil color class
     real(kind=kind_noahmp), allocatable, dimension(:,:)    ::  bexp_3D             ! C-H B exponent
     real(kind=kind_noahmp), allocatable, dimension(:,:)    ::  smcdry_3D           ! Soil Moisture Limit: Dry
     real(kind=kind_noahmp), allocatable, dimension(:,:)    ::  smcwlt_3D           ! Soil Moisture Limit: Wilt

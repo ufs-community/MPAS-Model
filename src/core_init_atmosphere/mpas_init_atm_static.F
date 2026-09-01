@@ -1211,6 +1211,16 @@
  if (config_noahmp_static) then
 
     !
+    ! Interpolate soil_color
+    !
+    geog_sub_path = 'soil_color/'
+
+    call mpas_log_write('--- start interpolate soil_color')
+    call interp_soil_color(mesh, tree, trim(geog_data_path)//trim(geog_sub_path), &
+                          supersample_fac=supersample_fac)
+    call mpas_log_write('--- end interpolate soil_color')
+
+    !
     ! Interpolate SOILCOMP
     !
     geog_sub_path = 'soilgrids/soilcomp/'
@@ -1781,6 +1791,74 @@ else
     end if
 
  end subroutine interp_terrain
+
+ !***********************************************************************
+ !
+ !  routine interp_soil_color
+ !
+ !> \brief   Interpolate soil color
+ !> \author  Michael Barlage
+ !> \date    25 February 2025
+ !> \details
+ !> Interpolate soil color by using the init_atm_map_static_data routine and
+ !> accumulating the pixel values into each cell using categorical_interp_accumulation.
+ !>
+ !> following the method outlined for landuse
+ !
+ !-----------------------------------------------------------------------
+ subroutine interp_soil_color(mesh, kdtree, geog_data_path, supersample_fac)
+
+     implicit none  
+
+     ! Input variables
+     type (mpas_pool_type), intent(inout) :: mesh
+     type (mpas_kd_type), pointer, intent(in) :: kdtree
+     character (len=*), intent(in) :: geog_data_path
+     integer, intent(in), optional :: supersample_fac
+
+     ! Local variables
+     type (mpas_geotile_mgr_type) :: mgr
+     integer, pointer :: nCells
+     integer, dimension(:), pointer :: soil_color
+
+     integer :: iCell
+     integer :: ierr
+
+     ierr = mgr % init(trim(geog_data_path))
+     if (ierr /= 0) then
+         call mpas_log_write("Error occured initalizing interpolation for "//trim(geog_data_path), messageType=MPAS_LOG_CRIT)
+         return ! Program execution should not reach this statement since the preceding message is a critical error
+     end if
+
+     call mpas_pool_get_dimension(mesh, 'nCells', nCells)
+     call mpas_pool_get_config(mgr % pool, 'category_min', category_min)
+     call mpas_pool_get_config(mgr % pool, 'category_max', category_max)
+     call mpas_pool_get_array(mesh, 'soil_color', soil_color)
+
+     allocate(ncat(category_min:category_max, nCells))
+     ncat(:,:) = 0
+     
+     call init_atm_map_static_data(mesh, mgr, kdtree, categorical_interp_criteria, categorical_interp_accumulation, &
+                                   supersample_fac=supersample_fac)
+     do iCell = 1, nCells
+         ! Because maxloc returns the location of the maximum value of an array as if the
+         ! starting index of the array is 1, and dataset categories do not necessarily start
+         ! at 1, we need to use category_min to ensure the correct category location is chosen.
+         if (all(ncat(:,iCell) == 0)) then
+           soil_color(iCell) = 11  ! all missing, e.g. water, so choose a neutral value
+         else
+           soil_color(iCell) = maxloc(ncat(:,iCell), dim=1) - 1 + category_min
+         end if
+     end do
+     deallocate(ncat)
+
+     ierr = mgr % finalize()
+     if (ierr /= 0) then
+         call mpas_log_write("Error occured finalizing interpolation for "//trim(geog_data_path), messageType=MPAS_LOG_CRIT)
+         return ! Program execution should not reach this statement since the preceding message is a critical error
+     end if
+
+ end subroutine interp_soil_color
 
  !***********************************************************************
  !
