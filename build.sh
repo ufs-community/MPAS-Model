@@ -11,6 +11,7 @@ usage() {
   echo "Usage: $0 -j <num> -h"
   echo
   echo "  -j  number of build jobs               DEFAULT: 8"
+  echo "  -s  build with stochastic_physics"
   echo "  -c  additional CMAKE options"
   echo "  -f  force a clean build"
   echo "  -h  display this message and quit"
@@ -18,10 +19,13 @@ usage() {
   exit 1
 }
 
-while getopts "c:j:hf" opt; do
+while getopts "c:j:hfs" opt; do
   case ${opt} in
     c)
       CMAKE_OPTS=${OPTARG}
+      ;;
+    s)
+      CMAKE_OPTS="${CMKAE_OPT} -DSTOCHASTIC_PHYSICS=ON"
       ;;
     j)
       BUILD_JOBS=${OPTARG}
