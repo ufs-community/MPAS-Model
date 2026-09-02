@@ -917,6 +917,18 @@ else # Not using PIO, using SMIOL
 	FCINCLUDES += -I$(PWD)/src/external/SMIOL
 endif
 
+# Auto-detect NETCDF_C_ROOT / NETCDF_FORTRAN_ROOT if NETCDF / NETCDFF are not set
+ifeq "$(NETCDF)" ""
+ifneq "$(NETCDF_C_ROOT)" ""
+	NETCDF := $(NETCDF_C_ROOT)
+endif
+endif
+ifeq "$(NETCDFF)" ""
+ifneq "$(NETCDF_FORTRAN_ROOT)" ""
+	NETCDFF := $(NETCDF_FORTRAN_ROOT)
+endif
+endif
+
 ifneq "$(NETCDF)" ""
 ifneq ($(wildcard $(NETCDF)/lib/libnetcdf.*), )
 	NETCDFLIBLOC = lib
@@ -933,8 +945,14 @@ endif
 		LIBS += $(NCLIBF)
 	endif # CHECK FOR NETCDF4
 	ifneq "$(NETCDFF)" ""
+	ifneq ($(wildcard $(NETCDFF)/lib/libnetcdff.*), )
+		NETCDFFLIBLOC = lib
+	endif
+	ifneq ($(wildcard $(NETCDFF)/lib64/libnetcdff.*), )
+		NETCDFFLIBLOC = lib64
+	endif
 		FCINCLUDES += -I$(NETCDFF)/include
-		LIBS += -L$(NETCDFF)/$(NETCDFLIBLOC)
+		LIBS += -L$(NETCDFF)/$(NETCDFFLIBLOC)
 		LIBS += $(NCLIBF)
 	endif
 	LIBS += $(NCLIB)
