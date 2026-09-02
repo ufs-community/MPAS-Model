@@ -160,7 +160,7 @@ jobs:
       run: |
         cd ${driver_ROOT}/MPAS-Model/MPAS-Model
         make intel-mpi CORE=init_atmosphere
-        make intel-mpi CORE=atmosphere STOCHASTIC_PHYSICS=true
+        make intel-mpi CORE=atmosphere STOCHASTIC_PHYSICS=true AUTOCLEAN=true
 
     - name: Build MPAS Standalone (cmake)
       if: matrix.build-system == 'cmake'
