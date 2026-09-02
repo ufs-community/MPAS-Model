@@ -7836,8 +7836,9 @@ call mpas_log_write('Done with soil consistency check')
       integer :: nInterpPoints, ndims
 
       integer :: nfglevels_actual
-      integer, pointer :: index_qv, index_qc, index_qr, index_qi, index_qs, index_qg,index_ni, index_nc, index_nr, index_ns, index_ng
-      integer, pointer :: index_nwfa, index_nifa
+      integer, pointer :: index_qv => null(), index_nwfa => null(), index_nifa => null()
+      integer, pointer :: index_qc => null(), index_qr => null(), index_qi => null(), index_qs => null(), index_qg => null()
+      integer, pointer :: index_nc => null(), index_ni => null(), index_nr => null(), index_ns => null(), index_ng => null()
 ! Chemistry
       integer, pointer :: index_smoke_fine => null(), index_dust_fine => null(), index_dust_coarse => null()
 
@@ -8600,18 +8601,42 @@ call mpas_log_write('Done with soil consistency check')
          if (associated(index_smoke_fine  )) sorted_arrQ11(:,:) = -999.0
          if (associated(index_dust_fine   )) sorted_arrQ12(:,:) = -999.0
          if (associated(index_dust_coarse )) sorted_arrQ13(:,:) = -999.0
-         scalars(index_nwfa,:,iCell) = 0._RKIND
-         scalars(index_nifa,:,iCell) = 0._RKIND
-         scalars(index_qc,:,iCell) = 0._RKIND
-         scalars(index_qr,:,iCell) = 0._RKIND
-         scalars(index_qi,:,iCell) = 0._RKIND
-         scalars(index_qs,:,iCell) = 0._RKIND
-         scalars(index_qg,:,iCell) = 0._RKIND
-         scalars(index_nc,:,iCell) = 0._RKIND
-         scalars(index_ni,:,iCell) = 0._RKIND
-         scalars(index_nr,:,iCell) = 0._RKIND
-         scalars(index_ns,:,iCell) = 0._RKIND
-         scalars(index_ng,:,iCell) = 0._RKIND
+         if (associated(index_nwfa)) then
+            if (index_nwfa > 0) scalars(index_nwfa,:,iCell) = 0._RKIND
+         end if
+         if (associated(index_nifa)) then
+            if (index_nifa > 0) scalars(index_nifa,:,iCell) = 0._RKIND
+         end if
+         if (associated(index_qc)) then
+            if (index_qc > 0) scalars(index_qc,:,iCell) = 0._RKIND
+         end if
+         if (associated(index_qr)) then
+            if (index_qr > 0) scalars(index_qr,:,iCell) = 0._RKIND
+         end if
+         if (associated(index_qi)) then
+            if (index_qi > 0) scalars(index_qi,:,iCell) = 0._RKIND
+         end if
+         if (associated(index_qs)) then
+            if (index_qs > 0) scalars(index_qs,:,iCell) = 0._RKIND
+         end if
+         if (associated(index_qg)) then
+            if (index_qg > 0) scalars(index_qg,:,iCell) = 0._RKIND
+         end if
+         if (associated(index_nc)) then
+            if (index_nc > 0) scalars(index_nc,:,iCell) = 0._RKIND
+         end if
+         if (associated(index_ni)) then
+            if (index_ni > 0) scalars(index_ni,:,iCell) = 0._RKIND
+         end if
+         if (associated(index_nr)) then
+            if (index_nr > 0) scalars(index_nr,:,iCell) = 0._RKIND
+         end if
+         if (associated(index_ns)) then
+            if (index_ns > 0) scalars(index_ns,:,iCell) = 0._RKIND
+         end if
+         if (associated(index_ng)) then
+            if (index_ng > 0) scalars(index_ng,:,iCell) = 0._RKIND
+         end if
 ! Chemistry
          if (associated(index_smoke_fine   )) then
             if (index_smoke_fine > 0   )  scalars(index_smoke_fine,:,iCell) = 0._RKIND
@@ -8686,26 +8711,46 @@ call mpas_log_write('Done with soil consistency check')
          if (associated(index_dust_coarse ))        call mpas_quicksort(nfglevels_actual, sorted_arrQ13)
          do k = nVertLevels, 1, -1
             target_z = 0.5 * (zgrid(k,iCell) + zgrid(k+1,iCell))
-            scalars(index_nwfa,k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
-                                        sorted_arrQ9(:,1:nfglevels_actual-1), order=1, extrap=0)
-            scalars(index_nifa,k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
-                                        sorted_arrQ10(:,1:nfglevels_actual-1), order=1, extrap=0)
-            scalars(index_qc,k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
-                                        sorted_arrQ1(:,1:nfglevels_actual-1), order=1, extrap=0)
-            scalars(index_qr,k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
-                                        sorted_arrQ2(:,1:nfglevels_actual-1), order=1, extrap=0)
-            scalars(index_qi,k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
-                                        sorted_arrQ3(:,1:nfglevels_actual-1), order=1, extrap=0)
-            scalars(index_qs,k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
-                                        sorted_arrQ4(:,1:nfglevels_actual-1), order=1, extrap=0)
-            scalars(index_qg,k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
-                                        sorted_arrQ5(:,1:nfglevels_actual-1), order=1, extrap=0)
-            scalars(index_nc,k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
-                                        sorted_arrQ6(:,1:nfglevels_actual-1), order=1, extrap=0)
-            scalars(index_ni,k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
-                                        sorted_arrQ7(:,1:nfglevels_actual-1), order=1, extrap=0)
-            scalars(index_nr,k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
-                                        sorted_arrQ8(:,1:nfglevels_actual-1), order=1, extrap=0)
+            if (associated(index_nwfa)) then
+               if (index_nwfa > 0) scalars(index_nwfa,k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
+                                           sorted_arrQ9(:,1:nfglevels_actual-1), order=1, extrap=0)
+            end if
+            if (associated(index_nifa)) then
+               if (index_nifa > 0) scalars(index_nifa,k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
+                                           sorted_arrQ10(:,1:nfglevels_actual-1), order=1, extrap=0)
+            end if
+            if (associated(index_qc)) then
+               if (index_qc > 0) scalars(index_qc,k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
+                                           sorted_arrQ1(:,1:nfglevels_actual-1), order=1, extrap=0)
+            end if
+            if (associated(index_qr)) then
+               if (index_qr > 0) scalars(index_qr,k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
+                                           sorted_arrQ2(:,1:nfglevels_actual-1), order=1, extrap=0)
+            end if
+            if (associated(index_qi)) then
+               if (index_qi > 0) scalars(index_qi,k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
+                                           sorted_arrQ3(:,1:nfglevels_actual-1), order=1, extrap=0)
+            end if
+            if (associated(index_qs)) then
+               if (index_qs > 0) scalars(index_qs,k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
+                                           sorted_arrQ4(:,1:nfglevels_actual-1), order=1, extrap=0)
+            end if
+            if (associated(index_qg)) then
+               if (index_qg > 0) scalars(index_qg,k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
+                                           sorted_arrQ5(:,1:nfglevels_actual-1), order=1, extrap=0)
+            end if
+            if (associated(index_nc)) then
+               if (index_nc > 0) scalars(index_nc,k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
+                                           sorted_arrQ6(:,1:nfglevels_actual-1), order=1, extrap=0)
+            end if
+            if (associated(index_ni)) then
+               if (index_ni > 0) scalars(index_ni,k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
+                                           sorted_arrQ7(:,1:nfglevels_actual-1), order=1, extrap=0)
+            end if
+            if (associated(index_nr)) then
+               if (index_nr > 0) scalars(index_nr,k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
+                                           sorted_arrQ8(:,1:nfglevels_actual-1), order=1, extrap=0)
+            end if
 ! JLS
             if ( associated(index_smoke_fine )) then
                 if ( index_smoke_fine > 0  ) scalars(index_smoke_fine,k,iCell) = conv_aer_kg2ug * vertical_interp(target_z, nfglevels_actual-1, &
@@ -8720,18 +8765,42 @@ call mpas_log_write('Done with soil consistency check')
                                         sorted_arrQ13(:,1:nfglevels_actual-1), order=1, extrap=0)
             endif
             if (target_z < z_fg(1,iCell) .and. k < nVertLevels) then
-                scalars(index_nwfa,k,iCell) = scalars(index_nwfa,k+1,iCell)
-                scalars(index_nifa,k,iCell) = scalars(index_nifa,k+1,iCell)
-                scalars(index_qc,k,iCell) = scalars(index_qc,k+1,iCell)
-                scalars(index_qr,k,iCell) = scalars(index_qr,k+1,iCell)
-                scalars(index_qi,k,iCell) = scalars(index_qi,k+1,iCell)
-                scalars(index_qs,k,iCell) = scalars(index_qs,k+1,iCell)
-                scalars(index_qg,k,iCell) = scalars(index_qg,k+1,iCell)
-                scalars(index_nc,k,iCell) = scalars(index_nc,k+1,iCell)
-                scalars(index_ni,k,iCell) = scalars(index_ni,k+1,iCell)
-                scalars(index_nr,k,iCell) = scalars(index_nr,k+1,iCell)
-                scalars(index_ns,k,iCell) = scalars(index_ns,k+1,iCell)
-                scalars(index_ng,k,iCell) = scalars(index_ng,k+1,iCell)
+                if (associated(index_nwfa)) then
+                   if (index_nwfa > 0) scalars(index_nwfa,k,iCell) = scalars(index_nwfa,k+1,iCell)
+                end if
+                if (associated(index_nifa)) then
+                   if (index_nifa > 0) scalars(index_nifa,k,iCell) = scalars(index_nifa,k+1,iCell)
+                end if
+                if (associated(index_qc)) then
+                   if (index_qc > 0) scalars(index_qc,k,iCell) = scalars(index_qc,k+1,iCell)
+                end if
+                if (associated(index_qr)) then
+                   if (index_qr > 0) scalars(index_qr,k,iCell) = scalars(index_qr,k+1,iCell)
+                end if
+                if (associated(index_qi)) then
+                   if (index_qi > 0) scalars(index_qi,k,iCell) = scalars(index_qi,k+1,iCell)
+                end if
+                if (associated(index_qs)) then
+                   if (index_qs > 0) scalars(index_qs,k,iCell) = scalars(index_qs,k+1,iCell)
+                end if
+                if (associated(index_qg)) then
+                   if (index_qg > 0) scalars(index_qg,k,iCell) = scalars(index_qg,k+1,iCell)
+                end if
+                if (associated(index_nc)) then
+                   if (index_nc > 0) scalars(index_nc,k,iCell) = scalars(index_nc,k+1,iCell)
+                end if
+                if (associated(index_ni)) then
+                   if (index_ni > 0) scalars(index_ni,k,iCell) = scalars(index_ni,k+1,iCell)
+                end if
+                if (associated(index_nr)) then
+                   if (index_nr > 0) scalars(index_nr,k,iCell) = scalars(index_nr,k+1,iCell)
+                end if
+                if (associated(index_ns)) then
+                   if (index_ns > 0) scalars(index_ns,k,iCell) = scalars(index_ns,k+1,iCell)
+                end if
+                if (associated(index_ng)) then
+                   if (index_ng > 0) scalars(index_ng,k,iCell) = scalars(index_ng,k+1,iCell)
+                end if
 ! Chemistry
                 if ( associated(index_smoke_fine  )) then
                    if (index_smoke_fine > 0   ) scalars(index_smoke_fine,k,iCell) = scalars(index_smoke_fine,k+1,iCell)
@@ -8855,14 +8924,18 @@ call mpas_log_write('Done with soil consistency check')
          end do
 
          do k=1,nVertLevels
-            IF ( index_qs > 0 .and. index_ns > 0 ) THEN
-              IF ( scalars(index_qs,k,iCell) > 0.0 .and. scalars(index_ns,k,iCell) == 0.0 ) THEN
-                scalars(index_ns,k,iCell) = calcnfromq(qsw=scalars(index_qs,k,iCell),dn=rho_zz(k,iCell) )
+            IF ( associated(index_qs) .and. associated(index_ns) ) THEN
+              IF ( index_qs > 0 .and. index_ns > 0 ) THEN
+                IF ( scalars(index_qs,k,iCell) > 0.0 .and. scalars(index_ns,k,iCell) == 0.0 ) THEN
+                  scalars(index_ns,k,iCell) = calcnfromq(qsw=scalars(index_qs,k,iCell),dn=rho_zz(k,iCell) )
+                ENDIF
               ENDIF
             ENDIF
-            IF ( index_qg > 0 .and. index_ng > 0 ) THEN
-              IF ( scalars(index_qg,k,iCell) > 0.0 .and. scalars(index_ng,k,iCell) == 0.0 ) THEN
-                scalars(index_ng,k,iCell) = calcnfromq(qhw=scalars(index_qg,k,iCell),dn=rho_zz(k,iCell) )
+            IF ( associated(index_qg) .and. associated(index_ng) ) THEN
+              IF ( index_qg > 0 .and. index_ng > 0 ) THEN
+                IF ( scalars(index_qg,k,iCell) > 0.0 .and. scalars(index_ng,k,iCell) == 0.0 ) THEN
+                  scalars(index_ng,k,iCell) = calcnfromq(qhw=scalars(index_qg,k,iCell),dn=rho_zz(k,iCell) )
+                ENDIF
               ENDIF
             ENDIF
           !  IF ( index_qr > 0 .and. index_nr > 0 ) THEN
