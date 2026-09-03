@@ -2125,6 +2125,10 @@
                         <var name="qg" array_group="moist" units="kg kg^{-1}"
                              description="Graupel mixing ratio"
                              packages="mp_thompson_in;mp_thompson_aers_in;mp_wsm6_in;mp_nssl2m_in;mp_tempo_in"/>
+
+                        <var name="ng" array_group="number" units="nb kg^{-1}"
+                             description="Graupel number concentration"
+                             packages="mp_nssl2m_in;tempo_hailaware_in"/>
                 </var_array>
 #else
                 <var_array name="scalars" type="real" dimensions="nVertLevels nCells Time">
