@@ -568,7 +568,7 @@ gfortran:   # BUILDTARGET GNU Fortran, C, and C++ compilers
 	"USE_PAPI = $(USE_PAPI)" \
 	"OPENMP = $(OPENMP)" \
 	"OPENACC = $(OPENACC)" \
-	"LAPACK_LIBS = -llapack -lblas" \
+	"LAPACK_LIBS = $(if $(filter true,$(STOCHASTIC_PHYSICS)), -llapack -lblas)" \
 	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI" )
 
 gfortran-clang:   # BUILDTARGET GNU Fortran compiler with LLVM clang/clang++ compilers
