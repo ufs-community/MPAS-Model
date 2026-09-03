@@ -98,23 +98,6 @@ jobs:
         echo "FC=mpiifx"   >> $GITHUB_ENV
         echo "MPICC=/opt/intel/oneapi/mpi/latest/bin/mpiicx"   >> $GITHUB_ENV
 
-    - name: Install LAPACK/BLAS
-      run: |
-        apt-get update -y
-        apt-get install -y liblapack-dev libblas-dev libnetcdff-dev
-
-    - name: Setup NetCDF
-      run: |
-        NETCDF_DIR=/home/runner/NetCDF
-        mkdir -p ${NETCDF_DIR}/lib ${NETCDF_DIR}/include
-        for f in /usr/include/netcdf*.h /usr/include/netcdf*.inc /usr/include/netcdf*.mod; do
-          [ -e "$f" ] && ln -sf "$f" ${NETCDF_DIR}/include/ || true
-        done
-        for f in /usr/lib/x86_64-linux-gnu/libnetcdf*.so; do
-          [ -e "$f" ] && ln -sf "$f" ${NETCDF_DIR}/lib/ || true
-        done
-        echo "NETCDF=${NETCDF_DIR}" >> $GITHUB_ENV
-
     - name: Setup PnetCDF
       run: |
         echo "PNETCDF=/opt/pnetcdf"   >> $GITHUB_ENV

@@ -21,6 +21,10 @@ ifdef CHEMISTRY
     CHEM_OBJS = libchem/*.o
 endif
 
+ifeq "$(STOCHASTIC_PHYSICS)" "true"
+    STOCH = true
+endif
+
 OBJS = mpas_atm_core.o \
        mpas_atm_core_interface.o \
        mpas_atm_dimensions.o \
@@ -66,8 +70,12 @@ post_build:
 
 physcore: mpas_atm_dimensions.o
 	( cd physics; $(MAKE) all )
+ifdef STOCH
 	( cd stochastic_physics; $(MAKE) -f Makefile all )
-	( mkdir libphys; cd libphys; ar -x ../physics/libphys.a; ar -x ../stochastic_physics/libstochphys.a ) 
+	( mkdir libphys; cd libphys; ar -x ../physics/libphys.a; ar -x ../stochastic_physics/libstochphys.a )
+else
+	( mkdir libphys; cd libphys; ar -x ../physics/libphys.a )
+endif
 	( cd ../..; ln -sf ./src/core_atmosphere/physics/physics_wrf/files/*TBL .)
 	( cd ../..; ln -sf ./src/core_atmosphere/physics/physics_wrf/files/*DATA* .)
 	( cd ../..; ln -sf ./src/core_atmosphere/physics/physics_noahmp/parameters/*TBL .)
@@ -103,7 +111,9 @@ clean:
 	@# the latter for MPAS.  The default for "make" is to use "makefile", but
 	@# here, we want to use the one for MPAS (with an upper case "M").  Indicate
 	@# that using the -f flag.
+ifneq ($(wildcard stochastic_physics/Makefile),)
 	( cd stochastic_physics; $(MAKE) -f Makefile clean )
+endif
 	( cd diagnostics; $(MAKE) clean )
 	( cd utils; $(MAKE) clean )
 	( cd ../..; rm -f *TBL )
@@ -121,7 +131,15 @@ clean:
 	$(RM) $@ $*.mod
 ifeq "$(GEN_F90)" "true"
 	$(CPP) $(CPPFLAGS) $(PHYSICS) $(CHEMISTRY) $(CPPINCLUDES) -I./inc -I../framework $< > $*.f90
+ifdef STOCH
 	$(FC) $(FFLAGS) -c $*.f90 $(FCINCLUDES) -I../framework -I../operators -I./physics -I./dynamics -I./diagnostics -I./physics/physics_wrf -I./physics/physics_mmm -I./physics/physics_noaa/UGWP $(MPAS_ESMF_INC) -I./chemistry -I./stochastic_physics
 else
+	$(FC) $(FFLAGS) -c $*.f90 $(FCINCLUDES) -I../framework -I../operators -I./physics -I./dynamics -I./diagnostics -I./physics/physics_wrf -I./physics/physics_mmm -I./physics/physics_noaa/UGWP $(MPAS_ESMF_INC) -I./chemistry
+endif
+else
+ifdef STOCH
 	$(FC) $(CPPFLAGS) $(PHYSICS) $(CHEMISTRY) $(FFLAGS) -c $*.F $(CPPINCLUDES) $(FCINCLUDES) -I./inc -I../framework -I../operators -I./physics -I./dynamics -I./diagnostics -I./physics/physics_wrf -I./physics/physics_mmm -I./physics/physics_noaa/UGWP $(MPAS_ESMF_INC) -I./chemistry -I./stochastic_physics
+else
+	$(FC) $(CPPFLAGS) $(PHYSICS) $(CHEMISTRY) $(FFLAGS) -c $*.F $(CPPINCLUDES) $(FCINCLUDES) -I./inc -I../framework -I../operators -I./physics -I./dynamics -I./diagnostics -I./physics/physics_wrf -I./physics/physics_mmm -I./physics/physics_noaa/UGWP $(MPAS_ESMF_INC) -I./chemistry
+endif
 endif

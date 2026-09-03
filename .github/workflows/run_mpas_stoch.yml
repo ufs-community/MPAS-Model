@@ -220,7 +220,7 @@ jobs:
       if: steps.cache-feature.outputs.cache-hit != 'true'
       run: |
         cd ${SRCDIR_FT}
-        make ${{matrix.bld_target}} CORE=atmosphere ${{matrix.build-type == 'Debug' && 'DEBUG=true' || ''}}
+        make ${{matrix.bld_target}} CORE=atmosphere STOCHASTIC_PHYSICS=true ${{matrix.build-type == 'Debug' && 'DEBUG=true' || ''}}
 
     ##########################################################################################
     # Download any data/files needed for MPAS runs.
