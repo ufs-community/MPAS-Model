@@ -45,7 +45,7 @@ jobs:
 
     - name: Cache Intel
       id: cache-INTEL
-      uses: actions/cache@v5
+      uses: actions/cache@v6
       with:
         path: /opt/intel/oneapi/mpi/2021.10.0
         key: cache-Intel-MPI-${{matrix.fortran-compiler}}-${{matrix.build-system}}-key
@@ -57,14 +57,14 @@ jobs:
 
     - name: Cache NetCDF-Fortran
       id: cache-netcdf-fortran
-      uses: actions/cache@v4
+      uses: actions/cache@v6
       with:
         path: /home/runner/NetCDF
         key: cache-NetCDF-Fortran-${{matrix.fortran-compiler}}-${{matrix.build-system}}-key
 
     - name: Cache GNU autotools
       id: cache-AUTOTOOLS
-      uses: actions/cache@v5
+      uses: actions/cache@v6
       with:
         path: /home/runner/AUTOTOOLS
         key: cache-AUTOTOOLS-${{matrix.fortran-compiler}}-${{matrix.build-system}}-key
@@ -104,7 +104,7 @@ jobs:
 
     - name: Cache PnetCDF
       id: cache-pnetcdf
-      uses: actions/cache@v5
+      uses: actions/cache@v6
       with:
         path: /home/runner/PnetCDF
         key: cache-PnetCDF-${{matrix.fortran-compiler}}-${{matrix.build-system}}-key
