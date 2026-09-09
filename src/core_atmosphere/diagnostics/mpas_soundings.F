@@ -242,7 +242,7 @@ module mpas_soundings
         integer, pointer :: nVertLevels, index_qv, index_qc, index_qr, index_qi, index_qs, index_qg
         real (kind=RKIND), dimension(:,:), pointer :: pressure_base, pressure_p, uReconstructZonal, uReconstructMeridional, zgrid, &
                                                       theta_m, exner
-        real (kind=RKIND), dimension(:), pointer :: rainncv, snowncv, graupelncv
+        real (kind=RKIND), dimension(:), pointer :: rainncv, snowncv, graupelncv, rainnc, snownc, graupelnc
         real (kind=RKIND), dimension(:,:,:), pointer :: scalars
         real (kind=RKIND) :: tmpc, tdpc, dir, spd, rh, log_rh, qvs, pres, qc, qr, qi, qs, qg
         type (MPAS_time_type) :: now
@@ -276,6 +276,9 @@ module mpas_soundings
             call MPAS_pool_get_array(diag_physics, 'rainncv', rainncv)
             call MPAS_pool_get_array(diag_physics, 'snowncv', snowncv)
             call MPAS_pool_get_array(diag_physics, 'graupelncv', graupelncv)
+            call MPAS_pool_get_array(diag_physics, 'rainnc', rainnc)
+            call MPAS_pool_get_array(diag_physics, 'snownc', snownc)
+            call MPAS_pool_get_array(diag_physics, 'graupelnc', graupelnc)
 
 
 !            call mpas_log_write('--- Writing soundings at '//trim(nowString)//'---')
@@ -290,12 +293,12 @@ module mpas_soundings
 
                     write(stid,'(a)') trim(stationNames(iStn))
 
-                    write(sndUnit,'(a)') '  SNPARM = PRES;HGHT;TMPC;DWPC;DRCT;SPED;QC;QR;QI;QS;QG;RAINNCV;SNOWNCV;GRAUPELNCV'
+                    write(sndUnit,'(a)') '  SNPARM = PRES;HGHT;TMPC;DWPC;DRCT;SPED;QC;QR;QI;QS;QG;RAINNCV;SNOWNCV;GRAUPELNCV;RAINNC;SNOWNC;GRAUPELNC'
                     write(sndUnit,'(a)') ''
                     write(sndUnit,'(a,i2.2,i2.2,i2.2,a,i2.2,i2.2)') ' STID = '//stid//'  STNM = 99999       TIME = ', mod(yyyy,100), mm, dd,'/', h, m
                     write(sndUnit,'(a,f6.2,a,f7.2,a)') ' SLAT = ', stationLats(iStn), '      SLON = ', stationLons(iStn), '     SELV =    -999'
                     write(sndUnit,'(a)') ''
-                    write(sndUnit,'(a)') '      PRES      HGHT     TMPC     DWPC     DRCT     SPED     QC     QR     QI     QS     QG     RAINNCV     SNOWNCV     GRAUPELNCV'
+                    write(sndUnit,'(a)') '      PRES      HGHT     TMPC     DWPC     DRCT     SPED     QC     QR     QI     QS     QG     RAINNCV     SNOWNCV     GRAUPELNCV     RAINNC     SNOWNC     GRAUPELNC'
 
                     do k=1,nVertLevels
                         tmpc = theta_m(k,stationCells(iStn)) / (1.0_RKIND + rvord * scalars(index_qv,k,stationCells(iStn))) * exner(k,stationCells(iStn))
@@ -326,7 +329,7 @@ module mpas_soundings
                         qs = scalars(index_qs,k,stationCells(iStn))
                         qg = scalars(index_qg,k,stationCells(iStn))
 
-                        write(sndUnit,'(f10.2,f10.2,f9.2,f9.2,f9.2,f9.2,e15.4,e15.4,e15.4,e15.4,e15.4,e15.4,e15.4,e15.4)') &
+                        write(sndUnit,'(f10.2,f10.2,f9.2,f9.2,f9.2,f9.2,e15.4,e15.4,e15.4,e15.4,e15.4,e15.4,e15.4,e15.4,e15.4,e15.4,e15.4)') &
                                     pres, &
                                     0.5 * (zgrid(k,stationCells(iStn)) + zgrid(k+1,stationCells(iStn))), &               ! Avg to layer midpoint
                                     tmpc, &
@@ -340,7 +343,10 @@ module mpas_soundings
                                     1000.*qg, &
                                     rainncv(stationCells(iStn)), &
                                     snowncv(stationCells(iStn)), &
-                                    graupelncv(stationCells(iStn))
+                                    graupelncv(stationCells(iStn)), &
+                                    rainnc(stationCells(iStn)), &
+                                    snownc(stationCells(iStn)), &
+                                    graupelnc(stationCells(iStn))
                     end do
 
                     close(sndUnit)
