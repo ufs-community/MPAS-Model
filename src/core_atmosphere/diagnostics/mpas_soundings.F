@@ -298,7 +298,10 @@ module mpas_soundings
                     write(sndUnit,'(a,i2.2,i2.2,i2.2,a,i2.2,i2.2)') ' STID = '//stid//'  STNM = 99999       TIME = ', mod(yyyy,100), mm, dd,'/', h, m
                     write(sndUnit,'(a,f6.2,a,f7.2,a)') ' SLAT = ', stationLats(iStn), '      SLON = ', stationLons(iStn), '     SELV =    -999'
                     write(sndUnit,'(a)') ''
-                    write(sndUnit,'(a)') '      PRES      HGHT     TMPC     DWPC     DRCT     SPED     QC     QR     QI     QS     QG     RAINNCV     SNOWNCV     GRAUPELNCV     RAINNC     SNOWNC     GRAUPELNC'
+                    write(sndUnit,'(a,e15.4,a,e15.4,a,e15.4)') ' RAINNCV = ', rainncv(stationCells(iStn)), '     SNOWNCV = ', snowncv(stationCells(iStn)), '     GRAUPELNCV = ', graupelncv(stationCells(iStn))
+                    write(sndUnit,'(a,e15.4,a,e15.4,a,e15.4)') ' RAINNC = ', rainnc(stationCells(iStn)), '     SNOWNC = ', snownc(stationCells(iStn)), '     GRAUPELNC = ', graupelncv(stationCells(iStn))
+                    write(sndUnit,'(a)') ''
+                    write(sndUnit,'(a)') '      PRES      HGHT     TMPC     DWPC     DRCT     SPED     QC     QR     QI     QS     QG'
 
                     do k=1,nVertLevels
                         tmpc = theta_m(k,stationCells(iStn)) / (1.0_RKIND + rvord * scalars(index_qv,k,stationCells(iStn))) * exner(k,stationCells(iStn))
@@ -329,7 +332,7 @@ module mpas_soundings
                         qs = scalars(index_qs,k,stationCells(iStn))
                         qg = scalars(index_qg,k,stationCells(iStn))
 
-                        write(sndUnit,'(f10.2,f10.2,f9.2,f9.2,f9.2,f9.2,e15.4,e15.4,e15.4,e15.4,e15.4,e15.4,e15.4,e15.4,e15.4,e15.4,e15.4)') &
+                        write(sndUnit,'(f10.2,f10.2,f9.2,f9.2,f9.2,f9.2,e15.4,e15.4,e15.4,e15.4,e15.4)') &
                                     pres, &
                                     0.5 * (zgrid(k,stationCells(iStn)) + zgrid(k+1,stationCells(iStn))), &               ! Avg to layer midpoint
                                     tmpc, &
@@ -340,13 +343,7 @@ module mpas_soundings
                                     1000.*qr, &
                                     1000.*qi, &
                                     1000.*qs, &
-                                    1000.*qg, &
-                                    rainncv(stationCells(iStn)), &
-                                    snowncv(stationCells(iStn)), &
-                                    graupelncv(stationCells(iStn)), &
-                                    rainnc(stationCells(iStn)), &
-                                    snownc(stationCells(iStn)), &
-                                    graupelnc(stationCells(iStn))
+                                    1000.*qg
                     end do
 
                     close(sndUnit)
