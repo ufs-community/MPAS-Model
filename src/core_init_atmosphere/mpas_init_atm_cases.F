@@ -7181,8 +7181,6 @@ call mpas_log_write('Done with soil consistency check')
 
       call mpas_log_write('min lon $r max lon $r min lat $r max lat $r',realArgs=(/minval(lonPoints),maxval(lonPoints),minval(latPoints),maxval(latPoints)/))
       do iCell=1,nCells
-         !lat = latPoints(i)*DEG_PER_RAD
-         !lon = lonPoints(i)*DEG_PER_RAD
          lat = latPoints(iCell)*DEG_PER_RAD
          lon = lonPoints(iCell)*DEG_PER_RAD
          ! T
