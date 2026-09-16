@@ -154,6 +154,9 @@
  call mpas_pool_get_dimension(state,'index_nifa'  ,index_nifa  )
  call mpas_pool_get_dimension(state,'index_nwfa'  ,index_nwfa  )
 
+!aerosol scalars may be excluded from a reduced scalars array (e.g. JEDI IO): nothing to initialize.
+ if(.not.associated(index_nifa) .or. .not.associated(index_nwfa)) return
+
  call mpas_pool_get_array(state,'scalars',scalars,time_lev)
  nifa   => scalars(index_nifa,:,:)
  nwfa   => scalars(index_nwfa,:,:)
