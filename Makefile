@@ -375,7 +375,7 @@ ifort_icx:   # BUILDTARGET Intel Fortran, C, and C++ compiler suite
 	"DEBUG = $(DEBUG)" \
 	"USE_PAPI = $(USE_PAPI)" \
 	"OPENMP = $(OPENMP)" \
-	"LAPACK_LIBS = -lmkl_intel_lp64 -lmkl_core -lmkl_sequential" \
+	"LAPACK_LIBS = $(if $(filter true,$(STOCHASTIC_PHYSICS)),-lmkl_intel_lp64 -lmkl_core -lmkl_sequential)" \
 	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI" )
 
 jet_ifort:
@@ -482,7 +482,7 @@ intel-mpi:   # BUILDTARGET Intel compiler suite with Intel MPI library
 	"DEBUG = $(DEBUG)" \
 	"USE_PAPI = $(USE_PAPI)" \
 	"OPENMP = $(OPENMP)" \
-	"LAPACK_LIBS = -lmkl_intel_lp64 -lmkl_core -lmkl_sequential" \
+	"LAPACK_LIBS = $(if $(filter true,$(STOCHASTIC_PHYSICS)),-lmkl_intel_lp64 -lmkl_core -lmkl_sequential)" \
 	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI" )
 
 intel-llvm-mpi:   # BUILDTARGET Intel LLVM compiler suite with Intel MPI library
@@ -510,6 +510,7 @@ intel-llvm-mpi:   # BUILDTARGET Intel LLVM compiler suite with Intel MPI library
 	"DEBUG = $(DEBUG)" \
 	"USE_PAPI = $(USE_PAPI)" \
 	"OPENMP = $(OPENMP)" \
+	"LAPACK_LIBS = $(if $(filter true,$(STOCHASTIC_PHYSICS)),-lmkl_intel_lp64 -lmkl_core -lmkl_sequential)" \
 	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI" )
 
 intel-mpi-ursa:   # usra
@@ -537,7 +538,7 @@ intel-mpi-ursa:   # usra
 	"DEBUG = $(DEBUG)" \
 	"USE_PAPI = $(USE_PAPI)" \
 	"OPENMP = $(OPENMP)" \
-	"LAPACK_LIBS = -lmkl_intel_lp64 -lmkl_core -lmkl_sequential" \
+	"LAPACK_LIBS = $(if $(filter true,$(STOCHASTIC_PHYSICS)),-lmkl_intel_lp64 -lmkl_core -lmkl_sequential)" \
 	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI" )
 
 gfortran:   # BUILDTARGET GNU Fortran, C, and C++ compilers
@@ -568,7 +569,7 @@ gfortran:   # BUILDTARGET GNU Fortran, C, and C++ compilers
 	"USE_PAPI = $(USE_PAPI)" \
 	"OPENMP = $(OPENMP)" \
 	"OPENACC = $(OPENACC)" \
-	"LAPACK_LIBS = -llapack -lblas" \
+	"LAPACK_LIBS = $(if $(filter true,$(STOCHASTIC_PHYSICS)),-llapack -lblas)" \
 	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI" )
 
 gfortran-clang:   # BUILDTARGET GNU Fortran compiler with LLVM clang/clang++ compilers
@@ -917,6 +918,18 @@ else # Not using PIO, using SMIOL
 	FCINCLUDES += -I$(PWD)/src/external/SMIOL
 endif
 
+# Auto-detect NETCDF_C_ROOT / NETCDF_FORTRAN_ROOT if NETCDF / NETCDFF are not set
+ifeq "$(NETCDF)" ""
+ifneq "$(NETCDF_C_ROOT)" ""
+	NETCDF := $(NETCDF_C_ROOT)
+endif
+endif
+ifeq "$(NETCDFF)" ""
+ifneq "$(NETCDF_FORTRAN_ROOT)" ""
+	NETCDFF := $(NETCDF_FORTRAN_ROOT)
+endif
+endif
+
 ifneq "$(NETCDF)" ""
 ifneq ($(wildcard $(NETCDF)/lib/libnetcdf.*), )
 	NETCDFLIBLOC = lib
@@ -933,8 +946,14 @@ endif
 		LIBS += $(NCLIBF)
 	endif # CHECK FOR NETCDF4
 	ifneq "$(NETCDFF)" ""
+	ifneq ($(wildcard $(NETCDFF)/lib/libnetcdff.*), )
+		NETCDFFLIBLOC = lib
+	endif
+	ifneq ($(wildcard $(NETCDFF)/lib64/libnetcdff.*), )
+		NETCDFFLIBLOC = lib64
+	endif
 		FCINCLUDES += -I$(NETCDFF)/include
-		LIBS += -L$(NETCDFF)/$(NETCDFLIBLOC)
+		LIBS += -L$(NETCDFF)/$(NETCDFFLIBLOC)
 		LIBS += $(NCLIBF)
 	endif
 	LIBS += $(NCLIB)

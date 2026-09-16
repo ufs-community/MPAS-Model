@@ -1,4 +1,4 @@
-name: Build (GNU) MPAS Standalone
+name: Build (GNU) MPAS Stochastic
 
 on: [pull_request,workflow_dispatch]
 
@@ -37,7 +37,7 @@ jobs:
     - name: Install NetCDF library
       run: |
         sudo apt-get update
-        sudo apt-get install libnetcdff-dev
+        sudo apt-get install libnetcdff-dev liblapack-dev libblas-dev
 
     - name: Cache openmpi
       id: cache-openmpi
@@ -138,6 +138,18 @@ jobs:
         echo "LD_LIBRARY_PATH=${PNETCDF}/bin:$LD_LIBRARY_PATH" >> $GITHUB_ENV
         echo "PATH=${PNETCDF}/bin:$PATH" >> $GITHUB_ENV
 
+    - name: Setup NetCDF
+      run: |
+        NETCDF_DIR=/home/runner/NetCDF
+        mkdir -p ${NETCDF_DIR}/lib ${NETCDF_DIR}/include
+        for f in /usr/include/netcdf*.h /usr/include/netcdf*.inc /usr/include/netcdf*.mod; do
+          [ -e "$f" ] && ln -sf "$f" ${NETCDF_DIR}/include/ || true
+        done
+        for f in /usr/lib/x86_64-linux-gnu/libnetcdf*.so; do
+          [ -e "$f" ] && ln -sf "$f" ${NETCDF_DIR}/lib/ || true
+        done
+        echo "NETCDF=${NETCDF_DIR}" >> $GITHUB_ENV
+
 #    - name: Setup environment
 #      run: |
 #        echo "FC=mpif90" >> $GITHUB_ENV
@@ -163,7 +175,7 @@ jobs:
       run: |
         cd ${driver_ROOT}/MPAS-Model/MPAS-Model
         make gfortran CORE=init_atmosphere
-        make gfortran CORE=atmosphere
+        make gfortran CORE=atmosphere STOCHASTIC_PHYSICS=true AUTOCLEAN=true
 
     - name: Build MPAS Standalone (cmake)
       if: matrix.build-system == 'cmake'
@@ -171,5 +183,5 @@ jobs:
         cd ${driver_ROOT}/MPAS-Model/MPAS-Model
         mkdir build
         cd build
-        cmake -DMPAS_DOUBLE_PRECISION=OFF -DMPAS_CORES="init_atmosphere;atmosphere" ..
+        cmake -DMPAS_DOUBLE_PRECISION=OFF -DSTOCHASTIC_PHYSICS=ON -DMPAS_CORES="init_atmosphere;atmosphere" ..
         make -j8

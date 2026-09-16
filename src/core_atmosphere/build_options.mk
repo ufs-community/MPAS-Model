@@ -6,5 +6,9 @@ FCINCLUDES += -I$(PWD)/src/core_atmosphere/physics/physics_noahmp/drivers/mpas \
               -I$(PWD)/src/core_atmosphere/physics/physics_noahmp/utility \
               -I$(PWD)/src/core_atmosphere/physics/physics_noahmp/src
 
+ifeq "$(STOCHASTIC_PHYSICS)" "true"
+override CPPFLAGS += -DSTOCHASTIC_PHYSICS
+endif
+
 report_builds:
 	@echo "CORE=atmosphere"
