@@ -169,7 +169,7 @@ jobs:
 
     - name: Cache MPAS build -- baseline branch
       id: cache-bl
-      uses: actions/cache@v3
+      uses: actions/cache@v6
       with:
         path: ${{env.SRCDIR_BL}}/atmosphere_model
         key: mpas-build-bl-${{runner.os}}-${{matrix.image}}-${{matrix.f-compiler}}-${{matrix.build-type}}-${{steps.baseline-sha.outputs.sha}}
@@ -189,14 +189,14 @@ jobs:
     # Clone and build the MPAS feature branch.
     ##########################################################################################
 
-    # actions/checkout@v3 is a standard GitHub Actions action that clones the repository that
+    # actions/checkout@v7 is a standard GitHub Actions action that clones the repository that
     # triggered the workflow into the runner's workspace.  Specifically it:
     #
     #   1) Clones the feature branch (the one that was pushed or opened as a PR) into ${SRCDIR_FT}.
     #   2) Checks out the specific commit that triggered the workflow.
     #
     - name: Checkout MPAS -- feature branch
-      uses: actions/checkout@v3
+      uses: actions/checkout@v7
 
     - name: Initialize submodules -- feature branch
       run: |
@@ -206,7 +206,7 @@ jobs:
 
     - name: Cache MPAS build -- feature branch
       id: cache-feature
-      uses: actions/cache@v3
+      uses: actions/cache@v6
       with:
         path: ${{env.SRCDIR_FT}}/atmosphere_model
         key: mpas-build-${{runner.os}}-${{matrix.image}}-${{matrix.f-compiler}}-${{matrix.build-type}}-${{hashFiles('Makefile', 'src/**')}}
@@ -374,13 +374,13 @@ jobs:
 
     - name: Cache conda environment
       id: cache-conda
-      uses: actions/cache@v3
+      uses: actions/cache@v6
       with:
         path: ${{ env.CONDA }}/envs
         key: conda-${{ runner.os }}-${{ hashFiles(format('{0}/environment.yml', env.ufs_community)) }}
 
     - name: Setup miniconda
-      uses: conda-incubator/setup-miniconda@v3
+      uses: conda-incubator/setup-miniconda@v4
       with:
         python-version: ${{env.py-version}}
         auto-update-conda: true
@@ -428,7 +428,7 @@ jobs:
         fi
 
     - name: Upload MPAS runs as GitHub artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: mpas-baselines-${{env.artifact}}
         path: ${{env.ARTIFACT_DIR}}
