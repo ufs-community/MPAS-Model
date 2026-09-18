@@ -442,6 +442,16 @@
                      units="-"
                      description="Whether to print the global min/max of scalar fields each timestep"
                      possible_values=".true. or .false."/>
+
+                <nml_option name="config_print_global_minmax_tend_ps" type="logical" default_value="false"
+                     units="-"
+                     description="Whether to print the global min/max of surface-pressure tendency each timestep"
+                     possible_values=".true. or .false."/>
+
+                <nml_option name="config_print_detailed_minmax_tend_ps" type="logical" default_value="false"
+                     units="-"
+                     description="Whether to print the global min/max of surface-pressure tendency each timestep, along with the location in the domain where those extrema occurred"
+                     possible_values=".true. or .false."/>
         </nml_record>
 
         <nml_record name="IAU" in_defaults="true">
@@ -516,12 +526,14 @@
                 <package name="ugwp_ngw_stream"  description="Input stream (and variables) for UGWP NGW lookup table"/>
                 <package name="ugwp_diags_stream" description="Output stream (and variables) for UGWP output diagnostics"/>
 		<package name="gfl_sub3d" description="GFL 3d lateral spreading of the env subsidence"/>
+#ifdef DO_PHYSICS
                 <package name="les"
                          description="Variables and options associated with LES models"
                          active_when="trim(config_les_model) /= 'none'"/>
                 <package name="sfclayer"
                          description="Variables and options associated with surface layer physics"
                          active_when="(trim(config_physics_suite) /= 'none' .and. trim(config_sfclayer_scheme) == 'suite') .or.  any(trim(config_sfclayer_scheme) == [ character(len=StrKind) :: 'sf_monin_obukhov', 'sf_monin_obukhov_rev', 'sf_mynn', 'sf_mynnsfclay', 'sf_myj' ])"/>
+#endif
         </packages>
 
 
@@ -5139,9 +5151,9 @@
 #include "physics/Registry_noahmp.xml"
 #include "physics/Registry_tempo.xml"
 #include "physics/registry.chemistry.xml"
+#endif
 #ifdef STOCHASTIC_PHYSICS
 #include "stochastic_physics/Registry_stoch_physics.xml"
-#endif
 #endif
 
 #ifdef MPAS_UFS_DYCORE
