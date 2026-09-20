@@ -31,6 +31,7 @@ module mpas_gfs_convection_wrapper_mod
 
    use mpas_kind_types, only: RKIND
    use mpas_atmphys_constants, only: gravity, cp, R_d, R_v, xlv
+   use, intrinsic :: ieee_arithmetic, only : ieee_is_finite
 
    implicit none
    private
@@ -102,7 +103,6 @@ contains
       real(kind=RKIND) :: raw_t
       real(kind=RKIND) :: dtemp_sas, rth_test, dtdt_test
       real(kind=RKIND) :: rqv_raw, rqc_raw, rqi_raw, ru_raw, rv_raw
-      real(kind=RKIND) :: pif_surf, pif_top, pbot, ptop
 
       real(kind=RKIND) :: psp(im), delp(im,km), prslp(im,km), phil(im,km)
       real(kind=RKIND) :: dot(im,km)
@@ -278,7 +278,7 @@ contains
 
          bad_col(i) = .false.
 
-         if (psp(i) /= psp(i) .or. psp(i) <= 1000._RKIND .or. psp(i) > 120000._RKIND) then
+         if (.not. ieee_is_finite(psp(i)) .or. psp(i) <= 1000._RKIND .or. psp(i) > 120000._RKIND) then
             ierr = 11
             write(errmsg,'(a,i8,1x,es14.6)') 'bad SAS surface pressure psp at i=', i, psp(i)
             return
@@ -344,27 +344,27 @@ contains
          ! kmap is rebuilt every call and preserves bottom-up ordering.
          kk = kmap(i,k)
 
-         ! Robust layer pressure construction.  Some MPAS interface arrays are not
-         ! strictly monotonic locally after remapping/physics adjustment, so never
-         ! infer bottom/top from the raw index alone.  SAS only needs positive mass
-         ! thickness in Pa and a layer-center pressure in Pa.
-         pbot = max(pres_int(i,kk), pres_int(i,kk+1))
-         ptop = min(pres_int(i,kk), pres_int(i,kk+1))
-         delp(i,k)  = pbot - ptop
-         prslp(i,k) = 0.5_RKIND * (pbot + ptop)
+         ! Pressure was repaired/validated in the MPAS driver.  Preserve the
+         ! physical bottom-to-top ordering here; do not hide an ordering error
+         ! with MAX/MIN or ABS.  These checks are final assertions only.
+         delp(i,k)  = pres_int(i,kk) - pres_int(i,kk+1)
+         prslp(i,k) = pres_mid(i,kk)
          phil(i,k)  = gravity * 0.5_RKIND * (z_int(i,kk) + z_int(i,kk+1))
 
-         if (delp(i,k) /= delp(i,k) .or. delp(i,k) <= 0._RKIND) then
+         if (.not. ieee_is_finite(delp(i,k)) .or. delp(i,k) <= 0._RKIND) then
             ierr = 13
-            write(errmsg,'(a,2i8,1x,l1,3(1x,es14.6))') &
-                 'bad SAS delp after pbot/ptop at i,k,pbot,ptop,delp=', &
-                 i, k, pbot, ptop, delp(i,k)
+            write(errmsg,'(a,2i8,3(1x,es14.6))') &
+                 'bad SAS repaired pressure at i,k,pint_lo,pint_hi,delp=', &
+                 i, k, pres_int(i,kk), pres_int(i,kk+1), delp(i,k)
             return
          endif
 
-         if (prslp(i,k) /= prslp(i,k) .or. prslp(i,k) <= 0._RKIND .or. prslp(i,k) > 120000._RKIND) then
+         if (.not. ieee_is_finite(prslp(i,k)) .or. prslp(i,k) <= pres_int(i,kk+1) .or. &
+             prslp(i,k) >= pres_int(i,kk) .or. prslp(i,k) > 120000._RKIND) then
             ierr = 14
-            write(errmsg,'(a,2i8,1x,es14.6)') 'bad SAS prslp at i,k=', i, k, prslp(i,k)
+            write(errmsg,'(a,2i8,3(1x,es14.6))') &
+                 'bad SAS repaired midpoint at i,k,pint_lo,pmid,pint_hi=', &
+                 i, k, pres_int(i,kk), prslp(i,k), pres_int(i,kk+1)
             return
          endif
 
@@ -528,17 +528,6 @@ contains
                return
             endif
 
-            if (.false. .and. (abs(rth_test) > 5.0e-2_RKIND .or. abs(rqv_raw) > 2.0e-5_RKIND .or. &
-                abs(rqc_raw) > 2.0e-5_RKIND .or. abs(rqi_raw) > 2.0e-5_RKIND .or. &
-                abs(ru_raw)  > 5.0e-3_RKIND .or. abs(rv_raw)  > 5.0e-3_RKIND)) then
-               write(0,*) 'LARGE LATEST SAMF GFS SAS TENDENCY -- REPORT ONLY'
-               write(0,*) 'i,k,kk             = ', i, k, kk
-               write(0,*) 'rth,rqv,rqc,rqi    = ', rth_test, rqv_raw, rqc_raw, rqi_raw
-               write(0,*) 'ru,rv              = ', ru_raw, rv_raw
-               write(0,*) 'deep rn,shal rn    = ', rn_deep(i), rn_shal(i)
-               write(0,*) 'kbot,ktop,kcnv     = ', kbot(i), ktop(i), kcnv(i)
-               call flush(0)
-            endif
 
             rthcuten(i,kk) = rth_test
             rqvcuten(i,kk) = rqv_raw
