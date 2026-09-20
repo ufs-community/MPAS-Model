@@ -17,6 +17,7 @@ if(MPAS_CORES MATCHES " ") #Convert strings separated with spaces to CMake list 
     set(MPAS_CORES ${MPAS_CORES} CACHE STRING "MPAS cores to build. Options: ${MPAS_ALL_CORES}" FORCE)
 endif()
 option(DO_PHYSICS "Use built-in physics schemes." TRUE)
+option(STOCHASTIC_PHYSICS "Build with stochastic physics support." FALSE)
 option(MPAS_DOUBLE_PRECISION "Use double precision 64-bit Floating point." TRUE)
 option(MPAS_PROFILE "Enable GPTL profiling" OFF)
 option(MPAS_OPENMP "Enable OpenMP" OFF)
@@ -67,10 +68,12 @@ if(CMAKE_Fortran_COMPILER_ID MATCHES NVHPC)
 endif()
 find_package(MPI REQUIRED COMPONENTS Fortran)
 #
-# Always set the MPAS_USE_MPI_F08 macro, which entails using "use mpi_f08"
-# instead of the older "use mpi" in Fortran source code.
+# The MPAS_USE_MPI_F08 macro (use mpi_f08, type(MPI_Comm) communicators) is
+# required only when building stochastic_physics, which uses mpi_f08.
 #
-add_compile_definitions(MPAS_USE_MPI_F08)
+if(STOCHASTIC_PHYSICS)
+    add_compile_definitions(MPAS_USE_MPI_F08)
+endif()
 #
 # When building stochastic_physics under the UFS, by default we use the
 # "esmf_dgemm" Fortran matrix multiplication subroutine that the UFS host
