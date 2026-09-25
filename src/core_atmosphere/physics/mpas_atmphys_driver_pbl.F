@@ -1549,11 +1549,9 @@ endif
  integer, dimension(:), pointer :: nEdgesOnCell
  integer, dimension(:,:), pointer :: cellsOnCell
  logical, allocatable :: pbl_col_valid(:), pbl_col_bad(:)
- logical, allocatable :: pbl_press_valid(:), pbl_press_bad(:)
  real(kind=RKIND), allocatable :: p_mid_tkeedmf(:,:), p_int_tkeedmf(:,:), pi_tkeedmf(:,:)
  integer :: n, nbr, ngood, bad_reason
  real(kind=RKIND) :: t_after, qv_after, qc_after, qi_after
- real(kind=RKIND) :: min_dp_press, p_lower, p_upper
  real(kind=RKIND) :: u_after, v_after
  real(kind=RKIND) :: sum_hpbl
  integer :: sum_kpbl
@@ -1617,15 +1615,11 @@ endif
        call mpas_pool_get_array(diag_physics,'coszr',coszr)
 
        allocate(pbl_col_valid(ims:ime), pbl_col_bad(ims:ime))
-       allocate(pbl_press_valid(ims:ime), pbl_press_bad(ims:ime))
        allocate(p_mid_tkeedmf(its:ite,kts:kte))
        allocate(p_int_tkeedmf(its:ite,kts:kte+1))
        allocate(pi_tkeedmf(its:ite,kts:kte))
        pbl_col_valid   = .false.
        pbl_col_bad     = .false.
-       pbl_press_valid = .false.
-       pbl_press_bad   = .false.
-       min_dp_press    = 1.0_RKIND
 
        ! Conservative initial settings.  Expose these through Registry later.
        tke_edmf_cfg%sa3dtke     = .false.
@@ -1685,101 +1679,11 @@ endif
        enddo
        enddo
        !---------------------------------------------------------------
-       ! Restore the previously working 60-km pressure-column repair
-       ! before the GFS TKE-EDMF call.
-       !
-       ! Repair only temporary PBL pressure arrays when the native MPAS
-       ! pressure column is non-finite, non-positive, non-monotonic, or
-       ! has a layer midpoint outside its bounding interfaces.  The MPAS
-       ! model state itself is NOT modified.
-       !---------------------------------------------------------------
+       ! Pressure repair is now performed once in MPAS_to_physics.
+       ! All physics schemes receive the same repaired hydrostatic column.
        p_mid_tkeedmf(:,:) = pres_hyd_p(its:ite,kts:kte,jts)
        p_int_tkeedmf(:,:) = pres2_hyd_p(its:ite,kts:kte+1,jts)
        pi_tkeedmf(:,:)     = pi_p(its:ite,kts:kte,jts)
-
-       ! Determine valid pressure profiles for owned and halo cells so
-       ! that a bad owned cell can use valid physical neighbors.
-       do i = ims, ime
-          pbl_press_valid(i) = .true.
-          do k = kts, kte
-             if (.not. ieee_is_finite(pres_hyd_p(i,k,jts)) .or. &
-                 .not. ieee_is_finite(pres2_hyd_p(i,k,jts)) .or. &
-                 .not. ieee_is_finite(pres2_hyd_p(i,k+1,jts))) then
-                pbl_press_valid(i) = .false.
-                exit
-             endif
-
-             if (pres2_hyd_p(i,k,jts) <= 0.0_RKIND .or. &
-                 pres2_hyd_p(i,k+1,jts) <= 0.0_RKIND .or. &
-                 pres2_hyd_p(i,k+1,jts) >= pres2_hyd_p(i,k,jts) .or. &
-                 pres_hyd_p(i,k,jts) >= pres2_hyd_p(i,k,jts) .or. &
-                 pres_hyd_p(i,k,jts) <= pres2_hyd_p(i,k+1,jts)) then
-                pbl_press_valid(i) = .false.
-                exit
-             endif
-          enddo
-       enddo
-
-       do i = its, ite
-          pbl_press_bad(i) = .not. pbl_press_valid(i)
-       enddo
-
-
-       do i = its, ite
-          if (.not. pbl_press_bad(i)) cycle
-
-          p_mid_tkeedmf(i,kts:kte)   = 0.0_RKIND
-          p_int_tkeedmf(i,kts:kte+1) = 0.0_RKIND
-          ngood = 0
-
-          do n = 1, nEdgesOnCell(i)
-             nbr = cellsOnCell(n,i)
-             if (nbr < ims .or. nbr > ime) cycle
-             if (.not. pbl_press_valid(nbr)) cycle
-
-             ngood = ngood + 1
-             p_mid_tkeedmf(i,kts:kte) = p_mid_tkeedmf(i,kts:kte) + &
-                  pres_hyd_p(nbr,kts:kte,jts)
-             p_int_tkeedmf(i,kts:kte+1) = p_int_tkeedmf(i,kts:kte+1) + &
-                  pres2_hyd_p(nbr,kts:kte+1,jts)
-          enddo
-
-          if (ngood > 0) then
-             p_mid_tkeedmf(i,kts:kte) = p_mid_tkeedmf(i,kts:kte) / &
-                  real(ngood,RKIND)
-             p_int_tkeedmf(i,kts:kte+1) = p_int_tkeedmf(i,kts:kte+1) / &
-                  real(ngood,RKIND)
-          else
-             ! Emergency fallback when no valid neighbor is locally
-             ! available. Preserve the original surface interface and
-             ! force a minimally monotonic profile only for this PBL call.
-             p_int_tkeedmf(i,kts) = max(100.0_RKIND, &
-                  pres2_hyd_p(i,kts,jts))
-             do k = kts, kte
-                p_int_tkeedmf(i,k+1) = min(p_int_tkeedmf(i,k)-min_dp_press, &
-                     max(1.0_RKIND,pres2_hyd_p(i,k+1,jts)))
-                p_mid_tkeedmf(i,k) = 0.5_RKIND * &
-                     (p_int_tkeedmf(i,k)+p_int_tkeedmf(i,k+1))
-             enddo
-          endif
-
-          ! Final strict monotonicity and midpoint check after averaging.
-          do k = kts, kte
-             p_lower = p_int_tkeedmf(i,k)
-             p_upper = p_int_tkeedmf(i,k+1)
-
-             if (p_upper >= p_lower-min_dp_press) then
-                p_upper = max(1.0_RKIND,p_lower-min_dp_press)
-                p_int_tkeedmf(i,k+1) = p_upper
-             endif
-
-             if (p_mid_tkeedmf(i,k) >= p_lower .or. &
-                 p_mid_tkeedmf(i,k) <= p_upper .or. &
-                 .not. ieee_is_finite(p_mid_tkeedmf(i,k))) then
-                p_mid_tkeedmf(i,k) = 0.5_RKIND*(p_lower+p_upper)
-             endif
-          enddo
-       enddo
 
        call mpas_call_satmedmfvdifq(                                  &
             (ite-its+1), (kte-kts+1), 4, dt_pbl,                      &
@@ -1999,8 +1903,6 @@ endif
 
        if (allocated(pbl_col_valid))   deallocate(pbl_col_valid)
        if (allocated(pbl_col_bad))     deallocate(pbl_col_bad)
-       if (allocated(pbl_press_valid)) deallocate(pbl_press_valid)
-       if (allocated(pbl_press_bad))   deallocate(pbl_press_bad)
        if (allocated(p_mid_tkeedmf))   deallocate(p_mid_tkeedmf)
        if (allocated(p_int_tkeedmf))   deallocate(p_int_tkeedmf)
        if (allocated(pi_tkeedmf))      deallocate(pi_tkeedmf)

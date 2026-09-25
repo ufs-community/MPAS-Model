@@ -613,11 +613,6 @@
  integer:: icount,initflag,sub3d
  integer:: nbad_sas_after
  logical:: bad_sas_tend_col
- integer:: n, nbr, ngood
- real(kind=RKIND):: min_dp_press, p_lower, p_upper
- integer, dimension(:), pointer :: nEdgesOnCell
- integer, dimension(:,:), pointer :: cellsOnCell
- logical, allocatable :: sas_press_valid(:), sas_press_repaired(:)
 
  real(kind=RKIND):: dx
  real(kind=RKIND):: qv_after_sas
@@ -817,13 +812,8 @@ real(kind=RKIND),allocatable:: pres_mid_gfs_sas(:,:), pres_int_gfs_sas(:,:)
    case("cu_gfs_sas")
       call mpas_timer_start('GFS scale-aware SAS')
       call mpas_pool_get_array(diag_physics,'hpbl',hpbl)
-      call mpas_pool_get_array(mesh,'nEdgesOnCell',nEdgesOnCell)
-      call mpas_pool_get_array(mesh,'cellsOnCell' ,cellsOnCell )
-
       if (.not. allocated(gfs_sas_bad_col)) allocate(gfs_sas_bad_col(its:ite,jts:jte))
       gfs_sas_bad_col(:,:) = .false.
-      allocate(sas_press_valid(ims:ime), sas_press_repaired(its:ite))
-      min_dp_press = 1.0_RKIND
 
       ! The GFS SAS wrapper expects interface height, z_int(im,km+1).
       ! MPAS convection local arrays provide layer thickness dz_p(im,km,j),
@@ -844,143 +834,10 @@ real(kind=RKIND),allocatable:: pres_mid_gfs_sas(:,:), pres_int_gfs_sas(:,:)
          enddo
 
          !---------------------------------------------------------------
-         ! Pressure-column repair for GFS SAS.  This intentionally mirrors
-         ! the GFS TKE-EDMF pressure repair: only temporary physics arrays
-         ! are changed; the native MPAS pressure state is never modified.
-         !---------------------------------------------------------------
-         sas_press_valid(:) = .true.
-         sas_press_repaired(:) = .false.
-
-         do i = ims, ime
-            do k = kts, kte
-               if (.not. ieee_is_finite(pres_hyd_p(i,k,j)) .or. &
-                   .not. ieee_is_finite(pres2_hyd_p(i,k,j)) .or. &
-                   .not. ieee_is_finite(pres2_hyd_p(i,k+1,j))) then
-                  sas_press_valid(i) = .false.
-                  exit
-               endif
-               if (pres2_hyd_p(i,k,j) <= 0.0_RKIND .or. &
-                   pres2_hyd_p(i,k+1,j) <= 0.0_RKIND .or. &
-                   pres2_hyd_p(i,k+1,j) >= pres2_hyd_p(i,k,j) .or. &
-                   pres_hyd_p(i,k,j) >= pres2_hyd_p(i,k,j) .or. &
-                   pres_hyd_p(i,k,j) <= pres2_hyd_p(i,k+1,j)) then
-                  sas_press_valid(i) = .false.
-                  exit
-               endif
-            enddo
-         enddo
-
-         ! Start with the native MPAS pressure for all owned columns.
+         ! Pressure repair is now performed once in MPAS_to_physics.
+         ! GFS SAS uses the same repaired hydrostatic pressure seen by all physics.
          pres_mid_gfs_sas(:,:) = pres_hyd_p(its:ite,kts:kte,j)
          pres_int_gfs_sas(:,:) = pres2_hyd_p(its:ite,kts:kte+1,j)
-
-         ! Replace an invalid owned column by the mean of valid physical
-         ! neighbors when possible.  If no valid neighbor is available,
-         ! reconstruct a strictly decreasing positive interface profile.
-         do i = its, ite
-            if (sas_press_valid(i)) cycle
-            sas_press_repaired(i) = .true.
-            pres_mid_gfs_sas(i,kts:kte) = 0.0_RKIND
-            pres_int_gfs_sas(i,kts:kte+1) = 0.0_RKIND
-            ngood = 0
-
-            do n = 1, nEdgesOnCell(i)
-               nbr = cellsOnCell(n,i)
-               if (nbr < ims .or. nbr > ime) cycle
-               if (.not. sas_press_valid(nbr)) cycle
-               ngood = ngood + 1
-               pres_mid_gfs_sas(i,kts:kte) = pres_mid_gfs_sas(i,kts:kte) + &
-                    pres_hyd_p(nbr,kts:kte,j)
-               pres_int_gfs_sas(i,kts:kte+1) = pres_int_gfs_sas(i,kts:kte+1) + &
-                    pres2_hyd_p(nbr,kts:kte+1,j)
-            enddo
-
-            if (ngood > 0) then
-               pres_mid_gfs_sas(i,kts:kte) = pres_mid_gfs_sas(i,kts:kte) / real(ngood,RKIND)
-               pres_int_gfs_sas(i,kts:kte+1) = pres_int_gfs_sas(i,kts:kte+1) / real(ngood,RKIND)
-            else
-               if (ieee_is_finite(pres2_hyd_p(i,kts,j)) .and. &
-                   pres2_hyd_p(i,kts,j) > 0.0_RKIND) then
-                  pres_int_gfs_sas(i,kts) = pres2_hyd_p(i,kts,j)
-               else
-                  pres_int_gfs_sas(i,kts) = 100000.0_RKIND
-               endif
-
-               do k = kts, kte
-                  p_lower = pres_int_gfs_sas(i,k)
-                  if (ieee_is_finite(pres2_hyd_p(i,k+1,j)) .and. &
-                      pres2_hyd_p(i,k+1,j) > 0.0_RKIND .and. &
-                      pres2_hyd_p(i,k+1,j) < p_lower) then
-                     p_upper = pres2_hyd_p(i,k+1,j)
-                  else if (p_lower > 2.0_RKIND*min_dp_press) then
-                     p_upper = p_lower - min_dp_press
-                  else
-                     p_upper = 0.5_RKIND*p_lower
-                  endif
-
-                  if (p_lower > 2.0_RKIND*min_dp_press) then
-                     if (p_lower-p_upper < min_dp_press) p_upper = p_lower-min_dp_press
-                  else if (p_upper >= p_lower .or. p_upper <= 0.0_RKIND) then
-                     p_upper = 0.5_RKIND*p_lower
-                  endif
-
-                  pres_int_gfs_sas(i,k+1) = p_upper
-                  pres_mid_gfs_sas(i,k) = 0.5_RKIND*(p_lower+p_upper)
-               enddo
-            endif
-         enddo
-
-         ! Final guarantee pass over every owned column.
-         do i = its, ite
-            if (.not. ieee_is_finite(pres_int_gfs_sas(i,kts)) .or. &
-                pres_int_gfs_sas(i,kts) <= 0.0_RKIND) then
-               sas_press_repaired(i) = .true.
-               if (ieee_is_finite(pres2_hyd_p(i,kts,j)) .and. &
-                   pres2_hyd_p(i,kts,j) > 0.0_RKIND) then
-                  pres_int_gfs_sas(i,kts) = pres2_hyd_p(i,kts,j)
-               else
-                  pres_int_gfs_sas(i,kts) = 100000.0_RKIND
-               endif
-            endif
-
-            do k = kts, kte
-               p_lower = pres_int_gfs_sas(i,k)
-               p_upper = pres_int_gfs_sas(i,k+1)
-
-               if (.not. ieee_is_finite(p_lower) .or. p_lower <= 0.0_RKIND) then
-                  sas_press_repaired(i) = .true.
-                  if (k == kts) then
-                     p_lower = 100000.0_RKIND
-                  else
-                     p_lower = max(2.0_RKIND*tiny(1.0_RKIND), &
-                                   0.5_RKIND*pres_int_gfs_sas(i,k-1))
-                  endif
-                  pres_int_gfs_sas(i,k) = p_lower
-               endif
-
-               if (.not. ieee_is_finite(p_upper) .or. p_upper <= 0.0_RKIND .or. &
-                   p_upper >= p_lower) then
-                  sas_press_repaired(i) = .true.
-                  if (p_lower > 2.0_RKIND*min_dp_press) then
-                     p_upper = p_lower-min_dp_press
-                  else
-                     p_upper = 0.5_RKIND*p_lower
-                  endif
-               else if (p_lower > 2.0_RKIND*min_dp_press .and. &
-                        p_lower-p_upper < min_dp_press) then
-                  sas_press_repaired(i) = .true.
-                  p_upper = p_lower-min_dp_press
-               endif
-               pres_int_gfs_sas(i,k+1) = p_upper
-
-               if (.not. ieee_is_finite(pres_mid_gfs_sas(i,k)) .or. &
-                   pres_mid_gfs_sas(i,k) >= p_lower .or. &
-                   pres_mid_gfs_sas(i,k) <= p_upper) then
-                  sas_press_repaired(i) = .true.
-                  pres_mid_gfs_sas(i,k) = 0.5_RKIND*(p_lower+p_upper)
-               endif
-            enddo
-         enddo
 
          ! Initialize MPAS cloud-base/cloud-top diagnostics before the wrapper.
          if (allocated(cubot_p)) cubot_p(its:ite,j) = real(kte+1, RKIND)
@@ -1182,8 +1039,6 @@ real(kind=RKIND),allocatable:: pres_mid_gfs_sas(:,:), pres_int_gfs_sas(:,:)
       if (allocated(z_int_sas))          deallocate(z_int_sas)
       if (allocated(pres_mid_gfs_sas))   deallocate(pres_mid_gfs_sas)
       if (allocated(pres_int_gfs_sas))   deallocate(pres_int_gfs_sas)
-      if (allocated(sas_press_valid))     deallocate(sas_press_valid)
-      if (allocated(sas_press_repaired))  deallocate(sas_press_repaired)
       call mpas_timer_stop('GFS scale-aware SAS')
 
     case("cu_tiedtke")
