@@ -25,6 +25,7 @@ set(ATMOSPHERE_CORE_PHYSICS_SOURCES
     mpas_atmphys_update_surface.F
     mpas_atmphys_utilities.F
     mpas_atmphys_driver.F
+    mpas_gfs_pressure_repair.F90
     mpas_atmphys_driver_convection.F
     mpas_atmphys_driver_gwdo.F
     mpas_atmphys_driver_lsm.F

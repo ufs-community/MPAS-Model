@@ -18,7 +18,6 @@
  module mpas_atmphys_interface
  use mpas_kind_types
  use mpas_pool_routines
- use, intrinsic :: ieee_arithmetic, only : ieee_is_finite
 
  use mpas_atmphys_constants
  use mpas_atmphys_vars
@@ -281,8 +280,6 @@
  logical,pointer:: config_tempo_aerosolaware
 
  integer,pointer:: index_qv,index_qc,index_qr,index_qi,index_qs,index_qg
- integer, dimension(:), pointer :: nEdgesOnCell
- integer, dimension(:,:), pointer :: cellsOnCell
  integer,pointer:: index_nc,index_ni,index_nifa,index_nwfa
 
  real(kind=RKIND),dimension(:),pointer    :: latCell,lonCell
@@ -296,12 +293,9 @@
  real(kind=RKIND),dimension(:,:,:),pointer:: scalars
 
 !local variables:
- integer:: i,k,j,n,nbr,ngood
- logical, allocatable :: phys_press_valid(:)
- real(kind=RKIND), allocatable :: pres_hyd_native(:,:), pres2_hyd_native(:,:)
+ integer:: i,k,j
 
  real(kind=RKIND):: z0,z1,z2,w1,w2
- real(kind=RKIND):: min_dp_press,p_lower,p_upper
  real(kind=RKIND):: rho_a,rho1,rho2,tem1,tem2
 
 !-----------------------------------------------------------------------------------------------------------------
@@ -327,8 +321,6 @@
  call mpas_pool_get_array(mesh,'rdzw'   ,rdzw   )
  call mpas_pool_get_array(mesh,'zgrid'  ,zgrid  )
  call mpas_pool_get_array(mesh,'zz'     ,zz     )
- call mpas_pool_get_array(mesh,'nEdgesOnCell',nEdgesOnCell)
- call mpas_pool_get_array(mesh,'cellsOnCell' ,cellsOnCell )
 
  call mpas_pool_get_array(diag,'surface_pressure'      ,surface_pressure)
  call mpas_pool_get_array(diag,'exner'                 ,exner           )
@@ -652,144 +644,10 @@
  enddo
 
 !-----------------------------------------------------------------------------------------------------------------
-! Common physics pressure-column repair.
-!
-! Do this once here, after hydrostatic pressure is constructed and before
-! any physics driver is called.  All physics schemes therefore see the
-! same repaired pres_hyd_p / pres2_hyd_p columns.  Only the physics-interface
-! arrays are modified; the native MPAS dynamical state is unchanged.
-!
-! A column is repaired if pressure is non-finite, non-positive,
-! non-monotonic, or a layer midpoint lies outside its two interfaces.
-! Prefer the mean profile of valid owned cellsOnCell neighbors.  If no valid
-! owned neighbor is available, retain the original surface interface when
-! possible and construct a minimally monotonic positive profile.
+! Keep native MPAS hydrostatic pressure for the general physics suite.
+! GFS TKE-EDMF and GFS SAS repair temporary pressure copies in their drivers.
 !-----------------------------------------------------------------------------------------------------------------
- min_dp_press = 1.0_RKIND
- allocate(phys_press_valid(its:ite))
- allocate(pres_hyd_native(its:ite,kts:kte))
- allocate(pres2_hyd_native(its:ite,kts:kte+1))
 
- do j = jts,jte
-    pres_hyd_native(:,:)  = pres_hyd_p(its:ite,kts:kte,j)
-    pres2_hyd_native(:,:) = pres2_hyd_p(its:ite,kts:kte+1,j)
-    phys_press_valid(:) = .true.
-
-    do i = its,ite
-       do k = kts,kte
-          if (.not. ieee_is_finite(pres_hyd_native(i,k)) .or. &
-              .not. ieee_is_finite(pres2_hyd_native(i,k)) .or. &
-              .not. ieee_is_finite(pres2_hyd_native(i,k+1))) then
-             phys_press_valid(i) = .false.
-             exit
-          endif
-          if (pres2_hyd_native(i,k) <= 0.0_RKIND .or. &
-              pres2_hyd_native(i,k+1) <= 0.0_RKIND .or. &
-              pres2_hyd_native(i,k+1) >= pres2_hyd_native(i,k) .or. &
-              pres_hyd_native(i,k) >= pres2_hyd_native(i,k) .or. &
-              pres_hyd_native(i,k) <= pres2_hyd_native(i,k+1)) then
-             phys_press_valid(i) = .false.
-             exit
-          endif
-       enddo
-    enddo
-
-    do i = its,ite
-       if (phys_press_valid(i)) cycle
-
-       pres_hyd_p(i,kts:kte,j)   = 0.0_RKIND
-       pres2_hyd_p(i,kts:kte+1,j) = 0.0_RKIND
-       ngood = 0
-
-       do n = 1,nEdgesOnCell(i)
-          nbr = cellsOnCell(n,i)
-          if (nbr < its .or. nbr > ite) cycle
-          if (.not. phys_press_valid(nbr)) cycle
-          ngood = ngood + 1
-          pres_hyd_p(i,kts:kte,j) = pres_hyd_p(i,kts:kte,j) + &
-               pres_hyd_native(nbr,kts:kte)
-          pres2_hyd_p(i,kts:kte+1,j) = pres2_hyd_p(i,kts:kte+1,j) + &
-               pres2_hyd_native(nbr,kts:kte+1)
-       enddo
-
-       if (ngood > 0) then
-          pres_hyd_p(i,kts:kte,j) = pres_hyd_p(i,kts:kte,j) / real(ngood,RKIND)
-          pres2_hyd_p(i,kts:kte+1,j) = pres2_hyd_p(i,kts:kte+1,j) / real(ngood,RKIND)
-       else
-          if (ieee_is_finite(pres2_hyd_native(i,kts)) .and. &
-              pres2_hyd_native(i,kts) > 0.0_RKIND) then
-             pres2_hyd_p(i,kts,j) = pres2_hyd_native(i,kts)
-          else
-             pres2_hyd_p(i,kts,j) = 100000.0_RKIND
-          endif
-
-          do k = kts,kte
-             p_lower = pres2_hyd_p(i,k,j)
-             if (ieee_is_finite(pres2_hyd_native(i,k+1)) .and. &
-                 pres2_hyd_native(i,k+1) > 0.0_RKIND .and. &
-                 pres2_hyd_native(i,k+1) < p_lower) then
-                p_upper = pres2_hyd_native(i,k+1)
-             else if (p_lower > 2.0_RKIND*min_dp_press) then
-                p_upper = p_lower-min_dp_press
-             else
-                p_upper = 0.5_RKIND*p_lower
-             endif
-             if (p_lower > 2.0_RKIND*min_dp_press) then
-                if (p_lower-p_upper < min_dp_press) p_upper = p_lower-min_dp_press
-             else if (p_upper >= p_lower .or. p_upper <= 0.0_RKIND) then
-                p_upper = 0.5_RKIND*p_lower
-             endif
-             pres2_hyd_p(i,k+1,j) = p_upper
-             pres_hyd_p(i,k,j) = 0.5_RKIND*(p_lower+p_upper)
-          enddo
-       endif
-
-       ! Final guarantee pass for the repaired column.
-       if (.not. ieee_is_finite(pres2_hyd_p(i,kts,j)) .or. &
-           pres2_hyd_p(i,kts,j) <= 0.0_RKIND) then
-          pres2_hyd_p(i,kts,j) = 100000.0_RKIND
-       endif
-       do k = kts,kte
-          p_lower = pres2_hyd_p(i,k,j)
-          p_upper = pres2_hyd_p(i,k+1,j)
-          if (.not. ieee_is_finite(p_lower) .or. p_lower <= 0.0_RKIND) then
-             if (k == kts) then
-                p_lower = 100000.0_RKIND
-             else
-                p_lower = max(2.0_RKIND*tiny(1.0_RKIND), &
-                              0.5_RKIND*pres2_hyd_p(i,k-1,j))
-             endif
-             pres2_hyd_p(i,k,j) = p_lower
-          endif
-          if (.not. ieee_is_finite(p_upper) .or. p_upper <= 0.0_RKIND .or. &
-              p_upper >= p_lower) then
-             if (p_lower > 2.0_RKIND*min_dp_press) then
-                p_upper = p_lower-min_dp_press
-             else
-                p_upper = 0.5_RKIND*p_lower
-             endif
-          else if (p_lower > 2.0_RKIND*min_dp_press .and. &
-                   p_lower-p_upper < min_dp_press) then
-             p_upper = p_lower-min_dp_press
-          endif
-          pres2_hyd_p(i,k+1,j) = p_upper
-          if (.not. ieee_is_finite(pres_hyd_p(i,k,j)) .or. &
-              pres_hyd_p(i,k,j) >= p_lower .or. &
-              pres_hyd_p(i,k,j) <= p_upper) then
-             pres_hyd_p(i,k,j) = 0.5_RKIND*(p_lower+p_upper)
-          endif
-       enddo
-
-       ! Keep derived hydrostatic surface pressure and sigma coordinate
-       ! consistent with the common repaired pressure column.
-       psfc_hyd_p(i,j) = pres2_hyd_p(i,kts,j)
-       do k = kts,kte
-          znu_hyd_p(i,k,j) = pres_hyd_p(i,k,j)/psfc_hyd_p(i,j)
-       enddo
-    enddo
- enddo
-
- deallocate(phys_press_valid,pres_hyd_native,pres2_hyd_native)
 
 !save the model-top pressure:
  do j = jts,jte

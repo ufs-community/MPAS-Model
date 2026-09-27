@@ -10,6 +10,7 @@
  use mpas_kind_types
  use, intrinsic :: ieee_arithmetic, only : ieee_is_finite
  use mpas_pool_routines
+ use mpas_gfs_pressure_repair, only : repair_gfs_pressure_columns
  use mpas_timer, only : mpas_timer_start, mpas_timer_stop
 
  use mpas_atmphys_constants
@@ -611,21 +612,14 @@
 
  integer:: i,j,k
  integer:: icount,initflag,sub3d
- integer:: nbad_sas_after
- logical:: bad_sas_tend_col
 
  real(kind=RKIND):: dx
- real(kind=RKIND):: qv_after_sas
- real(kind=RKIND),parameter:: qv_floor_sas = 1.0e-12_RKIND
- real(kind=RKIND),parameter:: max_rth_sas  = 5.0e-2_RKIND
- real(kind=RKIND),parameter:: max_rqv_sas  = 1.0e-4_RKIND
- real(kind=RKIND),parameter:: max_ru_sas   = 5.0_RKIND
- real(kind=RKIND),parameter:: max_rv_sas   = 5.0_RKIND
  real(kind=RKIND),allocatable:: z_int_sas(:,:)
  real(kind=RKIND),allocatable:: t_gfs_sas(:,:), qv_gfs_sas(:,:)
 real(kind=RKIND),allocatable:: pres_mid_gfs_sas(:,:), pres_int_gfs_sas(:,:)
+integer, dimension(:), pointer :: nEdgesOnCell_gfs
+integer, dimension(:,:), pointer :: cellsOnCell_gfs
  real(kind=RKIND),allocatable:: tkeh_gfs_sas(:,:), maxmf_gfs_sas(:)
- logical, allocatable :: gfs_sas_bad_col(:,:)
  logical:: do_mynnedmf_gfs_sas
  integer,allocatable:: kbot_sas(:), ktop_sas(:)
 
@@ -811,9 +805,9 @@ real(kind=RKIND),allocatable:: pres_mid_gfs_sas(:,:), pres_int_gfs_sas(:,:)
 
    case("cu_gfs_sas")
       call mpas_timer_start('GFS scale-aware SAS')
+      call mpas_pool_get_array(mesh,'nEdgesOnCell',nEdgesOnCell_gfs)
+      call mpas_pool_get_array(mesh,'cellsOnCell',cellsOnCell_gfs)
       call mpas_pool_get_array(diag_physics,'hpbl',hpbl)
-      if (.not. allocated(gfs_sas_bad_col)) allocate(gfs_sas_bad_col(its:ite,jts:jte))
-      gfs_sas_bad_col(:,:) = .false.
 
       ! The GFS SAS wrapper expects interface height, z_int(im,km+1).
       ! MPAS convection local arrays provide layer thickness dz_p(im,km,j),
@@ -834,10 +828,14 @@ real(kind=RKIND),allocatable:: pres_mid_gfs_sas(:,:), pres_int_gfs_sas(:,:)
          enddo
 
          !---------------------------------------------------------------
-         ! Pressure repair is now performed once in MPAS_to_physics.
-         ! GFS SAS uses the same repaired hydrostatic pressure seen by all physics.
-         pres_mid_gfs_sas(:,:) = pres_hyd_p(its:ite,kts:kte,j)
-         pres_int_gfs_sas(:,:) = pres2_hyd_p(its:ite,kts:kte+1,j)
+         ! Repair pressure only for the GFS SAS temporary input arrays.
+         ! Native pres_hyd_p/pres2_hyd_p remain unchanged for other physics.
+         call repair_gfs_pressure_columns(                         &
+     &      pres_hyd_p(its:ite,kts:kte,j),                           &
+     &      pres2_hyd_p(its:ite,kts:kte+1,j),                        &
+     &      pres_mid_gfs_sas, pres_int_gfs_sas,                     &
+     &      nEdgesOnCell_gfs, cellsOnCell_gfs,                       &
+     &      its, ite, kts, kte)
 
          ! Initialize MPAS cloud-base/cloud-top diagnostics before the wrapper.
          if (allocated(cubot_p)) cubot_p(its:ite,j) = real(kte+1, RKIND)
@@ -873,32 +871,16 @@ real(kind=RKIND),allocatable:: pres_mid_gfs_sas(:,:), pres_int_gfs_sas(:,:)
             ! rthften_p is already a physical temperature tendency.
             t_gfs_sas(i,k) = t_p(i,k,j) + dt_dyn * rthften_p(i,k,j)
 
-            qv_gfs_sas(i,k) = max(1.0e-12_RKIND, qv_p(i,k,j) + dt_dyn * rqvften_p(i,k,j))
+            qv_gfs_sas(i,k) = qv_p(i,k,j) + dt_dyn * rqvften_p(i,k,j)
 
-            ! Cold temperatures near the model top are valid.  Apply a
-            ! pressure-aware staged-temperature guard instead of the old
-            ! uniform 150-K lower bound, which produced many false warnings
-            ! at the 124-level model top in the 10-km configuration.
+            ! Do not clip or repair the staged temperature here.
+            ! Preserve the actual staged state passed to GFS SAS.
             if (t_gfs_sas(i,k) /= t_gfs_sas(i,k)) then
                write(0,*) 'NONFINITE STAGED T BEFORE GFS SAS'
                write(0,*) 'i,j,k=', i,j,k
                write(0,*) 'p_mid,t_raw,t_stage=', pres_mid_gfs_sas(i,k), &
                     t_p(i,k,j), t_gfs_sas(i,k)
                call flush(0)
-               t_gfs_sas(i,k) = min(400._RKIND, max(100._RKIND, t_p(i,k,j)))
-
-            else if (t_gfs_sas(i,k) > 400._RKIND .or. &
-                     (pres_mid_gfs_sas(i,k) >= 1000._RKIND .and. &
-                      t_gfs_sas(i,k) < 120._RKIND) .or. &
-                     (pres_mid_gfs_sas(i,k) < 1000._RKIND .and. &
-                      t_gfs_sas(i,k) < 80._RKIND)) then
-               ! Finite out-of-range staged-temperature diagnostics suppressed.
-
-               if (pres_mid_gfs_sas(i,k) >= 1000._RKIND) then
-                  t_gfs_sas(i,k) = min(400._RKIND, max(120._RKIND, t_gfs_sas(i,k)))
-               else
-                  t_gfs_sas(i,k) = min(400._RKIND, max(80._RKIND, t_gfs_sas(i,k)))
-               endif
             endif
          enddo
          enddo
@@ -969,68 +951,7 @@ real(kind=RKIND),allocatable:: pres_mid_gfs_sas(:,:), pres_int_gfs_sas(:,:)
 
          if (errflg /= 0) call physics_error_fatal(trim(errmsg))
 
-         !---------------------------------------------------------------
-         ! SAFETY: Check GFS SAS tendencies immediately after wrapper returns.
-         !
-         ! Previous code called physics_error_fatal here.  That made one bad
-         ! SAS column abort the full MPAS job.  For real testing, keep the
-         ! existing check but handle it locally: if any level in a column has
-         ! NaN, excessively large tendency, or would drive qv negative during
-         ! this physics step, zero convection tendencies/precip for that column
-         ! only and continue the integration.
-         !---------------------------------------------------------------
-         nbad_sas_after = 0
-
-         do i = its, ite
-            if (gfs_sas_bad_col(i,j)) cycle
-
-            bad_sas_tend_col = .false.
-
-            do k = kts, kte
-
-               qv_after_sas = qv_p(i,k,j) + dt_dyn * rqvcuten_p(i,k,j)
-
-               if ( rthcuten_p(i,k,j) /= rthcuten_p(i,k,j) .or. &
-                    rqvcuten_p(i,k,j) /= rqvcuten_p(i,k,j) .or. &
-                    rqccuten_p(i,k,j) /= rqccuten_p(i,k,j) .or. &
-                    rqicuten_p(i,k,j) /= rqicuten_p(i,k,j) .or. &
-                    rucuten_p(i,k,j)  /= rucuten_p(i,k,j)  .or. &
-                    rvcuten_p(i,k,j)  /= rvcuten_p(i,k,j)  .or. &
-                    abs(rthcuten_p(i,k,j)) > max_rth_sas .or. &
-                    abs(rqvcuten_p(i,k,j)) > max_rqv_sas .or. &
-                    abs(rucuten_p(i,k,j))  > max_ru_sas  .or. &
-                    abs(rvcuten_p(i,k,j))  > max_rv_sas  .or. &
-                    qv_after_sas /= qv_after_sas          .or. &
-                    qv_after_sas < qv_floor_sas ) then
-
-                  if (.not. bad_sas_tend_col) then
-                     nbad_sas_after = nbad_sas_after + 1
-                  endif
-
-                  bad_sas_tend_col = .true.
-               endif
-            enddo
-
-            if (bad_sas_tend_col) then
-               gfs_sas_bad_col(i,j) = .true.
-
-               do k = kts, kte
-                  rthcuten_p(i,k,j) = 0._RKIND
-                  rqvcuten_p(i,k,j) = 0._RKIND
-                  rqccuten_p(i,k,j) = 0._RKIND
-                  rqicuten_p(i,k,j) = 0._RKIND
-                  rucuten_p(i,k,j)  = 0._RKIND
-                  rvcuten_p(i,k,j)  = 0._RKIND
-               enddo
-
-               raincv_p(i,j) = 0._RKIND
-               pratec_p(i,j) = 0._RKIND
-               cubot_p(i,j)  = 0._RKIND
-               cutop_p(i,j)  = 0._RKIND
-               cu_act_flag(i,j) = .false.
-            endif
-         enddo
-         !---------------------------------------------------------------
+         ! No post-SAS tendency clipping or whole-column zeroing.
 
          ! cubot_p/cutop_p were set inside the wrapper from SAS kbot/ktop.
          cu_act_flag(its:ite,j) = raincv_p(its:ite,j) > 0._RKIND

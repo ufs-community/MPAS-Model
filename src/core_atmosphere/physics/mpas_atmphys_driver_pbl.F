@@ -9,6 +9,7 @@
  module mpas_atmphys_driver_pbl
  use mpas_kind_types
  use mpas_pool_routines
+ use mpas_gfs_pressure_repair, only : repair_gfs_pressure_columns
  use mpas_timer,only: mpas_timer_start,mpas_timer_stop
  use, intrinsic :: ieee_arithmetic, only : ieee_is_finite
 
@@ -1679,11 +1680,15 @@ endif
        enddo
        enddo
        !---------------------------------------------------------------
-       ! Pressure repair is now performed once in MPAS_to_physics.
-       ! All physics schemes receive the same repaired hydrostatic column.
-       p_mid_tkeedmf(:,:) = pres_hyd_p(its:ite,kts:kte,jts)
-       p_int_tkeedmf(:,:) = pres2_hyd_p(its:ite,kts:kte+1,jts)
-       pi_tkeedmf(:,:)     = pi_p(its:ite,kts:kte,jts)
+       ! Repair pressure only for the GFS TKE-EDMF temporary input arrays.
+       ! Native pres_hyd_p/pres2_hyd_p remain unchanged for other physics.
+       call repair_gfs_pressure_columns(                           &
+     &      pres_hyd_p(its:ite,kts:kte,jts),                         &
+     &      pres2_hyd_p(its:ite,kts:kte+1,jts),                      &
+     &      p_mid_tkeedmf, p_int_tkeedmf,                            &
+     &      nEdgesOnCell, cellsOnCell,                              &
+     &      its, ite, kts, kte)
+       pi_tkeedmf(:,:) = pi_p(its:ite,kts:kte,jts)
 
        call mpas_call_satmedmfvdifq(                                  &
             (ite-its+1), (kte-kts+1), 4, dt_pbl,                      &

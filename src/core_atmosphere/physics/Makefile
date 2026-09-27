@@ -22,6 +22,7 @@ OBJS = \
 	mpas_atmphys_camrad_init.o         \
 	mpas_atmphys_control.o             \
 	mpas_atmphys_driver.o              \
+	mpas_gfs_pressure_repair.o          \
 	mpas_atmphys_driver_cloudiness.o   \
 	mpas_atmphys_driver_convection.o   \
 	mpas_atmphys_driver_gwdo.o         \
@@ -145,6 +146,7 @@ mpas_atmphys_driver_cloudiness.o: \
 	mpas_atmphys_vars.o
 
 mpas_atmphys_driver_convection.o: \
+	mpas_gfs_pressure_repair.o \
 	mpas_atmphys_constants.o \
 	mpas_atmphys_utilities.o \
 	mpas_atmphys_vars.o \
@@ -196,6 +198,7 @@ mpas_gfs_convection_wrapper_mod.o: \
 
 
 mpas_atmphys_driver_pbl.o: \
+	mpas_gfs_pressure_repair.o \
 	mpas_atmphys_constants.o \
 	mpas_atmphys_vars.o \
 	mpas_satmedmfvdifq_wrapper_mod.o
