@@ -866,20 +866,19 @@ integer, dimension(:,:), pointer :: cellsOnCell_gfs
 
          do k = kts, kte
          do i = its, ite
-            ! rthften_p and rqvften_p were prepared in convection_from_MPAS
-            ! using the same staging pattern as cu_ntiedtke.
-            ! rthften_p is already a physical temperature tendency.
-            t_gfs_sas(i,k) = t_p(i,k,j) + dt_dyn * rthften_p(i,k,j)
+            ! Follow the native cu_ntiedtke coupling pattern: convection
+            ! receives the current MPAS state.  Do not advance T or qv
+            ! with previously accumulated physics/dynamics tendencies here.
+            ! GFS SAS returns only its own convection tendencies (r*cuten),
+            ! which are coupled to dynamics later in mpas_atmphys_todynamics.
+            t_gfs_sas(i,k)  = t_p(i,k,j)
+            qv_gfs_sas(i,k) = qv_p(i,k,j)
 
-            qv_gfs_sas(i,k) = qv_p(i,k,j) + dt_dyn * rqvften_p(i,k,j)
-
-            ! Do not clip or repair the staged temperature here.
-            ! Preserve the actual staged state passed to GFS SAS.
             if (t_gfs_sas(i,k) /= t_gfs_sas(i,k)) then
-               write(0,*) 'NONFINITE STAGED T BEFORE GFS SAS'
+               write(0,*) 'NONFINITE T BEFORE GFS SAS'
                write(0,*) 'i,j,k=', i,j,k
-               write(0,*) 'p_mid,t_raw,t_stage=', pres_mid_gfs_sas(i,k), &
-                    t_p(i,k,j), t_gfs_sas(i,k)
+               write(0,*) 'p_mid,t=', pres_mid_gfs_sas(i,k), &
+                    t_gfs_sas(i,k)
                call flush(0)
             endif
          enddo
@@ -1185,7 +1184,7 @@ integer, dimension(:,:), pointer :: cellsOnCell_gfs
              rqvblten_p(i,k,j)  = rqvblten(k,i)
              rqvdynten_p(i,k,j) = rqvdynten(k,i)
              rucuten_p(i,k,j)   = rucuten(k,i)
-             rvcuten_p(i,k,j)   = rvcuten(k,k)
+             rvcuten_p(i,k,j)   = rvcuten(k,i)
           enddo
        enddo
        enddo

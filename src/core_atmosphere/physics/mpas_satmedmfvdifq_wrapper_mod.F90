@@ -280,7 +280,7 @@ contains
       ! UFS code uses z0 = 0.01*zorl, so zorl is in cm.
       zorl(i) = max(z0_mpas(i), 1.0e-6_RKIND) * 100.0_RKIND
       kk = surf_k(i)
-      rho1 = prsl(i,kk) / (rd * max(t1(i,kk), 180.0_RKIND))
+      rho1 = prsl(i,kk) / (rd * t1(i,kk))
 
       tsea(i) = skin_temp(i)
       heat(i) = shflx(i)/(rho1*cp)

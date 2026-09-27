@@ -1545,17 +1545,10 @@ endif
  real(kind=RKIND), allocatable :: zmid_tkeedmf_p(:,:,:)
  real(kind=RKIND), allocatable :: zint_tkeedmf_p(:,:,:)
 
-! Rare-column TKE-EDMF safeguard. Use actual MPAS cell connectivity
-! to replace only invalid PBL outputs with neighboring valid PBL outputs.
+! MPAS cell connectivity is used only by the GFS pressure-repair input path.
  integer, dimension(:), pointer :: nEdgesOnCell
  integer, dimension(:,:), pointer :: cellsOnCell
- logical, allocatable :: pbl_col_valid(:), pbl_col_bad(:)
  real(kind=RKIND), allocatable :: p_mid_tkeedmf(:,:), p_int_tkeedmf(:,:), pi_tkeedmf(:,:)
- integer :: n, nbr, ngood, bad_reason
- real(kind=RKIND) :: t_after, qv_after, qc_after, qi_after
- real(kind=RKIND) :: u_after, v_after
- real(kind=RKIND) :: sum_hpbl
- integer :: sum_kpbl
 
 
 !-----------------------------------------------------------------------------------------------------------------
@@ -1615,12 +1608,9 @@ endif
        call mpas_pool_get_array(mesh,'cellsOnCell' ,cellsOnCell )
        call mpas_pool_get_array(diag_physics,'coszr',coszr)
 
-       allocate(pbl_col_valid(ims:ime), pbl_col_bad(ims:ime))
        allocate(p_mid_tkeedmf(its:ite,kts:kte))
        allocate(p_int_tkeedmf(its:ite,kts:kte+1))
        allocate(pi_tkeedmf(its:ite,kts:kte))
-       pbl_col_valid   = .false.
-       pbl_col_bad     = .false.
 
        ! Conservative initial settings.  Expose these through Registry later.
        tke_edmf_cfg%sa3dtke     = .false.
@@ -1729,185 +1719,10 @@ endif
             rqiblten_p(its:ite,kts:kte,jts),                          &
             tke_edmf_cfg, tke_edmf_errmsg, tke_edmf_errflg)
 
-       !-----------------------------------------------------------------
-       ! Safeguard: identify columns for which the returned TKE-EDMF tendency
-       ! would produce a non-finite or clearly unphysical one-step state.
-       ! Do not modify valid columns.  For a bad column, replace the full
-       ! PBL tendency profile with the mean from valid cellsOnCell neighbors.
-       ! This keeps the atmospheric state unchanged and repairs only the
-       ! faulty PBL contribution.
-       !-----------------------------------------------------------------
-       if (tke_edmf_errflg == 0) then
-          do i = its, ite
-             pbl_col_valid(i) = .true.
-             bad_reason = 0
+       ! No post-TKE-EDMF clipping, one-step state caps, or neighbor-profile
+       ! replacement is applied here. The scheme tendencies are passed through
+       ! unchanged; wrapper errors remain fatal below.
 
-             if (.not. ieee_is_finite(hpbl_p(i,jts))) then
-                bad_reason = 1
-             else if (hpbl_p(i,jts) < 0.0_RKIND .or. &
-                      hpbl_p(i,jts) > 10000.0_RKIND) then
-                bad_reason = 2
-             endif
-
-             if (bad_reason == 0) then
-                do k = kts, kte
-                   if (.not. ieee_is_finite(rthblten_p(i,k,jts)) .or. &
-                       .not. ieee_is_finite(rqvblten_p(i,k,jts)) .or. &
-                       .not. ieee_is_finite(rqcblten_p(i,k,jts)) .or. &
-                       .not. ieee_is_finite(rqiblten_p(i,k,jts)) .or. &
-                       .not. ieee_is_finite(rublten_p (i,k,jts)) .or. &
-                       .not. ieee_is_finite(rvblten_p (i,k,jts)) .or. &
-                       .not. ieee_is_finite(tkepbl_p  (i,k,jts))) then
-                      bad_reason = 1
-                      exit
-                   endif
-
-                   ! rthblten is potential-temperature tendency. Convert the
-                   ! one-step impact to physical temperature with Exner pi_p.
-                   t_after  = t_p(i,k,jts)  + dt_pbl*pi_tkeedmf(i,k)*rthblten_p(i,k,jts)
-                   qv_after = qv_p(i,k,jts) + dt_pbl*rqvblten_p(i,k,jts)
-                   qc_after = qc_p(i,k,jts) + dt_pbl*rqcblten_p(i,k,jts)
-                   qi_after = qi_p(i,k,jts) + dt_pbl*rqiblten_p(i,k,jts)
-                   u_after  = u_p(i,k,jts)  + dt_pbl*rublten_p(i,k,jts)
-                   v_after  = v_p(i,k,jts)  + dt_pbl*rvblten_p(i,k,jts)
-
-                   if (.not. ieee_is_finite(t_after)  .or. &
-                       .not. ieee_is_finite(qv_after) .or. &
-                       .not. ieee_is_finite(qc_after) .or. &
-                       .not. ieee_is_finite(qi_after) .or. &
-                       .not. ieee_is_finite(u_after)  .or. &
-                       .not. ieee_is_finite(v_after)) then
-                      bad_reason = 1
-                      exit
-                   endif
-
-                   ! Remove harmless roundoff before deciding that the full
-                   ! column requires neighbor repair.
-                   if (tkepbl_p(i,k,jts) < 0.0_RKIND .and. &
-                       tkepbl_p(i,k,jts) >= -1.0e-8_RKIND) then
-                      tkepbl_p(i,k,jts) = 0.0_RKIND
-                   endif
-
-                   if (t_after < 140.0_RKIND .or. t_after > 400.0_RKIND) then
-                      bad_reason = 3
-                      exit
-                   else if (qv_after < 0.0_RKIND) then
-                      ! Positivity limiter: modify only the vapor tendency at
-                      ! this level so that qv after the PBL update is exactly
-                      ! zero.  Do not replace the entire PBL column.
-                      rqvblten_p(i,k,jts) = -qv_p(i,k,jts) / &
-                           max(dt_pbl, tiny(1.0_RKIND))
-                      qv_after = qv_p(i,k,jts) + dt_pbl*rqvblten_p(i,k,jts)
-
-                      ! Only a nonfinite or materially positive-overflow state
-                      ! remains a reason for whole-column neighbor repair.
-                      if (.not. ieee_is_finite(qv_after)) then
-                         bad_reason = 1
-                         exit
-                      endif
-                   else if (qv_after > 0.10_RKIND) then
-                      bad_reason = 4
-                      exit
-                   else if (qc_after < 0.0_RKIND) then
-                      ! Positivity limiter for cloud water: modify only the
-                      ! cloud-water tendency at this level so qc_after = 0.
-                      rqcblten_p(i,k,jts) = -qc_p(i,k,jts) / &
-                           max(dt_pbl, tiny(1.0_RKIND))
-                      qc_after = qc_p(i,k,jts) + dt_pbl*rqcblten_p(i,k,jts)
-                      if (.not. ieee_is_finite(qc_after)) then
-                         bad_reason = 1
-                         exit
-                      endif
-                   else if (qi_after < 0.0_RKIND) then
-                      ! Positivity limiter for cloud ice: modify only the
-                      ! cloud-ice tendency at this level so qi_after = 0.
-                      rqiblten_p(i,k,jts) = -qi_p(i,k,jts) / &
-                           max(dt_pbl, tiny(1.0_RKIND))
-                      qi_after = qi_p(i,k,jts) + dt_pbl*rqiblten_p(i,k,jts)
-                      if (.not. ieee_is_finite(qi_after)) then
-                         bad_reason = 1
-                         exit
-                      endif
-                   else if (abs(u_after) > 250.0_RKIND .or. &
-                            abs(v_after) > 250.0_RKIND) then
-                      bad_reason = 7
-                      exit
-                   else if (tkepbl_p(i,k,jts) < -1.0e-8_RKIND .or. &
-                            tkepbl_p(i,k,jts) > 1000.0_RKIND) then
-                      bad_reason = 8
-                      exit
-                   endif
-                enddo
-             endif
-
-             pbl_col_valid(i) = (bad_reason == 0)
-             pbl_col_bad(i)   = .not. pbl_col_valid(i)
-          enddo
-
-          do i = its, ite
-             if (.not. pbl_col_bad(i)) cycle
-
-             ! First zero the bad-column outputs.  Valid neighboring columns
-             ! are accumulated below.
-             rthblten_p(i,kts:kte,jts) = 0.0_RKIND
-             rqvblten_p(i,kts:kte,jts) = 0.0_RKIND
-             rqcblten_p(i,kts:kte,jts) = 0.0_RKIND
-             rqiblten_p(i,kts:kte,jts) = 0.0_RKIND
-             rublten_p (i,kts:kte,jts) = 0.0_RKIND
-             rvblten_p (i,kts:kte,jts) = 0.0_RKIND
-             tkepbl_p  (i,kts:kte,jts) = 0.0_RKIND
-             sum_hpbl = 0.0_RKIND
-             sum_kpbl = 0
-             ngood = 0
-
-             do n = 1, nEdgesOnCell(i)
-                nbr = cellsOnCell(n,i)
-                if (nbr < its .or. nbr > ite) cycle
-                if (.not. pbl_col_valid(nbr)) cycle
-
-                ngood = ngood + 1
-                rthblten_p(i,kts:kte,jts) = rthblten_p(i,kts:kte,jts) + &
-                                             rthblten_p(nbr,kts:kte,jts)
-                rqvblten_p(i,kts:kte,jts) = rqvblten_p(i,kts:kte,jts) + &
-                                             rqvblten_p(nbr,kts:kte,jts)
-                rqcblten_p(i,kts:kte,jts) = rqcblten_p(i,kts:kte,jts) + &
-                                             rqcblten_p(nbr,kts:kte,jts)
-                rqiblten_p(i,kts:kte,jts) = rqiblten_p(i,kts:kte,jts) + &
-                                             rqiblten_p(nbr,kts:kte,jts)
-                rublten_p(i,kts:kte,jts)  = rublten_p(i,kts:kte,jts) + &
-                                             rublten_p(nbr,kts:kte,jts)
-                rvblten_p(i,kts:kte,jts)  = rvblten_p(i,kts:kte,jts) + &
-                                             rvblten_p(nbr,kts:kte,jts)
-                tkepbl_p(i,kts:kte,jts)   = tkepbl_p(i,kts:kte,jts) + &
-                                             tkepbl_p(nbr,kts:kte,jts)
-                sum_hpbl = sum_hpbl + hpbl_p(nbr,jts)
-                sum_kpbl = sum_kpbl + kpbl_p(nbr,jts)
-             enddo
-
-             if (ngood > 0) then
-                rthblten_p(i,kts:kte,jts) = rthblten_p(i,kts:kte,jts) / real(ngood,RKIND)
-                rqvblten_p(i,kts:kte,jts) = rqvblten_p(i,kts:kte,jts) / real(ngood,RKIND)
-                rqcblten_p(i,kts:kte,jts) = rqcblten_p(i,kts:kte,jts) / real(ngood,RKIND)
-                rqiblten_p(i,kts:kte,jts) = rqiblten_p(i,kts:kte,jts) / real(ngood,RKIND)
-                rublten_p(i,kts:kte,jts)  = rublten_p(i,kts:kte,jts)  / real(ngood,RKIND)
-                rvblten_p(i,kts:kte,jts)  = rvblten_p(i,kts:kte,jts)  / real(ngood,RKIND)
-                tkepbl_p(i,kts:kte,jts)   = max(1.0e-9_RKIND, &
-                     tkepbl_p(i,kts:kte,jts) / real(ngood,RKIND))
-                hpbl_p(i,jts) = sum_hpbl / real(ngood,RKIND)
-                kpbl_p(i,jts) = nint(real(sum_kpbl,RKIND) / real(ngood,RKIND))
-             else
-                ! No valid owned neighbor was available (for example at a
-                ! partition boundary).  Return zero PBL tendencies rather
-                ! than sending an invalid update to the rest of physics.
-                tkepbl_p(i,kts:kte,jts) = max(1.0e-9_RKIND, tkepbl_p(i,kts:kte,jts))
-                hpbl_p(i,jts) = max(0.0_RKIND, hpbl_p(i,jts))
-                kpbl_p(i,jts) = max(kts, min(kte, kpbl_p(i,jts)))
-             endif
-          enddo
-       endif
-
-       if (allocated(pbl_col_valid))   deallocate(pbl_col_valid)
-       if (allocated(pbl_col_bad))     deallocate(pbl_col_bad)
        if (allocated(p_mid_tkeedmf))   deallocate(p_mid_tkeedmf)
        if (allocated(p_int_tkeedmf))   deallocate(p_int_tkeedmf)
        if (allocated(pi_tkeedmf))      deallocate(pi_tkeedmf)

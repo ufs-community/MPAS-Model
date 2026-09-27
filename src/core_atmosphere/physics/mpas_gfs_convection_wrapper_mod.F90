@@ -62,8 +62,8 @@ contains
       real(kind=RKIND), intent(in) :: z_int(im,km+1)       ! m, interface height
       real(kind=RKIND), intent(in) :: dx(im)              ! cell length scale, m
       real(kind=RKIND), intent(in) :: u(im,km), v(im,km)   ! m s-1
-      real(kind=RKIND), intent(in) :: t(im,km)             ! physical temperature, K; staged by MPAS driver
-      real(kind=RKIND), intent(in) :: qv(im,km)            ! kg kg-1; staged by MPAS driver
+      real(kind=RKIND), intent(in) :: t(im,km)             ! physical temperature, K; current MPAS state
+      real(kind=RKIND), intent(in) :: qv(im,km)            ! kg kg-1; current MPAS state
       real(kind=RKIND), intent(in) :: qc(im,km), qi(im,km) ! kg kg-1
       real(kind=RKIND), intent(in) :: w(im,km)             ! m s-1
       real(kind=RKIND), intent(in) :: hpbl(im)             ! m
@@ -537,12 +537,6 @@ contains
             rvcuten(i,kk)  = rv_raw
          endif
 
-         if (rthcuten(i,kk) /= rthcuten(i,kk)) rthcuten(i,kk) = 0._RKIND
-         if (rqvcuten(i,kk) /= rqvcuten(i,kk)) rqvcuten(i,kk) = 0._RKIND
-         if (rqccuten(i,kk) /= rqccuten(i,kk)) rqccuten(i,kk) = 0._RKIND
-         if (rqicuten(i,kk) /= rqicuten(i,kk)) rqicuten(i,kk) = 0._RKIND
-         if (rucuten(i,kk)  /= rucuten(i,kk) ) rucuten(i,kk)  = 0._RKIND
-         if (rvcuten(i,kk)  /= rvcuten(i,kk) ) rvcuten(i,kk)  = 0._RKIND
       enddo
       enddo
 
