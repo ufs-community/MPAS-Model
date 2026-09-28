@@ -487,7 +487,7 @@
          st_fg(ifgSoil,iCell) = tmn(iCell)
       endif
       if(sm_fg(ifgSoil,iCell) .lt. 0._RKIND) num_sm = num_sm + 1
-      if(sm_fg(ifgSoil,iCell) .le. 0._RKIND) sm_fg(ifgSoil,iCell) = 0.20
+      if(sm_fg(ifgSoil,iCell) .le. 0._RKIND) sm_fg(ifgSoil,iCell) = 0.20_RKIND
     enddo
  enddo
  if(num_st .gt. 0) then
