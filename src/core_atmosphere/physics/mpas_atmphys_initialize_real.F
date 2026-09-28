@@ -504,11 +504,6 @@
    !if(config_nsoillevels .ne. 9) &
    !   call physics_error_fatal('RUC lsm uses 9 soil layers. Correct config_nsoillevels.')
    call init_soil_properties_ruc(mesh, fg, dminfo, dims, configs)
- case ( 10 )
-  ! if(config_nsoillevels .ne. 10) &
-  !    call physics_error_fatal('This version of Noah-MP lsm uses 10 soil layers. Correct config_nsoillevels.')
-   call init_soil_properties_noah(mesh, fg, dminfo, dims, configs)
-
 
  case ( 10 )
   ! if(config_nsoillevels .ne. 10) &
