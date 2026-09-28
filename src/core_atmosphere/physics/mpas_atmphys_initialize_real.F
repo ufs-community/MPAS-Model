@@ -482,10 +482,12 @@
  num_st = 0
  do iCell = 1, nCellsSolve
     do ifgSoil = 1, nFGSoilLevels
-       if(st_fg(ifgSoil,iCell) .le. 0._RKIND) st_fg(ifgSoil,iCell) = tmn(iCell)
-       if(sm_fg(ifgSoil,iCell) .le. 0._RKIND) sm_fg(ifgSoil,iCell) = 0.20
-       if(st_fg(ifgSoil,iCell) .le. 0._RKIND) num_st = num_st + 1
-       if(sm_fg(ifgSoil,iCell) .lt. 0._RKIND) num_sm = num_sm + 1
+      if(st_fg(ifgSoil,iCell) .le. 0._RKIND) then
+         num_st = num_st + 1
+         st_fg(ifgSoil,iCell) = tmn(iCell)
+      endif
+      if(sm_fg(ifgSoil,iCell) .lt. 0._RKIND) num_sm = num_sm + 1
+      if(sm_fg(ifgSoil,iCell) .le. 0._RKIND) sm_fg(ifgSoil,iCell) = 0.20
     enddo
  enddo
  if(num_st .gt. 0) then
@@ -577,12 +579,9 @@ end subroutine init_soil_layers_properties
        sm_input(ifgSoil+1,iCell) = sm_fg(ifgSoil,iCell)
     enddo
 
-    if(nSoilLevels .eq. 4) then
-       zhave(nFGSoilLevels+2,iCell) = 300._RKIND/100._RKIND
-    elseif(nSoilLevels .eq. 10) then
+    zhave(nFGSoilLevels+2,iCell) = 300._RKIND/100._RKIND
+    if(nSoilLevels .eq. 10) then
        zhave(nFGSoilLevels+2,iCell) = 600._RKIND/100._RKIND
-    else
-
     endif
     st_input(nFGSoilLevels+2,iCell) = tmn(iCell)
     sm_input(nFGSoilLevels+2,iCell) = sm_input(nFGSoilLevels,iCell)
@@ -1115,4 +1114,3 @@ end subroutine init_soil_layers_properties
 !=================================================================================================================
  end module mpas_atmphys_initialize_real
 !=================================================================================================================
-
