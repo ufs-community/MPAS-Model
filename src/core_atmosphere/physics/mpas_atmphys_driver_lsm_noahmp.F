@@ -858,10 +858,6 @@
        n = ns - nsnow
        zsnsoxy(ns,i) = mpas_noahmp%zsnsoxy(i,n)
     enddo
-!    do ns = nsnow+1,nzsnow
-!       n = ns - nsoil + 1
-!       zsnsoxy(ns,i) = mpas_noahmp%zsnsoxy(i,n)
-!    enddo
  enddo
 
 

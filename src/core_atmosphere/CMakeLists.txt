@@ -1,6 +1,7 @@
 
 ## Source files
 # physics/
+if (${DO_PHYSICS})
 set(ATMOSPHERE_CORE_PHYSICS_SOURCES
     ccpp_kind_types.F
     mpas_atmphys_camrad_init.F
@@ -134,10 +135,47 @@ set(ATMOSPHERE_CORE_PHYSICS_SMOKE_SOURCES
     seas_data_mod.F90
     seas_ngac_mod.F90
     ssalt_mod.F90
+    module_anthro_emissions.F90
+    module_mp_aero_emissions.F90
 )
 list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_SMOKE_SOURCES PREPEND physics/physics_noaa/SMOKE/)
 
 set(ATMOSPHERE_CORE_PHYSICS_MMM_DIR ${CMAKE_CURRENT_SOURCE_DIR}/physics/physics_mmm)
+
+# build stochastic_physics as a library (optional)
+if (${STOCHASTIC_PHYSICS})
+set(ATMOSPHERE_CORE_STOCHASTIC_PHYSICS_SOURCES
+    kinddef.F90
+    mpi_wrapper.F90
+    plumes.F90
+    mersenne_twister.F90
+    random_numbers.F90
+    stochy_namelist_def.F90
+    compns_stochy.F90
+    stochy_internal_state_mod.F90
+    spectral_transforms.F90
+    stochastic_physics_m.F90
+    stochy_patterngenerator.F90
+    stochy_data_mod.F90
+    stochy_nml_rec.F90
+    get_stochy_pattern.F90
+    lndp_apply_perts.F90
+    mpas_stochastic_physics.F90
+)
+list(TRANSFORM ATMOSPHERE_CORE_STOCHASTIC_PHYSICS_SOURCES PREPEND stochastic_physics/)
+add_library(stochastic_physics ${ATMOSPHERE_CORE_STOCHASTIC_PHYSICS_SOURCES})
+mpas_fortran_target(stochastic_physics)
+target_compile_definitions(stochastic_physics PRIVATE INTERNAL_FILE_NML MPAS)
+if(NOT MPAS_DOUBLE_PRECISION)
+  target_compile_definitions(stochastic_physics PRIVATE CCPP_32BIT)
+endif()
+find_package(BLAS REQUIRED)
+find_package(NetCDF REQUIRED COMPONENTS Fortran C)
+target_link_libraries(stochastic_physics PUBLIC MPI::MPI_Fortran framework ${BLAS_LIBRARIES} NetCDF::NetCDF_Fortran NetCDF::NetCDF_C)
+install(TARGETS stochastic_physics EXPORT ${PROJECT_NAME}ExportsCore
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
+endif()
 
 if(NOT EXISTS ${ATMOSPHERE_CORE_PHYSICS_MMM_DIR})
     set(PHYSICS_MMM_REPO_URL "https://github.com/NCAR/MMM-physics")
@@ -150,7 +188,7 @@ if(NOT EXISTS ${ATMOSPHERE_CORE_PHYSICS_MMM_DIR})
     endif()
 
 else()
-    message(STATUS "Directory ${DIR_TO_CHECK} already exists, skipping clone")
+    message( STATUS "Finished checking out external repos via manage_externals" )
 endif()
 
 set(ATMOSPHERE_CORE_PHYSICS_MMM_SOURCES
@@ -457,6 +495,7 @@ set(ATMOSPHERE_CORE_PHYSICS_NOAMP_SRC_SOURCES
     WaterVarType.F90
 )
 list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_NOAMP_SRC_SOURCES PREPEND physics/physics_noahmp/src/)
+endif()
 
 # diagnostics/
 set(ATMOSPHERE_CORE_DIAGNOSTIC_SOURCES
@@ -475,6 +514,7 @@ list(TRANSFORM ATMOSPHERE_CORE_DIAGNOSTIC_SOURCES PREPEND diagnostics/)
 # dynamics/
 set(ATMOSPHERE_CORE_DYNAMICS_SOURCES
     mpas_atm_boundaries.F
+    mpas_atm_dissipation_models.F
     mpas_atm_iau.F
     mpas_atm_time_integration.F)
 list(TRANSFORM ATMOSPHERE_CORE_DYNAMICS_SOURCES PREPEND dynamics/)
@@ -505,23 +545,28 @@ set(ATMOSPHERE_CORE_INCLUDES
     setup_immutable_streams.inc
     structs_and_variables.inc)
 
-
-add_library(core_atmosphere ${ATMOSPHERE_CORE_SOURCES}
-            ${ATMOSPHERE_CORE_PHYSICS_NOAMP_UTILITY_SOURCES}
-            ${ATMOSPHERE_CORE_PHYSICS_NOAMP_MPAS_DRIVER_SOURCES}
-            ${ATMOSPHERE_CORE_PHYSICS_NOAMP_SRC_SOURCES}
-            ${ATMOSPHERE_CORE_PHYSICS_SOURCES}
-            ${ATMOSPHERE_CORE_PHYSICS_MMM_SOURCES}
-            ${ATMOSPHERE_CORE_PHYSICS_WRF_SOURCES}
-            ${ATMOSPHERE_CORE_PHYSICS_UGWP_SOURCES}
-            ${ATMOSPHERE_CORE_PHYSICS_TEMPO_SOURCES}
-            ${ATMOSPHERE_CORE_PHYSICS_MYNN-EDMF_SOURCES}
-	    ${ATMOSPHERE_CORE_PHYSICS_MYNN-SFC_SOURCES}
-            ${ATMOSPHERE_CORE_PHYSICS_RUCLSM_SOURCES}
-	    ${ATMOSPHERE_CORE_PHYSICS_GFL_SOURCES}
-	    ${ATMOSPHERE_CORE_PHYSICS_SMOKE_SOURCES}
-            ${ATMOSPHERE_CORE_DIAGNOSTIC_SOURCES}
-            ${ATMOSPHERE_CORE_DYNAMICS_SOURCES})
+if (${DO_PHYSICS})
+  add_library(core_atmosphere ${ATMOSPHERE_CORE_SOURCES}
+              ${ATMOSPHERE_CORE_PHYSICS_NOAMP_UTILITY_SOURCES}
+              ${ATMOSPHERE_CORE_PHYSICS_NOAMP_MPAS_DRIVER_SOURCES}
+              ${ATMOSPHERE_CORE_PHYSICS_NOAMP_SRC_SOURCES}
+              ${ATMOSPHERE_CORE_PHYSICS_SOURCES}
+              ${ATMOSPHERE_CORE_PHYSICS_MMM_SOURCES}
+              ${ATMOSPHERE_CORE_PHYSICS_WRF_SOURCES}
+              ${ATMOSPHERE_CORE_PHYSICS_UGWP_SOURCES}
+              ${ATMOSPHERE_CORE_PHYSICS_TEMPO_SOURCES}
+              ${ATMOSPHERE_CORE_PHYSICS_MYNN-EDMF_SOURCES}
+              ${ATMOSPHERE_CORE_PHYSICS_MYNN-SFC_SOURCES}
+              ${ATMOSPHERE_CORE_PHYSICS_RUCLSM_SOURCES}
+              ${ATMOSPHERE_CORE_PHYSICS_GFL_SOURCES}
+              ${ATMOSPHERE_CORE_PHYSICS_SMOKE_SOURCES}
+              ${ATMOSPHERE_CORE_DIAGNOSTIC_SOURCES}
+              ${ATMOSPHERE_CORE_DYNAMICS_SOURCES})
+else ()
+  add_library(core_atmosphere ${ATMOSPHERE_CORE_SOURCES}
+              ${ATMOSPHERE_CORE_DIAGNOSTIC_SOURCES}
+              ${ATMOSPHERE_CORE_DYNAMICS_SOURCES})
+endif()
 
 set(CORE_ATMOSPHERE_COMPILE_DEFINITIONS
     mpas=1
@@ -530,36 +575,44 @@ set(CORE_ATMOSPHERE_COMPILE_DEFINITIONS
 if (${DO_PHYSICS})
     list(APPEND CORE_ATMOSPHERE_COMPILE_DEFINITIONS DO_PHYSICS)
 endif ()
+if (${STOCHASTIC_PHYSICS})
+    list(APPEND CORE_ATMOSPHERE_COMPILE_DEFINITIONS STOCHASTIC_PHYSICS)
+endif()
 target_compile_definitions(core_atmosphere PRIVATE ${CORE_ATMOSPHERE_COMPILE_DEFINITIONS})
+if (${STOCHASTIC_PHYSICS})
+    target_link_libraries(core_atmosphere PUBLIC stochastic_physics)
+endif()
 set_MPAS_DEBUG_flag(core_atmosphere)
 mpas_core_target(CORE atmosphere TARGET core_atmosphere INCLUDES ${ATMOSPHERE_CORE_INCLUDES})
 
 #Get physics_wrf tables from MPAS-Data
-include(FetchContent)
-if (${PROJECT_VERSION} VERSION_GREATER_EQUAL 7.0)
+if (${DO_PHYSICS})
+  include(FetchContent)
+  if (${PROJECT_VERSION} VERSION_GREATER_EQUAL 7.0)
     set(MPAS_DATA_GIT_TAG v${PROJECT_VERSION_MAJOR}.0)
-else ()
+  else ()
     set(MPAS_DATA_GIT_TAG master)
-endif ()
+  endif ()
 
-FetchContent_Declare(mpas_data
-                     GIT_REPOSITORY https://github.com/MPAS-Dev/MPAS-Data.git
-                     GIT_TAG ${MPAS_DATA_GIT_TAG}
-                     GIT_PROGRESS True
-                     GIT_SHALLOW True)
-FetchContent_Populate(mpas_data)
-message(STATUS "MPAS-Data source dir: ${mpas_data_SOURCE_DIR}")
-set(PHYSICS_WRF_DATA_DIR ${mpas_data_SOURCE_DIR}/atmosphere/physics_wrf/files)
-file(GLOB PHYSICS_WRF_DATA RELATIVE ${PHYSICS_WRF_DATA_DIR} "${PHYSICS_WRF_DATA_DIR}/*")
-file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/${PROJECT_NAME}/core_atmosphere)
-foreach (data_file IN LISTS PHYSICS_WRF_DATA)
-    execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ${PHYSICS_WRF_DATA_DIR}/${data_file}
-                    ${CMAKE_BINARY_DIR}/${PROJECT_NAME}/core_atmosphere/${data_file})
-endforeach ()
-install(DIRECTORY ${PHYSICS_WRF_DATA_DIR}/ DESTINATION ${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME}/core_atmosphere)
+  FetchContent_Declare(mpas_data
+                       GIT_REPOSITORY https://github.com/MPAS-Dev/MPAS-Data.git
+                       GIT_TAG ${MPAS_DATA_GIT_TAG}
+                       GIT_PROGRESS True
+                       GIT_SHALLOW True)
+  FetchContent_Populate(mpas_data)
+  message(STATUS "MPAS-Data source dir: ${mpas_data_SOURCE_DIR}")
+  set(PHYSICS_WRF_DATA_DIR ${mpas_data_SOURCE_DIR}/atmosphere/physics_wrf/files)
+  file(GLOB PHYSICS_WRF_DATA RELATIVE ${PHYSICS_WRF_DATA_DIR} "${PHYSICS_WRF_DATA_DIR}/*")
+  file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/${PROJECT_NAME}/core_atmosphere)
+  foreach (data_file IN LISTS PHYSICS_WRF_DATA)
+      execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ${PHYSICS_WRF_DATA_DIR}/${data_file}
+                      ${CMAKE_BINARY_DIR}/${PROJECT_NAME}/core_atmosphere/${data_file})
+  endforeach ()
+  install(DIRECTORY ${PHYSICS_WRF_DATA_DIR}/ DESTINATION ${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME}/core_atmosphere)
 
-add_executable(mpas_atmosphere_build_tables ${ATMOSPHERE_CORE_UTILS_SOURCES})
-target_link_libraries(mpas_atmosphere_build_tables PUBLIC core_atmosphere)
-mpas_fortran_target(mpas_atmosphere_build_tables)
-install(TARGETS mpas_atmosphere_build_tables EXPORT ${PROJECT_NAME}ExportsCore
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+  add_executable(mpas_atmosphere_build_tables ${ATMOSPHERE_CORE_UTILS_SOURCES})
+  target_link_libraries(mpas_atmosphere_build_tables PUBLIC core_atmosphere)
+  mpas_fortran_target(mpas_atmosphere_build_tables)
+  install(TARGETS mpas_atmosphere_build_tables EXPORT ${PROJECT_NAME}ExportsCore
+          RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+endif()

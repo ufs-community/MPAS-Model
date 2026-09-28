@@ -19,7 +19,7 @@
  use mpas_atmphys_driver_radiation_sw,only: init_radiation_sw
  use mpas_atmphys_driver_sfclayer,only: init_sfclayer
  use mpas_atmphys_vars,only: f_qc,f_qr,f_qi,f_qs,f_qg,f_qoz,f_nc,f_ni,f_nifa,f_nwfa,f_nbca, &
-                             f_smoke_fine,f_dust_fine,f_dust_coarse
+                             f_smoke_fine,f_dust_fine,f_dust_coarse,f_unspc_fine
 
  use mpas_atmphys_landuse
  use mpas_atmphys_o3climatology
@@ -75,13 +75,14 @@
 !   Laura D. Fowler (laura@ucar.edu) / 2024-02-14.
 ! * added call to subroutine init_lsm_noahmp to initialize the Noah-MP land surface scheme.
 !   Laura D. Fowler (laura@ucar.edu) / 2024-03-11.
-
+! * added initialization of the integer variable mp_top_level to the physics_init code.
+!   Bill Skamarock / 2025-10-17 
 
  contains
 
 
 !=================================================================================================================
- subroutine physics_init(dminfo,stream_manager,clock,configs,mesh,diag,tend,state,time_lev,diag_physics,     &
+ subroutine physics_init(dminfo,stream_manager,clock,configs,mesh,diag,tend,tend_physics,state,time_lev,diag_physics, &
                          diag_physics_noahmp,ngw_input,atm_input,sfc_input,output_noahmp)
 !=================================================================================================================
 
@@ -100,6 +101,7 @@ use mpas_stream_manager
  type(mpas_pool_type),intent(inout):: state
  type(mpas_pool_type),intent(inout):: diag
  type(mpas_pool_type),intent(inout):: tend
+ type(mpas_pool_type),intent(inout):: tend_physics
  type(mpas_pool_type),intent(inout):: diag_physics
  type(mpas_pool_type),intent(inout):: diag_physics_noahmp
  type(mpas_pool_type),intent(inout):: ngw_input
@@ -154,13 +156,16 @@ use mpas_stream_manager
  integer,dimension(:),pointer:: jindx1_tau, jindx2_tau
  real(kind=RKIND),dimension(:),pointer:: ddy_j1tau, ddy_j2tau
  real(kind=RKIND),dimension(:),pointer:: latCell
+ real(kind=RKIND),pointer:: config_microphysics_top
+ integer,pointer:: mp_top_level
 
 !local variables and arrays:
  type(MPAS_Time_Type):: currTime
 
  logical:: init_done
  integer:: ierr,julday 
- integer:: iCell,iLag
+ integer:: iCell,iLag,k
+ real(kind=RKIND):: layer_height
 
 !-----------------------------------------------------------------------------------------------------------------
 !call mpas_log_write('')
@@ -178,6 +183,7 @@ use mpas_stream_manager
  call mpas_pool_get_config(configs,'config_radt_sw_scheme'   ,config_radt_sw_scheme   )
  call mpas_pool_get_config(configs,'config_smoke_scheme'     ,config_smoke_scheme     )
  call mpas_pool_get_config(configs,'config_dust_scheme'      ,config_dust_scheme      )
+ call mpas_pool_get_config(configs,'config_microphysics_top' ,config_microphysics_top )
 
  call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
  call mpas_pool_get_dimension(mesh,'nLags'      ,nLags      )
@@ -245,6 +251,7 @@ use mpas_stream_manager
  call mpas_pool_get_dimension(mesh,'nVertLevels',nVertLevels  )
  call mpas_pool_get_array(mesh,'rdzw'   ,rdzw   )
  call mpas_pool_get_array(mesh,'dzu'    ,dzu    )
+ call mpas_pool_get_array(tend_physics,'mp_top_level',mp_top_level)
 
  currTime = mpas_get_clock_time(clock,MPAS_NOW,ierr)
  call mpas_get_time(curr_time=currTime,DoY=julday,ierr=ierr)
@@ -256,7 +263,7 @@ use mpas_stream_manager
 !initialization of logical flags for cloud mixing ratios and number concentrations, and aerosols
 !number concentrations from the Thompson cloud microphysics:
  call init_physics_flags(state,f_qc,f_qr,f_qi,f_qs,f_qg,f_qoz,f_nc,f_ni,f_nifa,f_nwfa,f_nbca, &
-                         f_smoke_fine,f_dust_fine,f_dust_coarse)
+                         f_smoke_fine,f_dust_fine,f_dust_coarse,f_unspc_fine)
 
 !initialization of counters i_rainc and i_rainnc. i_rainc and i_rainnc track the number of
 !times the accumulated convective (rainc) and grid-scale (rainnc) rain exceed the prescribed
@@ -273,6 +280,17 @@ use mpas_stream_manager
        i_rainnc(iCell) = 0
     enddo
  endif
+
+! set the level above which microphysics tendencies will be ignored
+ mp_top_level = 0
+ layer_height = 0.5/rdzw(1)
+ if(layer_height .le. config_microphysics_top) mp_top_level = 1
+ do k=2,nVertLevels
+    layer_height = layer_height + dzu(k)
+    if(layer_height .le. config_microphysics_top) mp_top_level = k
+ end do
+ call mpas_log_write('physics init: config_microphysics_top and level $r $i ', &
+                     realArgs=(/config_microphysics_top/),intArgs=(/mp_top_level/))
 
 !initialization of counters i_acsw* and i_aclw*. i_acsw* and i_aclw* track the number of times
 !the accumulated long and short-wave radiation fluxes exceed their prescribed theshold values.
@@ -478,7 +496,7 @@ use mpas_stream_manager
 
 !=================================================================================================================
  subroutine init_physics_flags(state,f_qc,f_qr,f_qi,f_qs,f_qg,f_qoz,f_nc,f_ni,f_nifa,f_nwfa,f_nbca, &
-                               f_smoke_fine,f_dust_fine,f_dust_coarse)
+                               f_smoke_fine,f_dust_fine,f_dust_coarse,f_unspc_fine)
 !=================================================================================================================
 
 !input arguments:
@@ -487,12 +505,12 @@ use mpas_stream_manager
 !output arguments:
  logical,intent(out):: f_qc,f_qr,f_qi,f_qs,f_qg,f_qoz
  logical,intent(out):: f_nc,f_ni,f_nifa,f_nwfa,f_nbca
- logical,intent(out):: f_smoke_fine,f_dust_fine,f_dust_coarse
+ logical,intent(out):: f_smoke_fine,f_dust_fine,f_dust_coarse,f_unspc_fine
 
 !local pointers:
  integer,pointer:: index_qc,index_qr,index_qi,index_qs,index_qg
  integer,pointer:: index_nc,index_ni,index_nifa,index_nwfa
- integer,pointer:: index_smoke_fine,index_dust_fine,index_dust_coarse
+ integer,pointer:: index_smoke_fine,index_dust_fine,index_dust_coarse,index_unspc_fine
 
 !-----------------------------------------------------------------------------------------------------------------
 
@@ -506,6 +524,7 @@ use mpas_stream_manager
  f_smoke_fine   = .false.
  f_dust_fine    = .false.
  f_dust_coarse  = .false.
+ f_unspc_fine   = .false.
  call mpas_pool_get_dimension(state,'index_qc',index_qc)
  call mpas_pool_get_dimension(state,'index_qr',index_qr)
  call mpas_pool_get_dimension(state,'index_qi',index_qi)
@@ -514,15 +533,17 @@ use mpas_stream_manager
  call mpas_pool_get_dimension(state,'index_smoke_fine',index_smoke_fine)
  call mpas_pool_get_dimension(state,'index_dust_fine',index_dust_fine)
  call mpas_pool_get_dimension(state,'index_dust_coarse',index_dust_coarse)
+ call mpas_pool_get_dimension(state,'index_unspc_fine',index_unspc_fine)
 
  if(index_qc .gt. -1) f_qc = .true.
  if(index_qr .gt. -1) f_qr = .true.
  if(index_qi .gt. -1) f_qi = .true.
  if(index_qs .gt. -1) f_qs = .true.
  if(index_qg .gt. -1) f_qg = .true.
- if(index_smoke_fine .gt. -1) f_smoke_fine = .true.
+ if(index_smoke_fine   .gt. -1) f_smoke_fine = .true.
  if(index_dust_fine    .gt. -1) f_dust_fine = .true.
  if(index_dust_coarse  .gt. -1) f_dust_coarse = .true.
+ if(index_unspc_fine   .gt. -1) f_unspc_fine = .true.
 
 !initializes the logical assigned to number concentrations:
  f_nc   = .false.

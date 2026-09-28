@@ -159,7 +159,7 @@
  integer,public:: num_months          !number of months                                         [-]
 
  integer,public:: num_chem             !Temporary workaround for defining dimensions holding chem data
- integer,public:: kanthro,kbiogenic,kwildfire,kvolcanic!Number of vertical levels in input emission data
+ integer,public:: kanthro,kbiogenic,kwildfire,kvolcanic,kreswoodcomb!Number of vertical levels in input emission data
  logical:: do_chemistry                !controls call to smoke, dust and other chemical processes
 
  integer,public:: num_e_ant_in,num_e_bb_in,num_e_bio_in,num_e_vol_in
@@ -248,6 +248,8 @@
     aod3d_smoke_p, aod3d_p
  real(kind=RKIND),dimension(:,:),allocatable:: &
     aod550_p
+ real(kind=RKIND),dimension(:,:),allocatable:: &
+    aero_emis_for_enhmix_p
 ! Input/output smoke 2D fields - JLS
  real(kind=RKIND),dimension(:,:),allocatable::  &
     frp_in_p,          &!
@@ -291,10 +293,8 @@
     clayfrac_in_p,       &!
     sandfrac_in_p,       &!
     uthres_in_p,         &!
-    uthres_sg_in_p,      &!
-    albedo_drag_p,       &!
-    feff_p,              &!
-    sep_in_p              !
+    rdrag_p,             &!
+    ssm_in_p              !
 ! Input biomass burning emissions - JLS
  real(kind=RKIND),dimension(:,:,:,:),allocatable:: &
     e_ant_in_p, e_bb_in_p, e_bio_in_p, e_vol_in_p
@@ -552,10 +552,15 @@
 
  real(kind=RKIND),dimension(:,:),allocatable:: &
     maxwidthbl_p,     &!max plume width                                                                        [m]
-    maxmfbl_p,        &!maximum mass flux for PBL shallow convection.
+    maxmfbl_p,        &!maximum mass flux for PBL shallow convection.                                        [m/s]
     zbl_plume_p,      &!height of highest penetrating plume                                                    [m]
     excessh_p,        &!maximum heat excess applied to plumes                                                  [K]
-    excessq_p          !maximum moisture excess applied to plumes                                          [kg/kg]
+    excessq_p,        &!maximum moisture excess applied to plumes                                          [kg/kg]
+    maxwidth_dd_p,    &!maximum downdraft plume width                                                          [m]
+    maxmf_dd_p,       &!maximum mass flux for downdrafts                                                     [m/s]
+    maxtkeprod_dd_p,  &!maximum tke prduction in column from downdrafts                                 [m2/s2/hr]
+    cldtop_cooling_p, &!maximum net cooling at boundary layer cloud top                                     [K/hr]
+    ent_eff_p          !entrainment efficiency                                                                 [-]   
       
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
     dqke_p,           &!

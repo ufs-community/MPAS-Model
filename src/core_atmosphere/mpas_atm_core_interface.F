@@ -471,6 +471,7 @@ module atm_core_interface
 
       integer, pointer :: cam_pcnst
       integer :: err_level
+      logical, pointer :: config_apply_lbcs
 
       ierr = 0
 
@@ -486,6 +487,7 @@ module atm_core_interface
       err_level = mpas_pool_get_error_level()
       call mpas_pool_set_error_level(MPAS_POOL_SILENT)
       call mpas_pool_get_config(block % domain % configs, 'cam_pcnst', cam_pcnst)
+      call mpas_pool_get_config(block % domain % configs, 'config_apply_lbcs', config_apply_lbcs)
       call mpas_pool_set_error_level(err_level)
       if (associated(cam_pcnst)) then
          call mpas_log_write('')
@@ -493,6 +495,9 @@ module atm_core_interface
          call mpas_log_write('   Scalars will be allocated separately from Registry-defined variables')
          call mpas_log_write('')
          ierr = atm_allocate_scalars(block, cam_pcnst)
+         if (config_apply_lbcs) then
+            ierr = atm_allocate_lbc_scalars(block, cam_pcnst)
+         end if
       end if
 
    end function atm_setup_block
@@ -630,6 +635,76 @@ module atm_core_interface
       call mpas_pool_add_field(block % allFields, 'scalars_tend', scalarsField)
 
    end function atm_allocate_scalars
+
+   !***********************************************************************
+   !
+   !***********************************************************************
+   function atm_allocate_lbc_scalars(block, num_scalars) result(ierr)
+      use mpas_derived_types, only : block_type
+      use mpas_derived_types, only : mpas_pool_type, field3dReal, MPAS_LOG_ERR
+      use mpas_pool_routines, only : mpas_pool_get_subpool, mpas_pool_add_dimension, mpas_pool_add_field
+      use mpas_log, only : mpas_log_write
+
+      implicit none
+
+      ! Arguments
+      type (block_type), pointer :: block
+      integer, intent(in) :: num_scalars
+
+      ! Return value
+      integer :: ierr
+
+      ! Local variables
+      integer :: i, j, timeLevs
+      type (mpas_pool_type), pointer :: lbcPool
+      type (field3dReal), dimension(:), pointer :: scalarsField
+
+      ierr = 0
+
+      !
+      ! Allocate lbc_scalars var_array
+      !
+      nullify(lbcPool)
+      call mpas_pool_get_subpool(block % structs, 'lbc', lbcPool)
+      if (.not. associated(lbcPool)) then
+         call mpas_log_write('No pool named ''lbc'' was found in atm_allocate_lbc_scalars', messageType=MPAS_LOG_ERR)
+         ierr = 1
+         return
+      endif
+
+      timeLevs = 2
+
+      call mpas_pool_add_dimension(lbcPool, 'num_scalars', num_scalars)
+
+      allocate(scalarsField(timeLevs))
+
+      do i = 1, timeLevs
+         scalarsField(i) % block => block
+         scalarsField(i) % fieldName = 'lbc_scalars'
+         scalarsField(i) % dimNames(1) = 'num_scalars'
+         scalarsField(i) % dimNames(2) = 'nVertLevels'
+         scalarsField(i) % dimNames(3) = 'nCells'
+         scalarsField(i) % defaultValue = 0.0
+         scalarsField(i) % missingValue = -1.0
+         scalarsField(i) % isDecomposed = .true.
+         scalarsField(i) % hasTimeDimension = .true.
+         scalarsField(i) % isActive = .true.
+         scalarsField(i) % isVarArray = .true.
+         scalarsField(i) % isPersistent = .true.
+
+         allocate(scalarsField(i) % constituentNames(num_scalars))
+
+         allocate(scalarsField(i) % attLists(num_scalars))
+         do j = 1, num_scalars
+            allocate(scalarsField(i) % attLists(j) % attList)
+         end do
+
+      end do
+
+      call mpas_pool_add_field(lbcPool, 'lbc_scalars', scalarsField)
+      call mpas_pool_add_field(block % allFields, 'lbc_scalars', scalarsField)
+
+    end function atm_allocate_lbc_scalars
 
 #include "setup_immutable_streams.inc"
 

@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<registry model="mpas" core="atmosphere" core_abbrev="atm" version="8.3.1-noaa">
+<registry model="mpas" core="atmosphere" core_abbrev="atm" version="8.4.1-noaa">
 
 <!-- **************************************************************************************** -->
 <!-- ************************************** Dimensions ************************************** -->
@@ -32,7 +32,12 @@
                      description="The number of atmospheric layers"/>
                 <dim name="nVertLevelsP1"      definition="nVertLevels+1"
                      description="The number of atmospheric levels, always one more than the number of layers"/>
-
+#ifdef MPAS_UFS_DYCORE
+		<dim name="nSoilLevels"        definition="namelist:num_soil_layers"
+                     description="The number of soil layers used by the land-surface scheme"/>
+		<dim name="nMonths"            definition="namelist:months"
+                     description="The number of months in a year"/>
+#endif
 #ifdef DO_PHYSICS
                 <dim name="nMonths"            definition="namelist:months"
                      description="The number of months in a year"/>
@@ -150,15 +155,45 @@
                      description="Formulation of horizontal mixing"
                      possible_values="`2d_fixed' or `2d_smagorinsky'"/>
 
+                <nml_option name="config_les_model" type="character" default_value="none"
+                     units="-"
+                     description="LES dissipation model"
+                     possible_values="`none', `3d_smagorinsky', `prognostic_1.5_order'"/>
+
+                <nml_option name="config_les_surface" type="character" default_value="none"
+                     units="-"
+                     description="LES surface flux option"
+                     possible_values="`specified', `varying'"/>
+
+                <nml_option name="config_surface_heat_flux" type="real" default_value="0.0"
+                     units="K m s-1"
+                     description="specified surface heat flux w'theta'"
+                     possible_values="real number"/>
+
+                <nml_option name="config_surface_moisture_flux" type="real" default_value="0.0"
+                     units="kg m s-1"
+                     description="specified surface moisture flux w'q'"
+                     possible_values="real number"/>
+
+                <nml_option name="config_surface_drag_coefficient" type="real" default_value="0.0"
+                     units="-"
+                     description="Cd 10m drag coefficient"
+                     possible_values="real number"/>
+
                 <nml_option name="config_len_disp" type="real" default_value="0.0" in_defaults="false"
                      units="m"
                      description="Horizontal length scale, used by the Smagorinsky formulation of horizontal diffusion and by 3-d divergence damping"
                      possible_values="Positive real values. A zero value implies that the length scale is prescribed by the nominalMinDc value in the input file."/>
 
                 <nml_option name="config_visc4_2dsmag" type="real" default_value="0.05"
-                     units="-"
-                     description="Scaling coefficient of $\delta x^3$ to obtain $\nabla^4$ diffusion coefficient"
+                     units="m s^{-1}"
+                     description="Coefficient multiplied by $\delta x^3$ to obtain $\nabla^4$ physical hyperviscosity"
                      possible_values="Non-negative real values"/>
+
+                <nml_option name="config_mix_scalars" type="logical" default_value="false"
+                     units="-"
+                     description="Whether to enable horizontal and vertical mixing for scalars"
+                     possible_values=".true. or .false."/>
 
                 <nml_option name="config_del4u_div_factor" type="real" default_value="10.0" in_defaults="false"
                      units="-"
@@ -240,7 +275,7 @@
                      description="Mix full $\theta$ and $u$ fields, or mix perturbation from intitial state"
                      possible_values=".true. or .false."/>
 
-                <nml_option name="config_epssm" type="real" default_value="0.1"
+                <nml_option name="config_epssm" type="real" default_value="0.0" in_defaults="false"
                      units="-"
                      description="Off-centering parameter for the vertically implicit acoustic integration"
                      possible_values="Positive real values"/>
@@ -278,12 +313,12 @@
                      possible_values="Positive real values"/>
 
                 <nml_option name="config_xnutr" type="real" default_value="0.2"
-                     units="-"
+                     units="s^{-1}"
                      description="Maximum w-damping coefficient at model top"
                      possible_values="0 $\leq$ config_xnutr $\leq$ 1"/>
 
                 <nml_option name="config_mpas_cam_coef" type="real" default_value="0.0" in_defaults="false"
-                     units="-"
+                     units="m s^{-1}"
                      description="Coefficient for scaling the 2nd-order horizontal mixing in the mpas_cam absorbing layer"
                      possible_values="0 $\leq$ config_mpas_cam_coef $\leq$ 1, standard value is 0.2"/>
 
@@ -306,6 +341,27 @@
                      units="-"
                      description="Number of layers in which to apply Rayleigh damping on horizontal velocity at top of model; damping linearly ramps to zero by layer number from the top"
                      possible_values="Positive integer values"/>
+
+                <nml_option name="config_epssm_minimum" type="real" default_value="0.1"
+                     units="-"
+                     description="Value of epssm below transition zone"
+                     possible_values="Positive real values between 0 and 1"/>
+
+                <nml_option name="config_epssm_maximum" type="real" default_value="0.5"
+                     units="-"
+                     description="Value of epssm above transition zone"
+                     possible_values="Positive real values between 0 and 1"/>
+
+                <nml_option name="config_epssm_transition_bottom_z" type="real" default_value="30000."
+                     units="m"
+                     description="Height MSL of bottom of transition zone for epssm"
+                     possible_values="Positive real values"/>
+
+                <nml_option name="config_epssm_transition_top_z" type="real" default_value="50000."
+                     units="m"
+                     description="Height MSL of top of transition zone for epssm"
+                     possible_values="Positive real values"/>
+
         </nml_record>
 
         <nml_record name="limited_area" in_defaults="true">
@@ -314,7 +370,7 @@
                      description="Whether to apply lateral boundary conditions"
                      possible_values="true or false; this option must be set to true for limited-area simulations and false for global simulations"/>
 
-                <nml_option name="config_lbc_w" type="character" default_value="nearest"
+                <nml_option name="config_lbc_w" type="character" default_value="zero"
                      units="-"
                      description="Options for w on lateral boundaries"
                      possible_values="`nearest',`zero'"/>
@@ -386,6 +442,16 @@
                      units="-"
                      description="Whether to print the global min/max of scalar fields each timestep"
                      possible_values=".true. or .false."/>
+
+                <nml_option name="config_print_global_minmax_tend_ps" type="logical" default_value="false"
+                     units="-"
+                     description="Whether to print the global min/max of surface-pressure tendency each timestep"
+                     possible_values=".true. or .false."/>
+
+                <nml_option name="config_print_detailed_minmax_tend_ps" type="logical" default_value="false"
+                     units="-"
+                     description="Whether to print the global min/max of surface-pressure tendency each timestep, along with the location in the domain where those extrema occurred"
+                     possible_values=".true. or .false."/>
         </nml_record>
 
         <nml_record name="IAU" in_defaults="true">
@@ -411,7 +477,21 @@
                      units="-"
                      description="Method to use for exchanging halos"
                      possible_values="`mpas_dmpar', `mpas_halo'"/>
+
+               <nml_option name="config_gpu_aware_mpi" type="logical" default_value="false"
+                     units="-"
+                     description="Whether to use GPU-aware MPI for halo exchanges. GPU-aware MPI is only implemented for config_halo_exch_method='mpas_halo'"
+                     possible_values=".true. or .false."/>
         </nml_record>
+
+#ifdef MPAS_USE_MUSICA
+        <nml_record name="musica" in_defaults="true">
+                <nml_option name="config_micm_file" type="character" default_value=""
+                     units="-"
+                     description="MICM configuration file name"
+                     possible_values="Any valid filename"/>
+        </nml_record>
+#endif
 
 <!-- **************************************************************************************** -->
 <!-- **************************************  Packages  ************************************** -->
@@ -446,6 +526,14 @@
                 <package name="ugwp_ngw_stream"  description="Input stream (and variables) for UGWP NGW lookup table"/>
                 <package name="ugwp_diags_stream" description="Output stream (and variables) for UGWP output diagnostics"/>
 		<package name="gfl_sub3d" description="GFL 3d lateral spreading of the env subsidence"/>
+#ifdef DO_PHYSICS
+                <package name="les"
+                         description="Variables and options associated with LES models"
+                         active_when="trim(config_les_model) /= 'none'"/>
+                <package name="sfclayer"
+                         description="Variables and options associated with surface layer physics"
+                         active_when="(trim(config_physics_suite) /= 'none' .and. trim(config_sfclayer_scheme) == 'suite') .or.  any(trim(config_sfclayer_scheme) == [ character(len=StrKind) :: 'sf_monin_obukhov', 'sf_monin_obukhov_rev', 'sf_mynn', 'sf_mynnsfclay', 'sf_myj' ])"/>
+#endif
         </packages>
 
 
@@ -522,8 +610,6 @@
 			<var name="zb3"/>
 			<var name="dss"/>
 			<var name="deriv_two"/>
-			<var name="defc_a"/>
-			<var name="defc_b"/>
 			<var name="coeffs_reconstruct"/>
 #ifdef MPAS_CAM_DYCORE
 			<var name="cell_gradient_coef_x"/>
@@ -611,6 +697,24 @@
 			<var name="tslb"/>
 			<var name="h_oml_initial"/>
 #endif
+#ifdef MPAS_UFS_DYCORE
+                        <var name="swdnb"/>
+			<var name="swdnbc"/>
+			<var name="swdnt"/>
+			<var name="swdntc"/>
+			<var name="swupb"/>
+			<var name="swupbc"/>
+			<var name="swupt"/>
+			<var name="swuptc"/>
+			<var name="lwdnb"/>
+			<var name="lwdnbc"/>
+			<var name="lwdnt"/>
+			<var name="lwdntc"/>
+			<var name="lwupb"/>
+			<var name="lwupbc"/>
+			<var name="lwupt"/>
+			<var name="lwuptc"/>
+#endif
 		</stream>
 
 		<stream name="restart" 
@@ -682,6 +786,7 @@
 			<var name="max_hail_diameter_column"/>
 			<var name="max_hail_diameter_column_acc"/>
 			<var name="refl10cm_max"/>
+			<var name="refl10cm_compref_max"/>
 			<var name="i_rainnc"/>
 			<var name="rainncv"/>
 			<var name="rainnc"/>
@@ -979,6 +1084,9 @@
 			<var name="ke"/>
 			<var name="uReconstructZonal"/>
 			<var name="uReconstructMeridional"/>
+#ifdef STOCHASTIC_PHYSICS
+			<var name="stoch_pattern_sppt"/>
+#endif
 
                         <!-- Begin Ertel PV diagnostics defined in diagnostics/Registry_pv.xml -->
 			<var name="ertel_pv"/>
@@ -988,19 +1096,6 @@
 			<var name="vort_pv"/>
 			<var name="iLev_DT"/>
 #ifdef DO_PHYSICS
-			<var name="depv_dt_lw"/>
-			<var name="depv_dt_sw"/>
-			<var name="depv_dt_bl"/>
-			<var name="depv_dt_cu"/>
-			<var name="depv_dt_mix"/>
-			<var name="dtheta_dt_mp"/>
-			<var name="depv_dt_mp"/>
-			<var name="depv_dt_diab"/>
-			<var name="depv_dt_fric"/>
-			<var name="depv_dt_diab_pv"/>
-			<var name="depv_dt_fric_pv"/>
-                        <!-- End Ertel PV diagnostics defined in diagnostics/Registry_pv.xml -->
-
 			<var name="i_rainnc"/>
 			<var name="rainnc"/>
 			<var name="precipw"/>
@@ -1142,6 +1237,7 @@
                         <var name="swupt"/>
 			<var name="rainc"/>
 			<var name="rainnc"/>
+			<var name="prate_max"/>
 			<var name="vcpool"/>
 			<var name="refl10cm"/>
 			<var name="max_hail_diameter_sfc"/>
@@ -1149,6 +1245,7 @@
 			<var name="max_hail_diameter_column"/>
 			<var name="max_hail_diameter_column_acc"/>
 			<var name="refl10cm_max"/>
+			<var name="refl10cm_compref_max"/>
 			<var name="refl10cm_1km"/>
 			<var name="refl10cm_1km_max"/>
 			<var name="precipw"/>
@@ -1157,17 +1254,22 @@
 			<var name="q2"/>
 			<var name="t2m"/>
 			<var name="th2m"/>
-                        <var name="cldfrac_bl"/>
-                        <var name="qc_bl"/>
-                        <var name="qi_bl"/>
-                        <var name="maxmf"/>
-                        <var name="maxwidth"/>
-                        <var name="ztop_plume"/>
+			<var name="cldfrac_bl"/>
+			<var name="qc_bl"/>
+			<var name="qi_bl"/>
+			<var name="maxmf"/>
+			<var name="maxwidth"/>
+			<var name="ztop_plume"/>
 			<var name="excess_h"/>
 			<var name="excess_q"/>
-                        <var name="hpbl"/>
-                        <var name="cldfrac_cu"/>
-                        <var name="refl10cm_cu"/>
+			<var name="maxmf_dd"/>
+			<var name="maxwidth_dd"/>
+			<var name="maxtkeprod_dd"/>
+			<var name="cldtop_cooling"/>
+			<var name="ent_eff"/>
+			<var name="hpbl"/>
+			<var name="cldfrac_cu"/>
+			<var name="refl10cm_cu"/>
 #endif
 
                         <!-- Begin convective diagnostics defined in diagnostics/Registry_convective.xml -->
@@ -1843,6 +1945,18 @@
                 <var name="rdzw" type="real" dimensions="nVertLevels" units="unitless"
                      description="Reciprocal dzw"/>
 
+                <var name="etp" type="real" dimensions="nVertLevels" units="unitless"
+                     description="etp = (1+epssm(z))/2 at theta point"/>
+
+                <var name="etm" type="real" dimensions="nVertLevels" units="unitless"
+                     description="etm = (1-epssm(z))/2 at theta point"/>
+
+                <var name="ewp" type="real" dimensions="nVertLevelsP1" units="unitless"
+                     description="ewp = (1+epssm(z))/2 at w point"/>
+
+                <var name="ewm" type="real" dimensions="nVertLevelsP1" units="unitless"
+                     description="ewm = (1-epssm(z))/2 at w point"/>
+
                 <var name="dzu" type="real" dimensions="nVertLevels" units="unitless"
                      description="d(zeta) at w levels"/>
 
@@ -1906,13 +2020,6 @@
                 <var name="nAdvCellsForEdge" type="integer" dimensions="nEdges" units="-"
                      description="Number of cells used to reconstruct a cell-based field at an edge"/>
 
-                <!-- Space needed for deformation calculation weights -->
-                <var name="defc_a" type="real" dimensions="maxEdges nCells" units="unitless"
-                     description="Coefficients for computing the off-diagonal components of the horizontal deformation"/>
-
-                <var name="defc_b" type="real" dimensions="maxEdges nCells" units="unitless"
-                     description="Coefficients for computing the diagonal components of the horizontal deformation"/>
-
 #ifdef MPAS_CAM_DYCORE
                 <var name="cell_gradient_coef_x" type="real" dimensions="maxEdges nCells" units="m^-1"
                      description="Coefficients for computing the x (zonal) derivative of a cell-centered variable"/>
@@ -1920,6 +2027,21 @@
                 <var name="cell_gradient_coef_y" type="real" dimensions="maxEdges nCells" units="m^-1"
                      description="Coefficients for computing the y (meridional) derivative of a cell-centered variable"/>
 #endif
+                <!-- Space needed for deformation calculation weights -->
+                <var name="deformation_coef_c2" type="real" dimensions="maxEdges nCells" units="unitless"
+                     description="Coefficients for computing the cos-squared terms of the 3d deformation"/>
+
+                <var name="deformation_coef_s2" type="real" dimensions="maxEdges nCells" units="unitless"
+                     description="Coefficients for computing the sine-squared terms of the 3d deformation"/>
+
+                <var name="deformation_coef_cs" type="real" dimensions="maxEdges nCells" units="unitless"
+                     description="Coefficients for computing the cos-sine terms of the 3d deformation"/>
+
+                <var name="deformation_coef_c" type="real" dimensions="maxEdges nCells" units="unitless"
+                     description="Coefficients for computing the cos-only terms of the 3d deformation"/>
+
+                <var name="deformation_coef_s" type="real" dimensions="maxEdges nCells" units="unitless"
+                     description="Coefficients for computing the sine-only terms of the 3d deformation"/>
 
                 <!-- Arrays required for reconstruction of velocity field -->
                 <var name="coeffs_reconstruct" type="real" dimensions="R3 maxEdges nCells" units="unitless"
@@ -1989,6 +2111,7 @@
                 <!-- constituent at each position in the scalars array is later set by code in    -->
                 <!-- the CAM-MPAS interface layer.                                                -->
 #ifndef MPAS_CAM_DYCORE
+#ifndef MPAS_UFS_DYCORE
                 <var_array name="scalars" type="real" dimensions="nVertLevels nCells Time">
                         <var name="qv" array_group="moist" units="kg kg^{-1}"
                              description="Water vapor mixing ratio"/>
@@ -2072,7 +2195,12 @@
                         <var name="nwfa" array_group="number" units="nb kg^{-1}"
                              description="Water-friendly aerosol number concentration"
                              packages="mp_thompson_aers_in;tempo_aerosolaware_in"/>
+
+                        <var name="tke" array_group="turbulence" units="m^2 s^{-2}"
+                             description="Turbulent kinetic energy for the prognostic tke LES scheme"
+                             packages="les"/>
                 </var_array>
+#endif
 #endif
 
 #ifdef DO_PHYSICS
@@ -2320,8 +2448,20 @@
                 <var name="rho_p_save" type="real" dimensions="nVertLevels nCells Time" units="kg m^{-3}"
                      description="predicted value rho_p, saved before acoustic steps"/>
 
-                <var name="kdiff" type="real" dimensions="nVertLevels nCells Time" units="m^2 s^{-1}"
-                     description="Smagorinsky horizontal eddy viscosity"/>
+                <var name="eddy_visc_vert" type="real" dimensions="nVertLevels nCells Time" units="m^2 s^{-1}"
+                     description="vertical eddy viscosity for les models"/>
+
+                <var name="eddy_visc_horz" type="real" dimensions="nVertLevels nCells Time" units="m^2 s^{-1}"
+                     description="horizontal eddy viscosity for les models"/>
+
+                <var name="prandtl_3d_inv" type="real" dimensions="nVertLevels nCells Time" units="unitless"
+                     description="Inverse prandtl number used for vertical mixing in prognostic LES formulation"/>
+
+                <var name="bn2" type="real" dimensions="nVertLevels nCells Time" units="s^{-2}"
+                     description="Square of Brunt-Vaisala frequency"/>
+
+                <var name="tend_rtheta_adv" type="real" dimensions="nVertLevels nCells Time" units="kg K m^{-3} s^{-1}"
+                     description="flux divergence for rho*theta_m/zz, used in the Tiedtke convective parameterization"/>
 
                 <var name="surface_pressure" type="real" dimensions="nCells Time" units="Pa"
                      description="Diagnosed surface pressure"/>
@@ -2379,6 +2519,7 @@
                 <!-- constituent at each position in the scalars array is later set by code in    -->
                 <!-- the CAM-MPAS interface layer.                                                -->
 #ifndef MPAS_CAM_DYCORE
+#ifndef MPAS_UFS_DYCORE
                 <!-- scalar tendencies -->
                 <var_array name="scalars_tend" type="real" dimensions="nVertLevels nCells Time">
                         <var name="tend_qv" name_in_code="qv" array_group="moist" units="kg m^{-3} s^{-1}"
@@ -2463,7 +2604,12 @@
                         <var name="tend_nwfa" name_in_code="nwfa" array_group="number" units="nb m^{-3} s^{-1}"
                              description="Tendency of water-friendly aerosol number concentration multiplied by dry air density divided by d(zeta)/dz"
                              packages="mp_thompson_aers_in;tempo_aerosolaware_in"/>
+
+                        <var name="tend_tke" name_in_code="tke" array_group="turbulence" units="kg m^{-3} m^2 s^{-2} s^{-1}" 
+                             description="Tendency of tke multiplied by dry air density divided by d(zeta)/dz"
+                             packages="les"/>
                 </var_array>
+#endif
 #endif
         </var_struct>
 
@@ -2496,7 +2642,7 @@
 
                 <var name="lbc_rtheta_m" type="real" dimensions="nVertLevels nCells Time" units="kg K m^{-3} s^{-2}"
                      description="Lateral boundary tendency of rho_zz-coupled theta_m"/>
-
+#ifndef MPAS_UFS_DYCORE
                 <var_array name="lbc_scalars" type="real" dimensions="nVertLevels nCells Time">
                         <var name="lbc_qv" name_in_code="qv" array_group="moist"
                              units="kg kg^{-1} s^{-1}"
@@ -2562,7 +2708,13 @@
                         <var name="lbc_nwfa" name_in_code="nwfa" array_group="number" packages="mp_thompson_aers_in;tempo_aerosolaware_in"
                              units="m^{-3} s^{-1}"
                              description="Lateral boundary tendency of water-friendly aerosol number concentration"/>
+
+                        <var name="lbc_tke" name_in_code="tke" array_group="turbulence"
+                             units="m^2 s^{-3}"
+                             description="Lateral boundary tendency of TKE"
+                             packages="les"/>
                 </var_array>
+#endif
         </var_struct>
 
         <var_struct name="halo_scratch" time_levs="1">
@@ -2577,6 +2729,19 @@
 <!--  hydrostatic and non-hydrostatic dynamical cores):                                                 -->
 <!-- ================================================================================================== -->
 
+#ifdef MPAS_UFS_DYCORE
+<nml_record name="physics" in_defaults="true">
+  <nml_option name="num_soil_layers" type="integer" default_value="4" in_defaults="false"
+              units="-"
+              description="number of soil layers in Noah land surface scheme"
+              possible_values="Positive integers. For Noah LSM, must be set to 4."/>
+
+  <nml_option name="months" type="integer" default_value="12" in_defaults="false"
+              units="-"
+              description="number of months per year"
+              possible_values="Positive integer values. DO NOT CHANGE."/>
+</nml_record>
+#endif
 
 #ifdef DO_PHYSICS
         <nml_record name="physics" in_defaults="true">
@@ -2679,6 +2844,11 @@
                      units="-"
                      description="number of microphysics time-steps per physics time-steps"
                      possible_values="Positive integers"/>
+
+                <nml_option name="config_microphysics_top" type="real" default_value="45000." in_defaults="false"
+                     units="m"
+                     description="height above which to exclude microphysics tendencies"
+                     possible_values="Positive reals"/>
 
                 <nml_option name="config_radtlw_interval" type="character" default_value="00:30:00"
                      units="-"
@@ -2981,6 +3151,10 @@
                      units="s"
                      description="Relaxation time to initial values in 1-d OML"
                      possible_values="Non-negative real values"/>
+
+                <nml_option name="calc_prate_max" type="logical" default_value="false" in_defaults="false" units="-"
+                     description="switch for calculating time-maximum precipitation rate for instantaneous, 1-minute, 5-minute, and 10-minute periods"
+                     possible_values=".true. or .false."/>
         </nml_record>
 
         <var_struct name="diag_physics" time_levs="1">
@@ -3036,6 +3210,10 @@
                      description="10 cm maximum radar reflectivity"
                      packages="mp_thompson_in;mp_thompson_aers_in;mp_wsm6_in;mp_nssl2m_in;mp_tempo_in"/>
 
+                <var name="refl10cm_compref_max" type="real" dimensions="nCells Time" units="dBZ"
+                     description="maximum composite 10 cm radar reflectivity since last output time"
+                     packages="mp_thompson_in;mp_thompson_aers_in;mp_nssl2m_in;mp_tempo_in"/>
+
                 <var name="refl10cm_1km" type="real" dimensions="nCells Time" units="dBZ"
                      description="diagnosed 10 cm radar reflectivity at 1 km AGL"
                      packages="mp_thompson_in;mp_thompson_aers_in;mp_wsm6_in;mp_nssl2m_in;mp_tempo_in"/>
@@ -3068,6 +3246,18 @@
                      description="accumulated total grid-scale precipitation"
                      packages="mp_kessler_in;mp_thompson_in;mp_thompson_aers_in;mp_wsm6_in;mp_nssl2m_in;mp_tempo_in"/>
 
+                <var name="ave_prate_1min" type="real" dimensions="nCells Time" units="mm s^{-1}"
+                     description="maximum 1-minute precipitation rate since last output time"
+                     packages="mp_kessler_in;mp_thompson_in;mp_thompson_aers_in;mp_wsm6_in;mp_nssl2m_in;mp_tempo_in"/>
+
+                <var name="ave_prate_5min" type="real" dimensions="nCells Time" units="mm s^{-1}"
+                     description="maximum 5-minute precipitation rate since last output time"
+                     packages="mp_kessler_in;mp_thompson_in;mp_thompson_aers_in;mp_wsm6_in;mp_nssl2m_in;mp_tempo_in"/>
+
+                <var name="ave_prate_10min" type="real" dimensions="nCells Time" units="mm s^{-1}"
+                     description="maximum 10-minute precipitation rate since last output time"
+                     packages="mp_kessler_in;mp_thompson_in;mp_thompson_aers_in;mp_wsm6_in;mp_nssl2m_in;mp_tempo_in"/>
+
                 <var name="frainnc" type="real" dimensions="nCells Time" units="mm"
                      description="accumulated total grid-scale freezing rain"
                      packages="mp_tempo_in"/>
@@ -3079,6 +3269,10 @@
                 <var name="graupelnc" type="real" dimensions="nCells Time" units="mm"
                      description="accumulated grid-scale precipitation of graupel"
                      packages="mp_thompson_in;mp_thompson_aers_in;mp_wsm6_in;mp_nssl2m_in;mp_tempo_in"/>
+
+                <var name="prate_max" type="real" dimensions="nCells Time" units="mm s^{-1}"
+                     description="maximum instantaneous precipitation rate since last output time"
+                     packages="mp_thompson_in;mp_thompson_aers_in;mp_nssl2m_in;mp_tempo_in"/>
 
                 <var name="rainprod" type="real" dimensions="nVertLevels nCells Time" units="s^{-1}"
                      description="rain production rate"
@@ -3229,7 +3423,7 @@
 
                 <var name="hpbl" type="real" dimensions="nCells Time" units="m"
                      description="Planetary Boundary Layer (PBL) height"
-                     packages="bl_mynn_in;bl_mynnedmf_in;bl_ysu_in;bl_myj_in"/>
+                     packages="bl_mynn_in;bl_mynnedmf_in;bl_ysu_in;bl_myj_in;sfclayer"/>
 
 		<var name="kzh" type="real" dimensions="nVertLevels nCells Time" units="m^{2} s^{-1}"
                      description="vertical diffusion coefficient of potential temperature"
@@ -3379,6 +3573,26 @@
                      description="Maximum excess moisture added to plumes"
                      packages="bl_mynnedmf_in"/>
 
+		<var name="maxmf_dd" type="real" dimensions="nCells Time" units="m s^{-1}"
+                     description="Maximum mass flux in the each column from downdrafts"
+                     packages="bl_mynnedmf_in"/>
+
+		<var name="maxwidth_dd" type="real" dimensions="nCells Time" units="m"
+                     description="Maximum width of downdrafts"
+                     packages="bl_mynnedmf_in"/>
+
+		<var name="maxtkeprod_dd" type="real" dimensions="nCells Time" units="m^2 s^{-2} hr^{-1}"
+                     description="Maximum tke production in column from downdrafts"
+                     packages="bl_mynnedmf_in"/>
+
+		<var name="cldtop_cooling" type="real" dimensions="nCells Time" units="K hr^{-1}"
+                     description="Maximum cooling at boundary layer cloud top"
+                     packages="bl_mynnedmf_in"/>
+
+		<var name="ent_eff" type="real" dimensions="nCells Time" units=""
+                     description="Entrainment efficiency"
+                     packages="bl_mynnedmf_in"/>
+
 		<!-- MYJ PBL SCHEME: -->
                 <var name="chlowq" type="real" dimensions="nCells Time" units=""
                      description=""
@@ -3394,131 +3608,131 @@
 
                 <var name="hfx" type="real" dimensions="nCells Time" units="W m^{-2}"
                      description="upward heat flux at the surface"
-                     packages="bl_mynn_in;bl_mynnedmf_in;bl_ysu_in;bl_myj_in"/>
+                     packages="sfclayer"/>
 
                 <var name="mavail" type="real" dimensions="nCells Time" units="unitless"
                      description="surface moisture availability (between 0 and 1)"
-                     packages="bl_mynn_in;bl_mynnedmf_in;bl_ysu_in;bl_myj_in;lsm_ruc_in"/>
+                     packages="sfclayer"/>
 
                 <var name="mol" type="real" dimensions="nCells Time" units="K"
                      description="T* in similarity theory"
-                     packages="bl_mynn_in;bl_mynnedmf_in;bl_ysu_in;bl_myj_in"/>
+                     packages="sfclayer"/>
 
                 <var name="qfx" type="real" dimensions="nCells Time" units="kg m^{-2} s^{-1}"
                      description="upward moisture flux at the surface"
-                     packages="bl_mynn_in;bl_mynnedmf_in;bl_ysu_in;bl_myj_in"/>
+                     packages="sfclayer"/>
 
                 <var name="qsfc" type="real"  dimensions="nCells Time" units="kg kg^{-1}"
                      description="specific humidity at lower boundary"
-                     packages="bl_mynn_in;bl_mynnedmf_in;bl_ysu_in;bl_myj_in"/>
+                     packages="sfclayer"/>
 
                 <var name="ust" type="real" dimensions="nCells Time" units="m s^{-1}"
                      description="U* in similarity theory"
-                     packages="bl_mynn_in;bl_mynnedmf_in;bl_ysu_in;bl_myj_in"/>
+                     packages="sfclayer"/>
 
                 <var name="ustm" type="real" dimensions="nCells Time" units="m s^{-1}"
                      description="U* in similarity theory without vconv"
-                     packages="bl_mynn_in;bl_mynnedmf_in;bl_ysu_in;bl_myj_in"/>
+                     packages="sfclayer"/>
 
                 <var name="zol" type="real" dimensions="nCells Time" units="unitless"
                      description="z/L height over Monin-Obukhov length"
-                     packages="bl_mynn_in;bl_mynnedmf_in;bl_ysu_in;bl_myj_in"/>
+                     packages="sfclayer"/>
 
                 <var name="br" type="real" dimensions="nCells Time" units="unitless"
                      description="Richardson number"
-                     packages="bl_mynn_in;bl_mynnedmf_in;bl_ysu_in;bl_myj_in"/>
+                     packages="sfclayer"/>
 
                 <var name="cd" type="real" dimensions="nCells Time" units="unitless"
                      description="drag coefficient at 10-meter"
-                     packages="bl_mynn_in;bl_mynnedmf_in;bl_ysu_in;bl_myj_in"/>
+                     packages="sfclayer"/>
 
                 <var name="cda" type="real" dimensions="nCells Time" units="unitless"
                      description="drag coefficient at lowest model level"
-                     packages="bl_mynn_in;bl_mynnedmf_in;bl_ysu_in;bl_myj_in"/>
+                     packages="sfclayer"/>
 
                 <var name="chs" type="real" dimensions="nCells Time" units="m s^{-1}"
                      description="surface exchange coefficient for heat and moisture"
-                     packages="bl_mynn_in;bl_mynnedmf_in;bl_ysu_in;bl_myj_in"/>
+                     packages="sfclayer"/>
 
                 <var name="chs2" type="real" dimensions="nCells Time" units="m s^{-1}"
                      description="surface exchange coefficient for heat at 2-meter"
-                     packages="bl_mynn_in;bl_mynnedmf_in;bl_ysu_in;bl_myj_in"/>
+                     packages="sfclayer"/>
 
                 <var name="cqs2" type="real" dimensions="nCells Time" units="m s^{-1}"
                      description="surface exchange coefficient for moisture at 2-meter"
-                     packages="bl_mynn_in;bl_mynnedmf_in;bl_ysu_in;bl_myj_in"/>
+                     packages="sfclayer"/>
 
-	        <var name="cqs" type="real" dimensions="nCells Time" units="m s^{-1}"
-                     description="surface exchange coefficient for moisture at 2-meter"
-                     packages="bl_mynnedmf_in;lsm_ruc_in"/>
+                <var name="cqs" type="real" dimensions="nCells Time" units="m s^{-1}"
+                     description="surface exchange coefficient for moisture"
+                     packages="sfclayer"/>
 
                 <var name="ck" type="real" dimensions="nCells Time" units="unitless"
                      description="enthalpy exchange coeff at 10-meter"
-                     packages="bl_mynn_in;bl_mynnedmf_in;bl_ysu_in;bl_myj_in"/>
+                     packages="sfclayer"/>
 
                 <var name="cka" type="real" dimensions="nCells Time" units="unitless"
                      description="enthalpy exchange coefficient at lowest model level"
-                     packages="bl_mynn_in;bl_mynnedmf_in;bl_ysu_in;bl_myj_in"/>
+                     packages="sfclayer"/>
 
                 <var name="cpm" type="real" dimensions="nCells Time" units="J K^{-1} kg^{-1}"
                      description="specific heat of dry air at constant pressure at lowest model level"
-                     packages="bl_mynn_in;bl_mynnedmf_in;bl_ysu_in;bl_myj_in"/>
+                     packages="sfclayer"/>
 
                 <var name="flhc" type="real" dimensions="nCells Time" units="W m^{-2} K^{-1}"
                      description="exchange coefficient for heat"
-                     packages="bl_mynn_in;bl_mynnedmf_in;bl_ysu_in;bl_myj_in;lsm_ruc_in"/>
+                     packages="sfclayer"/>
 
                 <var name="flqc" type="real" dimensions="nCells Time" units="kg m^{-2} s^{-1}"
                      description="exchange coefficient for moisture"
-                     packages="bl_mynn_in;bl_mynnedmf_in;bl_ysu_in;bl_myj_in;lsm_ruc_in"/>
+                     packages="sfclayer"/>
 
                 <var name="gz1oz0" type="real" dimensions="nCells Time" units="unitless"
                      description="log(z/z0) where z0 is roughness length"
-                     packages="bl_mynn_in;bl_mynnedmf_in;bl_ysu_in;bl_myj_in"/>
+                     packages="sfclayer"/>
 
                 <var name="lh" type="real" dimensions="nCells Time" units="W m^{-2}"
                      description="latent heat flux at the surface"
-                     packages="bl_mynn_in;bl_mynnedmf_in;bl_ysu_in;bl_myj_in"/>
+                     packages="sfclayer"/>
 
                 <var name="psim" type="real" dimensions="nCells Time" units="unitless"
                      description="similarity stability function for momentum"
-                     packages="bl_mynn_in;bl_mynnedmf_in;bl_ysu_in;bl_myj_in"/>
+                     packages="sfclayer"/>
 
                 <var name="psih" type="real" dimensions="nCells Time" units="unitless"
                      description="similarity stability function for heat"
-                     packages="bl_mynn_in;bl_mynnedmf_in;bl_ysu_in;bl_myj_in"/>
+                     packages="sfclayer"/>
 
                 <var name="qgh" type="real" dimensions="nCells Time" units="kg kg^{-1}"
                      description="lowest level saturation mixing ratio"
-                     packages="bl_mynn_in;bl_mynnedmf_in;bl_ysu_in;bl_myj_in"/>
+                     packages="sfclayer"/>
 
                 <var name="regime" type="real" dimensions="nCells Time" units="unitless"
                      description="flag indicating the PBL regime (stable,unstable,...)"
-                     packages="bl_mynn_in;bl_mynnedmf_in;bl_ysu_in;bl_myj_in"/>
+                     packages="sfclayer"/>
 
                 <var name="rmol" type="real" dimensions="nCells Time" units="unitless"
                      description="1./L Monin Obukhov length"
-                     packages="bl_mynn_in;bl_mynnedmf_in;bl_ysu_in;bl_myj_in"/>
+                     packages="sfclayer"/>
 
                 <var name="wspd" type="real" dimensions="nCells Time" units="m s^{-1}"
                      description="wind speed at lowest model level"
-                     packages="bl_mynn_in;bl_mynnedmf_in;bl_ysu_in;bl_myj_in"/>
+                     packages="sfclayer"/>
 
 
                 <!-- ... MONIN-OBUKHOV (SFCLAY): -->
                 <var name="fh" type="real" dimensions="nCells Time" units="unitless"
                      description="integrated stability function for heat"
-                     packages="bl_ysu_in"/>
+                     packages="sfclayer"/>
 
                 <var name="fm" type="real" dimensions="nCells Time" units="unitless"
                      description="integrated stability function for moisture"
-                     packages="bl_ysu_in"/>
+                     packages="sfclayer"/>
 
 
                 <!-- ... MYNN: -->
                 <var name="ch" type="real" dimensions="nCells Time" units="m s^{-1}"
                      description="surface exchange coefficient for heat"
-                     packages="bl_mynn_in;bl_mynnedmf_in"/>
+                     packages="sfclayer"/>
 
                 <var name="qcg" type="real" dimensions="nCells Time" units="kg kg^{-1}"
                      description="cloud water mixing ratio at the ground surface"
@@ -3585,20 +3799,20 @@
                      description="shelter specific humidity"
                      packages="bl_myj_in"/>
 
-                <!-- DIAGNOSTICS: -->
-                <var name="u10" type="real" dimensions="nCells Time" packages="bl_mynn_in;bl_mynnedmf_in;bl_ysu_in;bl_myj_in" units="m s^{-1}"
+                <!-- SURFACE DIAGNOSTICS: -->
+                <var name="u10" type="real" dimensions="nCells Time" packages="sfclayer" units="m s^{-1}"
                      description="10-meter zonal wind"/>
 
-                <var name="v10" type="real" dimensions="nCells Time" packages="bl_mynn_in;bl_mynnedmf_in;bl_ysu_in;bl_myj_in" units="m s^{-1}"
+                <var name="v10" type="real" dimensions="nCells Time" packages="sfclayer" units="m s^{-1}"
                      description="10-meter meridional wind"/>
 
-                <var name="q2" type="real" dimensions="nCells Time" packages="bl_mynn_in;bl_mynnedmf_in;bl_ysu_in;bl_myj_in" units="kg kg^{-1}"
+                <var name="q2" type="real" dimensions="nCells Time" packages="sfclayer" units="kg kg^{-1}"
                      description="2-meter specific humidity"/>
 
-                <var name="t2m" type="real" dimensions="nCells Time" packages="bl_mynn_in;bl_mynnedmf_in;bl_ysu_in;bl_myj_in" units="K"
+                <var name="t2m" type="real" dimensions="nCells Time" packages="sfclayer" units="K"
                      description="2-meter temperature"/>
 
-                <var name="th2m" type="real" dimensions="nCells Time" packages="bl_mynn_in;bl_mynnedmf_in;bl_ysu_in;bl_myj_in" units="K"
+                <var name="th2m" type="real" dimensions="nCells Time" packages="sfclayer" units="K"
                      description="2-meter potential temperature"/>
 
 
@@ -4135,8 +4349,61 @@
 
         </var_struct>
 #endif
+#ifdef MPAS_UFS_DYCORE
+        <var_struct name="diag_physics" time_levs="1">
+                <var name="swdnb" type="real" dimensions="nCells Time" units="W m^{-2}"
+                     description="all-sky downward surface shortwave radiation flux"/>
 
+                <var name="swdnbc" type="real" dimensions="nCells Time" units="W m^{-2}"
+                     description="clear-sky downward surface shortwave radiation flux"/>
+
+                <var name="swdnt" type="real" dimensions="nCells Time" units="W m^{-2}"
+                     description="all-sky downward top-of-atmosphere shortwave radiation flux"/>
+
+                <var name="swdntc" type="real" dimensions="nCells Time" units="W m^{-2}"
+                     description="clear-sky downward top-of-atmosphere shortwave radiation flux"/>
+
+                <var name="swupb" type="real" dimensions="nCells Time" units="W m^{-2}"
+                     description="all-sky upward surface shortwave radiation flux"/>
+
+                <var name="swupbc" type="real" dimensions="nCells Time" units="W m^{-2}"
+                     description="clear-sky upward surface shortwave radiation flux"/>
+
+                <var name="swupt" type="real" dimensions="nCells Time" units="W m^{-2}"
+                     description="all-sky upward top-of-atmosphere shortwave radiation flux"/>
+
+                <var name="swuptc" type="real" dimensions="nCells Time" units="W m^{-2}"
+                     description="clear-sky upward top-of-atmosphere shortwave radiation flux"/>
+
+                <var name="lwdnb" type="real" dimensions="nCells Time" units="W m^{-2}"
+                     description="all-sky downward surface longwave radiation flux"/>
+
+                <var name="lwdnbc" type="real" dimensions="nCells Time" units="W m^{-2}"
+                     description="clear-sky downward surface longwave radiation flux"/>
+
+                <var name="lwdnt" type="real" dimensions="nCells Time" units="W m^{-2}"
+                     description="all-sky downward top-of-the-atmosphere longwave radiation flux"/>
+
+                <var name="lwdntc" type="real" dimensions="nCells Time" units="W m^{-2}"
+                     description="clear-sky downward top-of-the-atmosphere longwave radiation flux"/>
+
+                <var name="lwupb" type="real" dimensions="nCells Time" units="W m^{-2}"
+                     description="all-sky upward surface longwave radiation flux"/>
+
+                <var name="lwupbc" type="real" dimensions="nCells Time" units="W m^{-2}"
+                     description="clear-sky upward surface longwave radiation flux"/>
+
+                <var name="lwupt" type="real" dimensions="nCells Time" units="W m^{-2}"
+                     description="all-sky upward top-of-the-atmosphere longwave radiation flux"/>
+
+                <var name="lwuptc" type="real" dimensions="nCells Time" units="W m^{-2}"
+                     description="clear-sky upward top-of-the-atmosphere longwave radiation flux"/>
+	</var_struct>
+#endif
         <var_struct name="tend_physics" time_levs="1">
+
+                <var name="mp_top_level" type="integer" dimensions="" units="-"
+                     description="Vertical layer above which microphysics tendency is ignored"/>
 
                 <var name="tend_ru_physics" type="real" dimensions="nVertLevels nEdges Time" units="kg m^{-2} s^{-1}"
                      description="Total horizontal momentum tendency from physics"
@@ -4161,7 +4428,12 @@
                 <var name="tend_umerid" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1} s^{-1}"
                      description="Total cell-centered meridional wind tendency from physics"
                      persistence="scratch" />
- 
+
+#ifdef STOCHASTIC_PHYSICS
+                <var name="stoch_pattern_sppt" type="real" dimensions="nVertLevels nCells Time" units="unitless"
+                     description="Perturbation pattern for stochastic physics SPPT scheme" />
+#endif
+
 #ifdef DO_PHYSICS
                 <!-- ================================================================================================== -->
                 <!-- TENDENCIES FROM PARAMETERIZATION OF CLOUD MICROPHYSICS:                                            -->
@@ -4344,7 +4616,214 @@
                      description="tendency of potential temperature due to long wave radiation"/>
 #endif
         </var_struct>
+	<!-- ================================================================================================== -->
+	<!-- ... WHEN USING MPAS AS A DYCORE IN THE UWM, WE STILL HAVE PHYSICS INPUTS DEFINED ON THE MPAS GRID, -->
+	<!-- ... ALTHOUGH WE DON'T USE MPAS PHYS. THESE INPUTS ARE CREATED OFFLINE USING CORE_INIT_ATMOSPHERE   -->
+	<!-- ... THIS <SFC_INPUT> STREAM CONTAINS A SUBSET OF THE <SFC_INPUT> UNDER THE "DO_PHYSICS"            -->
+	<!-- ================================================================================================== -->
+#ifdef MPAS_UFS_DYCORE
+        <var_struct name="sfc_input" time_levs="1">
+                <!-- ================================================================================================== -->
+                <!-- ... SURFACE CHARACTERISTICS THAT NEED TO BE READ FROM GRID.NC:                                     -->
+                <!-- ================================================================================================== -->
+		<var name="dzs" type="real" dimensions="nSoilLevels nCells Time" units="m"
+                    description="soil layer thickness"/>
 
+		<var name="isltyp" type="integer" dimensions="nCells" units="unitless"
+                     description="dominant soil category"/>
+
+		<var name="ivgtyp" type="integer" dimensions="nCells" units="unitless"
+                     description="dominant vegetation category"/>
+
+		<var name="isice_lu" name_in_code="isice" type="integer" dimensions="" units="unitless" default_value="24"
+                     description="Index category for snow/ice"/>
+
+		<var name="iswater_lu" name_in_code="iswater" type="integer" dimensions="" units="unitless" default_value="16"
+                     description="Index category for water"/>
+
+		<var name="landmask" type="integer"  dimensions="nCells" units="unitless"
+                     description="land-ocean mask (1=land ; 0=ocean)"/>
+
+		<var name="mminlu" type="text" dimensions="" units="unitless"
+                     description="land use classification"/>
+
+		<var name="sfc_albbck" type="real" dimensions="nCells Time" units="unitless"
+                     description="background surface albedo"/>
+
+		<var name="sh2o" type="real" dimensions="nSoilLevels nCells Time" units="m3 m^{-3}"
+                     description="soil equivalent liquid water "/>
+
+		<var name="smois" type="real" dimensions="nSoilLevels nCells Time" units="m3 m^{-3}"
+                     description="soil moisture"/>
+
+		<var name="skintemp" type="real" dimensions="nCells Time" units="K"
+                     description="ground or water surface temperature"/>
+
+		<var name="snow" type="real" dimensions="nCells Time" units="kg m^{-2}"
+                     description="snow water equivalent"/>
+
+		<var name="snowc" type="real" dimensions="nCells Time" units="unitless"
+                     description="flag for snow on ground (=0 no snow; =1,otherwise"/>
+
+		<var name="snowh" type="real" dimensions="nCells Time" units="m"
+                     description="physical snow depth"/>
+
+		<var name="sst" type="real" dimensions="nCells Time" units="K"
+                     description="sea-surface temperature"/>
+
+		<var name="ter" type="real" dimensions="nCells" units="m"
+                     description="terrain height"/>
+
+		<var name="tmn" type="real" dimensions="nCells Time" units="K"
+                     description="deep soil temperature"/>
+
+		<var name="tslb" type="real" dimensions="nSoilLevels nCells Time" units="K"
+                     description="soil layer temperature"/>
+
+		<var name="vegfra" type="real" dimensions="nCells Time" units="percent"
+		     description="vegetation fraction"/>
+
+		<var name="seaice" type="real" dimensions="nCells Time" units="unitless"
+		     description="sea-ice flag (0=no seaice; =1 otherwise)"/>
+
+		<var name="xice" type="real" dimensions="nCells Time" units="unitless"
+		     description="fractional area coverage of sea-ice"/>
+
+		<var name="xland" type="real" dimensions="nCells Time" units="unitless"
+		     description="land-ocean mask (1=land including sea-ice ; 2=ocean)"/>
+
+		<var name="shdmin" type="real" dimensions="nCells" units="percent"
+                     description="minimum fractional coverage of annual green vegetation fraction"/>
+
+		<var name="shdmax" type="real" dimensions="nCells" units="percent"
+                     description="maximum fractional coverage of annual green vegetation fraction"/>
+
+		<var name="snoalb" type="real"  dimensions="nCells" units="unitless"
+                     description="annual maximum snow albedo"/>
+
+		<var name="greenfrac" type="real" dimensions="nMonths nCells" units="percent"
+                     description="monthly-mean climatological greenness fraction"/>
+
+		<var name="albedo12m" type="real" dimensions="nMonths nCells" units="percent"
+                     description="monthly-mean climatological surface albedo"/>
+
+                <!-- ================================================================================================== -->
+                <!-- ... PARAMETERIZATION OF GRAVITY WAVE DRAG OVER OROGRAPHY:                                          -->
+                <!-- ================================================================================================== -->
+
+                <var name="var2d" type="real" dimensions="nCells" units="m"
+                     description="standard deviation of subgrid-scale orography"/>
+
+                <var name="con" type="real" dimensions="nCells" units="unitless"
+                     description="orographic convexity"/>
+
+                <var name="oa1" type="real" dimensions="nCells" units="unitless"
+                     description="asymmetry of subgrid-scale orography for westerly flow"/>
+
+                <var name="oa2" type="real" dimensions="nCells" units="unitless"
+                     description="asymmetry of subgrid-scale orography for southerly flow"/>
+
+                <var name="oa3" type="real" dimensions="nCells" units="unitless"
+                     description="asymmetry of subgrid-scale orography for south-westerly flow"/>
+
+                <var name="oa4" type="real" dimensions="nCells" units="unitless"
+                     description="asymmetry of subgrid-scale orography for north-westerly flow"/>
+
+                <var name="ol1" type="real" dimensions="nCells" units="unitless"
+                     description="effective orographic length for westerly flow"/>
+
+                <var name="ol2" type="real" dimensions="nCells" units="unitless"
+                     description="effective orographic length for southerly flow"/>
+
+                <var name="ol3" type="real" dimensions="nCells" units="unitless"
+                     description="effective orographic length for south-westerly flow"/>
+
+                <var name="ol4" type="real" dimensions="nCells" units="unitless"
+                     description="effective orographic length for north-westerly flow"/>
+                <!-- GSL GWDO fields - meso-scale -->
+                <var name="var2dls" type="real" dimensions="nCells" units="m"
+                     description="standard deviation of subgrid-scale orography (meso-scale GWD)"
+                     packages="ugwp_orog_stream"/>
+
+                <var name="conls" type="real" dimensions="nCells" units="unitless"
+                     description="orographic convexity (meso-scale GWD)"
+                     packages="ugwp_orog_stream"/>
+
+                <var name="oa1ls" type="real" dimensions="nCells" units="unitless"
+                     description="asymmetry of subgrid-scale orography for westerly flow (meso-scale GWD)"
+                     packages="ugwp_orog_stream"/>
+
+                <var name="oa2ls" type="real" dimensions="nCells" units="unitless"
+                     description="asymmetry of subgrid-scale orography for southerly flow (meso-scale GWD)"
+                     packages="ugwp_orog_stream"/>
+
+                <var name="oa3ls" type="real" dimensions="nCells" units="unitless"
+                     description="asymmetry of subgrid-scale orography for south-westerly flow (meso-scale GWD)"
+                     packages="ugwp_orog_stream"/>
+
+                <var name="oa4ls" type="real" dimensions="nCells" units="unitless"
+                     description="asymmetry of subgrid-scale orography for north-westerly flow (meso-scale GWD)"
+                     packages="ugwp_orog_stream"/>
+
+                <var name="ol1ls" type="real" dimensions="nCells" units="unitless"
+                     description="effective orographic length for westerly flow (meso-scale GWD)"
+                     packages="ugwp_orog_stream"/>
+
+                <var name="ol2ls" type="real" dimensions="nCells" units="unitless"
+                     description="effective orographic length for southerly flow (meso-scale GWD)"
+                     packages="ugwp_orog_stream"/>
+
+                <var name="ol3ls" type="real" dimensions="nCells" units="unitless"
+                     description="effective orographic length for south-westerly flow (meso-scale GWD)"
+                     packages="ugwp_orog_stream"/>
+
+                <var name="ol4ls" type="real" dimensions="nCells" units="unitless"
+                     description="effective orographic length for north-westerly flow (meso-scale GWD)"
+                     packages="ugwp_orog_stream"/>
+
+                <!-- GSL GWDO fields - small-scale -->
+                <var name="var2dss" type="real" dimensions="nCells" units="m"
+                     description="standard deviation of subgrid-scale orography (small-scale GWD)"
+                     packages="ugwp_orog_stream"/>
+
+                <var name="conss" type="real" dimensions="nCells" units="unitless"
+                     description="orographic convexity (small-scale GWD)"
+                     packages="ugwp_orog_stream"/>
+
+                <var name="oa1ss" type="real" dimensions="nCells" units="unitless"
+                     description="asymmetry of subgrid-scale orography for westerly flow (small-scale GWD)"
+                     packages="ugwp_orog_stream"/>
+
+                <var name="oa2ss" type="real" dimensions="nCells" units="unitless"
+                     description="asymmetry of subgrid-scale orography for southerly flow (small-scale GWD)"
+                     packages="ugwp_orog_stream"/>
+
+                <var name="oa3ss" type="real" dimensions="nCells" units="unitless"
+                     description="asymmetry of subgrid-scale orography for south-westerly flow (small-scale GWD)"
+                     packages="ugwp_orog_stream"/>
+
+                <var name="oa4ss" type="real" dimensions="nCells" units="unitless"
+                     description="asymmetry of subgrid-scale orography for north-westerly flow (small-scale GWD)"
+                     packages="ugwp_orog_stream"/>
+
+                <var name="ol1ss" type="real" dimensions="nCells" units="unitless"
+                     description="effective orographic length for westerly flow (small-scale GWD)"
+                     packages="ugwp_orog_stream"/>
+
+                <var name="ol2ss" type="real" dimensions="nCells" units="unitless"
+                     description="effective orographic length for southerly flow (small-scale GWD)"
+                     packages="ugwp_orog_stream"/>
+
+                <var name="ol3ss" type="real" dimensions="nCells" units="unitless"
+                     description="effective orographic length for south-westerly flow (small-scale GWD)"
+                     packages="ugwp_orog_stream"/>
+
+                <var name="ol4ss" type="real" dimensions="nCells" units="unitless"
+                     description="effective orographic length for north-westerly flow (small-scale GWD)"
+                     packages="ugwp_orog_stream"/>
+
+	     </var_struct>
+#endif
 
 #ifdef DO_PHYSICS
         <var_struct name="atm_input" time_levs="1">
@@ -4673,4 +5152,12 @@
 #include "physics/Registry_tempo.xml"
 #include "physics/registry.chemistry.xml"
 #endif
+#ifdef STOCHASTIC_PHYSICS
+#include "stochastic_physics/Registry_stoch_physics.xml"
+#endif
+
+#ifdef MPAS_UFS_DYCORE
+#include "physics/Registry_noahmp.xml"
+#endif
+
 </registry>

@@ -27,6 +27,7 @@ set(MPAS_FRAMEWORK_SOURCES
         mpas_io_streams.F
         mpas_log.F
         mpas_stream_inquiry.F
+        mpas_output_timelevels.F
         mpas_stream_manager.F
         mpas_string_utils.F
         mpas_timekeeping.F
@@ -69,6 +70,9 @@ if (MPAS_PROFILE)
     list(APPEND FRAMEWORK_LINK_LIBRARIES GPTL::GPTL)
 endif ()
 target_link_libraries(framework PUBLIC ${FRAMEWORK_LINK_LIBRARIES})
+target_include_directories(framework INTERFACE
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+        $<INSTALL_INTERFACE:include/framework>)
 
 install(TARGETS framework EXPORT ${PROJECT_NAME}Exports
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
