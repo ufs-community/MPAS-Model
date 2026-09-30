@@ -3938,7 +3938,7 @@ module atm_time_integration
       !
 
       MPAS_ACC_TIMER_START('atm_advance_scalars [ACC_data_xfer]')
-#ifndef DO_PHYSICS
+#if !defined(DO_PHYSICS) && !defined(MPAS_UFS_DYCORE)
       !$acc enter data create(scalar_tend_save)
 #else
       !$acc enter data copyin(scalar_tend_save)
@@ -3957,7 +3957,7 @@ module atm_time_integration
             do k=1,nVertLevels
             do iScalar=1,num_scalars
                scalar_tend_column(iScalar,k) = 0.0_RKIND
-#ifndef DO_PHYSICS
+#if !defined(DO_PHYSICS) && !defined(MPAS_UFS_DYCORE)
                scalar_tend_save(iScalar,k,iCell) = 0.0_RKIND  !  testing purposes - we have no sources or sinks
 #endif
             end do
@@ -4291,7 +4291,7 @@ module atm_time_integration
       !$acc              invAreaCell, cellsOnCell, cellsOnEdge, nAdvCellsForEdge, &
       !$acc              advCellsForEdge, adv_coefs, adv_coefs_3rd, dvEdge, bdyMaskCell)
 
-#ifdef DO_PHYSICS
+#if defined(DO_PHYSICS) || defined(MPAS_UFS_DYCORE)
       !$acc enter data copyin(scalar_tend)
 #else
       !$acc enter data create(scalar_tend)
@@ -4311,7 +4311,7 @@ module atm_time_integration
          do k = 1,nVertLevels
             do iScalar = 1,num_scalars
 
-#ifndef DO_PHYSICS
+#if !defined(DO_PHYSICS) && !defined(MPAS_UFS_DYCORE)
                scalar_tend(iScalar,k,iCell) = 0.0_RKIND  !  testing purposes - we have no sources or sinks
 #endif
                scalars_old(iScalar,k,iCell) = scalars_old(iScalar,k,iCell)+dt*scalar_tend(iScalar,k,iCell) / rho_zz_old(k,iCell)
