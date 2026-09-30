@@ -497,6 +497,7 @@
 
 !local pointers for MYNN scheme:
  real(kind=RKIND),pointer:: len_disp
+ integer,pointer:: config_mynn_tkebudget,config_mynn_edmf_output
  real(kind=RKIND),dimension(:),pointer  :: meshDensity
  real(kind=RKIND),dimension(:),pointer  :: ch,qsfc,rmol,skintemp
  real(kind=RKIND),dimension(:,:),pointer:: cov,qke,qsq,tsq,sh3d,sm3d,tke_pbl,qke_adv,el_pbl
@@ -767,6 +768,8 @@
        
     case("bl_mynnedmf")
        call mpas_pool_get_config(configs,'config_len_disp',len_disp)
+       call mpas_pool_get_config(configs,'config_mynn_edmf_output',config_mynn_edmf_output)
+       call mpas_pool_get_config(configs,'config_mynn_tkebudget',config_mynn_tkebudget)
        call mpas_pool_get_array(mesh,'meshDensity',meshDensity)
 
        call mpas_pool_get_array(sfc_input,'skintemp',skintemp)
@@ -783,17 +786,19 @@
        call mpas_pool_get_array(diag_physics,'cldfrac_bl',cldfrac_bl)
        call mpas_pool_get_array(diag_physics,'qc_bl'     ,qc_bl     )
        call mpas_pool_get_array(diag_physics,'qi_bl'     ,qi_bl     )
-       call mpas_pool_get_array(diag_physics,'edmf_a'    ,edmf_a    )
-       call mpas_pool_get_array(diag_physics,'edmf_ent'  ,edmf_ent  )
-       call mpas_pool_get_array(diag_physics,'edmf_qc'   ,edmf_qc   )
-       call mpas_pool_get_array(diag_physics,'edmf_qt'   ,edmf_qt   )
-       call mpas_pool_get_array(diag_physics,'edmf_thl'  ,edmf_thl  )
-       call mpas_pool_get_array(diag_physics,'edmf_w'    ,edmf_w    )
-       call mpas_pool_get_array(diag_physics,'sub_thl'   ,sub_thl   )
-       call mpas_pool_get_array(diag_physics,'sub_qv'    ,sub_qv    )
-       call mpas_pool_get_array(diag_physics,'det_thl'   ,det_thl   )
-       call mpas_pool_get_array(diag_physics,'det_qv'    ,det_qv    )
-
+       if(config_mynn_edmf_output > 0) then
+          call mpas_pool_get_array(diag_physics,'edmf_a'    ,edmf_a    )
+          call mpas_pool_get_array(diag_physics,'edmf_ent'  ,edmf_ent  )
+          call mpas_pool_get_array(diag_physics,'edmf_qc'   ,edmf_qc   )
+          call mpas_pool_get_array(diag_physics,'edmf_qt'   ,edmf_qt   )
+          call mpas_pool_get_array(diag_physics,'edmf_thl'  ,edmf_thl  )
+          call mpas_pool_get_array(diag_physics,'edmf_w'    ,edmf_w    )
+          call mpas_pool_get_array(diag_physics,'sub_thl'   ,sub_thl   )
+          call mpas_pool_get_array(diag_physics,'sub_qv'    ,sub_qv    )
+          call mpas_pool_get_array(diag_physics,'det_thl'   ,det_thl   )
+          call mpas_pool_get_array(diag_physics,'det_qv'    ,det_qv    )
+       endif
+          
        do j = jts,jte
        do i = its,ite
           dx_p(i,j)   = len_disp / meshDensity(i)**0.25
@@ -817,21 +822,6 @@
           cldfrabl_p(i,k,j) = cldfrac_bl(k,i)
           qcbl_p(i,k,j)     = qc_bl(k,i)
           qibl_p(i,k,j)     = qi_bl(k,i)
-          edmfa_p(i,k,j)    = edmf_a(k,i)
-          edmfent_p(i,k,j)  = edmf_ent(k,i)
-          edmfqc_p(i,k,j)   = edmf_qc(k,i)
-          edmfqt_p(i,k,j)   = edmf_qt(k,i)
-          edmfthl_p(i,k,j)  = edmf_thl(k,i)
-          edmfw_p(i,k,j)    = edmf_w(k,i)
-          subthl_p(i,k,j)   = sub_thl(k,i)
-          subqv_p(i,k,j)    = sub_qv(k,i)
-          detthl_p(i,k,j)   = det_thl(k,i)
-          detqv_p(i,k,j)    = det_qv(k,i)
-          dqke_p(i,k,j)     = 0._RKIND
-          qbuoy_p(i,k,j)    = 0._RKIND
-          qdiss_p(i,k,j)    = 0._RKIND
-          qshear_p(i,k,j)   = 0._RKIND
-          qwt_p(i,k,j)      = 0._RKIND
 
           rqsblten_p(i,k,j)   = 0._RKIND
           rncblten_p(i,k,j)   = 0._RKIND
@@ -845,6 +835,39 @@
        enddo
        enddo
 
+       if(config_mynn_edmf_output > 0)then
+         do j = jts,jte
+         do k = kts,kte
+         do i = its,ite
+            edmfa_p(i,k,j)    = edmf_a(k,i)
+            edmfent_p(i,k,j)  = edmf_ent(k,i)
+            edmfqc_p(i,k,j)   = edmf_qc(k,i)
+            edmfqt_p(i,k,j)   = edmf_qt(k,i)
+            edmfthl_p(i,k,j)  = edmf_thl(k,i)
+            edmfw_p(i,k,j)    = edmf_w(k,i)
+            subthl_p(i,k,j)   = sub_thl(k,i)
+            subqv_p(i,k,j)    = sub_qv(k,i)
+            detthl_p(i,k,j)   = det_thl(k,i)
+            detqv_p(i,k,j)    = det_qv(k,i)
+         enddo
+         enddo
+         enddo
+       endif
+
+       if(config_mynn_tkebudget == 1)then
+         do j = jts,jte
+         do k = kts,kte
+         do i = its,ite
+            dqke_p(i,k,j)     = 0._RKIND
+            qbuoy_p(i,k,j)    = 0._RKIND
+            qdiss_p(i,k,j)    = 0._RKIND
+            qshear_p(i,k,j)   = 0._RKIND
+            qwt_p(i,k,j)      = 0._RKIND
+         enddo
+         enddo
+         enddo
+       endif
+      
        do j = jts,jte
        do i = its,ite
           maxwidthbl_p(i,j)    = 0._RKIND
@@ -961,6 +984,7 @@
  real(kind=RKIND),dimension(:),pointer  :: delta,wstar
       
 !local pointers for MYNN scheme:
+ integer,pointer:: config_mynn_tkebudget,config_mynn_edmf_output
  real(kind=RKIND),dimension(:),pointer  :: maxmf,maxwidth,ztop_plume,excess_h,excess_q
  real(kind=RKIND),dimension(:),pointer  :: maxmf_dd,maxwidth_dd,maxtkeprod_dd,cldtop_cooling,ent_eff
  real(kind=RKIND),dimension(:,:),pointer:: cov,qke,qsq,tsq,sh3d,sm3d,tke_pbl,qke_adv,el_pbl,dqke,qbuoy, &
@@ -1147,7 +1171,9 @@
           enddo
        endif
        
-    case("bl_mynnedmf")
+      case("bl_mynnedmf")
+       call mpas_pool_get_config(configs,'config_mynn_edmf_output',config_mynn_edmf_output)
+       call mpas_pool_get_config(configs,'config_mynn_tkebudget',config_mynn_tkebudget)
        call mpas_pool_get_array(diag_physics,'maxmf'         ,maxmf         )
        call mpas_pool_get_array(diag_physics,'maxwidth'      ,maxwidth      )
        call mpas_pool_get_array(diag_physics,'ztop_plume'    ,ztop_plume    )
@@ -1166,25 +1192,28 @@
        call mpas_pool_get_array(diag_physics,'tsq'           ,tsq           )
        call mpas_pool_get_array(diag_physics,'sh3d'          ,sh3d          )
        call mpas_pool_get_array(diag_physics,'sm3d'          ,sm3d          )
-       call mpas_pool_get_array(diag_physics,'dqke'          ,dqke          )
-       call mpas_pool_get_array(diag_physics,'qbuoy'         ,qbuoy         )
-       call mpas_pool_get_array(diag_physics,'qdiss'         ,qdiss         )
-       call mpas_pool_get_array(diag_physics,'qshear'        ,qshear        )
-       call mpas_pool_get_array(diag_physics,'qwt'           ,qwt           )
+       if(config_mynn_tkebudget == 1) then
+          call mpas_pool_get_array(diag_physics,'dqke'       ,dqke          )
+          call mpas_pool_get_array(diag_physics,'qbuoy'      ,qbuoy         )
+          call mpas_pool_get_array(diag_physics,'qdiss'      ,qdiss         )
+          call mpas_pool_get_array(diag_physics,'qshear'     ,qshear        )
+          call mpas_pool_get_array(diag_physics,'qwt'        ,qwt           )
+       endif
        call mpas_pool_get_array(diag_physics,'cldfrac_bl'    ,cldfrac_bl    )
        call mpas_pool_get_array(diag_physics,'qc_bl'         ,qc_bl         )
        call mpas_pool_get_array(diag_physics,'qi_bl'         ,qi_bl         )
-       call mpas_pool_get_array(diag_physics,'edmf_a'        ,edmf_a        )
-       call mpas_pool_get_array(diag_physics,'edmf_ent'      ,edmf_ent      )
-       call mpas_pool_get_array(diag_physics,'edmf_qc'       ,edmf_qc       )
-       call mpas_pool_get_array(diag_physics,'edmf_qt'       ,edmf_qt       )
-       call mpas_pool_get_array(diag_physics,'edmf_thl'      ,edmf_thl      )
-       call mpas_pool_get_array(diag_physics,'edmf_w'        ,edmf_w        )
-       call mpas_pool_get_array(diag_physics,'sub_thl'       ,sub_thl       )
-       call mpas_pool_get_array(diag_physics,'sub_qv'        ,sub_qv        )
-       call mpas_pool_get_array(diag_physics,'det_thl'       ,det_thl       )
-       call mpas_pool_get_array(diag_physics,'det_qv'        ,det_qv        )
-
+       if(config_mynn_edmf_output > 0) then
+          call mpas_pool_get_array(diag_physics,'edmf_a'     ,edmf_a        )
+          call mpas_pool_get_array(diag_physics,'edmf_ent'   ,edmf_ent      )
+          call mpas_pool_get_array(diag_physics,'edmf_qc'    ,edmf_qc       )
+          call mpas_pool_get_array(diag_physics,'edmf_qt'    ,edmf_qt       )
+          call mpas_pool_get_array(diag_physics,'edmf_thl'   ,edmf_thl      )
+          call mpas_pool_get_array(diag_physics,'edmf_w'     ,edmf_w        )
+          call mpas_pool_get_array(diag_physics,'sub_thl'    ,sub_thl       )
+          call mpas_pool_get_array(diag_physics,'sub_qv'     ,sub_qv        )
+          call mpas_pool_get_array(diag_physics,'det_thl'    ,det_thl       )
+          call mpas_pool_get_array(diag_physics,'det_qv'     ,det_qv        )
+       endif
        call mpas_pool_get_array(tend_physics,'rqsblten'      ,rqsblten      )
 
        do j = jts,jte
@@ -1216,27 +1245,43 @@
           cldfrac_bl(k,i) = cldfrabl_p(i,k,j)
           qc_bl(k,i)      = qcbl_p(i,k,j)
           qi_bl(k,i)      = qibl_p(i,k,j)
-          edmf_a(k,i)     = edmfa_p(i,k,j)
-          edmf_ent(k,i)   = edmfent_p(i,k,j)
-          edmf_qc(k,i)    = edmfqc_p(i,k,j)
-          edmf_qt(k,i)    = edmfqt_p(i,k,j)
-          edmf_thl(k,i)   = edmfthl_p(i,k,j)
-          edmf_w(k,i)     = edmfw_p(i,k,j)
-          sub_thl(k,i)    = subthl_p(i,k,j)
-          sub_qv(k,i)     = subqv_p(i,k,j)
-          det_thl(k,i)    = detthl_p(i,k,j)
-          det_qv(k,i)     = detqv_p(i,k,j)
-          dqke(k,i)       = dqke_p(i,k,j)
-          qbuoy(k,i)      = qbuoy_p(i,k,j)
-          qdiss(k,i)      = qdiss_p(i,k,j)
-          qshear(k,i)     = qshear_p(i,k,j)
-          qwt(k,i)        = qwt_p(i,k,j)
-
           rqsblten(k,i)   = rqsblten_p(i,k,j)
        enddo
        enddo
        enddo
 
+       if(config_mynn_edmf_output > 0)then
+          do j = jts,jte
+          do k = kts,kte
+          do i = its,ite
+             edmf_a(k,i)     = edmfa_p(i,k,j)
+             edmf_ent(k,i)   = edmfent_p(i,k,j)
+             edmf_qc(k,i)    = edmfqc_p(i,k,j)
+             edmf_qt(k,i)    = edmfqt_p(i,k,j)
+             edmf_thl(k,i)   = edmfthl_p(i,k,j)
+             edmf_w(k,i)     = edmfw_p(i,k,j)
+             sub_thl(k,i)    = subthl_p(i,k,j)
+             sub_qv(k,i)     = subqv_p(i,k,j)
+             det_thl(k,i)    = detthl_p(i,k,j)
+             det_qv(k,i)     = detqv_p(i,k,j)
+          enddo
+          enddo
+          enddo
+       endif
+       if(config_mynn_tkebudget == 1)then
+          do j = jts,jte
+          do k = kts,kte
+          do i = its,ite
+             dqke(k,i)       = dqke_p(i,k,j)
+             qbuoy(k,i)      = qbuoy_p(i,k,j)
+             qdiss(k,i)      = qdiss_p(i,k,j)
+             qshear(k,i)     = qshear_p(i,k,j)
+             qwt(k,i)        = qwt_p(i,k,j)
+          enddo
+          enddo
+          enddo
+       endif
+       
        if(f_ni) then
           call mpas_pool_get_array(tend_physics,'rniblten',rniblten)
           do j = jts,jte
@@ -1382,7 +1427,6 @@
                    bl_mynn_mixqt,       &
                    bl_mynn_ess,         &
                    bl_mynn_tkebudget,   &
-                   icloud_bl,           &
                    spp_pbl
 
  real(kind=RKIND),pointer:: bl_mynn_closure
@@ -1465,7 +1509,6 @@
        call mpas_pool_get_config(configs,'config_mynn_mixqt'      ,bl_mynn_mixqt      )
        call mpas_pool_get_config(configs,'config_mynn_tkeadvect'  ,bl_mynn_tkeadvect  )
        call mpas_pool_get_config(configs,'config_mynn_tkebudget'  ,bl_mynn_tkebudget  )
-       call mpas_pool_get_config(configs,'config_icloud_bl'       ,icloud_bl          )
        call mpas_pool_get_config(configs,'config_spp_pbl'         ,spp_pbl            )
 !      call mpas_log_write(' ')
 !      call mpas_log_write('--- enter subroutine mynn_bl_driver:')
@@ -1561,10 +1604,6 @@
     case("bl_mynnedmf")
        call mpas_pool_get_config(configs,'config_mynn_cloudpdf'   ,bl_mynn_cloudpdf   )
        call mpas_pool_get_config(configs,'config_mynn_mixlength'  ,bl_mynn_mixlength  )
-       call mpas_pool_get_config(configs,'config_mynn_stfunc'     ,bl_mynn_stfunc     )
-       call mpas_pool_get_config(configs,'config_mynn_topdown'    ,bl_mynn_topdown    )
-       call mpas_pool_get_config(configs,'config_mynn_scaleaware' ,bl_mynn_scaleaware )
-       call mpas_pool_get_config(configs,'config_mynn_dheat_opt'  ,bl_mynn_dheat_opt  )
        call mpas_pool_get_config(configs,'config_mynn_edmf'       ,bl_mynn_edmf       )
        call mpas_pool_get_config(configs,'config_mynn_edmf_dd'    ,bl_mynn_edmf_dd    )
        call mpas_pool_get_config(configs,'config_mynn_edmf_mom'   ,bl_mynn_edmf_mom   )
@@ -1579,7 +1618,6 @@
        call mpas_pool_get_config(configs,'config_mynn_ess'        ,bl_mynn_ess        )
        call mpas_pool_get_config(configs,'config_mynn_tkeadvect'  ,bl_mynn_tkeadvect  )
        call mpas_pool_get_config(configs,'config_mynn_tkebudget'  ,bl_mynn_tkebudget  )
-       call mpas_pool_get_config(configs,'config_icloud_bl'       ,icloud_bl          )
        call mpas_pool_get_config(configs,'config_spp_pbl'         ,spp_pbl            )
        call mpas_pool_get_config(configs,'config_mynn_enh_mix'    ,enh_mix            )
 
@@ -1587,10 +1625,6 @@
 !      call mpas_log_write('--- enter subroutine mynn_bl_driver:')
 !      call mpas_log_write('--- config_mynn_cloudpdf    = $i',intArgs=(/bl_mynn_cloudpdf/))
 !      call mpas_log_write('--- config_mynn_mixlength   = $i',intArgs=(/bl_mynn_mixlength/))
-!      call mpas_log_write('--- config_mynn_stfunc      = $i',intArgs=(/bl_mynn_stfunc/))
-!      call mpas_log_write('--- config_mynn_topdown     = $i',intArgs=(/bl_mynn_topdown/))
-!      call mpas_log_write('--- config_mynn_scaleaware  = $i',intArgs=(/bl_mynn_scaleaware/))
-!      call mpas_log_write('--- config_mynn_dheat_opt   = $i',intArgs=(/bl_mynn_dheat_opt/))
 !      call mpas_log_write('--- config_mynn_edmf        = $i',intArgs=(/bl_mynn_edmf/))
 !      call mpas_log_write('--- config_mynn_edmf_dd     = $i',intArgs=(/bl_mynn_edmf_dd/))
 !      call mpas_log_write('--- config_mynn_edmf_mom    = $i',intArgs=(/bl_mynn_edmf_mom/))
@@ -1618,19 +1652,20 @@
        call mpas_timer_start('bl_mynnedmf')
        call mynnedmf_driver( &
                   f_qc       = f_qc         , f_qi         = f_qi           , f_qs          = f_qs             , &
-                  f_qoz      = f_qoz        , f_nc         = f_nc           , f_ni          = f_ni             , &
-                  f_nifa     = f_nifa       , f_nwfa       = f_nwfa         , f_nbca        = f_nbca           , &
-                  icloud_bl  = icloud_bl    , delt         = dt_pbl         , dx            = dx_p             , &
+                  f_qoz      = f_qoz        , f_qnc        = f_nc           , f_qni         = f_ni             , &
+                  f_qnifa    = f_nifa       , f_qnwfa      = f_nwfa         , f_qnbca       = f_nbca           , &
+                  delt       = dt_pbl       , dx           = dx_p           ,                                    &
                   xland      = xland_p      , ps           = psfc_p         , ts            = tsk_p            , &
                   qsfc       = qsfc_p       , ust          = ust_p          , ch            = ch_p             , &
                   hfx        = hfx_p        , qfx          = qfx_p          ,                                    &
                   wspd       = wspd_p       , znt          = znt_p          , uoce          = uoce_p           , &
                   voce       = voce_p       , dz           = dz_p           , u             = u_p              , &
                   v          = v_p          , w            = w_p            , th            = th_p             , &
-                  tt         = t_p          , p            = pres_p         , exner         = pi_p             , &
-                  rho        = rho_p        , qv           = qv_p           , qc            = qc_p             , &
-                  qi         = qi_p         , qs           = qs_p           , ni            = ni_p             , &
-                  nc         = nc_p         , nifa         = nifa_p         , nwfa          = nwfa_p           , &
+                  tk         = t_p          , p            = pres_p         , pint          = pres2_hyd_p      , &
+                  exner      = pi_p         , rho          = rho_p          ,                                    &
+                  qv         = qv_p         , qc           = qc_p           ,                                    &
+                  qi         = qi_p         , qs           = qs_p           , qni           = ni_p             , &
+                  qnc        = nc_p         , qnifa        = nifa_p         , qnwfa         = nwfa_p           , &
                   rthraten   = rthraten_p   , pblh         = hpbl_p         , kpbl          = kpbl_p           , &
                   cldfra_bl  = cldfrabl_p   , qc_bl        = qcbl_p         , qi_bl         = qibl_p           , &
                   maxwidth   = maxwidthbl_p , maxmf        = maxmfbl_p      , ztop_plume    = zbl_plume_p      , &
@@ -1641,8 +1676,8 @@
                   tsq        = tsq_p        , qsq          = qsq_p          , cov           = cov_p            , &
                   el_pbl     = elpbl_p      , rublten      = rublten_p      , rvblten       = rvblten_p        , &
                   rthblten   = rthblten_p   , rqvblten     = rqvblten_p     , rqcblten      = rqcblten_p       , &
-                  rqiblten   = rqiblten_p   , rqsblten     = rqsblten_p     , rniblten      = rniblten_p       , &
-                  rncblten   = rncblten_p   , rnwfablten   = rnwfablten_p   , rnifablten    = rnifablten_p     , &
+                  rqiblten   = rqiblten_p   , rqsblten     = rqsblten_p     , rqniblten     = rniblten_p       , &
+                  rqncblten  = rncblten_p   , rqnwfablten  = rnwfablten_p   , rqnifablten   = rnifablten_p     , &
                   edmf_a     = edmfa_p      , edmf_w       = edmfw_p        , edmf_qt       = edmfqt_p         , &
                   edmf_thl   = edmfthl_p    , edmf_ent     = edmfent_p      , edmf_qc       = edmfqc_p         , &
                   sub_thl    = subthl_p     , sub_sqv      = subqv_p        , det_thl       = detthl_p         , &
@@ -1650,18 +1685,14 @@
                   dqke       = dqke_p       , qwt          = qwt_p          , qshear        = qshear_p         , &
                   qbuoy      = qbuoy_p      , qdiss        = qdiss_p        , sh3d          = sh3d_p           , &
                   sm3d       = sm3d_p       , spp_pbl      = spp_pbl        , pattern_spp   = pattern_spp_pbl  , &
-                  do_restart         = config_do_restart   ,                                              &
-                  do_DAcycling       = config_do_DAcycling ,                                              &
+                  restart            = config_do_restart   ,                                              &
+                  cycling            = config_do_DAcycling ,                                              &
                   initflag           = initflag            ,                                              &
                   bl_mynn_tkeadvect  = bl_mynn_tkeadvect   ,                                              &
-                  bl_mynn_tkebudget  = bl_mynn_tkebudget   ,                                              &
+                  tke_budget         = bl_mynn_tkebudget   ,                                              &
                   bl_mynn_cloudpdf   = bl_mynn_cloudpdf    ,                                              &
                   bl_mynn_mixlength  = bl_mynn_mixlength   ,                                              &
                   bl_mynn_closure    = bl_mynn_closure     ,                                              &
-                  bl_mynn_stfunc     = bl_mynn_stfunc      ,                                              &
-                  bl_mynn_topdown    = bl_mynn_topdown     ,                                              &
-                  bl_mynn_scaleaware = bl_mynn_scaleaware  ,                                              &
-                  bl_mynn_dheat_opt  = bl_mynn_dheat_opt   ,                                              &
                   bl_mynn_edmf       = bl_mynn_edmf        ,                                              &
                   bl_mynn_edmf_dd    = bl_mynn_edmf_dd     ,                                              &
                   bl_mynn_edmf_mom   = bl_mynn_edmf_mom    ,                                              &
