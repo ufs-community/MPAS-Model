@@ -3325,7 +3325,7 @@
                 <var name="qke_adv" type="real" dimensions="nVertLevels nCells Time" units="m^{2} s^{-2}"
                      description="twice turbulent kinetic energy"
                      packages="bl_mynn_in;bl_mynnedmf_in"/>
-swales
+
                 <var name="qsq" type="real" dimensions="nVertLevels nCells Time" units="{kg kg^{-1}}^2"
                      description="liquid water variance"
                      packages="bl_mynn_in;bl_mynnedmf_in"/>
@@ -4295,6 +4295,9 @@ swales
                 <var name="sr" type="real" dimensions="nCells Time" units="unitless"
                      description="time-step ratio of frozen versus total grid-scale precipitation"/>
 
+		<var name="precipw" type="real" dimensions="nCells Time" units="kg m^{-2}"
+                     description="precipitable water"/>
+
                 <!-- ================================================================================================== -->
                 <!-- ... PARAMETERIZATION OF LAND-SURFACE SCHEME:                                                       -->
                 <!-- ================================================================================================== -->
@@ -4495,6 +4498,11 @@ swales
                 <var name="dtauy3d_fd" type="real" dimensions="nVertLevels nCells Time" units="m s^{-2}"
                      description="turb orog form drag v-tendency"/>
 
+		<var name="t2m" type="real" dimensions="nCells Time"  units="K"
+                     description="2-meter temperature"/>
+
+		<var name="q2" type="real" dimensions="nCells Time" units="kg kg^{-1}"
+                     description="2-meter specific humidity"/>
 	</var_struct>
 #endif
         <var_struct name="tend_physics" time_levs="1">
