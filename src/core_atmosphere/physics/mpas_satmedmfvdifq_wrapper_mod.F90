@@ -280,7 +280,19 @@ contains
       ! UFS code uses z0 = 0.01*zorl, so zorl is in cm.
       zorl(i) = max(z0_mpas(i), 1.0e-6_RKIND) * 100.0_RKIND
       kk = surf_k(i)
-      rho1 = prsl(i,kk) / (rd * t1(i,kk))
+
+      ! Use virtual temperature for the density that converts MPAS
+      ! surface sensible/latent heat fluxes to the kinematic fluxes
+      ! expected by GFS TKE-EDMF.
+      !
+      ! q1(:,:,ntqv) is the MPAS water-vapor mixing ratio [kg/kg].
+      ! For mixing ratio r_v:
+      !   T_v = T * (1 + (R_v/R_d - 1) * r_v)
+      !       = T * (1 + fv * r_v)
+      ! and
+      !   rho = p / (R_d * T_v)
+      tem1 = 1.0_RKIND + fv * q1(i,kk,ntqv)
+      rho1 = prsl(i,kk) / (rd * t1(i,kk) * tem1)
 
       tsea(i) = skin_temp(i)
       heat(i) = shflx(i)/(rho1*cp)
