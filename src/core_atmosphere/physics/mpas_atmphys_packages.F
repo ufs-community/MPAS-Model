@@ -43,7 +43,8 @@
  logical,pointer:: mp_kessler_in,mp_thompson_in,mp_thompson_aers_in,mp_wsm6_in,mp_nssl2m_in,nssl3m_in
  logical,pointer:: mp_tempo_in,tempo_hailaware_in,tempo_aerosolaware_in
  logical,pointer:: cu_grell_freitas_in,cu_grell_freitas_li_in,cu_kain_fritsch_in,cu_ntiedtke_in
- logical,pointer:: bl_mynn_in,bl_mynnedmf_in,bl_ysu_in,bl_myj_in
+ logical,pointer:: cu_gfs_sas_in
+ logical,pointer:: bl_mynn_in,bl_mynnedmf_in,bl_tke_edmf_in,bl_ysu_in,bl_myj_in
  logical,pointer:: lsm_noah_in,lsm_ruc_in
  logical,pointer:: sf_noahmp_in
 
@@ -161,10 +162,14 @@
  nullify(cu_ntiedtke_in)
  call mpas_pool_get_package(packages,'cu_ntiedtke_inActive',cu_ntiedtke_in)
 
+ nullify(cu_gfs_sas_in)
+ call mpas_pool_get_package(packages,'cu_gfs_sas_inActive',cu_gfs_sas_in)
+
  if(.not.associated(cu_grell_freitas_in) .or. &
     .not.associated(cu_grell_freitas_li_in)  .or. &
     .not.associated(cu_kain_fritsch_in)  .or. &
-    .not.associated(cu_ntiedtke_in)    ) then
+   .not.associated(cu_ntiedtke_in)      .or. &
+   .not.associated(cu_gfs_sas_in)    ) then
     call mpas_log_write('====================================================================================',messageType=MPAS_LOG_ERR)
     call mpas_log_write('* Error while setting up packages for convection options in atmosphere core.',        messageType=MPAS_LOG_ERR)
     call mpas_log_write('====================================================================================',messageType=MPAS_LOG_ERR)
@@ -172,10 +177,11 @@
     return
  endif
 
- cu_grell_freitas_in = .false.
- cu_kain_fritsch_in  = .false.
- cu_ntiedtke_in      = .false.
+ cu_grell_freitas_in    = .false.
+ cu_kain_fritsch_in     = .false.
+ cu_ntiedtke_in         = .false.
  cu_grell_freitas_li_in = .false.
+ cu_gfs_sas_in          = .false.
 
  if(config_convection_scheme=='cu_grell_freitas') then
     cu_grell_freitas_in = .true.
@@ -186,12 +192,15 @@
  elseif(config_convection_scheme == 'cu_tiedtke' .or. &
         config_convection_scheme == 'cu_ntiedtke') then
     cu_ntiedtke_in = .true.
+ elseif(config_convection_scheme == 'cu_gfs_sas') then
+    cu_gfs_sas_in = .true.
  endif
 
  call mpas_log_write('    cu_grell_freitas_in     = $l', logicArgs=(/cu_grell_freitas_in/))
  call mpas_log_write('    cu_grell_freitas_li_in  = $l', logicArgs=(/cu_grell_freitas_li_in/))
  call mpas_log_write('    cu_kain_fritsch_in      = $l', logicArgs=(/cu_kain_fritsch_in/))
  call mpas_log_write('    cu_ntiedtke_in          = $l', logicArgs=(/cu_ntiedtke_in/))
+ call mpas_log_write('    cu_gfs_sas_in           = $l', logicArgs=(/cu_gfs_sas_in/))
 
 !--- initialization of all packages for parameterizations of surface layer and planetary boundary layer:
 
@@ -202,6 +211,9 @@
 
  nullify(bl_mynnedmf_in)
  call mpas_pool_get_package(packages,'bl_mynnedmf_inActive',bl_mynnedmf_in)
+
+ nullify(bl_tke_edmf_in)
+ call mpas_pool_get_package(packages,'bl_tke_edmf_inActive',bl_tke_edmf_in)
       
  nullify(bl_ysu_in)
  call mpas_pool_get_package(packages,'bl_ysu_inActive',bl_ysu_in)
@@ -211,6 +223,7 @@
 
  if(.not.associated(bl_mynn_in) .or. &
     .not.associated(bl_mynnedmf_in) .or. &
+    .not.associated(bl_tke_edmf_in) .or. &
     .not.associated(bl_ysu_in) .or. &
     .not.associated(bl_myj_in)) then
     call mpas_log_write('====================================================================================',messageType=MPAS_LOG_ERR)
@@ -222,12 +235,15 @@
 
  bl_mynn_in = .false.
  bl_mynnedmf_in = .false. 
+ bl_tke_edmf_in = .false.
  bl_ysu_in  = .false.
  bl_myj_in = .false.
  if(config_pbl_scheme=='bl_mynn') then
     bl_mynn_in = .true.
  elseif(config_pbl_scheme == 'bl_mynnedmf') then
     bl_mynnedmf_in = .true.
+ elseif(config_pbl_scheme == 'bl_tke_edmf') then
+    bl_tke_edmf_in = .true.
  elseif(config_pbl_scheme == 'bl_ysu') then
     bl_ysu_in = .true.
  elseif(config_pbl_scheme == 'bl_myj') then
@@ -236,6 +252,7 @@
 
  call mpas_log_write('    bl_mynn_in              = $l', logicArgs=(/bl_mynn_in/))
  call mpas_log_write('    bl_mynnedmf_in          = $l', logicArgs=(/bl_mynnedmf_in/))
+ call mpas_log_write('    bl_tke_edmf_in          = $l', logicArgs=(/bl_tke_edmf_in/))
  call mpas_log_write('    bl_ysu_in               = $l', logicArgs=(/bl_ysu_in/))
  call mpas_log_write('    bl_myj_in               = $l', logicArgs=(/bl_myj_in/))
  call mpas_log_write('')
@@ -298,6 +315,3 @@
 !=================================================================================================================
  end module mpas_atmphys_packages
 !=================================================================================================================
-
-
-

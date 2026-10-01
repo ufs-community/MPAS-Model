@@ -21,6 +21,7 @@
  use sf_mynn,only: sf_mynn_init
  use sf_sfclayrev,only: sf_sfclayrev_init
  use module_sf_myjsfc
+ use module_sf_gfs,only: sf_gfs
 
  implicit none
  private
@@ -214,6 +215,14 @@
 
        end select sfclayer2_select
 
+    case("sf_wrf_gfssfc")
+       if(.not.allocated(fh_p)) allocate(fh_p(ims:ime,jms:jme))
+       if(.not.allocated(fm_p)) allocate(fm_p(ims:ime,jms:jme))
+       if(config_frac_seaice) then
+          if(.not.allocated(fh_sea)) allocate(fh_sea(ims:ime,jms:jme))
+          if(.not.allocated(fm_sea)) allocate(fm_sea(ims:ime,jms:jme))
+       endif
+
     case("sf_mynn")
        if(.not.allocated(snowh_p)) allocate(snowh_p(ims:ime,jms:jme))
        if(.not.allocated(ch_p)   ) allocate(ch_p(ims:ime,jms:jme)   )
@@ -376,6 +385,14 @@
           case default
 
        end select sfclayer2_select
+
+    case("sf_wrf_gfssfc")
+       if(allocated(fh_p)) deallocate(fh_p)
+       if(allocated(fm_p)) deallocate(fm_p)
+       if(config_frac_seaice) then
+          if(allocated(fh_sea)) deallocate(fh_sea)
+          if(allocated(fm_sea)) deallocate(fm_sea)
+       endif
 
     case("sf_mynn")
        if(allocated(snowh_p)) deallocate(snowh_p)
@@ -929,7 +946,7 @@
 
  sfclayer_select: select case (trim(sfclayer_scheme))
 
-    case("sf_monin_obukhov","sf_monin_obukhov_rev")
+    case("sf_monin_obukhov","sf_monin_obukhov_rev","sf_wrf_gfssfc")
        call mpas_pool_get_array(diag_physics,'fh',fh)
        call mpas_pool_get_array(diag_physics,'fm',fm)
 
@@ -1321,6 +1338,51 @@
                         )
        endif
        call mpas_timer_stop('sf_monin_obukhov_rev')
+
+    case("sf_wrf_gfssfc")
+       call mpas_timer_start('sf_wrf_gfssfc')
+       call sf_gfs( &
+                  u3d      = u_p    , v3d   = v_p       , t3d            = t_p      , &
+                  qv3d     = qv_p   , p3d   = pres_hyd_p, cp             = cp       , &
+                  dz8w         = dz_p, mavail   = mavail_p   ,                        &
+                  rovcp    = rcp    , R     = R_d       , xlv            = xlv      , &
+                  psfc     = psfc_p , chs   = chs_p     , chs2           = chs2_p   , &
+                  cqs2     = cqs2_p , cpm   = cpm_p     , znt            = znt_p    , &
+                  ust      = ust_p  , psim  = fm_p      , psih           = fh_p     , &
+                  xland    = xland_p, hfx   = hfx_p     , qfx            = qfx_p    , &
+                  lh       = lh_p   , tsk   = tsk_p     , flhc           = flhc_p   , &
+                  flqc     = flqc_p , qgh   = qgh_p     , qsfc           = qsfc_p   , &
+                  u10      = u10_p  , v10   = v10_p     , gz1oz0         = gz1oz0_p , &
+                  wspd     = wspd_p , br    = br_p      , isfflx         = isfflx   , &
+                  ep1      = ep_1   , ep2   = ep_2      , karman         = karman   , &
+                  itimestep= itimestep                                              , &     
+                  ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde , &
+                  ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme , &
+                  its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte   &
+                        )
+
+       if(config_frac_seaice) then
+              call sf_gfs( &
+                  u3d      = u_p    , v3d   = v_p       , t3d            = t_p      , &
+                  qv3d     = qv_p   , p3d   = pres_hyd_p, cp             = cp       , &
+                  dz8w         = dz_p, mavail      = mavail_sea   ,                   &
+                  rovcp    = rcp    , R     = R_d       , xlv            = xlv      , &
+                  psfc     = psfc_p , chs   = chs_sea   , chs2           = chs2_sea , &
+                  cqs2     = cqs2_sea, cpm   = cpm_sea  , znt            = znt_sea  , &
+                  ust      = ust_sea  , psim  = fm_sea  , psih           = fh_sea   , &
+                  xland    = xland_sea, hfx   = hfx_sea , qfx            = qfx_sea  , &
+                  lh       = lh_sea   , tsk   = tsk_sea , flhc           = flhc_sea , &
+                  flqc     = flqc_sea , qgh   = qgh_sea , qsfc           = qsfc_sea , &
+                  u10      = u10_sea  , v10   = v10_sea , gz1oz0         = gz1oz0_sea, &
+                  wspd     = wspd_sea , br    = br_sea      , isfflx         = isfflx   , &
+                  ep1      = ep_1   , ep2   = ep_2      , karman         = karman   , &
+                  itimestep= itimestep                                              , &
+                  ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde , &
+                  ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme , &
+                  its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte   &
+                        )
+       endif
+       call mpas_timer_stop('sf_wrf_gfssfc')
 
     case("sf_mynn")
        call mpas_timer_start('sf_mynn')

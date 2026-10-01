@@ -9,10 +9,14 @@
  module mpas_atmphys_driver_pbl
  use mpas_kind_types
  use mpas_pool_routines
+ use mpas_gfs_pressure_repair, only : repair_gfs_pressure_columns
  use mpas_timer,only: mpas_timer_start,mpas_timer_stop
+ use, intrinsic :: ieee_arithmetic, only : ieee_is_finite
 
  use mpas_atmphys_constants
  use mpas_atmphys_vars
+ use mpas_satmedmfvdifq_wrapper_mod, only : mpas_satmedmfvdifq_config_type, &
+                                            mpas_call_satmedmfvdifq
 
  use bl_mynn,only: bl_mynn_init
  use module_bl_mynn,only: mynn_bl_driver
@@ -148,6 +152,31 @@
        if(.not.allocated(v10_p)   ) allocate(v10_p(ims:ime,jms:jme)         )
        if(.not.allocated(exch_p)  ) allocate(exch_p(ims:ime,kms:kme,jms:jme))
        if(.not.allocated(wstar_p) ) allocate(wstar_p(ims:ime,jms:jme)       )
+
+
+    case("bl_tke_edmf")
+       ! Minimal MPAS application additions for UFS TKE-EDMF adapter.
+       ! Reuse existing local arrays to stage MPAS fields for the wrapper:
+       !   dx_p       : areaCell
+       !   tsk_p      : skin temperature
+       !   psim_p     : fm
+       !   psih_p     : fh
+       !   rthraten_p : SW radiative heating
+       !   exch_p     : LW radiative heating
+       if(.not.allocated(vegfra_p)  ) allocate(vegfra_p(ims:ime,jms:jme)      )
+       if(.not.allocated(br_p)      ) allocate(br_p(ims:ime,jms:jme)          )
+       if(.not.allocated(dx_p)      ) allocate(dx_p(ims:ime,jms:jme)          )
+       if(.not.allocated(tsk_p)     ) allocate(tsk_p(ims:ime,jms:jme)         )
+       if(.not.allocated(psim_p)    ) allocate(psim_p(ims:ime,jms:jme)        )
+       if(.not.allocated(psih_p)    ) allocate(psih_p(ims:ime,jms:jme)        )
+       if(.not.allocated(u10_p)     ) allocate(u10_p(ims:ime,jms:jme)         )
+       if(.not.allocated(v10_p)     ) allocate(v10_p(ims:ime,jms:jme)         )
+       if(.not.allocated(exch_p)    ) allocate(exch_p(ims:ime,kms:kme,jms:jme))
+       if(.not.allocated(kzh_p)     ) allocate(kzh_p(ims:ime,kms:kme,jms:jme))
+       if(.not.allocated(kzm_p)     ) allocate(kzm_p(ims:ime,kms:kme,jms:jme))
+       if(.not.allocated(kzq_p)     ) allocate(kzq_p(ims:ime,kms:kme,jms:jme))
+       if(.not.allocated(rthraten_p)) allocate(rthraten_p(ims:ime,kms:kme,jms:jme))
+       if(.not.allocated(tkepbl_p)  ) allocate(tkepbl_p(ims:ime,kms:kme,jms:jme)    )
 
     case("bl_mynn")
        if(.not.allocated(kbl_plume_p) ) allocate(kbl_plume_p(ims:ime,jms:jme)         )
@@ -339,6 +368,23 @@
        if(allocated(exch_p)  ) deallocate(exch_p  )
        if(allocated(wstar_p) ) deallocate(wstar_p )
 
+
+    case("bl_tke_edmf")
+       if(allocated(vegfra_p)  ) deallocate(vegfra_p  )
+       if(allocated(br_p)      ) deallocate(br_p      )
+       if(allocated(dx_p)      ) deallocate(dx_p      )
+       if(allocated(tsk_p)     ) deallocate(tsk_p     )
+       if(allocated(psim_p)    ) deallocate(psim_p    )
+       if(allocated(psih_p)    ) deallocate(psih_p    )
+       if(allocated(u10_p)     ) deallocate(u10_p     )
+       if(allocated(v10_p)     ) deallocate(v10_p     )
+       if(allocated(exch_p)    ) deallocate(exch_p    )
+       if(allocated(kzh_p)     ) deallocate(kzh_p     )
+       if(allocated(kzm_p)     ) deallocate(kzm_p     )
+       if(allocated(kzq_p)     ) deallocate(kzq_p     )
+       if(allocated(rthraten_p)) deallocate(rthraten_p)
+       if(allocated(tkepbl_p)  ) deallocate(tkepbl_p    )
+
     case("bl_mynn")
        if(allocated(kbl_plume_p) ) deallocate(kbl_plume_p )
        if(allocated(dx_p)        ) deallocate(dx_p        )
@@ -495,17 +541,26 @@
  real(kind=RKIND),dimension(:),pointer:: br,fh,fm,u10,v10
  real(kind=RKIND),dimension(:,:),pointer:: rthratenlw,rthratensw
 
+!local pointers for bl_tke_edmf adapter:
+ real(kind=RKIND),dimension(:),pointer:: areaCell,skintemp,vegfra
+
 !local pointers for MYNN scheme:
  real(kind=RKIND),pointer:: len_disp
  real(kind=RKIND),dimension(:),pointer  :: meshDensity
- real(kind=RKIND),dimension(:),pointer  :: ch,qsfc,rmol,skintemp
+ real(kind=RKIND),dimension(:),pointer  :: ch,qsfc,rmol
  real(kind=RKIND),dimension(:,:),pointer:: cov,qke,qsq,tsq,sh3d,sm3d,tke_pbl,qke_adv,el_pbl
  real(kind=RKIND),dimension(:,:),pointer:: cldfrac_bl,qc_bl,qi_bl
  real(kind=RKIND),dimension(:,:),pointer:: edmf_a,edmf_ent,edmf_qc,edmf_qt,edmf_thl,edmf_w
  real(kind=RKIND),dimension(:,:),pointer:: sub_thl,sub_qv,det_thl,det_qv
 
+!local pointers for tke_edmf
+! Prognostic TKE index is obtained from the Registry-generated state dimension
+! index_tke.  Never hard-code a scalar slot here: scalar ordering changes when
+! hydrometeors/packages are added or reordered.
+
 !local pointers for chemistry
  integer,pointer                           :: chemistry_start,chemistry_end
+ integer,pointer                           :: index_tke
  real(kind=RKIND),dimension(:,:,:),pointer :: scalars
  real(kind=RKIND),dimension(:,:,:),pointer :: tend_chem_settle
  real(kind=RKIND),dimension(:,:  ),pointer :: ddvel
@@ -672,6 +727,56 @@
        do k = kts,kte
        do i = its,ite
           exch_p(i,k,j) = 0._RKIND
+       enddo
+       enddo
+       enddo
+
+
+    case("bl_tke_edmf")
+       ! Stage MPAS fields needed by the UFS TKE-EDMF adapter.
+       call mpas_pool_get_array(sfc_input,   'vegfra'    ,vegfra    )
+       call mpas_pool_get_array(mesh        ,'areaCell'  ,areaCell  )
+       call mpas_pool_get_array(sfc_input   ,'skintemp'  ,skintemp  )
+       call mpas_pool_get_array(diag_physics,'br'        ,br        )
+       call mpas_pool_get_array(diag_physics,'fm'        ,fm        )
+       call mpas_pool_get_array(diag_physics,'fh'        ,fh        )
+       call mpas_pool_get_array(diag_physics,'u10'       ,u10       )
+       call mpas_pool_get_array(diag_physics,'v10'       ,v10       )
+       call mpas_pool_get_array(tend_physics,'rthratenlw',rthratenlw)
+       call mpas_pool_get_array(tend_physics,'rthratensw',rthratensw)
+! ------------------------------------------------------------------
+! Prognostic TKE for GFS TKE-EDMF
+!
+! In the Registry, tke is a member of var_array scalars:
+!   qv, qc, qr, qi, tke, ...
+! Therefore it cannot be retrieved with mpas_pool_get_array(scalars,'tke',...).
+! Get the parent state scalar array and use scalar index 5 for tke.
+! ------------------------------------------------------------------
+       call mpas_pool_get_array(state,'scalars',scalars,1)
+       call mpas_pool_get_dimension(state,'index_tke',index_tke)
+
+       do j = jts,jte
+       do i = its,ite
+          vegfra_p(i,j) = vegfra(i)
+          dx_p(i,j)   = areaCell(i)
+          tsk_p(i,j)  = skintemp(i)
+          br_p(i,j)   = br(i)
+          psim_p(i,j) = fm(i)
+          psih_p(i,j) = fh(i)
+          u10_p(i,j)  = u10(i)
+          v10_p(i,j)  = v10(i)
+       enddo
+       do k = kts,kte
+       do i = its,ite
+          rthraten_p(i,k,j) = rthratensw(k,i)
+          exch_p(i,k,j)     = rthratenlw(k,i)
+! Do not read tke_pbl from MPAS here.  In some MPAS builds this
+! diagnostic is not allocated before the TKE-EDMF call, and reading
+! tke_pbl(k,i) causes the SIGSEGV seen near this block.  The wrapper
+! advances TKE using rtg(:,:,ntke), updates tkepbl_p, and pbl_to_MPAS
+! writes that advanced prognostic state back to scalars(index_tke).
+!         tkepbl_p(i,k,j)   = 0.0_RKIND
+          tkepbl_p(i,k,j)   = max(1.0e-9_RKIND, scalars(index_tke,k,i))
        enddo
        enddo
        enddo
@@ -969,12 +1074,17 @@
  real(kind=RKIND),dimension(:,:),pointer:: edmf_a,edmf_ent,edmf_qc,edmf_qt,edmf_thl,edmf_w
  real(kind=RKIND),dimension(:,:),pointer:: sub_thl,sub_qv,det_thl,det_qv
 
+!local pointers for tke_edmf
+! Prognostic TKE index is obtained from the Registry-generated state dimension
+! index_tke.  Never hard-code a scalar slot here.
+
 !local pointers for chemistry
  real(kind=RKIND),dimension(:,:,:),pointer:: scalars
  real(kind=RKIND),dimension(:,:,:),pointer:: chem
  real(kind=RKIND),dimension(:,:,:),pointer:: tend_chem_settle
  real(kind=RKIND),dimension(:,:),pointer  :: ddvel
  integer,pointer :: chemistry_start,chemistry_end
+ integer,pointer :: index_tke
 
 !local pointers for MYJ scheme:
  real(kind=RKIND),dimension(:),pointer   :: thz0,qz0,uz0,vz0,akhs,akms,ct,mixht,qsfc,ust,znt
@@ -1013,9 +1123,18 @@
     rqcblten(k,i) = rqcblten_p(i,k,j)
     rqiblten(k,i) = rqiblten_p(i,k,j)
 
-    kzh(k,i) = kzh_p(i,k,j)
-    kzm(k,i) = kzm_p(i,k,j)
-    kzq(k,i) = kzh_p(i,k,j)
+!   kzh(k,i) = kzh_p(i,k,j)
+!   kzm(k,i) = kzm_p(i,k,j)
+!   kzq(k,i) = kzh_p(i,k,j)
+     ! For bl_tke_edmf, do not touch MPAS K-diagnostic fields here.
+! The TKE-EDMF wrapper used in this branch does not return a native
+! MPAS-safe exch_h/kzh/kzm/kzq diagnostic.  Writing these fields caused
+! a later crash in mpas_halo.  Keep only the physical tendencies.
+if (trim(pbl_scheme) /= "bl_tke_edmf") then
+   kzh(k,i) = kzh_p(i,k,j)
+   kzm(k,i) = kzm_p(i,k,j)
+   kzq(k,i) = kzh_p(i,k,j)
+endif
  enddo
  enddo
  enddo
@@ -1037,6 +1156,25 @@
  endif
 
  pbl_select: select case (trim(pbl_scheme))
+
+
+    case("bl_tke_edmf")
+! ------------------------------------------------------------------
+! Copy updated prognostic TKE back to the Registry-defined TKE scalar.
+! Do not hard-code the scalar slot: in the current configuration index_tke
+! is outside moist_start:moist_end, while scalar slot 5 is a moist species.
+! This path is only active for bl_tke_edmf; other PBL schemes are unchanged.
+! ------------------------------------------------------------------
+       call mpas_pool_get_array(state,'scalars',scalars,1)
+       call mpas_pool_get_dimension(state,'index_tke',index_tke)
+
+       do j = jts,jte
+       do k = kts,kte
+       do i = its,ite
+          scalars(index_tke,k,i) = max(1.0e-9_RKIND, tkepbl_p(i,k,j))
+       enddo
+       enddo
+       enddo
 
     case("bl_ysu")
        call mpas_pool_get_array(diag_physics,'delta',delta  )
@@ -1386,6 +1524,7 @@
                    spp_pbl
 
  real(kind=RKIND),pointer:: bl_mynn_closure
+ real(kind=RKIND), dimension(:), pointer :: coszr
 
 !local variables:
  integer:: initflag
@@ -1396,9 +1535,23 @@
  character(len=StrKIND):: errmsg
  integer:: errflg
 
+!UFS TKE-EDMF adapter variables:
+ type(mpas_satmedmfvdifq_config_type) :: tke_edmf_cfg
+ character(len=256) :: tke_edmf_errmsg
+ integer :: tke_edmf_errflg
+ real(kind=RKIND), allocatable :: coszen_tkeedmf_p(:,:)
+ real(kind=RKIND), allocatable :: lh_tkeedmf_p(:,:)
+ real(kind=RKIND), allocatable :: stress_tkeedmf_p(:,:)
+ real(kind=RKIND), allocatable :: zmid_tkeedmf_p(:,:,:)
+ real(kind=RKIND), allocatable :: zint_tkeedmf_p(:,:,:)
+
+! MPAS cell connectivity is used only by the GFS pressure-repair input path.
+ integer, dimension(:), pointer :: nEdgesOnCell
+ integer, dimension(:,:), pointer :: cellsOnCell
+ real(kind=RKIND), allocatable :: p_mid_tkeedmf(:,:), p_int_tkeedmf(:,:), pi_tkeedmf(:,:)
+
+
 !-----------------------------------------------------------------------------------------------------------------
-!call mpas_log_write('')
-!call mpas_log_write('--- enter subroutine driver_pbl:')
 
 !initialization of CCPP-compliant flags:
  errmsg = ' '
@@ -1446,6 +1599,143 @@
                  its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte    &
                 )
        call mpas_timer_stop('bl_ysu')
+
+
+    case("bl_tke_edmf")
+       call mpas_timer_start('bl_tke_edmf')
+
+       call mpas_pool_get_array(mesh,'nEdgesOnCell',nEdgesOnCell)
+       call mpas_pool_get_array(mesh,'cellsOnCell' ,cellsOnCell )
+       call mpas_pool_get_array(diag_physics,'coszr',coszr)
+
+       allocate(p_mid_tkeedmf(its:ite,kts:kte))
+       allocate(p_int_tkeedmf(its:ite,kts:kte+1))
+       allocate(pi_tkeedmf(its:ite,kts:kte))
+
+       ! Conservative initial settings.  Expose these through Registry later.
+       tke_edmf_cfg%sa3dtke     = .false.
+       tke_edmf_cfg%tte_edmf    = .false.
+       tke_edmf_cfg%dspheat     = .true.
+       tke_edmf_cfg%do_canopy   = .false.
+       tke_edmf_cfg%cplaqm      = .false.
+       tke_edmf_cfg%gen_tend    = .false.
+       tke_edmf_cfg%ldiag3d     = .false.
+
+       tke_edmf_cfg%sfc_rlm = 0
+       tke_edmf_cfg%tc_pbl  = 0
+       tke_edmf_cfg%use_lpt = 0
+
+       tke_edmf_cfg%xkzm_m  = 1.0_RKIND
+       tke_edmf_cfg%xkzm_h  = 1.0_RKIND
+       tke_edmf_cfg%xkzm_s  = 1.0_RKIND
+       tke_edmf_cfg%dspfac  = 1.0_RKIND
+       tke_edmf_cfg%bl_upfr = 0.07_RKIND
+       tke_edmf_cfg%bl_dnfr = 0.05_RKIND
+       tke_edmf_cfg%rlmx    = 300.0_RKIND
+       tke_edmf_cfg%elmx    = 300.0_RKIND
+
+       tke_edmf_errmsg = ''
+       tke_edmf_errflg = 0
+
+       if (.not. allocated(coszen_tkeedmf_p)) then
+          allocate(coszen_tkeedmf_p(ims:ime,jms:jme))
+          allocate(lh_tkeedmf_p(ims:ime,jms:jme))
+          allocate(stress_tkeedmf_p(ims:ime,jms:jme))
+          allocate(zmid_tkeedmf_p(ims:ime,kms:kme,jms:jme))
+          allocate(zint_tkeedmf_p(ims:ime,kms:kme+1,jms:jme))
+       endif
+
+       do j = jts,jte
+       do i = its,ite
+          ! MPAS shortwave radiation stores coszr as the cosine of the
+          ! solar zenith angle evaluated at the radiation-call midpoint.
+          ! Pass it to the TKE-EDMF adapter as the radiation reference
+          ! solar-zenith quantity; the wrapper uses it for day/night and
+          ! a neutral temporal-adjustment approximation (xmu=1 by day).
+          coszen_tkeedmf_p(i,j) = max(coszr(i), 0.0_RKIND)
+          lh_tkeedmf_p(i,j) = qfx_p(i,j) * xlv
+          stress_tkeedmf_p(i,j) = ust_p(i,j) * ust_p(i,j)
+
+          ! Build geometric heights from MPAS layer thickness.
+          ! zint is interface height and zmid is layer-center height.
+          zint_tkeedmf_p(i,kts,j) = 0.0_RKIND
+       enddo
+       do k = kts,kte
+       do i = its,ite
+          zint_tkeedmf_p(i,k+1,j) = zint_tkeedmf_p(i,k,j)              &
+                                  + dz_p(i,k,j)
+          zmid_tkeedmf_p(i,k,j) = 0.5_RKIND *                         &
+             (zint_tkeedmf_p(i,k,j) + zint_tkeedmf_p(i,k+1,j))
+       enddo
+       enddo
+       enddo
+       !---------------------------------------------------------------
+       ! Repair pressure only for the GFS TKE-EDMF temporary input arrays.
+       ! Native pres_hyd_p/pres2_hyd_p remain unchanged for other physics.
+       call repair_gfs_pressure_columns(                           &
+     &      pres_hyd_p(its:ite,kts:kte,jts),                         &
+     &      pres2_hyd_p(its:ite,kts:kte+1,jts),                      &
+     &      p_mid_tkeedmf, p_int_tkeedmf,                            &
+     &      nEdgesOnCell, cellsOnCell,                              &
+     &      its, ite, kts, kte)
+       pi_tkeedmf(:,:) = pi_p(its:ite,kts:kte,jts)
+
+       call mpas_call_satmedmfvdifq(                                  &
+            (ite-its+1), (kte-kts+1), 4, dt_pbl,                      &
+            zmid_tkeedmf_p(its:ite,kts:kte,jts),                                &
+            zint_tkeedmf_p(its:ite,kts:kte+1,jts),                              &
+            dx_p(its:ite,jts),                                        &
+            u_p(its:ite,kts:kte,jts),                                 &
+            v_p(its:ite,kts:kte,jts),                                 &
+            t_p(its:ite,kts:kte,jts),                                 &
+            qv_p(its:ite,kts:kte,jts),                                &
+            qc_p(its:ite,kts:kte,jts),                                &
+            qi_p(its:ite,kts:kte,jts),                                &
+            tkepbl_p(its:ite,kts:kte,jts),                            &
+            p_mid_tkeedmf(its:ite,kts:kte),                            &
+            p_int_tkeedmf(its:ite,kts:kte+1),                         &
+            pi_tkeedmf(its:ite,kts:kte),                              &
+            rthraten_p(its:ite,kts:kte,jts),                          &
+            exch_p(its:ite,kts:kte,jts),                              &
+            coszen_tkeedmf_p(its:ite,jts),                            &
+            tsk_p(its:ite,jts),                                       &
+            hfx_p(its:ite,jts),                                       &
+            lh_tkeedmf_p(its:ite,jts),                                &
+            stress_tkeedmf_p(its:ite,jts),                            &
+            znt_p(its:ite,jts),                                       &
+            u10_p(its:ite,jts),                                       &
+            v10_p(its:ite,jts),                                       &
+            vegfra_p(its:ite,jts),                                    &
+            br_p(its:ite,jts),                                        &
+            psim_p(its:ite,jts),                                      &
+            psih_p(its:ite,jts),                                      &
+            hpbl_p(its:ite,jts),                                      &
+            kpbl_p(its:ite,jts),                                      &
+            rthblten_p(its:ite,kts:kte,jts),                          &
+            rublten_p(its:ite,kts:kte,jts),                           &
+            rvblten_p(its:ite,kts:kte,jts),                           &
+            rqvblten_p(its:ite,kts:kte,jts),                          &
+            rqcblten_p(its:ite,kts:kte,jts),                          &
+            rqiblten_p(its:ite,kts:kte,jts),                          &
+            tke_edmf_cfg, tke_edmf_errmsg, tke_edmf_errflg)
+
+       ! No post-TKE-EDMF clipping, one-step state caps, or neighbor-profile
+       ! replacement is applied here. The scheme tendencies are passed through
+       ! unchanged; wrapper errors remain fatal below.
+
+       if (allocated(p_mid_tkeedmf))   deallocate(p_mid_tkeedmf)
+       if (allocated(p_int_tkeedmf))   deallocate(p_int_tkeedmf)
+       if (allocated(pi_tkeedmf))      deallocate(pi_tkeedmf)
+
+       if (tke_edmf_errflg /= 0) then
+          write(*,*) 'FATAL in bl_tke_edmf: ', trim(tke_edmf_errmsg)
+!         Only bl_tke_edmf was started in this routine.  PBL Scheme is
+!         owned by the outer physics driver and must not be stopped here.
+          call mpas_timer_stop('bl_tke_edmf')
+          stop 1
+       endif
+
+       call mpas_timer_stop('bl_tke_edmf')
 
     case("bl_mynn")
        call mpas_pool_get_config(configs,'config_mynn_cloudpdf'   ,bl_mynn_cloudpdf   )

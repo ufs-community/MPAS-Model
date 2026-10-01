@@ -192,6 +192,10 @@
             units="-"
             description="Flag that controls artificially enhancing the PBL exhange coefs"
             possbile_values=".true. or .false."/>
+       <nml_option name="config_mp_aero_emission" type="logical" default_value="false" in_defaults="false"
+            units="-"
+            description="Flag that controls aerosol emissions for TEMPO microphysics"
+            possible_values=".true. or .false."/>
    </nml_record>
 
 <!-- **************************************************************************************** -->
@@ -269,10 +273,8 @@
          <var name="sandfrac_in"/>
          <var name="clayfrac_in"/>
          <var name="uthres_in"/>
-         <var name="uthres_sg_in"/>
-         <var name="sep_in"/>
-         <var name="albedo_drag_m_in"/>
-         <var name="feff_m_in"/>
+         <var name="ssm_in"/>
+         <var name="rdrag_m_in"/>
       </stream>
 
       <stream name="anthro_input"
@@ -452,14 +454,11 @@
       <var name="feff"                  type="real" dimensions="nCells Time" units="-"
            description="drag partition (alternate)"
            packages="mpas_dust_in"/>
-      <var name="albedo_drag"           type="real" dimensions="nCells Time" units="-"
-           description="drag partition"
+      <var name="rdrag"           type="real" dimensions="nCells Time" units="-"
+           description="drag partition for dust emission calculation only"
            packages="mpas_dust_in"/>
       <var name="uthres_in" type="real" dimensions="nCells" units="-"
            description="threshold friction velocity"
-           packages="mpas_dust_in"/>
-      <var name="uthres_sg_in" type="real" dimensions="nCells" units="-"
-           description="threshold friction velocity (alternate)"
            packages="mpas_dust_in"/>
       <var name="sandfrac_in" type="real" dimensions="nCells" units="-"
            description="sand fraction"
@@ -467,13 +466,10 @@
       <var name="clayfrac_in" type="real" dimensions="nCells" units="-"
            description="clay fraction"
            packages="mpas_dust_in"/>
-      <var name="albedo_drag_m_in" type="real" dimensions="nMonths nCells" units="-"
+      <var name="rdrag_m_in" type="real" dimensions="nMonths nCells" units="-"
            description="drag partition"
            packages="mpas_dust_in"/>
-      <var name="feff_m_in" type="real" dimensions="nMonths nCells" units="-"
-           description="drag partition (alternate)"
-           packages="mpas_dust_in"/>
-      <var name="sep_in" type="real" dimensions="nCells" units="-"
+      <var name="ssm_in" type="real" dimensions="nCells" units="-"
            description="soil erosion potential"
            packages="mpas_dust_in"/>
       <var name="aod3d_smoke"     type="real" dimensions="nVertLevels nCells Time" units="-"
