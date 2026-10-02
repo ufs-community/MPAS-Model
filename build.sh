@@ -8,9 +8,10 @@ COMPILER="${COMPILER:-intel}"
 usage() {
   set +x
   echo
-  echo "Usage: $0 -j <num> -h"
+  echo "Usage: $0 [-j <num>] [-s] [-c <cmake_opts>] [-f] [-h]"
   echo
   echo "  -j  number of build jobs               DEFAULT: 8"
+  echo "  -s  build with stochastic_physics"
   echo "  -c  additional CMAKE options"
   echo "  -f  force a clean build"
   echo "  -h  display this message and quit"
@@ -18,10 +19,14 @@ usage() {
   exit 1
 }
 
-while getopts "c:j:hf" opt; do
+STOCHASTIC=""
+while getopts "c:j:hfs" opt; do
   case ${opt} in
     c)
       CMAKE_OPTS=${OPTARG}
+      ;;
+    s)
+      STOCHASTIC="-DSTOCHASTIC_PHYSICS=ON"
       ;;
     j)
       BUILD_JOBS=${OPTARG}
@@ -63,5 +68,5 @@ cd ${BUILD_DIR} || exit 1
 
 BUILD_JOBS=${BUILD_JOBS:-8}
 CMAKE_OPTS+=' -DMPAS_DOUBLE_PRECISION=OFF'
-cmake ${CMAKE_OPTS} -DMPAS_CORES="init_atmosphere;atmosphere" ..
+cmake ${CMAKE_OPTS} ${STOCHASTIC} -DMPAS_CORES="init_atmosphere;atmosphere" ..
 make -j $BUILD_JOBS
