@@ -535,15 +535,16 @@ use mpas_stream_manager
  call mpas_pool_get_dimension(state,'index_dust_coarse',index_dust_coarse)
  call mpas_pool_get_dimension(state,'index_unspc_fine',index_unspc_fine)
 
- if(index_qc .gt. -1) f_qc = .true.
- if(index_qr .gt. -1) f_qr = .true.
- if(index_qi .gt. -1) f_qi = .true.
- if(index_qs .gt. -1) f_qs = .true.
- if(index_qg .gt. -1) f_qg = .true.
- if(index_smoke_fine   .gt. -1) f_smoke_fine = .true.
- if(index_dust_fine    .gt. -1) f_dust_fine = .true.
- if(index_dust_coarse  .gt. -1) f_dust_coarse = .true.
- if(index_unspc_fine   .gt. -1) f_unspc_fine = .true.
+!a scalar that is not declared in Registry.xml has no index_* dimension in the pool
+ if(associated(index_qc))          then; if(index_qc          .gt. -1) f_qc          = .true.; end if
+ if(associated(index_qr))          then; if(index_qr          .gt. -1) f_qr          = .true.; end if
+ if(associated(index_qi))          then; if(index_qi          .gt. -1) f_qi          = .true.; end if
+ if(associated(index_qs))          then; if(index_qs          .gt. -1) f_qs          = .true.; end if
+ if(associated(index_qg))          then; if(index_qg          .gt. -1) f_qg          = .true.; end if
+ if(associated(index_smoke_fine))  then; if(index_smoke_fine   .gt. -1) f_smoke_fine  = .true.; end if
+ if(associated(index_dust_fine))   then; if(index_dust_fine    .gt. -1) f_dust_fine   = .true.; end if
+ if(associated(index_dust_coarse)) then; if(index_dust_coarse  .gt. -1) f_dust_coarse = .true.; end if
+ if(associated(index_unspc_fine))  then; if(index_unspc_fine   .gt. -1) f_unspc_fine  = .true.; end if
 
 !initializes the logical assigned to number concentrations:
  f_nc   = .false.
@@ -556,10 +557,10 @@ use mpas_stream_manager
  call mpas_pool_get_dimension(state,'index_nifa',index_nifa)
  call mpas_pool_get_dimension(state,'index_nwfa',index_nwfa)
 
- if(index_nc   .gt. -1) f_nc   = .true.
- if(index_ni   .gt. -1) f_ni   = .true.
- if(index_nifa .gt. -1) f_nifa = .true.
- if(index_nwfa .gt. -1) f_nwfa = .true.
+ if(associated(index_nc))   then; if(index_nc   .gt. -1) f_nc   = .true.; end if
+ if(associated(index_ni))   then; if(index_ni   .gt. -1) f_ni   = .true.; end if
+ if(associated(index_nifa)) then; if(index_nifa .gt. -1) f_nifa = .true.; end if
+ if(associated(index_nwfa)) then; if(index_nwfa .gt. -1) f_nwfa = .true.; end if
 
  end subroutine init_physics_flags
 
