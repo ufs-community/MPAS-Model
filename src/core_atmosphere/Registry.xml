@@ -504,6 +504,7 @@
                 <package name="mp_tempo_in" description="parameterization of TEMPO cloud microphysics."/>
                 <package name="tempo_aerosolaware_in" description="variables for TEMPO with aerosol-aware microphysics."/>
                 <package name="tempo_hailaware_in" description="variables for TEMPO hail-aware microphysics."/>
+		<package name="tempo_cldfra_in" description="variables for TEMPO prognostic cloud fraction microphysics."/>
                 <package name="mp_wsm6_in" description="parameterization of WSM6 cloud microphysics."/>
                 <package name="mp_nssl2m_in" description="parameterization of NSSL 2-moment microphysics."/>
                 <package name="nssl3m_in" description="variables for NSSL 3-moment microphysics."/>
@@ -2196,6 +2197,14 @@
                              description="Water-friendly aerosol number concentration"
                              packages="mp_thompson_aers_in;tempo_aerosolaware_in"/>
 
+                        <var name="qal" array_group="passive" units=""
+                             description="Prognostic cloud liquid fraction"
+                             packages="tempo_cldfra_in"/>
+
+                        <var name="qai" array_group="passive" units=""
+                             description="Prognostic cloud ice fraction"
+                             packages="tempo_cldfra_in"/>			
+
                         <var name="tke" array_group="turbulence" units="m^2 s^{-2}"
                              description="Turbulent kinetic energy for the prognostic tke LES scheme"
                              packages="les"/>
@@ -2605,6 +2614,14 @@
                              description="Tendency of water-friendly aerosol number concentration multiplied by dry air density divided by d(zeta)/dz"
                              packages="mp_thompson_aers_in;tempo_aerosolaware_in"/>
 
+                        <var name="tend_qal" name_in_code="qal" array_group="passive" units=""
+                             description="Tendency of prognostic cloud liquid fraction multiplied by dry air density divided by d(zeta)/dz"
+                             packages="tempo_cldfra_in"/>
+
+                        <var name="tend_qai" name_in_code="qai" array_group="passive" units=""
+                             description="Tendency of prognostic cloud ice fraction multiplied by dry air density divided by d(zeta)/dz"
+                             packages="tempo_cldfra_in"/>
+
                         <var name="tend_tke" name_in_code="tke" array_group="turbulence" units="kg m^{-3} m^2 s^{-2} s^{-1}" 
                              description="Tendency of tke multiplied by dry air density divided by d(zeta)/dz"
                              packages="les"/>
@@ -2709,6 +2726,14 @@
                              units="m^{-3} s^{-1}"
                              description="Lateral boundary tendency of water-friendly aerosol number concentration"/>
 
+			          <var name="lbc_qal" name_in_code="qal" array_group="passive" packages="tempo_cldfra_in"
+                             units=""
+                             description="Lateral boundary tendency of prognostic cloud liquid fraction"/>
+
+                        <var name="lbc_qai" name_in_code="qai" array_group="passive" packages="tempo_cldfra_in"
+                             units=""
+                             description="Lateral boundary tendency of prognostic cloud ice fraction"/>
+			
                         <var name="lbc_tke" name_in_code="tke" array_group="turbulence"
                              units="m^2 s^{-3}"
                              description="Lateral boundary tendency of TKE"
@@ -2895,11 +2920,6 @@
                      description="configuration for cloud microphysics schemes"
                      possible_values="`suite',`mp_wsm6',`mp_tempo',`mp_thompson',`mp_thompson_aerosols', `mp_kessler',`mp_nssl2m',`off'"/>
 
-               <nml_option name="config_tempo_cldfra" type="logical" default_value="false" in_defaults="false"
-		           units="-"
-                     description="Logical flag to turn on/off prognostic cloud fraction"
-                     possible_values=".true. or .false."/>
-
                <nml_option name="config_tempo_ml_nc" type="logical" default_value="false" in_defaults="false"
 		           units="-"
                      description="Logical flag to turn on/off ML prediction of microphysics cloud number concentrations"
@@ -2963,7 +2983,7 @@
                 <nml_option name="config_radt_cld_scheme" type="character" default_value="suite" in_defaults="false"
                      units="-"
                      description="configuration for calculation of horizontal cloud fraction"
-                     possible_values="`suite',`cld_fraction',`cld_incidence',`cld_fraction_thompson',`cld_fraction_mynn'"/>
+                     possible_values="`suite',`cld_fraction',`cld_incidence',`cld_fraction_thompson',`cld_fraction_mynn',`cld_tempo'"/>
 
                 <nml_option name="config_radt_lw_scheme" type="character" default_value="suite" in_defaults="false"
                      units="-"
@@ -3316,6 +3336,9 @@
                 <var name="precipw" type="real" dimensions="nCells Time" units="kg m^{-2}"
                      description="precipitable water"/>
 
+                <var name="precipfrac" type="real" dimensions="nVertLevels nCells Time" units=""
+                     description="rain/snow precipitation fraction"
+                     packages="tempo_cldfra_in"/>
 
                 <!-- ================================================================================================== -->
                 <!-- ... PARAMETERIZATION OF CONVECTION:                                                                -->

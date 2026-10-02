@@ -111,6 +111,7 @@
  character(len=StrKIND),pointer:: nssl_moments
  logical,pointer:: config_tempo_aerosolaware,config_tempo_hailaware
  logical,pointer:: config_tempo_ml_for_bl_nc
+ logical,pointer:: config_tempo_cldfra
 !-----------------------------------------------------------------------------------------------------------------
 
  call mpas_pool_get_config(configs,'config_microp_scheme',microp_scheme)
@@ -118,6 +119,7 @@
  call mpas_pool_get_config(configs,'config_tempo_hailaware',config_tempo_hailaware)
  call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
  call mpas_pool_get_config(configs,'config_tempo_ml_for_bl_nc',config_tempo_ml_for_bl_nc)
+ call mpas_pool_get_config(configs,'config_tempo_cldfra',config_tempo_cldfra)
 
 !sounding variables:
  if(.not.allocated(rho_p) ) allocate(rho_p(ims:ime,kms:kme,jms:jme) )
@@ -227,6 +229,23 @@
              if(.not.allocated(volg_p)) allocate(volg_p(ims:ime,kms:kme,jms:jme))
           endif
 
+          if (config_tempo_cldfra) then
+             if(.not.allocated(qal_p)) allocate(qal_p(ims:ime,kms:kme,jms:jme))
+             if(.not.allocated(qai_p)) allocate(qai_p(ims:ime,kms:kme,jms:jme))
+             if(.not.allocated(precipfrac_p)) allocate(precipfrac_p(ims:ime,kms:kme,jms:jme))
+
+             if(.not.allocated(rthblten_p)) allocate(rthblten_p(ims:ime,kms:kme,jms:jme))
+             if(.not.allocated(rqvblten_p)) allocate(rqvblten_p(ims:ime,kms:kme,jms:jme))
+             if(.not.allocated(rqcblten_p)) allocate(rqcblten_p(ims:ime,kms:kme,jms:jme))         
+             if(.not.allocated(rqiblten_p)) allocate(rqiblten_p(ims:ime,kms:kme,jms:jme))
+             if(.not.allocated(rthratenlw_p)) allocate(rthratenlw_p(ims:ime,kms:kme,jms:jme))
+             if(.not.allocated(rthratensw_p)) allocate(rthratensw_p(ims:ime,kms:kme,jms:jme))
+             if(.not.allocated(hpbl_p)) allocate(hpbl_p(ims:ime,jms:jme))
+             if(.not.allocated(xland_p)) allocate(xland_p(ims:ime,jms:jme))
+             if(.not.allocated(cldfrac_p) ) allocate(cldfrac_p(ims:ime,kms:kme,jms:jme))
+             if(.not.allocated(qcbl_p) ) allocate(qcbl_p(ims:ime,kms:kme,jms:jme))
+          endif
+
           if (config_tempo_ml_for_bl_nc) then
              if(.not.allocated(cldfrac_p) ) allocate(cldfrac_p(ims:ime,kms:kme,jms:jme))
              if(.not.allocated(qcbl_p) ) allocate(qcbl_p(ims:ime,kms:kme,jms:jme))
@@ -271,7 +290,7 @@
  character(len=StrKIND),pointer:: microp_scheme
  character(len=StrKIND),pointer:: nssl_moments
  logical,pointer:: config_tempo_hailaware, config_tempo_aerosolaware
- logical,pointer:: config_tempo_ml_for_bl_nc
+ logical,pointer:: config_tempo_ml_for_bl_nc, config_tempo_cldfra
 
 !-----------------------------------------------------------------------------------------------------------------
 
@@ -280,6 +299,7 @@
  call mpas_pool_get_config(configs,'config_tempo_hailaware',config_tempo_hailaware)
  call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
  call mpas_pool_get_config(configs,'config_tempo_ml_for_bl_nc',config_tempo_ml_for_bl_nc)
+ call mpas_pool_get_config(configs,'config_tempo_cldfra',config_tempo_cldfra)
 
 !sounding variables:
  if(allocated(rho_p) ) deallocate(rho_p )
@@ -389,6 +409,23 @@
              if(allocated(volg_p) ) deallocate(volg_p )
           endif
 
+          if (config_tempo_cldfra) then
+             if(allocated(qal_p)) deallocate(qal_p)
+             if(allocated(qai_p)) deallocate(qai_p)
+             if(allocated(precipfrac_p)) deallocate(precipfrac_p)
+
+             if(allocated(rthblten_p)) deallocate(rthblten_p)
+             if(allocated(rqvblten_p)) deallocate(rqvblten_p)
+             if(allocated(rqcblten_p)) deallocate(rqcblten_p)
+             if(allocated(rqiblten_p)) deallocate(rqiblten_p)
+             if(allocated(rthratenlw_p)) deallocate(rthratenlw_p)
+             if(allocated(rthratensw_p)) deallocate(rthratensw_p)
+             if(allocated(hpbl_p)) deallocate(hpbl_p)
+             if(allocated(xland_p)) deallocate(xland_p)
+             if(allocated(cldfrac_p) ) deallocate(cldfrac_p)
+             if(allocated(qcbl_p) ) deallocate(qcbl_p)             
+          endif
+
           if (config_tempo_ml_for_bl_nc) then
              if(allocated(cldfrac_p) ) deallocate(cldfrac_p)
              if(allocated(qcbl_p) ) deallocate(qcbl_p)
@@ -444,7 +481,7 @@
  logical,pointer:: do_restart
  character(len=StrKIND),pointer:: microp_scheme
  logical,pointer:: config_tempo_hailaware, config_tempo_aerosolaware, config_tempo_refl10cm_from_melting
- logical,pointer:: config_tempo_ml_for_bl_nc
+ logical,pointer:: config_tempo_ml_for_bl_nc, config_tempo_cldfra
  character(len=StrKIND),pointer:: nssl_moments
 
  logical :: outputon = .false.
@@ -464,6 +501,7 @@
  call mpas_pool_get_config(configs,'config_microp_scheme',microp_scheme)
  call mpas_pool_get_config(configs,'config_tempo_hailaware',config_tempo_hailaware)
  call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
+ call mpas_pool_get_config(configs,'config_tempo_cldfra',config_tempo_cldfra)
  call mpas_pool_get_config(configs,'config_tempo_ml_for_bl_nc',config_tempo_ml_for_bl_nc)
  call mpas_pool_get_config(configs,'config_tempo_refl10cm_from_melting',config_tempo_refl10cm_from_melting)
  call mpas_pool_get_config(configs,'config_nssl_moments',nssl_moments)
@@ -483,7 +521,7 @@
 
     case("mp_tempo")
        call tempo_init(aerosolaware_flag=config_tempo_aerosolaware, &
-         hailaware_flag=config_tempo_hailaware, &
+         hailaware_flag=config_tempo_hailaware, cldfra_flag=config_tempo_cldfra, &
          refl10cm_from_melting_flag=config_tempo_refl10cm_from_melting, &
          ml_for_bl_nc_flag=config_tempo_ml_for_bl_nc, tempo_cfgs=tempo_cfgs)
 
@@ -510,7 +548,7 @@
  end subroutine init_microphysics
 
 !=================================================================================================================
- subroutine driver_microphysics(configs,mesh,state,time_lev,diag,diag_physics,tend_physics,tend,itimestep,its,ite)
+ subroutine driver_microphysics(configs,mesh,state,time_lev,sfc_input,diag,diag_physics,tend_physics,tend,itimestep,its,ite)
 !=================================================================================================================
 
  use mpas_constants, only : rvord
@@ -524,6 +562,7 @@
  integer,intent(in):: its,ite
 !inout arguments:
  type(mpas_pool_type),intent(inout):: state
+ type(mpas_pool_type),intent(inout):: sfc_input
  type(mpas_pool_type),intent(inout):: diag
  type(mpas_pool_type),intent(inout):: diag_physics
  type(mpas_pool_type),intent(inout):: tend_physics
@@ -569,7 +608,7 @@
  call precip_from_MPAS(configs,diag_physics,its,ite)
 
 !... initialization of soundings for non-hydrostatic dynamical cores.
- call microphysics_from_MPAS(configs,mesh,state,time_lev,diag,diag_physics,tend_physics,its,ite)
+ call microphysics_from_MPAS(configs,mesh,state,time_lev,sfc_input,diag,diag_physics,tend_physics,its,ite)
 
 !... call to different cloud microphysics schemes:
  microp_select: select case(trim(microp_scheme))
@@ -607,7 +646,12 @@
             ng      = ng_p       , qb         = volg_p    , w      = w_p     , &
             nc      = nc_p       , nwfa       = nwfa_p    , nifa   = nifa_p  , &
             pii     = pi_p       , p          = pres_p    , dz     = dz_p    , &
-            qc_bl   = qcbl_p     , qcfrac_bl  = cldfrac_p                    , &          
+            qc_bl   = qcbl_p     , qcfrac_bl  = cldfrac_p                    , &
+            qcfrac  = qal_p      , qifrac     = qai_p                        , & 
+            thten_bl=rthblten_p  , qvten_bl   = rqvblten_p                   , &
+            qcten_bl=rqcblten_p  , qiten_bl   = rqiblten_p                   , &
+            thten_lwrad=rthratenlw_p, thten_swrad=rthratensw_p               , &
+            hpbl    = hpbl_p     , xland = xland_p                           , &
             ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde , &
             ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme , &
             its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte , &

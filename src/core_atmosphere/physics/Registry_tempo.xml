@@ -19,6 +19,11 @@
       description="Logical flag to turn on/off ML prediction of boundary layer cloud number concentrations"
       possible_values=".true. or .false."/>
 
+    <nml_option name="config_tempo_cldfra" type="logical" default_value="false" in_defaults="false"
+      units="-"
+      description="Logical flag to turn on/off prognostic cloud fraction"
+      possible_values=".true. or .false."/>
+
     <nml_option name="config_tempo_refl10cm_from_melting" type="logical" default_value="false" in_defaults="false"
       units="-"
       description="Logical flag to turn on/off reflectivity calculation from melting snow and graupel"
