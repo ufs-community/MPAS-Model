@@ -512,6 +512,7 @@
                         <var name="shdmax" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
                         <var name="albedo12m" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
                         <var name="lai12m" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
+                        <var name="soil_color" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
                         <var name="soilcomp" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
                         <var name="soilcl1" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
                         <var name="soilcl2" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
@@ -618,6 +619,7 @@
                         <var name="shdmax"/>
                         <var name="albedo12m"/>
                         <var name="lai12m"/>
+                        <var name="soil_color"/>
                         <var name="soilcomp"/>
                         <var name="soilcl1"/>
                         <var name="soilcl2"/>
@@ -946,6 +948,10 @@
 
                 <var name="iswater_lu" type="integer" dimensions="" units="unitless" default_value="16"
                      description="Index category for water"/>
+
+                <!-- soil color index needed for the Noah-MP land surface scheme -->
+                <var name="soil_color" type="integer" dimensions="nCells" units="unitless"
+                     description="soil color index"/>
 
                 <!-- SOIL COMPOSITION fields needed for the NOAH-MP land surface scheme -->
                 <var name="soilcomp" type="real" dimensions="nSoilComps nCells" units="percent"
