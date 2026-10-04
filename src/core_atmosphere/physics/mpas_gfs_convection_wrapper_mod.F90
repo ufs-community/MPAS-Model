@@ -43,7 +43,7 @@ module mpas_gfs_convection_wrapper_mod
 contains
 
    subroutine mpas_call_gfs_convection(im, km, dt,                              &
-        pres_mid, pres_int, z_int, dx, u, v, t, qv, qc, qi, w,                      &
+        pres_mid, pres_int, z_int, dx, areaCell, u, v, t, qv, qc, qi, w,            &
         hpbl, hfx, qfx, xland,                                                  &
         tkeh_in, maxmf_in, do_mynnedmf_in,                                      &
         rthcuten, rqvcuten, rqccuten, rqicuten, rucuten, rvcuten,               &
@@ -61,6 +61,7 @@ contains
       real(kind=RKIND), intent(in) :: pres_int(im,km+1)    ! Pa, MPAS interface pressure
       real(kind=RKIND), intent(in) :: z_int(im,km+1)       ! m, interface height
       real(kind=RKIND), intent(in) :: dx(im)              ! cell length scale, m
+      real(kind=RKIND), intent(in) :: areaCell(im)        ! actual MPAS Voronoi cell area, m2
       real(kind=RKIND), intent(in) :: u(im,km), v(im,km)   ! m s-1
       real(kind=RKIND), intent(in) :: t(im,km)             ! physical temperature, K; current MPAS state
       real(kind=RKIND), intent(in) :: qv(im,km)            ! kg kg-1; current MPAS state
@@ -296,7 +297,9 @@ contains
          else
             islimsk(i) = 0       ! ocean; add sea-ice category later when available
          endif
-         garea(i) = max(1.0_RKIND, dx(i)*dx(i))
+         ! SAMF expects physical horizontal grid-cell area [m2].
+         ! Use the native MPAS Voronoi area; keep dx separately for length-scale uses.
+         garea(i) = max(1.0_RKIND, areaCell(i))
 
          ! Surface density for shallow-convection flux conversion.
          ! The driver must pass physical temperature t_phy_p, not potential temperature.

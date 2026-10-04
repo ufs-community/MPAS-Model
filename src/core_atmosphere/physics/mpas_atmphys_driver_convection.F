@@ -287,6 +287,7 @@
        if(.not.allocated(qfx_p)        ) allocate(qfx_p(ims:ime,jms:jme)                )
        if(.not.allocated(xland_p)      ) allocate(xland_p(ims:ime,jms:jme)              )
        if(.not.allocated(dx_p)         ) allocate(dx_p(ims:ime,jms:jme)                 )
+       if(.not.allocated(area_p)       ) allocate(area_p(ims:ime,jms:jme)               )
        if(.not.allocated(maxmfbl_p)    ) allocate(maxmfbl_p(ims:ime,jms:jme)            )
        if(.not.allocated(rucuten_p)    ) allocate(rucuten_p(ims:ime,kms:kme,jms:jme)    )
        if(.not.allocated(rvcuten_p)    ) allocate(rvcuten_p(ims:ime,kms:kme,jms:jme)    )
@@ -301,6 +302,7 @@
           qfx_p(i,j)   = 0._RKIND
           xland_p(i,j) = 0._RKIND
           dx_p(i,j)    = 0._RKIND
+          area_p(i,j)  = 0._RKIND
           maxmfbl_p(i,j) = 0._RKIND
        enddo
        enddo
@@ -501,6 +503,7 @@
        if(allocated(qfx_p)        ) deallocate(qfx_p        )
        if(allocated(xland_p)      ) deallocate(xland_p      )
        if(allocated(dx_p)         ) deallocate(dx_p         )
+       if(allocated(area_p)       ) deallocate(area_p       )
        if(allocated(maxmfbl_p)    ) deallocate(maxmfbl_p    )
        if(allocated(rucuten_p)    ) deallocate(rucuten_p    )
        if(allocated(rvcuten_p)    ) deallocate(rvcuten_p    )
@@ -914,6 +917,7 @@ integer, dimension(:,:), pointer :: cellsOnCell_gfs
          call mpas_call_gfs_convection(                                      &
             im       = ite-its+1, km       = kte-kts+1, dt       = dt_dyn,   &
             dx       = dx_p(its:ite,j),                                      &
+            areaCell = area_p(its:ite,j),                                  &
             pres_mid = pres_mid_gfs_sas,                       &
             pres_int = pres_int_gfs_sas,                    &
             z_int    = z_int_sas(its:ite,kts:kte+1),                        &
@@ -1317,6 +1321,7 @@ integer, dimension(:,:), pointer :: cellsOnCell_gfs
        call mpas_pool_get_array(diag_physics,'cutop',cutop)
 
        call mpas_pool_get_config(configs,'config_len_disp',len_disp)
+       call mpas_pool_get_array(mesh,'areaCell',areaCell)
        call mpas_pool_get_array(mesh,'meshDensity',meshDensity)
 
        call mpas_pool_get_array(tend_physics,'rucuten'  ,rucuten  )
@@ -1334,6 +1339,7 @@ integer, dimension(:,:), pointer :: cellsOnCell_gfs
           hfx_p(i,j)   = hfx(i)
           qfx_p(i,j)   = qfx(i)
           dx_p(i,j)    = len_disp / meshDensity(i)**0.25
+          area_p(i,j)  = areaCell(i)
           cubot_p(i,j) = cubot(i)
           cutop_p(i,j) = cutop(i)
           if (allocated(maxmfbl_p)) maxmfbl_p(i,j) = 0._RKIND
