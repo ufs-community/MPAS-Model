@@ -623,7 +623,7 @@ real(kind=RKIND),allocatable:: pres_mid_gfs_sas(:,:), pres_int_gfs_sas(:,:)
 integer, dimension(:), pointer :: nEdgesOnCell_gfs
 integer, dimension(:,:), pointer :: cellsOnCell_gfs
  real(kind=RKIND),allocatable:: tkeh_gfs_sas(:,:), maxmf_gfs_sas(:)
- logical:: do_mynnedmf_gfs_sas
+ logical:: do_mynnedmf_gfs_sas = .false.
  integer,allocatable:: kbot_sas(:), ktop_sas(:)
 
 !local pointers:
@@ -862,8 +862,10 @@ integer, dimension(:,:), pointer :: cellsOnCell_gfs
          allocate(tkeh_gfs_sas(its:ite,kts:kte+1))
          allocate(maxmf_gfs_sas(its:ite))
 
-         do_mynnedmf_gfs_sas = (trim(pbl_scheme) == 'bl_tke_edmf' .or. &
-                                trim(pbl_scheme) == 'bl_mynnedmf')
+         ! GFS do_mynnedmf specifically denotes MYNN-EDMF.
+         ! GFS TKE-EDMF (satmedmf / bl_tke_edmf) must therefore pass
+         ! do_mynnedmf=.false. to SAMF.
+         do_mynnedmf_gfs_sas = (trim(pbl_scheme) == 'bl_mynnedmf')
          maxmf_gfs_sas(:) = 0._RKIND
          tkeh_gfs_sas(:,:) = 0._RKIND
 
