@@ -55,7 +55,12 @@ OBJS = \
 	cu_ntiedtke_post.o             \
 	cu_ntiedtke_pre.o	       \
 	sf_mynn_pre.o                  \
-	sf_sfclayrev_pre.o
+	sf_sfclayrev_pre.o             \
+        module_gfs_machine.o           \
+        module_gfs_physcons.o          \
+        module_gfs_funcphys.o          \
+        module_progtm.o                \
+        module_sf_gfs.o
 
 
 physics_wrf: $(OBJS)
@@ -118,6 +123,22 @@ module_sf_noah_seaice_drv.o: \
 module_sf_noah_seaice.o: \
 	module_sf_noahlsm.o
 
+module_gfs_physcons.o: \
+        module_gfs_machine.o
+
+module_gfs_funcphys.o: \
+        module_gfs_machine.o \
+        module_gfs_physcons.o
+
+module_progtm.o: \
+        module_gfs_machine.o
+
+module_sf_gfs.o: \
+        module_gfs_machine.o \
+        module_gfs_physcons.o \
+        module_gfs_funcphys.o \
+        module_progtm.o
+
 clean:
 	$(RM) *.f90 *.o *.mod
 	@# Certain systems with intel compilers generate *.i files
@@ -127,9 +148,9 @@ clean:
 .F.o:
 ifeq "$(GEN_F90)" "true"
 	$(CPP) $(CPPFLAGS) $(COREDEF) $(CPPINCLUDES) $< > $*.f90
-	$(FC) $(FFLAGS) -c $*.f90 $(FCINCLUDES) -I.. -I../physics_mmm -I../physics_noaa/UGWP -I../../../framework -I../../../external/esmf_time_f90
+	$(FC) $(FFLAGS) -c $*.f90 $(FCINCLUDES) -I.. -I../physics_mmm -I../physics_noaa/UGWP -I../../../framework $(MPAS_ESMF_INC)
 else
-	$(FC) $(CPPFLAGS) $(COREDEF) $(FFLAGS) -c $*.F $(CPPINCLUDES) $(FCINCLUDES) -I.. -I../physics_mmm -I../physics_noaa/UGWP -I../../../framework -I../../../external/esmf_time_f90
+	$(FC) $(CPPFLAGS) $(COREDEF) $(FFLAGS) -c $*.F $(CPPINCLUDES) $(FCINCLUDES) -I.. -I../physics_mmm -I../physics_noaa/UGWP -I../../../framework $(MPAS_ESMF_INC)
 endif
 
 .F90.o:

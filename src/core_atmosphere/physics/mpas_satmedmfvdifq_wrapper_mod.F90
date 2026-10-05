@@ -1,0 +1,413 @@
+module mpas_satmedmfvdifq_wrapper_mod
+
+  use mpas_kind_types, only: RKIND
+  use satmedmfvdifq, only: satmedmfvdifq_run
+  use, intrinsic :: ieee_arithmetic, only: ieee_is_finite
+  implicit none
+
+  type mpas_satmedmfvdifq_config_type
+    logical :: sa3dtke      = .false.
+    logical :: tte_edmf     = .false.
+    logical :: dspheat      = .true.
+    logical :: use_oceanuv  = .false.
+    logical :: do_canopy    = .false.
+    logical :: cplaqm       = .false.
+    logical :: gen_tend     = .false.
+    logical :: ldiag3d      = .false.
+
+    integer :: sfc_rlm = 0
+    integer :: tc_pbl  = 0
+    integer :: use_lpt = 0
+
+    real(kind=RKIND) :: xkzm_m = 1.0_RKIND
+    real(kind=RKIND) :: xkzm_h = 1.0_RKIND
+    real(kind=RKIND) :: xkzm_s = 1.0_RKIND
+    real(kind=RKIND) :: dspfac = 1.0_RKIND
+    real(kind=RKIND) :: bl_upfr = 0.13_RKIND
+    real(kind=RKIND) :: bl_dnfr = 0.10_RKIND
+    real(kind=RKIND) :: rlmx = 300.0_RKIND
+    real(kind=RKIND) :: elmx = 300.0_RKIND
+  end type mpas_satmedmfvdifq_config_type
+
+contains
+
+  subroutine mpas_call_satmedmfvdifq(nCells, nVertLevels, ntrac, dt,      &
+                                     z_mid, z_int, areaCell,             &
+                                     u_mpas, v_mpas, t_mpas,             &
+                                     qv_mpas, qc_mpas, qi_mpas, tke_mpas,&
+                                     p_mid, p_int, exner_mid,            &
+                                     sw_heat, lw_heat, coszen,           &
+                                     skin_temp, shflx, lhflx, stress_in, &
+                                     z0_mpas, u10, v10, vegfra_in, rb_in, fm_in, fh_in,    &
+                                     hpbl_out, kpbl_out,                 &
+                                     ten_t_out, ten_u_out, ten_v_out,    &
+                                     ten_qv_out, ten_qc_out, ten_qi_out, &
+                                     cfg, errmsg, errflg)
+
+    integer, intent(in) :: nCells, nVertLevels, ntrac
+    real(kind=RKIND), intent(in) :: dt
+    real(kind=RKIND), intent(in) :: z_mid(nCells,nVertLevels)
+    real(kind=RKIND), intent(in) :: z_int(nCells,nVertLevels+1)
+    real(kind=RKIND), intent(in) :: areaCell(nCells)
+    real(kind=RKIND), intent(in) :: u_mpas(nCells,nVertLevels)
+    real(kind=RKIND), intent(in) :: v_mpas(nCells,nVertLevels)
+    real(kind=RKIND), intent(in) :: t_mpas(nCells,nVertLevels)
+    real(kind=RKIND), intent(in) :: qv_mpas(nCells,nVertLevels)
+    real(kind=RKIND), intent(in) :: qc_mpas(nCells,nVertLevels)
+    real(kind=RKIND), intent(in) :: qi_mpas(nCells,nVertLevels)
+    real(kind=RKIND), intent(inout) :: tke_mpas(nCells,nVertLevels)
+    real(kind=RKIND), intent(in) :: p_mid(nCells,nVertLevels)
+    real(kind=RKIND), intent(in) :: p_int(nCells,nVertLevels+1)
+    real(kind=RKIND), intent(in) :: exner_mid(nCells,nVertLevels)
+    real(kind=RKIND), intent(in) :: sw_heat(nCells,nVertLevels)
+    real(kind=RKIND), intent(in) :: lw_heat(nCells,nVertLevels)
+    real(kind=RKIND), intent(in) :: coszen(nCells)
+    real(kind=RKIND), intent(in) :: skin_temp(nCells)
+    real(kind=RKIND), intent(in) :: shflx(nCells)
+    real(kind=RKIND), intent(in) :: lhflx(nCells)
+    real(kind=RKIND), intent(in) :: stress_in(nCells)
+    real(kind=RKIND), intent(in) :: z0_mpas(nCells)
+    real(kind=RKIND), intent(in) :: u10(nCells), v10(nCells)
+    real(kind=RKIND), intent(in) :: vegfra_in(nCells),rb_in(nCells)
+    real(kind=RKIND), intent(in) :: fm_in(nCells), fh_in(nCells)
+    real(kind=RKIND), intent(out) :: hpbl_out(nCells)
+    integer, intent(out) :: kpbl_out(nCells)
+    real(kind=RKIND), intent(out) :: ten_t_out(nCells,nVertLevels)
+    real(kind=RKIND), intent(out) :: ten_u_out(nCells,nVertLevels)
+    real(kind=RKIND), intent(out) :: ten_v_out(nCells,nVertLevels)
+    real(kind=RKIND), intent(out) :: ten_qv_out(nCells,nVertLevels)
+    real(kind=RKIND), intent(out) :: ten_qc_out(nCells,nVertLevels)
+    real(kind=RKIND), intent(out) :: ten_qi_out(nCells,nVertLevels)
+    type(mpas_satmedmfvdifq_config_type), intent(in) :: cfg
+    character(len=*), intent(out) :: errmsg
+    integer, intent(out) :: errflg
+
+    integer :: im, km
+    integer :: i, k, kk
+    integer :: ntqv, ntcw, ntiw, ntrw, ntke
+    integer :: index_of_temperature, index_of_x_wind
+    integer :: index_of_y_wind, index_of_process_pbl
+
+    real(kind=RKIND), parameter :: grav  = 9.80665_RKIND
+    real(kind=RKIND), parameter :: pi    = 3.14159265358979323846_RKIND
+    real(kind=RKIND), parameter :: rd    = 287.0_RKIND
+    real(kind=RKIND), parameter :: cp    = 1004.0_RKIND
+    real(kind=RKIND), parameter :: rv    = 461.5_RKIND
+    real(kind=RKIND), parameter :: hvap  = 2.5e6_RKIND
+    real(kind=RKIND), parameter :: hfus  = 3.3358e5_RKIND
+    real(kind=RKIND), parameter :: fv    = rv/rd - 1.0_RKIND
+    real(kind=RKIND), parameter :: eps   = rd/rv
+    real(kind=RKIND), parameter :: epsm1 = eps - 1.0_RKIND
+    real(kind=RKIND), parameter :: p0ref = 100000.0_RKIND
+    real(kind=RKIND), parameter :: kappa = rd/cp
+    real(kind=RKIND), parameter :: z0lo = 0.1_RKIND
+    real(kind=RKIND), parameter :: z0up = 1.0_RKIND
+
+    real(kind=RKIND), allocatable :: rtg(:,:,:), q1(:,:,:)
+    real(kind=RKIND), allocatable :: u1(:,:), v1(:,:), t1(:,:)
+    real(kind=RKIND), allocatable :: swh(:,:), hlw(:,:), xmu(:)
+    real(kind=RKIND), allocatable :: garea(:), zvfun(:), sigmaf(:)
+    real(kind=RKIND), allocatable :: psk(:), rbsoil(:), zorl(:)
+    real(kind=RKIND), allocatable :: u10m(:), v10m(:), fm(:), fh(:)
+    real(kind=RKIND), allocatable :: tsea(:), heat(:), evap(:)
+    real(kind=RKIND), allocatable :: stress(:), spd1(:)
+    real(kind=RKIND), allocatable :: prsi(:,:), del(:,:), prsl(:,:), prslk(:,:)
+    real(kind=RKIND), allocatable :: phii(:,:), phil(:,:)
+    real(kind=RKIND), allocatable :: dusfc(:), dvsfc(:), dtsfc(:), dqsfc(:)
+    real(kind=RKIND), allocatable :: hpbl(:), dkt(:,:), dku(:,:), tkeh(:,:)
+    real(kind=RKIND), allocatable :: def_1(:,:), def_2(:,:), def_3(:,:)
+    real(kind=RKIND), allocatable :: dku3d_h(:,:), dku3d_e(:,:)
+    real(kind=RKIND), allocatable :: ten_t(:,:), ten_u(:,:), ten_v(:,:)
+    real(kind=RKIND), allocatable :: dv(:,:), du(:,:), tdt(:,:)
+    real(kind=RKIND), allocatable :: dtend(:,:,:)
+    real(kind=RKIND), allocatable :: claie(:), cfch(:), cfrt(:), cclu(:), cpopu(:)
+    real(kind=RKIND) :: rho1,tem1, tem2
+    integer, allocatable :: kpbl(:), kinver(:), dtidx(:,:)
+    integer, allocatable :: surf_k(:), kmap(:,:)
+
+    im = nCells
+    km = nVertLevels
+
+    errmsg = ''
+    errflg = 0
+
+    ! Initialize all returned MPAS PBL tendencies for this call.
+    ! This matches the GFS-SAS-style convention: the wrapper returns
+    ! this scheme's own tendency contribution, not an accumulation onto
+    ! any incoming tendency.  It also prevents undefined values if the
+    ! UFS routine exits early or skips a column.
+    ten_t_out  = 0.0_RKIND
+    ten_u_out  = 0.0_RKIND
+    ten_v_out  = 0.0_RKIND
+    ten_qv_out = 0.0_RKIND
+    ten_qc_out = 0.0_RKIND
+    ten_qi_out = 0.0_RKIND
+
+    ! Tracer layout for the UFS routine.
+    ntqv = 1
+    ntcw = 2
+    ntiw = 3
+    ntrw = 0
+    ntke = ntrac
+
+    if (ntrac < 4) then
+      errmsg = 'mpas_call_satmedmfvdifq: ntrac must be at least 4: qv,qc,qi,tke'
+      errflg = 1
+      return
+    endif
+
+    allocate(rtg(im,km,ntrac), q1(im,km,ntrac))
+    allocate(u1(im,km), v1(im,km), t1(im,km))
+    allocate(swh(im,km), hlw(im,km), xmu(im))
+    allocate(garea(im), zvfun(im), sigmaf(im))
+    allocate(psk(im), rbsoil(im), zorl(im))
+    allocate(u10m(im), v10m(im), fm(im), fh(im))
+    allocate(tsea(im), heat(im), evap(im), stress(im), spd1(im))
+    allocate(prsi(im,km+1), del(im,km), prsl(im,km), prslk(im,km))
+    allocate(phii(im,km+1), phil(im,km))
+    allocate(dusfc(im), dvsfc(im), dtsfc(im), dqsfc(im))
+    allocate(hpbl(im), dkt(im,km), dku(im,km), tkeh(im,km))
+    allocate(def_1(im,km), def_2(im,km), def_3(im,km))
+    allocate(dku3d_h(im,km), dku3d_e(im,km))
+    allocate(ten_t(im,km), ten_u(im,km), ten_v(im,km))
+    allocate(dv(im,km), du(im,km), tdt(im,km))
+    allocate(kpbl(im), kinver(im))
+    allocate(surf_k(im), kmap(im,km))
+    allocate(dtidx(3,1), dtend(im,km,3))
+    allocate(claie(im), cfch(im), cfrt(im), cclu(im), cpopu(im))
+
+    rtg = 0.0_RKIND
+    q1 = 0.0_RKIND
+    dkt = 0.0_RKIND
+    dku = 0.0_RKIND
+    tkeh = 0.0_RKIND
+    def_1 = 0.0_RKIND
+    def_2 = 0.0_RKIND
+    def_3 = 0.0_RKIND
+    dku3d_h = 0.0_RKIND
+    dku3d_e = 0.0_RKIND
+    ten_t = 0.0_RKIND
+    ten_u = 0.0_RKIND
+    ten_v = 0.0_RKIND
+    dv = 0.0_RKIND
+    du = 0.0_RKIND
+    tdt = 0.0_RKIND
+    dtend = 0.0_RKIND
+    dtidx = 0
+    claie = 0.0_RKIND
+    cfch  = 0.0_RKIND
+    cfrt  = 0.0_RKIND
+    cclu  = 0.0_RKIND
+    cpopu = 0.0_RKIND
+
+    ! Build the vertical mapping fresh every call.  For the current
+    ! MPAS/TKE-EDMF path we keep bottom-up ordering: k=1 is the lowest
+    ! model layer.  Using kmap consistently avoids relying on stale
+    ! assumptions from a previous call.
+    do i = 1, im
+      surf_k(i) = 1
+      do k = 1, km
+        kmap(i,k) = k
+      enddo
+    enddo
+
+    do k = 1, km
+      do i = 1, im
+        kk = kmap(i,k)
+
+        u1(i,k) = u_mpas(i,kk)
+        v1(i,k) = v_mpas(i,kk)
+        t1(i,k) = t_mpas(i,kk)
+
+        q1(i,k,ntqv) = max(qv_mpas(i,kk), 1.0e-12_RKIND)
+        q1(i,k,ntcw) = max(qc_mpas(i,kk), 0.0_RKIND)
+        q1(i,k,ntiw) = max(qi_mpas(i,kk), 0.0_RKIND)
+        q1(i,k,ntke) = max(tke_mpas(i,kk), 1.0e-9_RKIND)
+
+        prsl(i,k)  = p_mid(i,kk)
+
+        ! Use native MPAS Exner directly, matching the YSU input path.
+        ! GFS satmedmfvdifq forms pix = psk/prslk internally, so psk
+        ! below is computed independently from the surface-interface
+        ! pressure using the same p0=100000 Pa and kappa=Rd/Cp.
+        prslk(i,k) = exner_mid(i,kk)
+
+
+        ! UFS routine expects geopotential, not geometric height.
+        phil(i,k) = grav * z_mid(i,kk)
+
+        swh(i,k) = sw_heat(i,kk)
+        hlw(i,k) = lw_heat(i,kk)
+      enddo
+    enddo
+
+    do k = 1, km+1
+      do i = 1, im
+        prsi(i,k) = p_int(i,k)
+
+        ! UFS routine internally does zi=phii/grav, so pass geopotential.
+        phii(i,k) = grav * z_int(i,k)
+      enddo
+    enddo
+
+    do k = 1, km
+      do i = 1, im
+        del(i,k) = prsi(i,k) - prsi(i,k+1)
+        if (.not. ieee_is_finite(del(i,k)) .or. del(i,k) <= 0.0_RKIND) then
+          errflg = 1
+          write(errmsg,'(A,I0,A,I0,A,ES14.6)') &
+               'mpas_call_satmedmfvdifq: non-positive del at i=', i, &
+               ', k=', k, ', del=', del(i,k)
+          return
+        endif
+      enddo
+    enddo
+
+    do i = 1, im
+      garea(i) = areaCell(i)
+
+      ! GFS defines xmu as xcosz/coszen, not coszen itself.  MPAS
+      ! currently provides the radiation-time coszr but not a separate
+      ! current-time xcosz to this PBL driver.  Until both are carried
+      ! through the interface, use the consistent approximation
+      ! xcosz=coszen: xmu=1 in daylight and 0 at night.
+      if (coszen(i) > 1.0e-4_RKIND) then
+        xmu(i) = 1.0_RKIND
+      else
+        xmu(i) = 0.0_RKIND
+      endif
+
+      ! UFS code uses z0 = 0.01*zorl, so zorl is in cm.
+      zorl(i) = max(z0_mpas(i), 1.0e-6_RKIND) * 100.0_RKIND
+      kk = surf_k(i)
+
+      ! Use virtual temperature for the density that converts MPAS
+      ! surface sensible/latent heat fluxes to the kinematic fluxes
+      ! expected by GFS TKE-EDMF.
+      !
+      ! q1(:,:,ntqv) is the MPAS water-vapor mixing ratio [kg/kg].
+      ! For mixing ratio r_v:
+      !   T_v = T * (1 + (R_v/R_d - 1) * r_v)
+      !       = T * (1 + fv * r_v)
+      ! and
+      !   rho = p / (R_d * T_v)
+      tem1 = 1.0_RKIND + fv * q1(i,kk,ntqv)
+      rho1 = prsl(i,kk) / (rd * t1(i,kk) * tem1)
+
+      tsea(i) = skin_temp(i)
+      heat(i) = shflx(i)/(rho1*cp)
+
+      ! If MPAS gives latent heat flux W m-2, convert to kg m-2 s-1.
+      evap(i) = lhflx(i) / (rho1*hvap)
+
+      stress(i) = max(stress_in(i), 0.0_RKIND)
+      spd1(i) = max(sqrt(u1(i,kk)**2 + v1(i,kk)**2), 0.1_RKIND)
+
+      u10m(i) = u10(i)
+      v10m(i) = v10(i)
+      rbsoil(i) = rb_in(i)
+      fm(i) = max(fm_in(i), 1.0e-6_RKIND)
+      fh(i) = max(fh_in(i), 1.0e-6_RKIND)
+
+      ! If MPAS does not have rbsoil, start neutral.
+!     rbsoil(i) = 0.0_RKIND
+
+      ! GFS psk is surface-interface Exner referenced to p0=100000 Pa.
+      ! It is NOT the lowest-model-layer Exner.  satmedmfvdifq uses
+      ! pix = psk/prslk = (ps/pk)**kappa.
+      psk(i) = (max(prsi(i,1),1.0_RKIND)/p0ref)**kappa
+
+! MPAS vegfra_in is percent (0-100).
+! GFS TKE-EDMF expects sigmaf as fraction (0-1).
+      sigmaf(i) = 0.01_RKIND * vegfra_in(i)
+      sigmaf(i) = max(0.0_RKIND, min(1.0_RKIND, sigmaf(i)))
+
+!     zvfun(i) = 1.0_RKIND
+      !-------------------------------------------------------
+! Compute zvfun: function of surface roughness and vegetation
+!-------------------------------------------------------
+
+! z0 from MPAS is in meters; UFS uses zorl in cm
+! Here we stay consistent with MPAS units (meters)
+      tem1 = (z0_mpas(i) - z0lo) / (z0up - z0lo)
+! limit between 0 and 1
+      tem1 = min(max(tem1, 0.0_RKIND), 1.0_RKIND)
+! ensure minimum vegetation fraction
+      tem2 = max(sigmaf(i), 0.1_RKIND)
+! final function
+      zvfun(i) = sqrt(tem1 * tem2)
+
+      ! No inversion limiter initially.
+      kinver(i) = km
+
+      kpbl(i) = 1
+      hpbl(i) = 0.0_RKIND
+    enddo
+
+    index_of_temperature = 1
+    index_of_x_wind = 2
+    index_of_y_wind = 3
+    index_of_process_pbl = 1
+
+    call satmedmfvdifq_run(im, km, ntrac, ntcw, ntrw, ntiw, ntke,       &
+         grav, pi, rd, cp, rv, hvap, hfus, fv, eps, epsm1,             &
+         def_1, def_2, def_3, cfg%sa3dtke, dku3d_h, dku3d_e,           &
+         dv, du, tdt, rtg, u1, v1, t1, q1,                             &
+         swh, hlw, xmu, garea, zvfun, sigmaf,                          &
+         psk, rbsoil, zorl, u10m, v10m, fm, fh,                        &
+         tsea, heat, evap, stress, spd1, kpbl,                         &
+         prsi, del, prsl, prslk, phii, phil, dt, cfg%tte_edmf,         &
+         cfg%dspheat, dusfc, dvsfc, dtsfc, dqsfc, hpbl, dkt, dku, tkeh,&
+         kinver, cfg%xkzm_m, cfg%xkzm_h, cfg%xkzm_s, cfg%dspfac,       &
+         cfg%bl_upfr, cfg%bl_dnfr, cfg%rlmx, cfg%elmx,                 &
+         cfg%sfc_rlm, cfg%tc_pbl, cfg%use_lpt,                         &
+         cfg%do_canopy, cfg%cplaqm, claie, cfch, cfrt, cclu, cpopu,    &
+         ntqv, dtend, dtidx, index_of_temperature,                     &
+         index_of_x_wind, index_of_y_wind, index_of_process_pbl,       &
+         cfg%gen_tend, cfg%ldiag3d, errmsg, errflg)
+
+    if (errflg /= 0) return
+
+    do k = 1, km
+      do i = 1, im
+        kk = kmap(i,k)
+
+        ! Convert physical-temperature tendency to MPAS potential-temperature
+        ! tendency using the Exner function from the SAME pressure column
+        ! that was supplied to TKE-EDMF.
+        ten_t_out(i,kk) = tdt(i,k)/prslk(i,k)
+        ten_u_out(i,kk) = du(i,k)
+        ten_v_out(i,kk) = dv(i,k)
+
+        ten_qv_out(i,kk) = rtg(i,k,ntqv)
+        ten_qc_out(i,kk) = rtg(i,k,ntcw)
+        ten_qi_out(i,kk) = rtg(i,k,ntiw)
+
+        ! satmedmfvdifq treats q1(:,:,ntke) as the INPUT prognostic TKE.
+        ! The updated TKE is returned as a tendency in rtg(:,:,ntke):
+        !   rtg(ntke) = (TKE_new - TKE_old) / dt
+        ! because rtg is initialized to zero in this wrapper.  Therefore
+        ! copy the advanced TKE state back to MPAS, not the unchanged q1.
+        if (ieee_is_finite(q1(i,k,ntke)) .and. &
+            ieee_is_finite(rtg(i,k,ntke))) then
+          ! Prognostic TKE coupling:
+          ! satmedmfvdifq returns d(TKE)/dt in rtg(:,:,ntke).
+          ! Do not copy q1 back unchanged.
+          tke_mpas(i,kk) = max(1.0e-9_RKIND, &
+                               q1(i,k,ntke) + dt*rtg(i,k,ntke))
+        else
+          errflg = 1
+          errmsg = 'Non-finite GFS TKE-EDMF prognostic TKE update'
+          return
+        endif
+      enddo
+    enddo
+
+    do i = 1, im
+      hpbl_out(i) = hpbl(i)
+      kpbl_out(i) = kpbl(i)
+    enddo
+
+  end subroutine mpas_call_satmedmfvdifq
+
+end module mpas_satmedmfvdifq_wrapper_mod

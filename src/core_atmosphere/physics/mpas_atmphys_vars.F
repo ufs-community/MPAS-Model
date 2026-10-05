@@ -293,10 +293,8 @@
     clayfrac_in_p,       &!
     sandfrac_in_p,       &!
     uthres_in_p,         &!
-    uthres_sg_in_p,      &!
-    albedo_drag_p,       &!
-    feff_p,              &!
-    sep_in_p              !
+    rdrag_p,             &!
+    ssm_in_p              !
 ! Input biomass burning emissions - JLS
  real(kind=RKIND),dimension(:,:,:,:),allocatable:: &
     e_ant_in_p, e_bb_in_p, e_bio_in_p, e_vol_in_p
