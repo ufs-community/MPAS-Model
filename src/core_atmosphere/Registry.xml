@@ -3651,7 +3651,7 @@
                      description="surface exchange coefficient for heat and moisture"
                      packages="sfclayer"/>
 
-		<var name="cqs" type="real" dimensions="nCells Time" units="m s^{-1}"
+                <var name="cqs" type="real" dimensions="nCells Time" units="m s^{-1}"
                      description="surface exchange coefficient for moisture (mynn/ruc)"
                      packages="sfclayer"/>
 
