@@ -165,7 +165,8 @@ mpas_atmphys_driver_microphysics.o: \
 	mpas_atmphys_init_microphysics.o \
 	mpas_atmphys_init_tempo.o \
 	mpas_atmphys_interface.o \
-	mpas_atmphys_vars.o
+	mpas_atmphys_vars.o \
+        physics_noaa/TEMPO/module_mp_tempo_cfgs.o
 
 mpas_atmphys_driver_oml.o: \
 	mpas_atmphys_constants.o \
