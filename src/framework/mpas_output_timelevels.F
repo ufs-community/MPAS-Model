@@ -10,7 +10,8 @@ module mpas_output_timelevels
     public :: parse_all_timelevels, &
               get_output_interval_from_timelevels, &
               get_next_timelevel_start, &
-              update_variable_output_alarm
+              update_variable_output_alarm, &
+              mpas_timelevel_seconds_to_interval
 
     private
 
@@ -105,6 +106,44 @@ module mpas_output_timelevels
         end if
 
     end subroutine parse_all_timelevels!}}}
+
+
+    !|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+    !
+    !  mpas_timelevel_seconds_to_interval
+    !
+    !> \brief Build a TimeInterval from a real seconds value at 100-microsecond resolution
+    !> \author Guoqing Ge
+    !> \date March 2026
+    !> \details
+    !>  Converts a real seconds value (e.g. hours*3600 or minutes*60) into a TimeInterval
+    !>  using exact rational seconds (S_i8 whole seconds + S_n/S_d fractional ticks), rather
+    !>  than mpas_set_timeInterval's dt argument, which round-trips through a formatted
+    !>  decimal string and can introduce sub-second jitter. Resolution is 1/10000 s
+    !>  (100 microseconds), which is far finer than any supported model timestep (including
+    !>  sub-second LES timesteps like 1.33s) while still absorbing floating-point noise.
+    !
+    !-----------------------------------------------------------------------
+    subroutine mpas_timelevel_seconds_to_interval(interval, seconds_real, ierr)!{{{
+
+        implicit none
+
+        type (MPAS_TimeInterval_type), intent(out) :: interval
+        real(kind=RKIND), intent(in) :: seconds_real
+        integer, intent(out), optional :: ierr
+
+        integer, parameter :: TICKS_PER_SECOND = 10000
+        integer (kind=I8KIND) :: total_ticks, whole_seconds
+        integer :: remainder_ticks, ierr_tmp
+
+        total_ticks = nint(real(seconds_real, R8KIND) * real(TICKS_PER_SECOND, R8KIND), kind=I8KIND)
+        whole_seconds = total_ticks / int(TICKS_PER_SECOND, I8KIND)
+        remainder_ticks = int(total_ticks - whole_seconds * int(TICKS_PER_SECOND, I8KIND))
+
+        call mpas_set_timeInterval(interval, S_i8=whole_seconds, S_n=remainder_ticks, S_d=TICKS_PER_SECOND, ierr=ierr_tmp)
+        if (present(ierr)) ierr = ierr_tmp
+
+    end subroutine mpas_timelevel_seconds_to_interval!}}}
 
 
     !|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
@@ -544,9 +583,9 @@ module mpas_output_timelevels
             
             if (next_start_hour > 0.0_RKIND) then
                 ! Schedule recurring alarm for when the next range starts
-                call mpas_set_timeInterval(time_diff, dt=next_start_hour * 3600.0_RKIND, ierr=ierr_tmp)
+                call mpas_timelevel_seconds_to_interval(time_diff, next_start_hour * 3600.0_RKIND, ierr=ierr_tmp)
                 alarmTime_local = start_time + time_diff
-                call mpas_set_timeInterval(alarmInterval_local, dt=next_interval_minutes * 60.0_RKIND, ierr=ierr_tmp)
+                call mpas_timelevel_seconds_to_interval(alarmInterval_local, next_interval_minutes * 60.0_RKIND, ierr=ierr_tmp)
                 call mpas_add_clock_alarm(manager % streamClock, alarm_name, alarmTime_local, &
                                          alarmTimeInterval=alarmInterval_local, ierr=ierr_tmp)
             end if
@@ -554,8 +593,8 @@ module mpas_output_timelevels
             return
         end if
 
-        ! Convert minutes to time interval (using dt in seconds for sub-minute precision)
-        call mpas_set_timeInterval(alarmInterval_local, dt=interval_minutes * 60.0_RKIND, ierr=ierr_tmp)
+        ! Convert minutes to time interval, preserving sub-second precision
+        call mpas_timelevel_seconds_to_interval(alarmInterval_local, interval_minutes * 60.0_RKIND, ierr=ierr_tmp)
         local_ierr = ior(local_ierr, ierr_tmp)
 
         ! Remove old alarm
@@ -567,7 +606,7 @@ module mpas_output_timelevels
         ! This ensures discrete times like "0m 15m 1h3m 2 3" hit exactly
         if (next_output_hour > 0.0_RKIND) then
             ! Compute alarm time absolutely: start_time + next_output_hour
-            call mpas_set_timeInterval(time_diff, dt=next_output_hour * 3600.0_RKIND, ierr=ierr_tmp)
+            call mpas_timelevel_seconds_to_interval(time_diff, next_output_hour * 3600.0_RKIND, ierr=ierr_tmp)
             alarmTime_local = start_time + time_diff
         else
             ! Fallback to relative calculation (for ranges)
