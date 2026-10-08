@@ -394,6 +394,7 @@ module atm_core
       use mpas_atmphys_init
       use mpas_atmphys_init_tempo
       use mpas_atmphys_manager
+      use mpas_atmphys_driver_microphysics, only : init_reflectivity_diagnostic
 #endif
 
       implicit none
@@ -614,6 +615,8 @@ module atm_core
          !initialization of all physics:
          call physics_init(dminfo, stream_manager, clock, block % configs, mesh, diag, tend, tend_physics, state, 1, &
                            diag_physics, diag_physics_noahmp, ngw_input, atm_input, sfc_input, output_noahmp)
+
+         call init_reflectivity_diagnostic(block % configs, state, 1, diag_physics, diag, mesh)
       endif
 #endif
    
