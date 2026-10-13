@@ -322,8 +322,8 @@ module atm_time_integration
 #ifdef MPAS_UFS_DYCORE
       !
       ! Under UFS these fields persist for the whole run: the UFS coupling layer
-      ! (atmos_coupling.F90::ufs_physics_to_mpas) overwrites tend_ru_physics before
-      ! every dynamics step, while tend_rtheta_physics and tend_rho_physics are not
+      ! (atmos_coupling.F90::ufs_physics_to_mpas) overwrites tend_ru_physics and
+      ! tend_rtheta_physics before every dynamics step, while tend_rho_physics are not
       ! (yet) used and must stay zero.
       !
       tend_rtheta_physicsField % array(:,:) = 0.0_RKIND
