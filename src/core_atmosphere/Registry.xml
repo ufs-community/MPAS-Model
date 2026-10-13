@@ -2088,8 +2088,7 @@
                 <!-- a call to the atm_allocate_scalars routine from setup_block. The specific    --> 
                 <!-- constituent at each position in the scalars array is later set by code in    -->
                 <!-- the CAM-MPAS interface layer.                                                -->
-#ifndef MPAS_CAM_DYCORE
-#ifndef MPAS_UFS_DYCORE
+#if !defined(MPAS_CAM_DYCORE) && !defined(MPAS_UFS_DYCORE)
 #ifdef MPAS_JEDI_IO
                 <!-- Reduced scalars for JEDI DA IO -->
                 <var_array name="scalars" type="real" dimensions="nVertLevels nCells Time">
@@ -2209,7 +2208,6 @@
                              description="Turbulent kinetic energy for the prognostic tke LES scheme"
                              packages="les"/>
                 </var_array>
-#endif
 #endif
 #endif
 
@@ -2528,8 +2526,7 @@
                 <!-- a call to the atm_allocate_scalars routine from setup_block. The specific    --> 
                 <!-- constituent at each position in the scalars array is later set by code in    -->
                 <!-- the CAM-MPAS interface layer.                                                -->
-#ifndef MPAS_CAM_DYCORE
-#ifndef MPAS_UFS_DYCORE
+#if !defined(MPAS_CAM_DYCORE) && !defined(MPAS_UFS_DYCORE)
                 <!-- scalar tendencies -->
                 <var_array name="scalars_tend" type="real" dimensions="nVertLevels nCells Time">
                         <var name="tend_qv" name_in_code="qv" array_group="moist" units="kg m^{-3} s^{-1}"
@@ -2619,7 +2616,6 @@
                              description="Tendency of tke multiplied by dry air density divided by d(zeta)/dz"
                              packages="les"/>
                 </var_array>
-#endif
 #endif
         </var_struct>
 
