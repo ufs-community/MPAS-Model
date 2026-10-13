@@ -4911,91 +4911,91 @@
                 <!-- ================================================================================================== -->
                 <!-- ... SURFACE CHARACTERISTICS THAT NEED TO BE READ FROM GRID.NC:                                     -->
                 <!-- ================================================================================================== -->
-		<var name="dzs" type="real" dimensions="nSoilLevels nCells Time" units="m"
+                <var name="dzs" type="real" dimensions="nSoilLevels nCells Time" units="m"
                     description="soil layer thickness"/>
 
                 <var name="zs" type="real" dimensions="nSoilLevels nCells Time" units="m"
                      description="depth of centers of soil layers"/>
 
-		<var name="isltyp" type="integer" dimensions="nCells" units="unitless"
+                <var name="isltyp" type="integer" dimensions="nCells" units="unitless"
                      description="dominant soil category"/>
 
-		<var name="ivgtyp" type="integer" dimensions="nCells" units="unitless"
+                <var name="ivgtyp" type="integer" dimensions="nCells" units="unitless"
                      description="dominant vegetation category"/>
 
-		<var name="isice_lu" type="integer" dimensions="" units="unitless" default_value="24"
+                <var name="isice_lu" type="integer" dimensions="" units="unitless" default_value="24"
                      description="Index category for snow/ice"/>
 
-		<var name="iswater_lu" type="integer" dimensions="" units="unitless" default_value="16"
+                <var name="iswater_lu" type="integer" dimensions="" units="unitless" default_value="16"
                      description="Index category for water"/>
 
-		<var name="landmask" type="integer"  dimensions="nCells" units="unitless"
+                <var name="landmask" type="integer"  dimensions="nCells" units="unitless"
                      description="land-ocean mask (1=land ; 0=ocean)"/>
 
-		<var name="mminlu" type="text" dimensions="" units="unitless"
+                <var name="mminlu" type="text" dimensions="" units="unitless"
                      description="land use classification"/>
 
-		<var name="sfc_albbck" type="real" dimensions="nCells Time" units="unitless"
+                <var name="sfc_albbck" type="real" dimensions="nCells Time" units="unitless"
                      description="background surface albedo"/>
 
-		<var name="sh2o" type="real" dimensions="nSoilLevels nCells Time" units="m3 m^{-3}"
+                <var name="sh2o" type="real" dimensions="nSoilLevels nCells Time" units="m3 m^{-3}"
                      description="soil equivalent liquid water "/>
 
-		<var name="smois" type="real" dimensions="nSoilLevels nCells Time" units="m3 m^{-3}"
+                <var name="smois" type="real" dimensions="nSoilLevels nCells Time" units="m3 m^{-3}"
                      description="soil moisture"/>
 
-		<var name="skintemp" type="real" dimensions="nCells Time" units="K"
+                <var name="skintemp" type="real" dimensions="nCells Time" units="K"
                      description="ground or water surface temperature"/>
 
-		<var name="snow" type="real" dimensions="nCells Time" units="kg m^{-2}"
+                <var name="snow" type="real" dimensions="nCells Time" units="kg m^{-2}"
                      description="snow water equivalent"/>
 
-		<var name="snowc" type="real" dimensions="nCells Time" units="unitless"
+                <var name="snowc" type="real" dimensions="nCells Time" units="unitless"
                      description="flag for snow on ground (=0 no snow; =1,otherwise"/>
 
-		<var name="snowh" type="real" dimensions="nCells Time" units="m"
+                <var name="snowh" type="real" dimensions="nCells Time" units="m"
                      description="physical snow depth"/>
 
-		<var name="sst" type="real" dimensions="nCells Time" units="K"
+                <var name="sst" type="real" dimensions="nCells Time" units="K"
                      description="sea-surface temperature"/>
 
-		<var name="ter" type="real" dimensions="nCells" units="m"
+                <var name="ter" type="real" dimensions="nCells" units="m"
                      description="terrain height"/>
 
-		<var name="tmn" type="real" dimensions="nCells Time" units="K"
+                <var name="tmn" type="real" dimensions="nCells Time" units="K"
                      description="deep soil temperature"/>
 
-		<var name="tslb" type="real" dimensions="nSoilLevels nCells Time" units="K"
+                <var name="tslb" type="real" dimensions="nSoilLevels nCells Time" units="K"
                      description="soil layer temperature"/>
 
-		<var name="vegfra" type="real" dimensions="nCells Time" units="percent"
-		     description="vegetation fraction"/>
+                <var name="vegfra" type="real" dimensions="nCells Time" units="percent"
+                     description="vegetation fraction"/>
 
-		<var name="seaice" type="real" dimensions="nCells Time" units="unitless"
-		     description="sea-ice flag (0=no seaice; =1 otherwise)"/>
+                <var name="seaice" type="real" dimensions="nCells Time" units="unitless"
+                     description="sea-ice flag (0=no seaice; =1 otherwise)"/>
 
-		<var name="xice" type="real" dimensions="nCells Time" units="unitless"
-		     description="fractional area coverage of sea-ice"/>
+                <var name="xice" type="real" dimensions="nCells Time" units="unitless"
+                     description="fractional area coverage of sea-ice"/>
 
-		<var name="xland" type="real" dimensions="nCells Time" units="unitless"
-		     description="land-ocean mask (1=land including sea-ice ; 2=ocean)"/>
+                <var name="xland" type="real" dimensions="nCells Time" units="unitless"
+                     description="land-ocean mask (1=land including sea-ice ; 2=ocean)"/>
 
-		<var name="shdmin" type="real" dimensions="nCells" units="percent"
+                <var name="shdmin" type="real" dimensions="nCells" units="percent"
                      description="minimum fractional coverage of annual green vegetation fraction"/>
 
-		<var name="shdmax" type="real" dimensions="nCells" units="percent"
+                <var name="shdmax" type="real" dimensions="nCells" units="percent"
                      description="maximum fractional coverage of annual green vegetation fraction"/>
 
                 <var name="soiltemp" type="real" dimensions="nCells" units="K"
                      description="annual mean deep soil temperature"/>
 
-		<var name="snoalb" type="real"  dimensions="nCells" units="unitless"
+                <var name="snoalb" type="real"  dimensions="nCells" units="unitless"
                      description="annual maximum snow albedo"/>
 
-		<var name="greenfrac" type="real" dimensions="nMonths nCells" units="percent"
+                <var name="greenfrac" type="real" dimensions="nMonths nCells" units="percent"
                      description="monthly-mean climatological greenness fraction"/>
 
-		<var name="albedo12m" type="real" dimensions="nMonths nCells" units="percent"
+                <var name="albedo12m" type="real" dimensions="nMonths nCells" units="percent"
                      description="monthly-mean climatological surface albedo"/>
 
                 <var name="canwat" type="real" dimensions="nCells Time" units="kg m^{-2}"
@@ -5004,7 +5004,7 @@
                 <var name="soilf" type="real" dimensions="nscat nCells" units="unitless"
                      description="fraction of each soil category present"/>
 
-		<var name="landusef" type="real" dimensions="nlcat nCells" units="unitless"
+                <var name="landusef" type="real" dimensions="nlcat nCells" units="unitless"
                      description="fraction of each vegetation category present"/>
 
                 <var name="lai12m" type="real" dimensions="nMonths nCells" units="unitless"
