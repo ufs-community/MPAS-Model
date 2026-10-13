@@ -4448,7 +4448,7 @@
                 <var name="raincv" type="real" dimensions="nCells Time" units="mm"
                      description="time-step convective precipitation"/>
 
-		<var name="rainncv" type="real" dimensions="nCells Time" units="mm"
+                <var name="rainncv" type="real" dimensions="nCells Time" units="mm"
                      description="time-step total grid-scale precipitation"/>
 
                 <var name="snowncv" type="real" dimensions="nCells Time" units="mm"
@@ -4460,7 +4460,7 @@
                 <var name="rainc" type="real" dimensions="nCells Time" units="mm"
                      description="accumulated convective precipitation"/>
 
-		<var name="rainnc" type="real" dimensions="nCells Time" units="mm"
+                <var name="rainnc" type="real" dimensions="nCells Time" units="mm"
                      description="accumulated total grid-scale precipitation"/>
 
                 <var name="snownc" type="real" dimensions="nCells Time" units="mm"
@@ -4475,7 +4475,7 @@
                 <var name="sr" type="real" dimensions="nCells Time" units="unitless"
                      description="time-step ratio of frozen versus total grid-scale precipitation"/>
 
-		<var name="precipw" type="real" dimensions="nCells Time" units="kg m^{-2}"
+                <var name="precipw" type="real" dimensions="nCells Time" units="kg m^{-2}"
                      description="precipitable water"/>
 
                 <!-- ================================================================================================== -->
@@ -4490,7 +4490,7 @@
                 <var name="sfc_emibck" type="real" dimensions="nCells Time" units="unitless"
                      description="background surface emissivity"/>
 
-		<var name="xicem" type="real" dimensions="nCells Time" units="unitless"
+                <var name="xicem" type="real" dimensions="nCells Time" units="unitless"
                      description="sea-ice flag from previsous time-step"/>
 
                 <var name="z0" type="real" dimensions="nCells Time" units="m"
@@ -4499,19 +4499,19 @@
                 <var name="znt" type="real" dimensions="nCells Time" units="m"
                      description="roughness length"/>
 
-		<var name="thc" type="real" dimensions="nCells Time" units="Cal cm^{-2} K^{-1} s^{-0.5}"
+                <var name="thc" type="real" dimensions="nCells Time" units="Cal cm^{-2} K^{-1} s^{-0.5}"
                      description="thermal inertia"/>
 
                 <var name="spp_lsm_loc" type="integer" dimensions="" units=""
                     description="use spoil property perturbations; 1 or 0; Hardcoded to 0 for now"/>
 
-		<var name="mosaic_lu" type="integer" dimensions="" units=""
+                <var name="mosaic_lu" type="integer" dimensions="" units=""
                     description="use fractional landuse categories; 1 or 0; Hardcoded to 1 for now"/>
 
-		<var name="mosaic_soil" type="integer" dimensions="" units=""
+                <var name="mosaic_soil" type="integer" dimensions="" units=""
                     desciption="use fractional soil categories; 1 or 0; Hardcoded to 1 for now"/>
 
-		<!-- ================================================================================================== -->
+                <!-- ================================================================================================== -->
                 <!-- ... PARAMETERIZATION OF SURFACE LAYER PROCESSES:                                                   -->
                 <!-- ================================================================================================== -->
                 <var name="hfx" type="real" dimensions="nCells Time" units="K m s^{-1}"
@@ -4523,73 +4523,73 @@
                 <var name="mol" type="real" dimensions="nCells Time" units="K"
                      description="T* in similarity theory"/>
 
-		<var name="qfx" type="real" dimensions="nCells Time" units="kg kg^{-1} m s^{-1}"
-		     description="upward moisture flux at the surface"/>
+                <var name="qfx" type="real" dimensions="nCells Time" units="kg kg^{-1} m s^{-1}"
+                     description="upward moisture flux at the surface"/>
 
                 <var name="qsfc" type="real"  dimensions="nCells Time" units="kg kg^{-1}"
                      description="specific humidity at lower boundary"/>
 
-		<var name="ust" type="real" dimensions="nCells Time" units="m s^{-1}"
+                <var name="ust" type="real" dimensions="nCells Time" units="m s^{-1}"
                      description="U* in similarity theory"/>
 
                 <var name="ustm" type="real" dimensions="nCells Time" units="m s^{-1}"
                      description="U* in similarity theory without vconv"/>
-		
-		<var name="zol" type="real" dimensions="nCells Time" units="unitless"
+
+                <var name="zol" type="real" dimensions="nCells Time" units="unitless"
                      description="z/L height over Monin-Obukhov length"/>
 
                 <var name="rmol" type="real" dimensions="nCells Time" units="unitless"
                      description="1./L Monin Obukhov length"/>
 
-		<var name="chs" type="real" dimensions="nCells Time" units="m s^{-1}"
+                <var name="chs" type="real" dimensions="nCells Time" units="m s^{-1}"
                      description="surface exchange coefficient for heat"/>
 
                 <var name="cqs" type="real" dimensions="nCells Time" units="m s^{-1}"
                      description="surface exchange coefficient for moisture"/>
 
-		<var name="chs2" type="real" dimensions="nCells Time" units="m s^{-1}"
+                <var name="chs2" type="real" dimensions="nCells Time" units="m s^{-1}"
                      description="surface exchange coefficient for heat at 2-meter"/>
 
                 <var name="cqs2" type="real" dimensions="nCells Time" units="m s^{-1}"
                      description="surface exchange coefficient for moisture at 2-meter"/>
 
-		<var name="lh" type="real" dimensions="nCells Time" units="W m^{-2}"
+                <var name="lh" type="real" dimensions="nCells Time" units="W m^{-2}"
                      description="latent heat flux at the surface"/>
 
-		<!-- ... MONIN-OBUKHOV (SFCLAY): -->
+               <!-- ... MONIN-OBUKHOV (SFCLAY): -->
                 <var name="fh" type="real" dimensions="nCells Time" units="unitless"
-		     description="integrated stability function for heat"/>
+                     description="integrated stability function for heat"/>
 
-		<var name="fm" type="real" dimensions="nCells Time" units="unitless"
-		     description="integrated stability function for moisture"/>
+               <var name="fm" type="real" dimensions="nCells Time" units="unitless"
+                    description="integrated stability function for moisture"/>
 
                 <!-- ... MYNN: -->
-		<var name="qcg" type="real" dimensions="nCells Time" units="kg kg^{-1}"
-		     description="cloud water mixing ratio at the ground surface"/>
+                <var name="qcg" type="real" dimensions="nCells Time" units="kg kg^{-1}"
+                     description="cloud water mixing ratio at the ground surface"/>
 
                 <var name="sh3d" type="real" dimensions="nVertLevels nCells Time" units="unitless"
                      description="stability function for heat"/>
 
-		<var name="sm3d" type="real" dimensions="nVertLevels nCells Time" units="unitless"
+                <var name="sm3d" type="real" dimensions="nVertLevels nCells Time" units="unitless"
                      description="stability function for moisture"/>
 
-		<!-- ================================================================================================== -->
+                <!-- ================================================================================================== -->
                 <!-- ... PARAMETERIZATION OF PLANETARY BOUNDARY LAYER PROCESSES:                                        -->
                 <!-- ================================================================================================== -->
                 <var name="kpbl" type="integer" dimensions="nCells Time" units="unitless"
                      description="index level of PBL top"/>
 
-		<var name="hpbl" type="real" dimensions="nCells Time" units="m"
-		     description="Planetary Boundary Layer (PBL) height"/>
+                <var name="hpbl" type="real" dimensions="nCells Time" units="m"
+                     description="Planetary Boundary Layer (PBL) height"/>
 
-		<var name="kzh" type="real" dimensions="nVertLevels nCells Time" units="m^{2} s^{-1}"
+                <var name="kzh" type="real" dimensions="nVertLevels nCells Time" units="m^{2} s^{-1}"
                      description="vertical diffusion coefficient of potential temperature"/>
 
                 <var name="kzm" type="real" dimensions="nVertLevels nCells Time" units="m^{2} s^{-1}"
                      description="vertical diffusion coefficient of mommentum"/>
 
-		<var name="kzq" type="real" dimensions="nVertLevels nCells Time" units="m^{2} s^{-1}"
-		     description="vertical diffusion coefficient of water vapor and cloud condensates"/>		
+                <var name="kzq" type="real" dimensions="nVertLevels nCells Time" units="m^{2} s^{-1}"
+                     description="vertical diffusion coefficient of water vapor and cloud condensates"/>
 
                 <var name="cldfrac_bl" type="real" dimensions="nVertLevels nCells Time" units="unitless"
                      description="cloud fraction in the MYNN PBL scheme"/>
@@ -4609,16 +4609,16 @@
                 <var name="qsq" type="real" dimensions="nVertLevels nCells Time" units="{kg kg^{-1}}^2"
                      description="liquid water variance"/>
 
-		<var name="tsq" type="real" dimensions="nVertLevels nCells Time" units="K^{2}"
+                <var name="tsq" type="real" dimensions="nVertLevels nCells Time" units="K^{2}"
                      description="liquid water potential temperature variance"/>
 
-		<var name="cov" type="real" dimensions="nVertLevels nCells Time" units="K kg kg^{-1}"
+                <var name="cov" type="real" dimensions="nVertLevels nCells Time" units="K kg kg^{-1}"
                      description="liquid water - liquid water potential temperature covariance"/>
 
                 <!-- ================================================================================================== -->
                 <!-- ... PARAMETERIZATION OF GRAVITY WAVE DRAG OVER OROGRAPHY:                                          -->
                 <!-- ================================================================================================== -->
-		<var name="dusfcg" type="real" dimensions="nCells Time" units="Pa"
+                <var name="dusfcg" type="real" dimensions="nCells Time" units="Pa"
                      description="vertically-integrated gravity wave drag over orography u-stress"/>
 
                 <var name="dvsfcg" type="real" dimensions="nCells Time" units="Pa"
@@ -4678,10 +4678,10 @@
                 <var name="dtauy3d_fd" type="real" dimensions="nVertLevels nCells Time" units="m s^{-2}"
                      description="turb orog form drag v-tendency"/>
 
-		<var name="t2m" type="real" dimensions="nCells Time"  units="K"
+                <var name="t2m" type="real" dimensions="nCells Time"  units="K"
                      description="2-meter temperature"/>
 
-		<var name="q2" type="real" dimensions="nCells Time" units="kg kg^{-1}"
+                <var name="q2" type="real" dimensions="nCells Time" units="kg kg^{-1}"
                      description="2-meter specific humidity"/>
 	</var_struct>
 #endif
