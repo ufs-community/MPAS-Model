@@ -40,7 +40,7 @@ module init_atm_vinterp
       
       integer :: k, lm, lp
       real (kind=RKIND) :: wm, wp
-      real (kind=RKIND) :: slope,z_temp, T_temp, dz_temp
+      real (kind=RKIND) :: slope,z_temp, t_temp, dz_temp
 
       integer :: interp_order, extrap_type
       real (kind=RKIND) :: surface, sealevel
@@ -95,13 +95,13 @@ module init_atm_vinterp
             vertical_interp = zf(2,nz) + slope * (target_z - zf(1,nz))
          else if (extrap_type == 2) then
              z_temp = zf(1,nz)
-             T_temp = zf(2,nz)
+             t_temp = zf(2,nz)
 
              ! Layer 1: Troposphere (up to 11,000 m)
              ! Gamma = -6.5 K/km (Cooling)
              if (z_temp < 11000.0 .and. target_z > z_temp) then
                 dz_temp = min(target_z, 11000.0) - z_temp
-                T_temp = T_temp - 0.0065 * dz_temp
+                t_temp = t_temp - 0.0065 * dz_temp
                 z_temp = z_temp + dz_temp
              end if
 
@@ -109,7 +109,7 @@ module init_atm_vinterp
              ! Gamma = 0.0 K/km (Isothermal)
              if (z_temp >= 11000.0 .and. z_temp < 20000.0 .and. target_z > z_temp) then
                 dz_temp = min(target_z, 20000.0) - z_temp
-                T_temp = T_temp - 0.0 * dz_temp
+                t_temp = t_temp - 0.0 * dz_temp
                 z_temp = z_temp + dz_temp
              end if
 
@@ -117,7 +117,7 @@ module init_atm_vinterp
              ! Gamma = +1.0 K/km (Warming)
              if (z_temp >= 20000.0 .and. z_temp < 32000.0 .and. target_z > z_temp) then
                 dz_temp = min(target_z, 32000.0) - z_temp
-                T_temp = T_temp - (-0.001) * dz_temp
+                t_temp = t_temp - (-0.001) * dz_temp
                 z_temp = z_temp + dz_temp
              end if
 
@@ -125,7 +125,7 @@ module init_atm_vinterp
              ! Gamma = +2.8 K/km (Warming)
              if (z_temp >= 32000.0 .and. z_temp < 47000.0 .and. target_z > z_temp) then
                 dz_temp = min(target_z, 47000.0) - z_temp
-                T_temp = T_temp - (-0.0028) * dz_temp
+                t_temp = t_temp - (-0.0028) * dz_temp
                 z_temp = z_temp + dz_temp
              end if
 
@@ -133,7 +133,7 @@ module init_atm_vinterp
              ! Gamma = 0.0 K/km (Isothermal)
              if (z_temp >= 47000.0 .and. z_temp < 51000.0 .and. target_z > z_temp) then
                 dz_temp = min(target_z, 51000.0) - z_temp
-                T_temp = T_temp - 0.0 * dz_temp
+                t_temp = t_temp - 0.0 * dz_temp
                 z_temp = z_temp + dz_temp
              end if
 
@@ -141,7 +141,7 @@ module init_atm_vinterp
              ! Gamma = -2.8 K/km (Cooling)
              if (z_temp >= 51000.0 .and. z_temp < 71000.0 .and. target_z > z_temp) then
                 dz_temp = min(target_z, 71000.0) - z_temp
-                T_temp = T_temp - 0.0028 * dz_temp
+                t_temp = t_temp - 0.0028 * dz_temp
                 z_temp = z_temp + dz_temp
              end if
 
@@ -149,23 +149,23 @@ module init_atm_vinterp
              ! Gamma = -2.0 K/km (Cooling)
              if (z_temp >= 71000.0 .and. z_temp < 85000.0 .and. target_z > z_temp) then
                 dz_temp = min(target_z, 85000.0) - z_temp
-                T_temp = T_temp - 0.002 * dz_temp
+                t_temp = t_temp - 0.002 * dz_temp
                 z_temp = z_temp + dz_temp
              end if
 
+             ! Extrapolation above 85 km is unsupported in this routine;
+
              if (z_temp >= 85000.0 .and. target_z > z_temp) then
-                call mpas_log_write('target_z >= 85km. Stop!', messageType=MPAS_LOG_ERR)
+                write(*,'(A,ES12.5,A,ES12.5,A,I10,A)') & 
+                   'vertical_interp: unsupported extrapolation above 85 km: target_z=', target_z, & 
+                   ', top_z=', zf(1,nz), ', nz=', nz, & 
+                   '. Adjust vertical grid/top-of-model assumptions or extend the extrapolation scheme.' 
+                call mpas_log_write('vertical_interp failed: target_z exceeds the supported extrapolation range above 85 km. See values printed for target_z, zf(1,nz), and nz. Adjust vertical grid/top-of-model assumptions or extend the extrapolation scheme.', messageType=MPAS_LOG_ERR)
                 if (present(ierr)) ierr = 1
                 return
              end if
 
-             ! Layer 8: Lower Thermosphere (85km to 110km)
-             ! Gamma = +2.0 K/km (Warming)
-             !if (z_temp >= 85000.0 .and. z_temp < 110000.0 .and. target_z > z_temp) then
-             !   dz_temp = min(target_z, 110000.0) - z_temp
-             !   T_temp = T_temp - (-0.002) * dz_temp
-             !   z_temp = z_temp + dz_temp
-             !end if
+             vertical_interp = t_temp
 
          else if (extrap_type == 3) then
              vertical_interp = zf(2,nz)
