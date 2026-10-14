@@ -4487,7 +4487,7 @@
                      description="background surface emissivity"/>
 
                 <var name="xicem" type="real" dimensions="nCells Time" units="unitless"
-                     description="sea-ice flag from previsous time-step"/>
+                     description="sea-ice flag from previous time-step"/>
 
                 <var name="z0" type="real" dimensions="nCells Time" units="m"
                      description="roughness height"/>
@@ -4505,7 +4505,7 @@
                     description="use fractional landuse categories; 1 or 0; Hardcoded to 1 for now"/>
 
                 <var name="mosaic_soil" type="integer" dimensions="" units=""
-                    desciption="use fractional soil categories; 1 or 0; Hardcoded to 1 for now"/>
+                    description="use fractional soil categories; 1 or 0; Hardcoded to 1 for now"/>
 
                 <!-- ================================================================================================== -->
                 <!-- ... PARAMETERIZATION OF SURFACE LAYER PROCESSES:                                                   -->
