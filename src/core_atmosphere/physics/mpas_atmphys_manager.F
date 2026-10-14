@@ -371,7 +371,7 @@
     call mpas_reset_clock_alarm(clock,diagAlarmID,ierr=ierr)
  end if
  call mpas_set_timeInterval(dtInterval,dt=dt,ierr=ierr)
- if (mpas_is_alarm_ringing(clock,diagAlarmID,interval=dtInterval,ierr=ierr)) then
+ if ( (itimestep.eq.1) .or. mpas_is_alarm_ringing(clock,diagAlarmID,interval=dtInterval,ierr=ierr)) then
     l_diags = .true.
  end if
  call mpas_log_write('--- time to calculate additional physics_diagnostics               = $l',logicArgs=(/l_diags/))
