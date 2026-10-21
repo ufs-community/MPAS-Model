@@ -516,7 +516,7 @@
                 <package name="bl_mynnedmf_in" description="parameterization of MYNN-EDMF Planetary Boundary Layer."/>
                 <package name="bl_mynnedmf_tkebudget_in" description="TKE budget variables for output in MYNN-EDMF."/>
                 <package name="bl_mynn_diags2d_in" description="realtime mode 2D diagnostic variables output in MYNN-EDMF."/>
-		<package name="bl_mynn_diags2dextra_in" description="research mode 2D diagnostic variables output in MYNN-EDMF."/>
+                <package name="bl_mynn_diags2dextra_in" description="research mode 2D diagnostic variables output in MYNN-EDMF."/>
                 <package name="bl_mynn_diags3d_in" description="additional 3D diagnostic variables output in MYNN-EDMF."/>
                 <package name="sf_noahmp_in" description="parameterization of NOAH-MP land surface scheme."/>
 		<package name="bl_myj_in" description="parameterization of MYJ Planetary Boundary Layer."/>

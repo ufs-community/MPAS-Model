@@ -923,6 +923,12 @@
             iwpbl_p(i,j)         = 0._RKIND
             swpbl_p(i,j)         = 0._RKIND
             cldceil_p(i,j)       = 0._RKIND
+         enddo
+         enddo
+       endif
+       if(config_mynn_diags2d >= 2)then
+         do j = jts,jte
+         do i = its,ite
             wspd10_p(i,j)        = 0._RKIND
             wspd80_p(i,j)        = 0._RKIND
             wspd160_p(i,j)       = 0._RKIND
@@ -931,7 +937,7 @@
          enddo
          enddo
        endif
-
+       
     case("bl_myj")
        !input variables:
        call mpas_pool_get_array(mesh        ,'zgrid' ,zgrid)
