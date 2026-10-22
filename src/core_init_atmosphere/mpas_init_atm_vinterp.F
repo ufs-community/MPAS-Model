@@ -164,7 +164,6 @@ module init_atm_vinterp
                 if (present(ierr)) ierr = 1
                 return
              end if
-
              vertical_interp = t_temp
 
          else if (extrap_type == 3) then
