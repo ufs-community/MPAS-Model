@@ -942,8 +942,8 @@ end subroutine init_soil_layers_properties
  real(kind=RKIND),pointer:: tsk_seaice_threshold
  real(kind=RKIND),dimension(:),pointer  :: vegfra
  real(kind=RKIND),dimension(:),pointer  :: seaice,snoalb,xice
+ real(kind=RKIND),dimension(:),pointer  :: snow, snowh, snowc
  real(kind=RKIND),dimension(:),pointer  :: skintemp,tmn,xland
- real(kind=RKIND),dimension(:),pointer  :: snow, snowh
  real(kind=RKIND),dimension(:,:),pointer:: tslb,smois,sh2o,smcrel
 
  logical, pointer :: config_frac_seaice
@@ -974,6 +974,9 @@ end subroutine init_soil_layers_properties
 
  call mpas_pool_get_array(input, 'seaice', seaice)
  call mpas_pool_get_array(input, 'xice', xice)
+ call mpas_pool_get_array(input, 'snowc', snowc)
+ call mpas_pool_get_array(input, 'snowh', snowh)
+ call mpas_pool_get_array(input, 'snow', snow)
  call mpas_pool_get_array(input, 'vegfra', vegfra)
 
  call mpas_pool_get_array(input, 'skintemp', skintemp)
@@ -1043,7 +1046,13 @@ end subroutine init_soil_layers_properties
        if(xice(iCell) .gt. 0._RKIND) &
           call mpas_log_write('$i $r $r $r', intArgs=(/iCell/), &
                                              realArgs=(/real(landmask(iCell),kind=RKIND),xland(iCell),xice(iCell)/))
-       seaice(iCell) = 0._RKIND
+       !seaice(iCell) = 0._RKIND -- commented out by CE 4/24/26, was not present in upstream but the xice() call below was
+       xice(iCell) = 0._RKIND
+       if(landmask(iCell) .eq. 0) then
+          snowc(iCell) = 0._RKIND  ! snow = 0 over water points
+          snowh(iCell) = 0._RKIND
+          snow(iCell) = 0._RKIND
+       endif
     endif
 
  enddo

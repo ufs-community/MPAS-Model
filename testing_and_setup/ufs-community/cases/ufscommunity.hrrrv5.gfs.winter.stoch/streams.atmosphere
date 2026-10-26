@@ -1,0 +1,80 @@
+<streams>
+
+<!--
+Define input streams.
+
+Notes on xml attributes used in the input stream definition(s) below:
+
+* input_interval:
+  Controls how often MPAS reads a new boundary condition record from the data:
+  * If set to "none", MPAS will never read from this stream during the run.  This
+    is used as a way to disable a feature without removing its stream definition
+    entirely; the stream stays in the file so it can be easily re-enabled by
+    changing "none" to a time interval.
+  * If set to e.g. "3:00:00", a new record is ingested every 3 hours of simulation
+    time.
+
+* filename_interval
+  Controls how often MPAS opens a new file (this is independent of how often it
+  reads data):
+  * If set to "none", MPAS opens the file once at the start and keeps it open
+    for the entire run, reading successive time records from it as needed.
+    This is appropriate when all LBC time levels live in a single file.
+  * If set to "input_interval", MPAS opens a new file at each input interval.
+    This is appropriate when LBCs are in separate per-timestep files (e.g.
+    lbc.$Y-$M-$D_$h.$m.$s.nc), where the filename template changes with time.
+
+* packages
+  This is MPAS's mechanism for making streams and their associated variables
+  optional.  The stream will only exists at runtime if the corresponding package
+  is switched on by the physics configuration.
+-->
+
+<immutable_stream name="input"
+                  type="input"
+                  filename_template="mpas.init.nc"
+                  input_interval="initial_only"
+                  />
+
+<immutable_stream name="lbc_in"
+                  type="input"
+                  filename_template="mpas.lbc.nc"
+                  input_interval="3:00:00"
+                  filename_interval="none"
+                  packages="limited_area"
+                  />
+
+<immutable_stream name="restart"
+                  type="input;output"
+                  filename_template="restart.$Y-$M-$D_$h.$m.$s.nc"
+                  input_interval="initial_only"
+                  output_interval="1_00:00:00"
+                  />
+
+<stream name="surface"
+        type="input"
+        filename_template="mpas.sfc_update.nc"
+        filename_interval="none"
+        input_interval="none">
+        <file name="stream_list.atmosphere.surface"/>
+</stream>
+
+<!--
+Define output streams.
+-->
+
+<stream name="output"
+        type="output"
+        filename_template="history.$Y-$M-$D_$h.$m.$s.nc"
+        output_interval="00:12:00">
+        <file name="stream_list.atmosphere.output"/>
+</stream>
+
+<stream name="diagnostics"
+        type="output"
+        filename_template="diag.$Y-$M-$D_$h.$m.$s.nc"
+        output_interval="00:12:00">
+        <file name="stream_list.atmosphere.diagnostics"/>
+</stream>
+
+</streams>
