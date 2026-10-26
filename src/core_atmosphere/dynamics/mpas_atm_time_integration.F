@@ -232,7 +232,7 @@ module atm_time_integration
 
       type (domain_type), intent(inout) :: domain
 
-#ifdef MPAS_CAM_DYCORE
+#if defined(MPAS_CAM_DYCORE) || defined(MPAS_UFS_DYCORE)
       ! Used in allocating scratch fields for physics tendencies
       type (mpas_pool_type), pointer :: tend_physics
       type (field2DReal), pointer :: tend_ru_physicsField, tend_rtheta_physicsField, tend_rho_physicsField
@@ -307,7 +307,7 @@ module atm_time_integration
       real (kind=RKIND), dimension(:,:), pointer :: deformation_coef_s
 #endif
 
-#ifdef MPAS_CAM_DYCORE
+#if defined(MPAS_CAM_DYCORE) || defined(MPAS_UFS_DYCORE)
       nullify(tend_physics)
       call mpas_pool_get_subpool(domain % blocklist % structs, 'tend_physics', tend_physics)
 
@@ -319,6 +319,17 @@ module atm_time_integration
 
       call mpas_pool_get_field(tend_physics, 'tend_ru_physics', tend_ru_physicsField)
       call mpas_allocate_scratch_field(tend_ru_physicsField)
+#ifdef MPAS_UFS_DYCORE
+      !
+      ! Under UFS these fields persist for the whole run: the UFS coupling layer
+      ! (atmos_coupling.F90::ufs_physics_to_mpas) overwrites tend_ru_physics and
+      ! tend_rtheta_physics before every dynamics step, while tend_rho_physics are not
+      ! (yet) used and must stay zero.
+      !
+      tend_rtheta_physicsField % array(:,:) = 0.0_RKIND
+      tend_rho_physicsField % array(:,:) = 0.0_RKIND
+      tend_ru_physicsField % array(:,:) = 0.0_RKIND
+#endif
 #endif
 
 #ifdef MPAS_OPENACC
@@ -597,7 +608,7 @@ module atm_time_integration
       MPAS_ACC_TIMER_START('first_compute_solve_diagnostics [ACC_data_xfer]')
 
       call mpas_pool_get_array(state, 'rho_zz', h, 1)
-      !$acc enter data create(h)
+      !$acc enter data copyin(h)
 
       call mpas_pool_get_array(state, 'u', u, 1)
       !$acc enter data copyin(u)
@@ -1493,7 +1504,7 @@ module atm_time_integration
 
       type (domain_type), intent(inout) :: domain
 
-#ifdef MPAS_CAM_DYCORE
+#if defined(MPAS_CAM_DYCORE) || defined(MPAS_UFS_DYCORE)
       ! Used in allocating scratch fields for physics tendencies
       type (mpas_pool_type), pointer :: tend_physics
       type (field2DReal), pointer :: tend_ru_physicsField, tend_rtheta_physicsField, tend_rho_physicsField
@@ -1569,7 +1580,7 @@ module atm_time_integration
 #endif
 
 
-#ifdef MPAS_CAM_DYCORE
+#if defined(MPAS_CAM_DYCORE) || defined(MPAS_UFS_DYCORE)
       nullify(tend_physics)
       call mpas_pool_get_subpool(domain % blocklist % structs, 'tend_physics', tend_physics)
 
@@ -1933,7 +1944,7 @@ module atm_time_integration
       real (kind=RKIND), dimension(:,:), pointer :: rho_pp, rtheta_pp, ru_p, rw_p, pv_edge, rho_edge
       real (kind=RKIND) :: theta_local, fac_m
 
-#ifndef MPAS_CAM_DYCORE
+#if !defined(MPAS_CAM_DYCORE) && !defined(MPAS_UFS_DYCORE)
       ! Used in allocating scratch fields for physics tendencies
       type (field2DReal), pointer :: tend_ru_physicsField, tend_rtheta_physicsField, tend_rho_physicsField
 #endif
@@ -2031,7 +2042,7 @@ module atm_time_integration
       end do
       !$acc end parallel
 
-#ifndef MPAS_CAM_DYCORE
+#if !defined(MPAS_CAM_DYCORE) && !defined(MPAS_UFS_DYCORE)
       call mpas_pool_get_field(tend_physics, 'tend_rtheta_physics', tend_rtheta_physicsField)
       call mpas_allocate_scratch_field(tend_rtheta_physicsField)
 
@@ -2169,7 +2180,7 @@ module atm_time_integration
 #endif
 
 #else
-#ifndef MPAS_CAM_DYCORE
+#if !defined(MPAS_CAM_DYCORE) && !defined(MPAS_UFS_DYCORE)
       !
       ! If no physics are being used, simply zero-out the physics tendency fields
       !
@@ -2679,7 +2690,7 @@ module atm_time_integration
       deallocate(qtot)  !  we are finished with these now
 
       !$acc exit data delete(tend_rtheta_physics,tend_rho_physics,tend_ru_physics)
-#ifndef MPAS_CAM_DYCORE
+#if !defined(MPAS_CAM_DYCORE) && !defined(MPAS_UFS_DYCORE)
       call mpas_deallocate_scratch_field(tend_rtheta_physicsField)
       call mpas_deallocate_scratch_field(tend_rho_physicsField)
       call mpas_deallocate_scratch_field(tend_ru_physicsField)
@@ -5056,7 +5067,7 @@ module atm_time_integration
             do k=1,nVertLevels
             do iScalar=1,num_scalars
                scalar_tend_column(iScalar,k) = 0.0_RKIND
-#ifndef DO_PHYSICS
+#if !defined(DO_PHYSICS) && !defined(MPAS_UFS_DYCORE)
                scalar_tend_save(iScalar,k,iCell) = 0.0_RKIND  !  testing purposes - we have no sources or sinks
 #endif
             end do
@@ -5394,7 +5405,7 @@ module atm_time_integration
          do k = 1,nVertLevels
             do iScalar = 1,num_scalars
 
-#ifndef DO_PHYSICS
+#if !defined(DO_PHYSICS) && !defined(MPAS_UFS_DYCORE)
                scalar_tend(iScalar,k,iCell) = 0.0_RKIND  !  testing purposes - we have no sources or sinks
 #endif
                scalars_old(iScalar,k,iCell) = scalars_old(iScalar,k,iCell)+dt*scalar_tend(iScalar,k,iCell) / rho_zz_old(k,iCell)
