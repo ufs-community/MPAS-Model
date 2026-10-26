@@ -4441,6 +4441,9 @@ module init_atm_cases
       call mpas_pool_get_array(fg, 'gfs_z', gfs_z)
       call mpas_pool_get_array(fg, 'p', p_fg)
 ! Chemistry
+      ! Nullify first: these are only fetched when the scheme is on, and
+      ! associated() on an undefined pointer is undefined behaviour.
+      nullify(smoke_fine_fg, dust_fine_fg, dust_coarse_fg)
       if ( config_smoke_scheme .ne. 'off' ) then
          call mpas_pool_get_array(fg, 'smoke_fine', smoke_fine_fg)
       endif
@@ -8016,6 +8019,9 @@ call mpas_log_write('Done with soil consistency check')
 ! Chemistry
       call mpas_pool_get_config(configs, 'config_smoke_scheme', config_smoke_scheme)
       call mpas_pool_get_config(configs, 'config_dust_scheme', config_dust_scheme)
+      ! Nullify first: these are only fetched when the scheme is on, and
+      ! associated() on an undefined pointer is undefined behaviour.
+      nullify(smoke_fine_fg, dust_fine_fg, dust_coarse_fg)
       if ( config_smoke_scheme .ne. 'off' ) then
          call mpas_pool_get_array(fg, 'smoke_fine', smoke_fine_fg)
       endif
