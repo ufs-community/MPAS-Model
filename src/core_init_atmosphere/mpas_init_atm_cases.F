@@ -4756,12 +4756,12 @@ module init_atm_cases
 
       if (smooth) then
 
-         coordinate_smoothing_height = zh
-         if (config_coordinate_smoothing_height > 0.0_RKIND) then
+         if (config_coordinate_smoothing_height == 0.0_RKIND) then
+            coordinate_smoothing_height = zh
+         else if (config_coordinate_smoothing_height > 0.0_RKIND) then
             coordinate_smoothing_height = config_coordinate_smoothing_height
-         end if
-         if (.not. (coordinate_smoothing_height > 0.0_RKIND)) then
-            call mpas_log_write('The effective coordinate smoothing height must be positive.', messageType=MPAS_LOG_CRIT)
+         else
+            call mpas_log_write('config_coordinate_smoothing_height must be zero or positive.', messageType=MPAS_LOG_CRIT)
          end if
 
          call mpas_log_write(' ')
