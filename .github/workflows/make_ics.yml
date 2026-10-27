@@ -27,7 +27,7 @@ on: [push, pull_request, workflow_dispatch]
 
 env:
   INPUTS_REPO: ${{ github.repository }}
-  INPUTS_TAG: init-inputs-v1.0.0
+  INPUTS_TAG: v8.4.2-1.19
   ICS_DIR: testing_and_setup/ufs-community/ics
   IMAGE: dustinswales/ufs-community-mpas-ci:gnu
 
