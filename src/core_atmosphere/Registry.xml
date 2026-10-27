@@ -619,6 +619,7 @@
 			<var name="mminlu"/>
 			<var name="isice_lu"/>
 			<var name="iswater_lu"/>
+                        <var name="islake_lu"/>			
 			<var name="landmask"/>
 			<var name="shdmin"/>
 			<var name="shdmax"/>
@@ -4921,6 +4922,9 @@
 
                 <var name="iswater_lu" type="integer" dimensions="" units="unitless" default_value="16"
                      description="Index category for water"/>
+
+                <var name="islake_lu" type="integer" dimensions="" units="unitless" default_value="-1"
+                     description="Index category for lakes (-1 if the land use dataset has no lake category)"/>
 
                 <var name="landmask" type="integer"  dimensions="nCells" units="unitless"
                      description="land-ocean mask (1=land ; 0=ocean)"/>
