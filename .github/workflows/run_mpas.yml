@@ -26,9 +26,9 @@ on: [push, pull_request, workflow_dispatch]
 #
 # Tests:
 #        Baseline Codebase Repository:Branch   Physics                       build type
-# 1/7)   MPAS-Dev:v8.4.1                       mesoscale_reference           Release/Debug
-# 2/8)   MPAS-Dev:v8.4.1                       convection_permitting         Release/Debug
-# 3/9)   MPAS-Dev:v8.4.1                       mesoscale_reference_noahmp    Release/Debug
+# 1/7)   MPAS-Dev:v8.4.2                       mesoscale_reference           Release/Debug
+# 2/8)   MPAS-Dev:v8.4.2                       convection_permitting         Release/Debug
+# 3/9)   MPAS-Dev:v8.4.2                       mesoscale_reference_noahmp    Release/Debug
 # 4/10)  ufs-community:noaa/develop            mesoscale_reference           Release/Debug
 # 5/11)  ufs-community:noaa/develop            convection_permitting         Release/Debug
 # 6/12)  ufs-community:noaa/develop            mesoscale_reference_noahmp    Release/Debug
@@ -43,13 +43,13 @@ jobs:
         f-compiler: [gfortran]#,ifx]
         physics:    [mesoscale_reference, convection_permitting, mesoscale_reference_noahmp]
         repo:       [ufs-community, MPAS-Dev]
-        branch:     [noaa/develop, v8.4.1]
+        branch:     [noaa/develop, v8.4.2]
         build-type: [Debug, Release]
         exclude:
           - repo: MPAS-Dev
             branch: noaa/develop
           - repo: ufs-community
-            branch: v8.4.1
+            branch: v8.4.2
         include:
         # Set container images for each compiler
         - f-compiler: gfortran
