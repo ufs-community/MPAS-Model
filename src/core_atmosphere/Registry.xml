@@ -613,13 +613,15 @@
 			<var name="cell_gradient_coef_x"/>
 			<var name="cell_gradient_coef_y"/>
 #endif
+#ifdef MPAS_UFS_DYCORE
+                        <var name="islake_lu"/>
+#endif
 #ifdef DO_PHYSICS
 			<var name="isltyp"/>
 			<var name="ivgtyp"/>
 			<var name="mminlu"/>
 			<var name="isice_lu"/>
 			<var name="iswater_lu"/>
-                        <var name="islake_lu"/>			
 			<var name="landmask"/>
 			<var name="shdmin"/>
 			<var name="shdmax"/>
