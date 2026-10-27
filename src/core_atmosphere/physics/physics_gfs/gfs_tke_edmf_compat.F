@@ -18,8 +18,9 @@
       real(kind=kind_phys), parameter :: con_rv = 461.5_kind_phys
       real(kind=kind_phys), parameter :: con_hvap = 2.5e6_kind_phys
       real(kind=kind_phys), parameter :: con_hfus = 3.3358e5_kind_phys
-      real(kind=kind_phys), parameter :: con_epsm1 = con_eps - 1.0_kind_phys
-      real(kind=kind_phys), parameter :: con_fvirt = con_rv / con_rd - 1.0_kind_phys
+      real(kind=kind_phys), parameter :: con_eps = con_rd/con_rv
+      real(kind=kind_phys), parameter :: con_epsm1 = con_eps-1
+      real(kind=kind_phys), parameter :: con_fvirt = con_rv/con_rd-1
 !> minimum aerosol concentration
       real(kind=kind_phys),parameter:: qamin = 1.e-16_kind_phys
       end module physcons
