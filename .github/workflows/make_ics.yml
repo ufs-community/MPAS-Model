@@ -4,7 +4,7 @@ on: [push, pull_request, workflow_dispatch]
 
 #############################################################################################
 # Build init_atmosphere_model from this branch and create the static, initial-condition,
-# lateral-boundary files for 120 km CONUS test cases, with and without lakes.
+# lateral-boundary files for 120 km CONUS test cases (GFS and RAP, with and without lakes).
 #
 # Jobs
 #   build   - make gfortran CORE=init_atmosphere (in the CI container)
@@ -14,10 +14,10 @@ on: [push, pull_request, workflow_dispatch]
 #   case    - init / lbc / sfc_update for each case, sanity checks, artifacts
 #
 # Cases          source   date        static land use
+#   conus_gfs       gfs   2023031015  20-class MODIS (also makes sfc_update)
 #   conus_raps      rap   2024081518  20-class MODIS
 #   conus_raps_lake rap   2024081518  21-class MODIS with lakes
-# (the summer RAP case has the smallest inputs; cases/ also has conus_gfs, conus_rapw
-#  and conus_rapw_lake for running by hand)
+# (cases/ also has conus_rapw and conus_rapw_lake for running by hand)
 #
 # Inputs (mesh, geographic data, ungrib intermediate files, aerosol climatology) come
 # from release INPUTS_TAG of this repository (copy them with
@@ -132,6 +132,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - case: conus_gfs
+            source: gfs
+            static_key: conus-120km
+            bundles: ungrib-gfs.2023031015 ungrib-sst.2023031015
+            lbc_times: 17
+            lakes: ''
           - case: conus_raps
             source: rap
             static_key: conus-120km

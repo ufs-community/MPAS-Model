@@ -7,9 +7,12 @@
 #   bash copy_inputs_release.sh [-s SRC_REPO] [-t SRC_TAG] [-T DEST_TAG] [-b "BUNDLES" | -a] DEST_REPO WORK_DIR
 #     -s   source repository   (default dustinswales/mpas-ic-factory)
 #     -t   source release tag  (default v1.0.0)
-#     -T   destination tag     (default init-inputs-v1.0.0, as in make_ics.yml)
-#     -b   bundles to copy (default: what make_ics.yml uses, about 6 GB:
-#          "grids aerosols geog ungrib-rap.2024081518"; geog includes geog-* bundles)
+#     -T   destination tag     (default v8.4.2-1.19, as INPUTS_TAG in make_ics.yml)
+#     -b   bundles to copy (default: what make_ics.yml uses, about 14 GB:
+#          "grids aerosols geog ungrib-rap.2024081518 ungrib-gfs.2023031015
+#          ungrib-sst.2023031015"; geog includes geog-* bundles). Bundles already in
+#          the destination release are skipped, so -b can add to it.
+
 #     -a   copy every bundle in the source release (about 30 GB)
 #   e.g.
 #     bash copy_inputs_release.sh dustinswales/MPAS-Model /scratch/$USER/copy
@@ -24,8 +27,9 @@ set -euo pipefail
 die() { echo "ERROR: $*" >&2; exit 1; }
 usage="usage: $0 [-s SRC_REPO] [-t SRC_TAG] [-T DEST_TAG] [-b \"BUNDLES\" | -a] DEST_REPO WORK_DIR"
 
-src_repo="dustinswales/mpas-ic-factory" src_tag="v1.0.0" dest_tag="init-inputs-v1.0.0"
-bundles="grids aerosols geog ungrib-rap.2024081518" all=false
+src_repo="dustinswales/mpas-ic-factory" src_tag="v1.0.0" dest_tag="v8.4.2-1.19"
+bundles="grids aerosols geog ungrib-rap.2024081518 ungrib-gfs.2023031015 ungrib-sst.2023031015"
+all=false
 while getopts "s:t:T:b:a" opt; do
   case $opt in
     s) src_repo=$OPTARG ;;
