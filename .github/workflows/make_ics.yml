@@ -15,6 +15,7 @@ on: [push, pull_request, workflow_dispatch]
 #
 # Cases          source   date        static land use
 #   conus_gfs       gfs   2023031015  20-class MODIS (also makes sfc_update)
+#   conus_gfs_lake  gfs   2023031015  21-class MODIS with lakes (also makes sfc_update)
 #   conus_raps      rap   2024081518  20-class MODIS
 #   conus_raps_lake rap   2024081518  21-class MODIS with lakes
 # (cases/ also has conus_rapw and conus_rapw_lake for running by hand)
@@ -138,6 +139,12 @@ jobs:
             bundles: ungrib-gfs.2023031015 ungrib-sst.2023031015
             lbc_times: 17
             lakes: ''
+          - case: conus_gfs_lake
+            source: gfs
+            static_key: conus-120km-lakes
+            bundles: ungrib-gfs.2023031015 ungrib-sst.2023031015
+            lbc_times: 17
+            lakes: --lakes
           - case: conus_raps
             source: rap
             static_key: conus-120km
