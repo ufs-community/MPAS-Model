@@ -619,6 +619,9 @@
  real(kind=RKIND):: dx
  real(kind=RKIND),allocatable:: z_int_sas(:,:)
  real(kind=RKIND),allocatable:: t_gfs_sas(:,:), qv_gfs_sas(:,:)
+ real(kind=RKIND),allocatable:: u_gfs_sas(:,:), v_gfs_sas(:,:)
+ real(kind=RKIND),dimension(:,:),pointer:: rublten_stage,rvblten_stage
+ logical,pointer:: config_gfs_sequential_physics
 real(kind=RKIND),allocatable:: pres_mid_gfs_sas(:,:), pres_int_gfs_sas(:,:)
 integer, dimension(:), pointer :: nEdgesOnCell_gfs
 integer, dimension(:,:), pointer :: cellsOnCell_gfs
@@ -662,6 +665,7 @@ integer, dimension(:,:), pointer :: cellsOnCell_gfs
  call mpas_pool_get_config(configs,'config_do_restart'       ,config_do_restart)
  call mpas_pool_get_config(configs,'config_convection_scheme',convection_scheme)
  call mpas_pool_get_config(configs,'config_pbl_scheme',pbl_scheme)
+ call mpas_pool_get_config(configs,'config_gfs_sequential_physics',config_gfs_sequential_physics)
 !call mpas_pool_get_array(mesh, 'bdyMaskCell', bdyMaskCell)
 !call mpas_pool_get_array(mesh, 'specZoneMaskCell',specZoneMaskCell )
 
@@ -853,10 +857,14 @@ integer, dimension(:,:), pointer :: cellsOnCell_gfs
          ! to stage physical temperature.
          !---------------------------------------------------------------
 
+         if (allocated(u_gfs_sas))     deallocate(u_gfs_sas)
+         if (allocated(v_gfs_sas))     deallocate(v_gfs_sas)
          if (allocated(t_gfs_sas))     deallocate(t_gfs_sas)
          if (allocated(qv_gfs_sas))    deallocate(qv_gfs_sas)
          if (allocated(tkeh_gfs_sas))  deallocate(tkeh_gfs_sas)
          if (allocated(maxmf_gfs_sas)) deallocate(maxmf_gfs_sas)
+         allocate(u_gfs_sas(its:ite,kts:kte))
+         allocate(v_gfs_sas(its:ite,kts:kte))
          allocate(t_gfs_sas(its:ite,kts:kte))
          allocate(qv_gfs_sas(its:ite,kts:kte))
          allocate(tkeh_gfs_sas(its:ite,kts:kte+1))
@@ -869,6 +877,30 @@ integer, dimension(:,:), pointer :: cellsOnCell_gfs
          maxmf_gfs_sas(:) = 0._RKIND
          tkeh_gfs_sas(:,:) = 0._RKIND
 
+         if (config_gfs_sequential_physics) then
+            nullify(rublten_stage,rvblten_stage)
+            call mpas_pool_get_array(tend_physics,'rublten',rublten_stage)
+            call mpas_pool_get_array(tend_physics,'rvblten',rvblten_stage)
+            if (.not. associated(rublten_stage) .or. &
+                .not. associated(rvblten_stage)) then
+               write(0,*) 'TEST2 ERROR: momentum tendency pointer missing'
+               flush(0)
+               error stop 'TEST2 momentum tendency pointer missing'
+            endif
+            if (kts < lbound(rublten_stage,1) .or. &
+                kte > ubound(rublten_stage,1) .or. &
+                its < lbound(rublten_stage,2) .or. &
+                ite > ubound(rublten_stage,2) .or. &
+                kts < lbound(rvblten_stage,1) .or. &
+                kte > ubound(rvblten_stage,1) .or. &
+                its < lbound(rvblten_stage,2) .or. &
+                ite > ubound(rvblten_stage,2)) then
+               write(0,*) 'TEST2 ERROR: momentum tendency bounds mismatch'
+               flush(0)
+               error stop 'TEST2 momentum tendency bounds mismatch'
+            endif
+         endif
+
          do k = kts, kte
          do i = its, ite
             ! Follow the native cu_ntiedtke coupling pattern: convection
@@ -878,6 +910,19 @@ integer, dimension(:,:), pointer :: cellsOnCell_gfs
             ! which are coupled to dynamics later in mpas_atmphys_todynamics.
             t_gfs_sas(i,k)  = t_p(i,k,j)
             qv_gfs_sas(i,k) = qv_p(i,k,j)
+            u_gfs_sas(i,k)  = u_p(i,k,j)
+            v_gfs_sas(i,k)  = v_p(i,k,j)
+            if (config_gfs_sequential_physics) then
+               ! Stage PBL/shared-GWD tendencies only into SAS inputs.
+               ! Do not modify MPAS state or tend_physics.
+               ! Old working-driver approach: convection_from_MPAS
+               ! prepares these allocated local temperature/qv tendencies.
+               t_gfs_sas(i,k) = t_p(i,k,j) + dt_dyn * rthften_p(i,k,j)
+               qv_gfs_sas(i,k) = max(0._RKIND, qv_p(i,k,j) + &
+                    dt_dyn * rqvften_p(i,k,j))
+               u_gfs_sas(i,k) = u_p(i,k,j) + dt_dyn * rublten_stage(k,i)
+               v_gfs_sas(i,k) = v_p(i,k,j) + dt_dyn * rvblten_stage(k,i)
+            endif
 
             if (t_gfs_sas(i,k) /= t_gfs_sas(i,k)) then
                write(0,*) 'NONFINITE T BEFORE GFS SAS'
@@ -923,8 +968,8 @@ integer, dimension(:,:), pointer :: cellsOnCell_gfs
             pres_mid = pres_mid_gfs_sas,                       &
             pres_int = pres_int_gfs_sas,                    &
             z_int    = z_int_sas(its:ite,kts:kte+1),                        &
-            u        = u_p(its:ite,kts:kte,j),                              &
-            v        = v_p(its:ite,kts:kte,j),                              &
+            u        = u_gfs_sas,                                          &
+            v        = v_gfs_sas,                                          &
             t        = t_gfs_sas,                                         &
             qv       = qv_gfs_sas,                                        &
             qc       = qc_p(its:ite,kts:kte,j),                             &
@@ -949,6 +994,8 @@ integer, dimension(:,:), pointer :: cellsOnCell_gfs
             cutop    = cutop_p(its:ite,j),                                  &
             ierr     = errflg, errmsg = errmsg )
 
+         if (allocated(u_gfs_sas))     deallocate(u_gfs_sas)
+         if (allocated(v_gfs_sas))     deallocate(v_gfs_sas)
          if (allocated(t_gfs_sas))     deallocate(t_gfs_sas)
          if (allocated(qv_gfs_sas))    deallocate(qv_gfs_sas)
          if (allocated(tkeh_gfs_sas))  deallocate(tkeh_gfs_sas)
@@ -1356,9 +1403,8 @@ integer, dimension(:,:), pointer :: cellsOnCell_gfs
           ! existing MPAS convection pattern used by cu_ntiedtke.
           ! rthften_p is stored here as a physical temperature tendency
           ! because the theta tendency is multiplied by pi_p immediately.
-          rqvften_p(i,k,j) = rqvdynten(k,i) + rqvblten(k,i)
-          rthften_p(i,k,j) = (rthdynten(k,i) + rthblten(k,i) &
-                           + rthratenlw(k,i) + rthratensw(k,i)) * pi_p(i,k,j)
+          rqvften_p(i,k,j) = rqvblten(k,i)
+          rthften_p(i,k,j) = rthblten(k,i) * pi_p(i,k,j)
        enddo
        enddo
        enddo

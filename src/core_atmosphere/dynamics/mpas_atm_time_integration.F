@@ -4036,7 +4036,7 @@ module atm_time_integration
             ! this follows Klemp et al MWR 2007, with the addition of an implicit Rayleigh damping of w
             ! serves as a gravity-wave absorbing layer, from Klemp et al 2008.
 
-!DIR$ IVDEP
+!!!DIR$ IVDEP
             !$acc loop vector
             do k=1, nVertLevels
                rs(k) = rho_pp(k,iCell) + dts*tend_rho(k,iCell) + rs(k)                  &

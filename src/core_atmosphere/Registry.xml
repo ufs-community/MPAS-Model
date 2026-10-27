@@ -2926,6 +2926,11 @@
                      description="Whether to activate the 3moment version of NSSL"
                      possible_values="`nssl2m',`nssl3m'"/>
 
+                <nml_option name="config_gfs_sequential_physics" type="logical" default_value="false"
+                     units="-"
+                     description="Stage PBL and GWD tendencies into temporary GFS SAS inputs without changing MPAS dynamics tendencies"
+                     possible_values=".true. or .false."/>
+
                 <nml_option name="config_convection_scheme" type="character" default_value="suite" in_defaults="false"
                      units="-"
                      description="configuration for convection schemes"
