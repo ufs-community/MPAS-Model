@@ -4,7 +4,7 @@ on: [push, pull_request, workflow_dispatch]
 
 #############################################################################################
 # Build init_atmosphere_model from this branch and create the static, initial-condition,
-# lateral-boundary and surface-update files for the 120 km CONUS test cases.
+# lateral-boundary files for 120 km CONUS test cases, with and without lakes.
 #
 # Jobs
 #   build   - make gfortran CORE=init_atmosphere (in the CI container)
@@ -14,10 +14,10 @@ on: [push, pull_request, workflow_dispatch]
 #   case    - init / lbc / sfc_update for each case, sanity checks, artifacts
 #
 # Cases          source   date        static land use
-#   conus_gfs       gfs   2023031015  20-class MODIS
 #   conus_raps      rap   2024081518  20-class MODIS
-#   conus_rapw      rap   2024020218  20-class MODIS
-#   conus_rapw_lake rap   2024020218  21-class MODIS with lakes
+#   conus_raps_lake rap   2024081518  21-class MODIS with lakes
+# (the summer RAP case has the smallest inputs; cases/ also has conus_gfs, conus_rapw
+#  and conus_rapw_lake for running by hand)
 #
 # Inputs (mesh, geographic data, ungrib intermediate files, aerosol climatology) come
 # from release INPUTS_TAG of this repository (copy them with
@@ -77,10 +77,10 @@ jobs:
       matrix:
         include:
           - static_key: conus-120km
-            case: conus_gfs
+            case: conus_raps
             nml_dir: step1_static
           - static_key: conus-120km-lakes
-            case: conus_rapw_lake
+            case: conus_raps_lake
             nml_dir: step1_static_lakes
     name: static (${{ matrix.static_key }})
     steps:
@@ -132,28 +132,16 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - case: conus_gfs
-            source: gfs
-            static_key: conus-120km
-            bundles: ungrib-gfs.2023031015 ungrib-sst.2023031015
-            lbc_times: 17
-            lakes: ''
           - case: conus_raps
             source: rap
             static_key: conus-120km
             bundles: ungrib-rap.2024081518
             lbc_times: 2
             lakes: ''
-          - case: conus_rapw
-            source: rap
-            static_key: conus-120km
-            bundles: ungrib-rap.2024020218
-            lbc_times: 2
-            lakes: ''
-          - case: conus_rapw_lake
+          - case: conus_raps_lake
             source: rap
             static_key: conus-120km-lakes
-            bundles: ungrib-rap.2024020218
+            bundles: ungrib-rap.2024081518
             lbc_times: 2
             lakes: --lakes
     name: ${{ matrix.case }}

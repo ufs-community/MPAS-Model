@@ -4,10 +4,13 @@
 # of this repository (the workflow reads release INPUTS_TAG of its own repository).
 #
 # Usage:
-#   bash copy_inputs_release.sh [-s SRC_REPO] [-t SRC_TAG] [-T DEST_TAG] DEST_REPO WORK_DIR
+#   bash copy_inputs_release.sh [-s SRC_REPO] [-t SRC_TAG] [-T DEST_TAG] [-b "BUNDLES" | -a] DEST_REPO WORK_DIR
 #     -s   source repository   (default dustinswales/mpas-ic-factory)
 #     -t   source release tag  (default v1.0.0)
 #     -T   destination tag     (default init-inputs-v1.0.0, as in make_ics.yml)
+#     -b   bundles to copy (default: what make_ics.yml uses, about 6 GB:
+#          "grids aerosols geog ungrib-rap.2024081518"; geog includes geog-* bundles)
+#     -a   copy every bundle in the source release (about 30 GB)
 #   e.g.
 #     bash copy_inputs_release.sh dustinswales/MPAS-Model /scratch/$USER/copy
 #
@@ -19,14 +22,17 @@
 set -euo pipefail
 
 die() { echo "ERROR: $*" >&2; exit 1; }
-usage="usage: $0 [-s SRC_REPO] [-t SRC_TAG] [-T DEST_TAG] DEST_REPO WORK_DIR"
+usage="usage: $0 [-s SRC_REPO] [-t SRC_TAG] [-T DEST_TAG] [-b \"BUNDLES\" | -a] DEST_REPO WORK_DIR"
 
 src_repo="dustinswales/mpas-ic-factory" src_tag="v1.0.0" dest_tag="init-inputs-v1.0.0"
-while getopts "s:t:T:" opt; do
+bundles="grids aerosols geog ungrib-rap.2024081518" all=false
+while getopts "s:t:T:b:a" opt; do
   case $opt in
     s) src_repo=$OPTARG ;;
     t) src_tag=$OPTARG ;;
     T) dest_tag=$OPTARG ;;
+    b) bundles=$OPTARG ;;
+    a) all=true ;;
     *) die "$usage" ;;
   esac
 done
@@ -39,8 +45,24 @@ gh auth status >/dev/null 2>&1 || die "gh is not logged in (set GH_TOKEN or run 
 mkdir -p "$work"; work="$(cd "$work" && pwd)"
 cd "$work"
 
-gh release download "$src_tag" -R "$src_repo" -p MANIFEST.sha256 -O src.sha256 --clobber \
+gh release download "$src_tag" -R "$src_repo" -p MANIFEST.sha256 -O src_all.sha256 --clobber \
   || die "cannot read MANIFEST.sha256 from $src_repo@$src_tag"
+
+# Select the assets of the requested bundles (BUNDLE.tar.gz or BUNDLE.tar.gz.part-xx;
+# "geog" also selects every geog-<dataset> bundle).
+if $all; then
+  cp src_all.sha256 src.sha256
+else
+  : > src.sha256
+  for b in $bundles; do
+    pat="^${b//./\\.}\\.tar\\.gz(\\.part-[a-z]+)?\$"
+    [ "$b" = geog ] && pat="^geog(-[^ ]+)?\\.tar\\.gz(\\.part-[a-z]+)?\$"
+    n0=$(wc -l < src.sha256)
+    PAT="$pat" awk '$2 ~ ENVIRON["PAT"]' src_all.sha256 >> src.sha256
+    [ "$(wc -l < src.sha256)" -gt "$n0" ] || die "bundle '$b' not in $src_repo@$src_tag"
+  done
+fi
+echo "Copying $(wc -l < src.sha256) assets from $src_repo@$src_tag to $dest_repo@$dest_tag"
 
 if gh release view "$dest_tag" -R "$dest_repo" >/dev/null 2>&1; then
   gh release download "$dest_tag" -R "$dest_repo" -p MANIFEST.sha256 -O dest.sha256 --clobber 2>/dev/null \
