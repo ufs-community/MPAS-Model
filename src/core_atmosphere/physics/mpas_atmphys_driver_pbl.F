@@ -10,6 +10,7 @@
  use mpas_kind_types
  use mpas_pool_routines
  use mpas_gfs_pressure_repair, only : repair_gfs_pressure_columns
+ use mpas_gfs_base_pressure_option, only : gfs_fixed_base_mode
  use mpas_timer,only: mpas_timer_start,mpas_timer_stop
  use, intrinsic :: ieee_arithmetic, only : ieee_is_finite
 
@@ -1672,12 +1673,17 @@ endif
        !---------------------------------------------------------------
        ! Repair pressure only for the GFS TKE-EDMF temporary input arrays.
        ! Native pres_hyd_p/pres2_hyd_p remain unchanged for other physics.
+       if (gfs_fixed_base_mode()) then
+          p_mid_tkeedmf(:,:) = pres_base_mid_gfs_p(its:ite,kts:kte,jts)
+          p_int_tkeedmf(:,:) = pres_base_int_gfs_p(its:ite,kts:kte+1,jts)
+       else
        call repair_gfs_pressure_columns(                           &
      &      pres_hyd_p(its:ite,kts:kte,jts),                         &
      &      pres2_hyd_p(its:ite,kts:kte+1,jts),                      &
      &      p_mid_tkeedmf, p_int_tkeedmf,                            &
      &      nEdgesOnCell, cellsOnCell,                              &
      &      its, ite, kts, kte)
+       endif
        pi_tkeedmf(:,:) = pi_p(its:ite,kts:kte,jts)
 
        call mpas_call_satmedmfvdifq(                                  &

@@ -31,6 +31,7 @@ set(ATMOSPHERE_CORE_PHYSICS_SOURCES
     mpas_atmphys_driver_lsm.F
     mpas_satmedmfvdifq_wrapper_mod.F90
     mpas_gfs_convection_wrapper_mod.F90
+    mpas_gfs_base_pressure_option.F90
     mpas_atmphys_driver_pbl.F
     mpas_atmphys_driver_radiation_lw.F
     mpas_atmphys_driver_radiation_sw.F

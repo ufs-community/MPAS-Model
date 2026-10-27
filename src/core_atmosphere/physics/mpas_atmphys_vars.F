@@ -307,6 +307,9 @@
     pres2_p,          &!pressure                                                               [Pa]
     t2_p               !temperature                                                             [K]
 
+! Reference pressure constructed from MPAS pressure_base and zgrid.
+! Mode 0: original repair; mode 1: fixed base-state reference coordinate.
+ real(kind=RKIND), dimension(:,:,:), allocatable :: pres_base_mid_gfs_p, pres_base_int_gfs_p
 !... arrays used for calculating the hydrostatic pressure and exner function:
  real(kind=RKIND),dimension(:,:),allocatable:: &
     psfc_hyd_p,       &!surface pressure                                                       [Pa]
