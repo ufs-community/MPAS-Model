@@ -119,15 +119,15 @@ set(ATMOSPHERE_CORE_PHYSICS_GFS_FIXED_SOURCES
     gfs_tke_edmf_compat.F
     mfscuq_mod.F
     canopy_utils_mod.F
-    satmedmfvdifq.F
     samfaerosols.F
-    samfdeepcnv.f
-    samfshalcnv.f
 )
 
 set(ATMOSPHERE_CORE_PHYSICS_GFS_FREE_SOURCES
     tridi_mod.F
     mfpbltq_mod.F
+    satmedmfvdifq.F
+    samfdeepcnv.f
+    samfshalcnv.f
     progsigma_calc.f90
     progomega_calc.f90
 )

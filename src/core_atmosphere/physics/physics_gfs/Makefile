@@ -62,10 +62,14 @@ samfshalcnv.o: \
 	samfaerosols.o
 
 # GNU Make inherits -ffree-form from MPAS. Override for fixed-form sources.
-# tridi_mod.F and converted mfpbltq_mod.F are free-form.
+# tridi_mod.F, converted mfpbltq_mod.F, and satmedmfvdifq.F are free-form.
 GFS_FIXED_OBJECTS = gfs_tke_edmf_compat.o mfscuq_mod.o \
-                    canopy_utils_mod.o satmedmfvdifq.o samfaerosols.o
+                    canopy_utils_mod.o samfaerosols.o
 $(GFS_FIXED_OBJECTS): GFS_SOURCE_FORM_FLAGS = -ffixed-form -ffixed-line-length-none
+
+# Converted legacy .f sources must override the inherited -ffree-form explicitly.
+GFS_FREE_F_OBJECTS = samfdeepcnv.o samfshalcnv.o
+$(GFS_FREE_F_OBJECTS): GFS_SOURCE_FORM_FLAGS = -ffree-form -ffree-line-length-none
 
 clean:
 	$(RM) *.o *.mod *.f90 *.i libphys_gfs.a
@@ -85,4 +89,4 @@ endif
 
 .f90.o:
 	$(RM) $@ $*.mod
-	$(FC) $(FFLAGS) -c $< $(FCINCLUDES) -I. -I.. -I../physics_mmm -I../physics_wrf -I../../../framework -I../../../external/esmf_time_f90
+	$(FC) $(FFLAGS) $(GFS_SOURCE_FORM_FLAGS) -c $< $(FCINCLUDES) -I. -I.. -I../physics_mmm -I../physics_wrf -I../../../framework -I../../../external/esmf_time_f90

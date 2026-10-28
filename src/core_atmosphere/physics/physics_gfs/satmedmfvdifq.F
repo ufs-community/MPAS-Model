@@ -43,8 +43,8 @@
 !! \htmlinclude satmedmfvdifq_init.html
 !!
       subroutine satmedmfvdifq_init (satmedmf,                          &
-     &                               isatmedmf,isatmedmf_vdifq,         &
-     &                               errmsg,errflg)
+      isatmedmf,isatmedmf_vdifq,         &
+      errmsg,errflg)
 
       logical, intent(in   ) :: satmedmf
       integer, intent(in) :: isatmedmf,isatmedmf_vdifq
@@ -64,8 +64,8 @@
       end if
 
       if (.not. isatmedmf==isatmedmf_vdifq) then
-        write(errmsg,fmt='(*(a))') 'Logic error: satmedmfvdif is ',
-     &                   'called, but isatmedmf/=isatmedmf_vdifq.'
+        write(errmsg,fmt='(*(a))') 'Logic error: satmedmfvdif is ', &
+      'called, but isatmedmf/=isatmedmf_vdifq.'
         errflg = 1
         return
       end if
@@ -87,21 +87,21 @@
 !! (mfscuq.f).
 !! \section detail_satmedmfvidfq GFS satmedmfvdifq Detailed Algorithm
       subroutine satmedmfvdifq_run(im,km,ntrac,ntcw,ntrw,               &
-     &     ntiw,ntke,grav,pi,rd,cp,rv,hvap,hfus,fv,eps,epsm1,              &
+      ntiw,ntke,grav,pi,rd,cp,rv,hvap,hfus,fv,eps,epsm1,              &
 !The following three variables are for SA-3D-TKE
-     &     def_1,def_2,def_3,sa3dtke,dku3d_h,dku3d_e,                   &
-     &     dv,du,tdt,rtg,u1,v1,t1,q1,                                   &
-     &     swh,hlw,xmu,garea,zvfun,sigmaf,                              &
-     &     psk,rbsoil,zorl,u10m,v10m,fm,fh,                             &
-     &     tsea,heat,evap,stress,spd1,kpbl,                             &
-     &     prsi,del,prsl,prslk,phii,phil,delt,tte_edmf,                 &
-     &     dspheat,dusfc,dvsfc,dtsfc,dqsfc,hpbl,dkt,dku,tkeh,           &
-     &     kinver,xkzm_m,xkzm_h,xkzm_s,dspfac,bl_upfr,bl_dnfr,          &
-     &     rlmx,elmx,sfc_rlm,tc_pbl,use_lpt,                            &
-     &     do_canopy, cplaqm, claie, cfch, cfrt, cclu, cpopu,           &
-     &     ntqv,dtend,dtidx,index_of_temperature,index_of_x_wind,       &
-     &     index_of_y_wind,index_of_process_pbl,gen_tend,ldiag3d,       &
-     &     errmsg,errflg)
+      def_1,def_2,def_3,sa3dtke,dku3d_h,dku3d_e,                   &
+      dv,du,tdt,rtg,u1,v1,t1,q1,                                   &
+      swh,hlw,xmu,garea,zvfun,sigmaf,                              &
+      psk,rbsoil,zorl,u10m,v10m,fm,fh,                             &
+      tsea,heat,evap,stress,spd1,kpbl,                             &
+      prsi,del,prsl,prslk,phii,phil,delt,tte_edmf,                 &
+      dspheat,dusfc,dvsfc,dtsfc,dqsfc,hpbl,dkt,dku,tkeh,           &
+      kinver,xkzm_m,xkzm_h,xkzm_s,dspfac,bl_upfr,bl_dnfr,          &
+      rlmx,elmx,sfc_rlm,tc_pbl,use_lpt,                            &
+      do_canopy, cplaqm, claie, cfch, cfrt, cclu, cpopu,           &
+      ntqv,dtend,dtidx,index_of_temperature,index_of_x_wind,       &
+      index_of_y_wind,index_of_process_pbl,gen_tend,ldiag3d,       &
+      errmsg,errflg)
 
 !
       use gfs_tke_edmf_machine  , only : kind_phys
@@ -111,7 +111,7 @@
 !
 !----------------------------------------------------------------------
       integer, intent(in)  :: im, km, ntrac, ntcw, ntrw, ntiw,          &
-     &                        ntke, ntqv
+      ntke, ntqv
       integer, intent(in)  :: sfc_rlm
       integer, intent(in)  :: tc_pbl
       integer, intent(in)  :: use_lpt
@@ -120,44 +120,44 @@
       logical, intent(in)  :: gen_tend,ldiag3d
 !
       real(kind=kind_phys), intent(in) :: grav,pi,rd,cp,rv,hvap,hfus,fv,   &
-     &                                    eps,epsm1
+      eps,epsm1
       real(kind=kind_phys), intent(in) :: delt, xkzm_m, xkzm_h, xkzm_s
       real(kind=kind_phys), intent(in) :: dspfac, bl_upfr, bl_dnfr
       real(kind=kind_phys), intent(in) :: rlmx, elmx
 !PCC CANOPY------------------------------------
       logical, intent(in)  :: do_canopy, cplaqm
       real(kind=kind_phys), optional, intent(in)  :: claie(:), cfch(:), &
-     &                     cfrt(:), cclu(:), cpopu(:)
+      cfrt(:), cclu(:), cpopu(:)
       !----------------------------------------------
       real(kind=kind_phys), intent(inout) :: dv(:,:),     du(:,:),      &
-     &                     tdt(:,:),    rtg(:,:,:),    tkeh(:,:)
+      tdt(:,:),    rtg(:,:,:),    tkeh(:,:)
       real(kind=kind_phys), intent(in) ::                               &
-     &                     u1(:,:),     v1(:,:),                        &
-     &                     t1(:,:),     q1(:,:,:),                      &
+      u1(:,:),     v1(:,:),                        &
+      t1(:,:),     q1(:,:,:),                      &
 !The following two variables are for SA-3D-TKE
-     &                     def_1(:,:),  def_2(:,:), def_3(:,:),         &
-     &                     swh(:,:),    hlw(:,:),                       &
-     &                     xmu(:),       garea(:),                      &
-     &                     zvfun(:),     sigmaf(:),                     &
-     &                     psk(:),       rbsoil(:),                     &
-     &                     zorl(:),      tsea(:),                       &
-     &                     u10m(:),      v10m(:),                       &
-     &                     fm(:),        fh(:),                         &
-     &                     evap(:),      heat(:),                       &
-     &                     stress(:),    spd1(:),                       &
-     &                     prsi(:,:), del(:,:),                         &
-     &                     prsl(:,:),   prslk(:,:),                     &
-     &                     phii(:,:), phil(:,:)
+      def_1(:,:),  def_2(:,:), def_3(:,:),         &
+      swh(:,:),    hlw(:,:),                       &
+      xmu(:),       garea(:),                      &
+      zvfun(:),     sigmaf(:),                     &
+      psk(:),       rbsoil(:),                     &
+      zorl(:),      tsea(:),                       &
+      u10m(:),      v10m(:),                       &
+      fm(:),        fh(:),                         &
+      evap(:),      heat(:),                       &
+      stress(:),    spd1(:),                       &
+      prsi(:,:), del(:,:),                         &
+      prsl(:,:),   prslk(:,:),                     &
+      phii(:,:), phil(:,:)
       real(kind=kind_phys), intent(inout), dimension(:,:,:), optional ::&
-     &     dtend
+      dtend
       integer, intent(in) :: dtidx(:,:), index_of_temperature,          &
-     &       index_of_x_wind, index_of_y_wind, index_of_process_pbl
+      index_of_x_wind, index_of_y_wind, index_of_process_pbl
       real(kind=kind_phys), intent(out) ::                              &
-     &                     dusfc(:),     dvsfc(:),                      &
-     &                     dtsfc(:),     dqsfc(:),                      &
-     &                     hpbl(:)
+      dusfc(:),     dvsfc(:),                      &
+      dtsfc(:),     dqsfc(:),                      &
+      hpbl(:)
       real(kind=kind_phys), intent(out) ::                              &
-     &                     dkt(:,:), dku(:,:)
+      dkt(:,:), dku(:,:)
 
 !
       logical, intent(in)  :: sa3dtke !flag for SA-3D-TKE scheme
@@ -171,8 +171,8 @@
       integer,          intent(out) :: errflg
 
 !For passing dku to the dyn_core (SA-3D-TKE scheme)
-       real(kind=kind_phys), intent(out) ::
-     &            dku3d_h(:,:),dku3d_e(:,:)
+       real(kind=kind_phys), intent(out) :: &
+      dku3d_h(:,:),dku3d_e(:,:)
 
 !
 !----------------------------------------------------------------------
@@ -185,64 +185,64 @@
       integer lcld(im),kcld(im),krad(im),mrad(im)
       integer kx1(im), kb1(im), kpblx(im)
 !
-      real(kind=kind_phys) te(im,km),   tei(im,km-1), tke(im,km),
-     &                     tteh(im,km), tesq(im,km-1),e2(im,0:km)
+      real(kind=kind_phys) te(im,km),   tei(im,km-1), tke(im,km), &
+      tteh(im,km), tesq(im,km-1),e2(im,0:km)
 !
-      real(kind=kind_phys) theta(im,km),thvx(im,km),  thlvx(im,km),
-     &                     qlx(im,km),  thetae(im,km),thlx(im,km),
-     &                     slx(im,km),  svx(im,km),   qtx(im,km),
-     &                     tvx(im,km),  pix(im,km),   radx(im,km-1),
-     &                     dkq(im,km-1)
+      real(kind=kind_phys) theta(im,km),thvx(im,km),  thlvx(im,km), &
+      qlx(im,km),  thetae(im,km),thlx(im,km), &
+      slx(im,km),  svx(im,km),   qtx(im,km), &
+      tvx(im,km),  pix(im,km),   radx(im,km-1), &
+      dkq(im,km-1)
 !
-      real(kind=kind_phys) plyr(im,km), rhly(im,km),  cfly(im,km),
-     &                     qstl(im,km)
+      real(kind=kind_phys) plyr(im,km), rhly(im,km),  cfly(im,km), &
+      qstl(im,km)
 !
-      real(kind=kind_phys) dtdz1(im), gdx(im),
-     &                     phih(im),  phim(im),    phihs(im),
-     &                     phims(im), prn(im,km-1),
-     &                     rbdn(im),  rbup(im),    thermal(im),
-     &                     ustar(im), wstar(im),   hpblx(im),
-     &                     ust3(im),  wst3(im),    rho_a(im),
-     &                     z0(im),    crb(im),     tkemean(im),
-     &                     hgamt(im), hgamq(im),
-     &                     wscale(im),vpert(im),   thvs(im),
-     &                     zol(im),   sflux(im),   ris(im),
-     &                     sumx(im),  tx1(im),     tx2(im)
+      real(kind=kind_phys) dtdz1(im), gdx(im), &
+      phih(im),  phim(im),    phihs(im), &
+      phims(im), prn(im,km-1), &
+      rbdn(im),  rbup(im),    thermal(im), &
+      ustar(im), wstar(im),   hpblx(im), &
+      ust3(im),  wst3(im),    rho_a(im), &
+      z0(im),    crb(im),     tkemean(im), &
+      hgamt(im), hgamq(im), &
+      wscale(im),vpert(im),   thvs(im), &
+      zol(im),   sflux(im),   ris(im), &
+      sumx(im),  tx1(im),     tx2(im)
 !
       real(kind=kind_phys) radmin(im)
 !
-      real(kind=kind_phys) zi(im,km+1),  zl(im,km),   zm(im,km),
-     &                     xkzo(im,km-1),xkzmo(im,km-1),
-     &                     xkzm_hx(im),  xkzm_mx(im), tkmnz(im,km-1),
-     &                     rdzt(im,km-1),rlmnz(im,km),
-     &                     al(im,km-1),  ad(im,km),   au(im,km-1),
-     &                     f1(im,km),    f2(im,km*(ntrac-1))
+      real(kind=kind_phys) zi(im,km+1),  zl(im,km),   zm(im,km), &
+      xkzo(im,km-1),xkzmo(im,km-1), &
+      xkzm_hx(im),  xkzm_mx(im), tkmnz(im,km-1), &
+      rdzt(im,km-1),rlmnz(im,km), &
+      al(im,km-1),  ad(im,km),   au(im,km-1), &
+      f1(im,km),    f2(im,km*(ntrac-1))
 !
-      real(kind=kind_phys) elm(im,km),   ele(im,km),
-     &                     ckz(im,km),   chz(im,km),
-     &                     diss(im,km-1),prod(im,km-1),
-     &                     bf(im,km-1),  shr2(im,km-1), wush(im,km),
-     &                     xlamue(im,km-1), xlamde(im,km-1),
-     &                     gotvx(im,km), rlam(im,km-1)
+      real(kind=kind_phys) elm(im,km),   ele(im,km), &
+      ckz(im,km),   chz(im,km), &
+      diss(im,km-1),prod(im,km-1), &
+      bf(im,km-1),  shr2(im,km-1), wush(im,km), &
+      xlamue(im,km-1), xlamde(im,km-1), &
+      gotvx(im,km), rlam(im,km-1)
 !
 !   variables for updrafts (thermals)
 !
-      real(kind=kind_phys) tcko(im,km),  qcko(im,km,ntrac),
-     &                     ucko(im,km),  vcko(im,km),
-     &                     buou(im,km),  xmf(im,km)
+      real(kind=kind_phys) tcko(im,km),  qcko(im,km,ntrac), &
+      ucko(im,km),  vcko(im,km), &
+      buou(im,km),  xmf(im,km)
 !
 !   variables for stratocumulus-top induced downdrafts
 !
-      real(kind=kind_phys) tcdo(im,km),  qcdo(im,km,ntrac),
-     &                     ucdo(im,km),  vcdo(im,km),
-     &                     buod(im,km),  xmfd(im,km)
+      real(kind=kind_phys) tcdo(im,km),  qcdo(im,km,ntrac), &
+      ucdo(im,km),  vcdo(im,km), &
+      buod(im,km),  xmfd(im,km)
 !
 !  variables for Total Variation Diminishing (TVD) flux-limiter scheme
 !
-      real(kind=kind_phys) e_half(im,km-1), e_diff(im,0:km-1),
-     &                     q_half(im,km-1,ntrac-1),
-     &                     qh(im,km-1,ntrac-1),
-     &                     q_diff(im,0:km-1,ntrac-1)
+      real(kind=kind_phys) e_half(im,km-1), e_diff(im,0:km-1), &
+      q_half(im,km-1,ntrac-1), &
+      qh(im,km-1,ntrac-1), &
+      q_diff(im,0:km-1,ntrac-1)
       real(kind=kind_phys) rrkp, phkp
       real(kind=kind_phys) tsumn(im), tsump(im), rtnp(im)
       real(kind=kind_phys) sfcpbl(im), vez0fun(im)
@@ -253,44 +253,44 @@
 !
 !  pcnvflg: true for unstable pbl
 !
-      real(kind=kind_phys) aphi16,  aphi5,
-     &                     wfac,    cfac,
-     &                     gamcrt,  gamcrq, sfcfrac,
+      real(kind=kind_phys) aphi16,  aphi5, &
+      wfac,    cfac, &
+      gamcrt,  gamcrq, sfcfrac, &
 !    &                     conq,    cont,   conw,
-     &                     dsdz2,   dsdzt,  dkmax,
-     &                     dsig,    dt2,    dtodsd,
-     &                     dtodsu,  g,      factor, dz,
-     &                     gocp,    gravi,  zol1,   zolcru,
-     &                     buop,    shrp,   dtn,
-     &                     prnum,   prmax,  prmin,  prtke,
-     &                     prscu,   pr0,    ri,
-     &                     dw2,     dw2min, zk,
-     &                     elmfac,  elefac, dspmax,
-     &                     alp,     clwt,   cql,
-     &                     f0,      robn,   crbmin, crbmax,
-     &                     es,      qs,     value,  onemrh,
-     &                     cfh,     gamma,  elocp,  el2orc,
-     &                     epsi,    beta,   chx,    cqx,
-     &                     rdt,     rdz,    qmin,   qlmin,
-     &                     rimin,   rbcr,   rbint,  tdzmin,
-     &                     rlmn,    rlmn0,  rlmn1,  rlmn2,
-     &                     ttend,   utend,  vtend,  qtend,
-     &                     zfac,    zfmin,  vk,     spdk2,
-     &                     tkmin,   tkbmx,  disste, xkgdx,
-     &                     xkinv1,  xkinv2,
-     &                     zlup,    zldn,   cs0,    csmf,
-     &                     tem,     tem1,   tem2,   tem3,
-     &                     ptem,    ptem0,  ptem1,  ptem2
+      dsdz2,   dsdzt,  dkmax, &
+      dsig,    dt2,    dtodsd, &
+      dtodsu,  g,      factor, dz, &
+      gocp,    gravi,  zol1,   zolcru, &
+      buop,    shrp,   dtn, &
+      prnum,   prmax,  prmin,  prtke, &
+      prscu,   pr0,    ri, &
+      dw2,     dw2min, zk, &
+      elmfac,  elefac, dspmax, &
+      alp,     clwt,   cql, &
+      f0,      robn,   crbmin, crbmax, &
+      es,      qs,     value,  onemrh, &
+      cfh,     gamma,  elocp,  el2orc, &
+      epsi,    beta,   chx,    cqx, &
+      rdt,     rdz,    qmin,   qlmin, &
+      rimin,   rbcr,   rbint,  tdzmin, &
+      rlmn,    rlmn0,  rlmn1,  rlmn2, &
+      ttend,   utend,  vtend,  qtend, &
+      zfac,    zfmin,  vk,     spdk2, &
+      tkmin,   tkbmx,  disste, xkgdx, &
+      xkinv1,  xkinv2, &
+      zlup,    zldn,   cs0,    csmf, &
+      tem,     tem1,   tem2,   tem3, &
+      ptem,    ptem0,  ptem1,  ptem2
 !
 !The following variables are for SA-3D-TKE
       integer kk
-      real(kind=kind_phys) thetal(im,km),dku_les(im,km),dkt_les(im,km),
-     &                     elmh(im,km),ele_les(im,km),pftke(im),
-     &                     dkq_les(im,km),pfl(im),pfdx(im),
-     &                     dku_h(im,km),dkq_h(im,km),
-     &                     elmhfac,elmhmx,ckh,elm_les,
-     &                     cpl1,cpl2,cpl3,cpl4,cpl5,cpl6,
-     &                     cptke1,cptke2,cptke3
+      real(kind=kind_phys) thetal(im,km),dku_les(im,km),dkt_les(im,km), &
+      elmh(im,km),ele_les(im,km),pftke(im), &
+      dkq_les(im,km),pfl(im),pfdx(im), &
+      dku_h(im,km),dkq_h(im,km), &
+      elmhfac,elmhmx,ckh,elm_les, &
+      cpl1,cpl2,cpl3,cpl4,cpl5,cpl6, &
+      cptke1,cptke2,cptke3
       integer ktkemax(im)
       real(kind=kind_phys) tkemax(im),scl(im)
       real(kind=kind_phys) sclmax,sclmin,dkmaxles
@@ -316,11 +316,11 @@
 !PCC_CANOPY------------------------------------
       integer COUNTCAN,KCAN
       integer kount 
-      real(kind=kind_phys) FCH,       MOL,   HOL, TLCAN,
-     &                     SIGMACAN,  RRCAN, BBCAN,
-     &                     AACAN,     ZCAN,  ZFL, BOTCAN,
-     &                     ZZ_INT,
-     &                     EDDYVEST1, EDDYVEST_INT
+      real(kind=kind_phys) FCH,       MOL,   HOL, TLCAN, &
+      SIGMACAN,  RRCAN, BBCAN, &
+      AACAN,     ZCAN,  ZFL, BOTCAN, &
+      ZZ_INT, &
+      EDDYVEST1, EDDYVEST_INT
 
       ! in canopy eddy diffusivity [ m**2/s ]
       real(kind=kind_phys), allocatable  :: EDDYVESTX ( : )
@@ -332,12 +332,12 @@
       integer, parameter :: mvt   = 30 ! use 30 instead of 27
       !Based on MODIS IGBP 20 Category Dataset
       real :: fch_table(mvt)         !< top of canopy (m)
-       data   ( fch_table(i),i=1,mvt)   /
-     &          20.0, 20.0, 18.0, 16.0, 16.0, 1.10,
-     &          1.10, 13.0, 10.0, 1.00, 5.00, 2.00,
-     &          15.0, 1.50, 0.00, 0.00, 0.00, 4.00,
-     &          2.00, 0.50, 0.00, 0.00, 0.00, 0.00,
-     &          0.00, 0.00, 0.00, 0.00, 0.00, 0.00 /
+       data   ( fch_table(i),i=1,mvt)   / &
+      20.0, 20.0, 18.0, 16.0, 16.0, 1.10, &
+      1.10, 13.0, 10.0, 1.00, 5.00, 2.00, &
+      15.0, 1.50, 0.00, 0.00, 0.00, 4.00, &
+      2.00, 0.50, 0.00, 0.00, 0.00, 0.00, &
+      0.00, 0.00, 0.00, 0.00, 0.00, 0.00 /
 !----------------------------------------------
       parameter(bfac=100.)
       parameter(wfac=7.0)
@@ -369,12 +369,12 @@
 
 !PCC_CANOPY------------------------------------
       if (do_canopy) then
-        if(.not.allocated(EDDYVESTX))
-     &    allocate( EDDYVESTX    ( MAXCAN ) )
-        if(.not.allocated(ZCANX))
-     &    allocate( ZCANX    ( MAXCAN ) )
-        if(.not.allocated(ZOOOX)) 
-     &    allocate( ZOOOX    ( MAXCAN ) )
+        if(.not.allocated(EDDYVESTX)) &
+      allocate( EDDYVESTX    ( MAXCAN ) )
+        if(.not.allocated(ZCANX)) &
+      allocate( ZCANX    ( MAXCAN ) )
+        if(.not.allocated(ZOOOX)) &
+      allocate( ZOOOX    ( MAXCAN ) )
       endif
 !----------------------------------------------
       if (tc_pbl == 0) then
@@ -745,8 +745,8 @@
       do i = 1, im
          rdz  = rdzt(i,k)
 !        bf(i,k) = gotvx(i,k)*(thvx(i,k+1)-thvx(i,k))*rdz
-         dw2  = (u1(i,k)-u1(i,k+1))**2
-     &        + (v1(i,k)-v1(i,k+1))**2
+         dw2  = (u1(i,k)-u1(i,k+1))**2 &
+      + (v1(i,k)-v1(i,k+1))**2
          shr2(i,k) = max(dw2,dw2min)*rdz*rdz
       enddo
       enddo
@@ -771,13 +771,13 @@
             spdk2   = max((u1(i,k)**2+v1(i,k)**2),1.)
 !           rbup(i) = (thvx(i,k)-thermal(i))*
 !    &                (g*zl(i,k)/thvx(i,1))/spdk2
-            rbup(i) = (thlvx(i,k)-thermal(i))*
-     &                (g*zl(i,k)/thlvx(i,1))/spdk2
+            rbup(i) = (thlvx(i,k)-thermal(i))* &
+      (g*zl(i,k)/thlvx(i,1))/spdk2
           else if (tc_pbl == 1) then
-            spdk2   = max((u1(i,k)-u1(i,1))**2+(v1(i,k)-v1(i,1))**2,1.)
-     &                + bfac*ustar(i)**2
-            rbup(i) = (thlvx(i,k)-thermal(i))*
-     &                (g*(zl(i,k)-zl(i,1))/thlvx(i,1))/spdk2
+            spdk2   = max((u1(i,k)-u1(i,1))**2+(v1(i,k)-v1(i,1))**2,1.) &
+      + bfac*ustar(i)**2
+            rbup(i) = (thlvx(i,k)-thermal(i))* &
+      (g*(zl(i,k)-zl(i,1))/thlvx(i,1))/spdk2
           endif
           kpblx(i) = k
           flg(i)  = rbup(i) > crb(i)
@@ -852,13 +852,13 @@
             spdk2   = max((u1(i,k)**2+v1(i,k)**2),1.)
 !           rbup(i) = (thvx(i,k)-thermal(i))*
 !    &                (g*zl(i,k)/thvx(i,1))/spdk2
-            rbup(i) = (thlvx(i,k)-thermal(i))*
-     &                (g*zl(i,k)/thlvx(i,1))/spdk2
+            rbup(i) = (thlvx(i,k)-thermal(i))* &
+      (g*zl(i,k)/thlvx(i,1))/spdk2
           else if (tc_pbl == 1) then
-            spdk2   = max((u1(i,k)-u1(i,1))**2+(v1(i,k)-v1(i,1))**2,1.)
-     &                + bfac*ustar(i)**2
-            rbup(i) = (thlvx(i,k)-thermal(i))*
-     &                (g*(zl(i,k)-zl(i,1))/thlvx(i,1))/spdk2
+            spdk2   = max((u1(i,k)-u1(i,1))**2+(v1(i,k)-v1(i,1))**2,1.) &
+      + bfac*ustar(i)**2
+            rbup(i) = (thlvx(i,k)-thermal(i))* &
+      (g*(zl(i,k)-zl(i,1))/thlvx(i,1))/spdk2
           endif
           kpblx(i) = k
           flg(i)  = rbup(i) > crb(i)
@@ -1022,13 +1022,13 @@
           rbdn(i) = rbup(i)
           if (tc_pbl == 0) then
             spdk2   = max((u1(i,k)**2+v1(i,k)**2),1.)
-            rbup(i) = (thlvx(i,k)-thermal(i))*
-     &                (g*zl(i,k)/thlvx(i,1))/spdk2
+            rbup(i) = (thlvx(i,k)-thermal(i))* &
+      (g*zl(i,k)/thlvx(i,1))/spdk2
           else if (tc_pbl == 1) then
-            spdk2   = max((u1(i,k)-u1(i,1))**2+(v1(i,k)-v1(i,1))**2,1.)
-     &                + bfac*ustar(i)**2
-            rbup(i) = (thlvx(i,k)-thermal(i))*
-     &                (g*(zl(i,k)-zl(i,1))/thlvx(i,1))/spdk2
+            spdk2   = max((u1(i,k)-u1(i,1))**2+(v1(i,k)-v1(i,1))**2,1.) &
+      + bfac*ustar(i)**2
+            rbup(i) = (thlvx(i,k)-thermal(i))* &
+      (g*(zl(i,k)-zl(i,1))/thlvx(i,1))/spdk2
           endif
           kpbl(i) = k
           flg(i)  = rbup(i) > crb(i)
@@ -1217,17 +1217,17 @@
       enddo
 !>  - Call mfpbltq(), which is an EDMF parameterization (Siebesma et al.(2007) \cite Siebesma_2007)
 !!    to take into account nonlocal transport by large eddies. For details of the mfpbltq subroutine, step into its documentation ::mfpbltq
-      call mfpbltq(im,im,km,kmpbl,ntcw,ntrac1,dt2,
-     &    pcnvflg,zl,zm,q1,t1,u1,v1,plyr,pix,thlx,thvx,
-     &    gdx,hpbl,kpbl,vpert,buou,wush,tkemean,vez0fun,xmf,
-     &    tcko,qcko,ucko,vcko,xlamue,bl_upfr)
+      call mfpbltq(im,im,km,kmpbl,ntcw,ntrac1,dt2, &
+      pcnvflg,zl,zm,q1,t1,u1,v1,plyr,pix,thlx,thvx, &
+      gdx,hpbl,kpbl,vpert,buou,wush,tkemean,vez0fun,xmf, &
+      tcko,qcko,ucko,vcko,xlamue,bl_upfr)
 !>  - Call mfscuq(), which is a new mass-flux parameterization for
 !!    stratocumulus-top-induced turbulence mixing. For details of the mfscuq subroutine, step into its documentation ::mfscuq
-      call mfscuq(im,im,km,kmscu,ntcw,ntrac1,dt2,
-     &    scuflg,zl,zm,q1,t1,u1,v1,plyr,pix,
-     &    thlx,thvx,thlvx,gdx,thetae,
-     &    krad,mrad,radmin,buod,wush,tkemean,vez0fun,xmfd,
-     &    tcdo,qcdo,ucdo,vcdo,xlamde,bl_dnfr)
+      call mfscuq(im,im,km,kmscu,ntcw,ntrac1,dt2, &
+      scuflg,zl,zm,q1,t1,u1,v1,plyr,pix, &
+      thlx,thvx,thlvx,gdx,thetae, &
+      krad,mrad,radmin,buod,wush,tkemean,vez0fun,xmfd, &
+      tcdo,qcdo,ucdo,vcdo,xlamde,bl_dnfr)
 
       if (tc_pbl == 1) then
 !>  - unify mass fluxes with Cu
@@ -1418,8 +1418,8 @@
             elm(i,k) = zk*rlam(i,k)/(rlam(i,k)+zk)
 !>  - If sfc_rlm=1, use zk for elm within surface layer
             if ( sfc_rlm == 1 ) then
-              if ( sfcflg(i) .and.
-     &             zl(i,k) < min(100.0,hpbl(i)*0.05) ) elm(i,k)=zk
+              if ( sfcflg(i) .and. &
+      zl(i,k) < min(100.0,hpbl(i)*0.05) ) elm(i,k)=zk
             endif
           else if (tc_pbl == 1) then
             ! new blending method for mixing length
@@ -1548,8 +1548,8 @@
           theta(i,k) = t1(i,k) * pix(i,k)
           tem=theta(i,k)/t1(i,k)
           if(ntiw > 0) then
-            tem1=max(q1(i,k,ntcw),qlmin)+
-     &         max(q1(i,k,ntiw)+q1(i,k,5)+q1(i,k,6),qlmin)
+            tem1=max(q1(i,k,ntcw),qlmin)+ &
+      max(q1(i,k,ntiw)+q1(i,k,5)+q1(i,k,6),qlmin)
             thetal(i,k)=theta(i,k)-(hvap+hfus)/cp*tem*tem1
           else
             tem1=max(q1(i,k,ntcw),qlmin)
@@ -1630,12 +1630,12 @@
 !
         do i = 1, im
 !            partition function for local fluxes
-          pfl(i)=cpl1*(pfdx(i)**2+cpl2*pfdx(i)**0.5-cpl3)/
-     &           (pfdx(i)**2+cpl4*pfdx(i)**0.5+cpl5)+cpl6
+          pfl(i)=cpl1*(pfdx(i)**2+cpl2*pfdx(i)**0.5-cpl3)/ &
+      (pfdx(i)**2+cpl4*pfdx(i)**0.5+cpl5)+cpl6
           pfl(i)=min(max(pfl(i),0.0),1.0)
 !            partition function for TKE
-          pftke(i)=(pfdx(i)**2+cptke1*pfdx(i)**(2./3.))/
-     &         (pfdx(i)**2+cptke2*pfdx(i)**(2./3.)+cptke3)
+          pftke(i)=(pfdx(i)**2+cptke1*pfdx(i)**(2./3.))/ &
+      (pfdx(i)**2+cptke2*pfdx(i)**(2./3.)+cptke3)
           pftke(i)=min(max(pftke(i),0.0),1.0)
         enddo
 !
@@ -1714,8 +1714,8 @@
             IF (k .EQ. 1) THEN !use model layer interfaces
               KCAN = 1
             ELSE
-              IF (   cfch(i) .GT. zi(i,k)
-     &         .AND. cfch(i) .LE. zi(i,k+1) ) THEN
+              IF (   cfch(i) .GT. zi(i,k) &
+      .AND. cfch(i) .LE. zi(i,k+1) ) THEN
                 KCAN = 1
               ELSE
                 KCAN = 0
@@ -1726,12 +1726,12 @@
 !           Check for other Contiguous Canopy Grid Cell Conditions
 
 !           Not a contiguous canopy cell
-            IF (   claie(i) .LT. 0.1
-     &        .OR. cfch (i) .LT. 0.5
-     &        .OR. MAX(0.0, 1.0 - cfrt(i)) .GT. 0.75
-     &        .OR. cpopu(i) .GT. 10000.0
-     &        .OR. (EXP(-0.5*claie(i)*cclu(i)) .GT. 0.45
-     &                          .AND. cfch(i)  .LT. 18.) ) THEN
+            IF (   claie(i) .LT. 0.1 &
+      .OR. cfch (i) .LT. 0.5 &
+      .OR. MAX(0.0, 1.0 - cfrt(i)) .GT. 0.75 &
+      .OR. cpopu(i) .GT. 10000.0 &
+      .OR. (EXP(-0.5*claie(i)*cclu(i)) .GT. 0.45 &
+      .AND. cfch(i)  .LT. 18.) ) THEN
 
             ELSE ! There is a contiguous forest canopy, apply correction over canopy layers
 
@@ -1754,18 +1754,18 @@
 
               DO WHILE (ZCAN.GE.BOTCAN)
                  ! TLCAN = Lagrangian timescale
-                 TLCAN = (FCH/ustar(i)) * (
-     &                   (0.256 * (ZCAN-(0.75*FCH))/FCH ) +
-     &                   (0.492*EXP((-0.256*ZCAN/FCH)/0.492)) )
+                 TLCAN = (FCH/ustar(i)) * ( &
+      (0.256 * (ZCAN-(0.75*FCH))/FCH ) + &
+      (0.492*EXP((-0.256*ZCAN/FCH)/0.492)) )
                  IF ( HOL .LT. -0.1 )  THEN  !STRONG UNSTABLE
                   IF ( ZCAN/FCH .GT. 1.25 ) THEN !SIGMACAN = Eulerian vertical velocity variance
                     SIGMACAN = 1.25*ustar(i)
                   END IF
-                  IF ( ZCAN/FCH .GE. 0.175
-     &               .AND. ZCAN/FCH .LE. 1.25 ) THEN
-                      SIGMACAN = ustar(i) * ( 0.75 +
-     &                         (0.5 * COS((PI/1.06818) *
-     &                         (1.25 - (ZCAN/FCH)))) )
+                  IF ( ZCAN/FCH .GE. 0.175 &
+      .AND. ZCAN/FCH .LE. 1.25 ) THEN
+                      SIGMACAN = ustar(i) * ( 0.75 + &
+      (0.5 * COS((PI/1.06818) * &
+      (1.25 - (ZCAN/FCH)))) )
                   END IF
                   IF ( ZCAN/FCH .LT. 0.175 )  THEN
                     SIGMACAN = 0.25*ustar(i)
@@ -1775,11 +1775,11 @@
                   IF ( ZCAN/FCH .GT. 1.25 ) THEN
                     SIGMACAN = 1.0*ustar(i)
                   END IF
-                  IF ( ZCAN/FCH .GE. 0.175
-     &               .AND. ZCAN/FCH .LE. 1.25 ) THEN
-                    SIGMACAN = ustar(i) * ( 0.625 +
-     &                       (0.375* COS((PI/1.06818) *
-     &                       (1.25 - (ZCAN/FCH)))) )
+                  IF ( ZCAN/FCH .GE. 0.175 &
+      .AND. ZCAN/FCH .LE. 1.25 ) THEN
+                    SIGMACAN = ustar(i) * ( 0.625 + &
+      (0.375* COS((PI/1.06818) * &
+      (1.25 - (ZCAN/FCH)))) )
                   END IF
                   IF ( ZCAN/FCH .LT. 0.175 )  THEN
                     SIGMACAN = 0.25*ustar(i)
@@ -1789,14 +1789,14 @@
                   IF ( ZCAN/FCH .GT. 1.25 ) THEN
                     SIGMACAN = 0.25*(4.375 - (3.75*HOL))*ustar(i)
                   END IF
-                  IF ( ZCAN/FCH .GE. 0.175
-     &                 .AND. ZCAN/FCH .LE. 1.25 ) THEN
+                  IF ( ZCAN/FCH .GE. 0.175 &
+      .AND. ZCAN/FCH .LE. 1.25 ) THEN
                     RRCAN=4.375-(3.75*HOL)
                     AACAN=(0.125*RRCAN) + 0.125
                     BBCAN=(0.125*RRCAN) - 0.125
-                    SIGMACAN = ustar(i) * ( AACAN +
-     &                             (BBCAN * COS((PI/1.06818) *
-     &                             (1.25 - (ZCAN/FCH)))) )
+                    SIGMACAN = ustar(i) * ( AACAN + &
+      (BBCAN * COS((PI/1.06818) * &
+      (1.25 - (ZCAN/FCH)))) )
                   END IF
                   IF ( ZCAN/FCH .LT. 0.175 )  THEN
                     SIGMACAN = 0.25*ustar(i)
@@ -1806,8 +1806,9 @@
                     SIGMACAN = 0.25*ustar(i)
                  END IF
 
-                 IF ( ZCAN .EQ. ZFL )  ! THEN ! Each model layer that includes canopy
-     &              EDDYVEST1 = (SIGMACAN*SIGMACAN)*TLCAN ! Model-layer top diffusivity
+                 IF ( ZCAN .EQ. ZFL ) THEN ! Each model layer that includes canopy
+                   EDDYVEST1 = (SIGMACAN*SIGMACAN)*TLCAN ! Model-layer top diffusivity
+                 END IF
 
 ! Average In-Canopy diffusivity gives larger canopy correction (2022)
 !                IF ( ZCAN .LE. FCH )  THEN          ! Average In-Canopy   diffusivity (2022) 
@@ -1829,17 +1830,17 @@
               IF (COUNTCAN .EQ. 1) THEN
                  ZZ_INT= ZCANX(COUNTCAN)  ! FCH (set to FCH if COUNTCAN is 1)
               ELSE
-                 ZZ_INT= IntegrateTrapezoid(
-     &                  ZCANX(COUNTCAN:1:-1), ZOOOX(COUNTCAN:1:-1))
+                 ZZ_INT= IntegrateTrapezoid( &
+      ZCANX(COUNTCAN:1:-1), ZOOOX(COUNTCAN:1:-1))
               END IF
  
               IF (COUNTCAN .EQ. 1) THEN
                  EDDYVEST_INT = EDDYVESTX(COUNTCAN)
               ELSE
 
-                 EDDYVEST_INT = IntegrateTrapezoid((ZCANX(COUNTCAN:1:-1)
-     &                                ),EDDYVESTX(COUNTCAN:1:-1)) / 
-     &                                  ZZ_INT
+                 EDDYVEST_INT = IntegrateTrapezoid((ZCANX(COUNTCAN:1:-1) &
+      ),EDDYVESTX(COUNTCAN:1:-1)) / &
+      ZZ_INT
               END IF
 
 ! Comment out to turn OFF the integrated canopy effect
@@ -2112,8 +2113,8 @@
              dz   = zl(i,k) - zl(i,k-1)
              tem  = 0.5 * xlamue(i,k-1) * dz
              factor = 1. + tem
-             qcko(i,k,ntke)=((1.-tem)*qcko(i,k-1,ntke)+tem*
-     &                (te(i,k)+te(i,k-1)))/factor
+             qcko(i,k,ntke)=((1.-tem)*qcko(i,k-1,ntke)+tem* &
+      (te(i,k)+te(i,k-1)))/factor
           endif
         enddo
       enddo
@@ -2124,8 +2125,8 @@
               dz = zl(i,k+1) - zl(i,k)
               tem  = 0.5 * xlamde(i,k) * dz
               factor = 1. + tem
-              qcdo(i,k,ntke)=((1.-tem)*qcdo(i,k+1,ntke)+tem*
-     &                 (te(i,k)+te(i,k+1)))/factor
+              qcdo(i,k,ntke)=((1.-tem)*qcdo(i,k+1,ntke)+tem* &
+      (te(i,k)+te(i,k+1)))/factor
             endif
           endif
         enddo
@@ -2152,11 +2153,11 @@
         enddo
         do i=1,im
           if(q1(i,1,n) >= 0.) then
-            q_diff(i,0,n) = max(0.,2.*q1(i,1,n)-q1(i,2,n))-
-     &                          q1(i,1,n)
+            q_diff(i,0,n) = max(0.,2.*q1(i,1,n)-q1(i,2,n))- &
+      q1(i,1,n)
           else
-            q_diff(i,0,n) = min(0.,2.*q1(i,1,n)-q1(i,2,n))-
-     &                          q1(i,1,n)
+            q_diff(i,0,n) = min(0.,2.*q1(i,1,n)-q1(i,2,n))- &
+      q1(i,1,n)
           endif
         enddo
       enddo
@@ -2172,24 +2173,24 @@
               if(pcnvflg(i) .and. k < kpbl(i)) then
                 tem = xmf(i,k)
               endif
-              if(scuflg(i) .and.
-     &            (k >= mrad(i) .and. k < krad(i))) then
+              if(scuflg(i) .and. &
+      (k >= mrad(i) .and. k < krad(i))) then
                 tem = tem - xmfd(i,k)
               endif
               if(tem > 0.) then
                 rrkp = 0.
-                if(abs(q_diff(i,k,n)) > 1.e-22)
-     &                 rrkp = q_diff(i,k+1,n) / q_diff(i,k,n)
+                if(abs(q_diff(i,k,n)) > 1.e-22) &
+      rrkp = q_diff(i,k+1,n) / q_diff(i,k,n)
                 phkp = (rrkp+abs(rrkp)) / (1.+abs(rrkp))
-                q_half(i,k,n) = q1(i,k+1,n) +
-     &                     phkp*(qh(i,k,n)-q1(i,k+1,n))
+                q_half(i,k,n) = q1(i,k+1,n) + &
+      phkp*(qh(i,k,n)-q1(i,k+1,n))
               elseif (tem < 0.) then
                 rrkp = 0.
-                if(abs(q_diff(i,k,n)) > 1.e-22)
-     &                 rrkp = q_diff(i,k-1,n) / q_diff(i,k,n)
+                if(abs(q_diff(i,k,n)) > 1.e-22) &
+      rrkp = q_diff(i,k-1,n) / q_diff(i,k,n)
                 phkp = (rrkp+abs(rrkp)) / (1.+abs(rrkp))
-                q_half(i,k,n) = q1(i,k,n) +
-     &                    phkp*(qh(i,k,n)-q1(i,k,n))
+                q_half(i,k,n) = q1(i,k,n) + &
+      phkp*(qh(i,k,n)-q1(i,k,n))
               endif
             endif
           enddo
@@ -2212,11 +2213,11 @@
       enddo
       do i=1,im
         if(te(i,1) >= 0.) then
-          e_diff(i,0) = max(0.,2.*te(i,1)-te(i,2))-
-     &                        te(i,1)
+          e_diff(i,0) = max(0.,2.*te(i,1)-te(i,2))- &
+      te(i,1)
         else
-          e_diff(i,0) = min(0.,2.*te(i,1)-te(i,2))-
-     &                          te(i,1)
+          e_diff(i,0) = min(0.,2.*te(i,1)-te(i,2))- &
+      te(i,1)
         endif
       enddo
 !
@@ -2229,24 +2230,24 @@
             if(pcnvflg(i) .and. k < kpbl(i)) then
               tem = xmf(i,k)
             endif
-            if(scuflg(i) .and.
-     &          (k >= mrad(i) .and. k < krad(i))) then
+            if(scuflg(i) .and. &
+      (k >= mrad(i) .and. k < krad(i))) then
               tem = tem - xmfd(i,k)
             endif
             if(tem > 0.) then
               rrkp = 0.
-              if(abs(e_diff(i,k)) > 1.e-22)
-     &               rrkp = e_diff(i,k+1) / e_diff(i,k)
+              if(abs(e_diff(i,k)) > 1.e-22) &
+      rrkp = e_diff(i,k+1) / e_diff(i,k)
               phkp = (rrkp+abs(rrkp)) / (1.+abs(rrkp))
-              e_half(i,k) = te(i,k+1) +
-     &                   phkp*(tei(i,k)-te(i,k+1))
+              e_half(i,k) = te(i,k+1) + &
+      phkp*(tei(i,k)-te(i,k+1))
             elseif (tem < 0.) then
               rrkp = 0.
-              if(abs(e_diff(i,k)) > 1.e-22)
-     &               rrkp = e_diff(i,k-1) / e_diff(i,k)
+              if(abs(e_diff(i,k)) > 1.e-22) &
+      rrkp = e_diff(i,k-1) / e_diff(i,k)
               phkp = (rrkp+abs(rrkp)) / (1.+abs(rrkp))
-              e_half(i,k) = te(i,k) +
-     &                  phkp*(tei(i,k)-te(i,k))
+              e_half(i,k) = te(i,k) + &
+      phkp*(tei(i,k)-te(i,k))
             endif
           endif
         enddo
@@ -2307,9 +2308,9 @@
 !
         enddo
       enddo
-c
+!
 !>  - Call tridit() to solve tridiagonal problem for TKE
-c
+!
       call tridit(im,km,1,al,ad,au,f1,au,f1)
 !
 ! Negative TKE or TTE are set to zero after borrowing it from positive
@@ -2332,8 +2333,8 @@ c
             kbx = mrad(i)
             kmx = krad(i)
           endif
-          if((pcnvflg(i) .or. scuflg(i)) .and.
-     &       (k >= kbx .and. k <= kmx)) then
+          if((pcnvflg(i) .or. scuflg(i)) .and. &
+      (k >= kbx .and. k <= kmx)) then
             tem = f1(i,k) * del(i,k) * gravi
             if(f1(i,k) < 0.) tsumn(i) = tsumn(i) + tem
             if(f1(i,k) > 0.) tsump(i) = tsump(i) + tem
@@ -2363,8 +2364,8 @@ c
             kbx = mrad(i)
             kmx = krad(i)
           endif
-          if((pcnvflg(i) .or. scuflg(i)) .and.
-     &       (k >= kbx .and. k <= kmx)) then
+          if((pcnvflg(i) .or. scuflg(i)) .and. &
+      (k >= kbx .and. k <= kmx)) then
             if(rtnp(i) < 0.) then
               if(tsump(i) > abs(tsumn(i))) then
                 if(f1(i,k) < 0.) f1(i,k) = 0.
@@ -2416,9 +2417,9 @@ c
           endif
         enddo
       enddo
-c
+!
 !>  - Recover the tendency of TKE or TTE
-c
+!
       do k = 1,km
          do i = 1,im
 !           f1(i,k) = max(f1(i,k), tkmin)
@@ -2430,12 +2431,12 @@ c
          idtend = dtidx(ntke+100,index_of_process_pbl)
          if(idtend>0) then
             dtend(1:im,1:km,idtend) = dtend(1:im,1:km,idtend) +         &
-     &        (f1(1:im,1:km)-q1(1:im,1:km,ntke))*rdt
+      (f1(1:im,1:km)-q1(1:im,1:km,ntke))*rdt
          endif
       endif
-c
+!
 !> ## Compute tridiagonal matrix elements for heat and moisture
-c
+!
       do i=1,im
          ad(i,1) = 1.
          f1(i,1) = t1(i,1)   + dtdz1(i) * heat(i)
@@ -2449,7 +2450,7 @@ c
           enddo
         enddo
       endif
-c
+!
       do k = 1,km1
         do i = 1,im
           dtodsd  = dt2/del(i,k)
@@ -2459,8 +2460,8 @@ c
           tem1    = dsig * dkt(i,k) * rdz
           dsdzt   = tem1 * gocp
           if (use_lpt > 0) then
-            dsdzt = dsdzt-tem1*elocp*(qliq(i,k+1)-qliq(i,k))*rdz
-     &        -(1+0.33/2.5)*tem1*elocp*(qice(i,k+1)-qice(i,k))*rdz
+            dsdzt = dsdzt-tem1*elocp*(qliq(i,k+1)-qliq(i,k))*rdz &
+      -(1+0.33/2.5)*tem1*elocp*(qice(i,k+1)-qice(i,k))*rdz
           endif
           dsdz2   = tem1 * rdz
           au(i,k) = -dtodsd*dsdz2
@@ -2558,9 +2559,9 @@ c
           enddo
         enddo
       endif
-c
+!
 !> - Call tridin() to solve tridiagonal problem for heat and moisture
-c
+!
       call tridin(im,km,ntrac1,al,ad,au,f1,f2,au,f1,f2)
 !
 ! Negative moisture is set to zero after borrowing it from
@@ -2583,8 +2584,8 @@ c
             kbx = mrad(i)
             kmx = krad(i)
           endif
-          if((pcnvflg(i) .or. scuflg(i)) .and.
-     &       (k >= kbx .and. k <= kmx)) then
+          if((pcnvflg(i) .or. scuflg(i)) .and. &
+      (k >= kbx .and. k <= kmx)) then
             tem = f2(i,k) * del(i,k) * gravi
             if(f2(i,k) < 0.) tsumn(i) = tsumn(i) + tem
             if(f2(i,k) > 0.) tsump(i) = tsump(i) + tem
@@ -2614,8 +2615,8 @@ c
             kbx = mrad(i)
             kmx = krad(i)
           endif
-          if((pcnvflg(i) .or. scuflg(i)) .and.
-     &       (k >= kbx .and. k <= kmx)) then
+          if((pcnvflg(i) .or. scuflg(i)) .and. &
+      (k >= kbx .and. k <= kmx)) then
             if(rtnp(i) < 0.) then
               if(tsump(i) > abs(tsumn(i))) then
                 if(f2(i,k) < 0.) f2(i,k) = 0.
@@ -2691,8 +2692,8 @@ c
               kbx = mrad(i)
               kmx = krad(i)
             endif
-            if((pcnvflg(i) .or. scuflg(i)) .and.
-     &         (k >= kbx .and. k <= kmx)) then
+            if((pcnvflg(i) .or. scuflg(i)) .and. &
+      (k >= kbx .and. k <= kmx)) then
               if(f2(i,k+is) < 0.) then
                 tem = f2(i,k) + f2(i,k+is)
                 if(tem >= 0.0) then
@@ -2728,8 +2729,8 @@ c
               kbx = mrad(i)
               kmx = krad(i)
             endif
-            if((pcnvflg(i) .or. scuflg(i)) .and.
-     &         (k >= kbx .and. k <= kmx)) then
+            if((pcnvflg(i) .or. scuflg(i)) .and. &
+      (k >= kbx .and. k <= kmx)) then
               if(f2(i,k+is) < 0.) then
                 tem = f2(i,k) + f2(i,k+is)
                 if(tem >= 0.0) then
@@ -2768,8 +2769,8 @@ c
                 kbx = mrad(i)
                 kmx = krad(i)
               endif
-              if((pcnvflg(i) .or. scuflg(i)) .and.
-     &           (k >= kbx .and. k <= kmx)) then
+              if((pcnvflg(i) .or. scuflg(i)) .and. &
+      (k >= kbx .and. k <= kmx)) then
                 tem = f2(i,k+is) * del(i,k) * gravi
                 if(f2(i,k+is) < 0.) tsumn(i) = tsumn(i) + tem
                 if(f2(i,k+is) > 0.) tsump(i) = tsump(i) + tem
@@ -2799,8 +2800,8 @@ c
                 kbx = mrad(i)
                 kmx = krad(i)
               endif
-              if((pcnvflg(i) .or. scuflg(i)) .and.
-     &           (k >= kbx .and. k <= kmx)) then
+              if((pcnvflg(i) .or. scuflg(i)) .and. &
+      (k >= kbx .and. k <= kmx)) then
                 if(rtnp(i) < 0.) then
                   if(tsump(i) > abs(tsumn(i))) then
                     if(f2(i,k+is)<0.) f2(i,k+is)=0.
@@ -2856,9 +2857,9 @@ c
 !
         enddo
       endif
-c
+!
 !> - Recover the tendencies of heat and moisture
-c
+!
       do  k = 1,km
          do i = 1,im
             ttend      = (f1(i,k)-t1(i,k))*rdt
@@ -2949,15 +2950,15 @@ c
           endif
         endif
       endif
-c
+!
 !> ## Compute tridiagonal matrix elements for momentum
-c
+!
       do i=1,im
          ad(i,1) = 1.0 + dtdz1(i) * stress(i) / spd1(i)
          f1(i,1) = u1(i,1)
          f2(i,1) = v1(i,1)
       enddo
-c
+!
       do k = 1,km1
         do i=1,im
           dtodsd  = dt2/del(i,k)
@@ -3007,13 +3008,13 @@ c
 !
         enddo
       enddo
-c
+!
 !> - Call tridi2() to solve tridiagonal problem for momentum
-c
+!
       call tridi2(im,km,al,ad,au,f1,f2,au,f1,f2)
-c
+!
 !> - Recover the tendencies of momentum
-c
+!
       do k = 1,km
          do i = 1,im
             utend = (f1(i,k)-u1(i,k))*rdt
