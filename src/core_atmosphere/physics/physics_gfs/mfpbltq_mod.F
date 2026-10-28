@@ -13,17 +13,17 @@
 !! thermals driven by surface heating. 
 !!\section mfpbltq_gen GFS mfpblt General Algorithm 
 !> @{
-      subroutine mfpbltq(im,ix,km,kmpbl,ntcw,ntrac1,delt,
-     &   cnvflg,zl,zm,q1,t1,u1,v1,plyr,pix,thlx,thvx,
-     &   gdx,hpbl,kpbl,vpert,buo,wush,tkemean,vez0fun,xmf,
-     &   tcko,qcko,ucko,vcko,xlamueq,a1)
+      subroutine mfpbltq(im,ix,km,kmpbl,ntcw,ntrac1,delt, &
+      &   cnvflg,zl,zm,q1,t1,u1,v1,plyr,pix,thlx,thvx, &
+      &   gdx,hpbl,kpbl,vpert,buo,wush,tkemean,vez0fun,xmf, &
+      &   tcko,qcko,ucko,vcko,xlamueq,a1)
 !
       use gfs_tke_edmf_machine , only : kind_phys
       use funcphys , only : fpvs
-      use physcons, grav => con_g, cp => con_cp
-     &,             rv => con_rv, hvap => con_hvap
-     &,             fv => con_fvirt
-     &,             eps => con_eps, epsm1 => con_epsm1
+      use physcons, grav => con_g, cp => con_cp &
+      &,             rv => con_rv, hvap => con_hvap &
+      &,             fv => con_fvirt &
+      &,             eps => con_eps, epsm1 => con_epsm1
 !
       implicit none
 !
@@ -32,45 +32,45 @@
       integer              kpbl(im)
       logical              cnvflg(im)
       real(kind=kind_phys) delt
-      real(kind=kind_phys) q1(ix,km,ntrac1),
-     &                     t1(ix,km),  u1(ix,km), v1(ix,km),
-     &                     plyr(im,km),pix(im,km),thlx(im,km),
-     &                     thvx(im,km),zl(im,km), zm(im,km),
-     &                     gdx(im),    hpbl(im),  vpert(im),
-     &                     buo(im,km), wush(im,km), 
-     &                     tkemean(im),vez0fun(im),xmf(im,km),
-     &                     tcko(im,km),qcko(im,km,ntrac1),
-     &                     ucko(im,km),vcko(im,km),
-     &                     xlamueq(im,km-1)
+      real(kind=kind_phys) q1(ix,km,ntrac1), &
+      &                     t1(ix,km),  u1(ix,km), v1(ix,km), &
+      &                     plyr(im,km),pix(im,km),thlx(im,km), &
+      &                     thvx(im,km),zl(im,km), zm(im,km), &
+      &                     gdx(im),    hpbl(im),  vpert(im), &
+      &                     buo(im,km), wush(im,km), &
+      &                     tkemean(im),vez0fun(im),xmf(im,km), &
+      &                     tcko(im,km),qcko(im,km,ntrac1), &
+      &                     ucko(im,km),vcko(im,km), &
+      &                     xlamueq(im,km-1)
 !
-c  local variables and arrays
+!  local variables and arrays
 !
       integer   i, j, k, n, ndc
       integer   kpblx(im), kpbly(im)
 !
-      real(kind=kind_phys) dt2,     dz,      ce0,
-     &                     cm,      cq,      tkcrt,
-     &                     factor,  gocp,    cmxfac,
-     &                     g,       b1,      f1,
-     &                     bb1,     bb2,
-     &                     alp,     vpertmax,a1,      pgcon,
-     &                     qmin,    qlmin,   xmmx,    rbint,
-     &                     tem,     tem1,    tem2,
-     &                     ptem,    ptem1,   ptem2
+      real(kind=kind_phys) dt2,     dz,      ce0, &
+      &                     cm,      cq,      tkcrt, &
+      &                     factor,  gocp,    cmxfac, &
+      &                     g,       b1,      f1, &
+      &                     bb1,     bb2, &
+      &                     alp,     vpertmax,a1,      pgcon, &
+      &                     qmin,    qlmin,   xmmx,    rbint, &
+      &                     tem,     tem1,    tem2, &
+      &                     ptem,    ptem1,   ptem2
 !
-      real(kind=kind_phys) elocp,   el2orc,  qs,      es,
-     &                     tlu,     gamma,   qlu,
-     &                     thup,    thvu,    dq
+      real(kind=kind_phys) elocp,   el2orc,  qs,      es, &
+      &                     tlu,     gamma,   qlu, &
+      &                     thup,    thvu,    dq
 !
-      real(kind=kind_phys) rbdn(im), rbup(im), hpblx(im),
-     &                     xlamue(im,km-1), xlamuem(im,km-1)
+      real(kind=kind_phys) rbdn(im), rbup(im), hpblx(im), &
+      &                     xlamue(im,km-1), xlamuem(im,km-1)
       real(kind=kind_phys) delz(im), xlamax(im), ce0t(im)
 !
-      real(kind=kind_phys) wu2(im,km), thlu(im,km),
-     &                     qtx(im,km), qtu(im,km)
+      real(kind=kind_phys) wu2(im,km), thlu(im,km), &
+      &                     qtx(im,km), qtu(im,km)
 !
-      real(kind=kind_phys) xlamavg(im),   sigma(im),
-     &                     scaldfunc(im), sumx(im)
+      real(kind=kind_phys) xlamavg(im),   sigma(im), &
+      &                     scaldfunc(im), sumx(im)
 !
       logical totflg, flg(im)
 !
@@ -168,13 +168,13 @@ c  local variables and arrays
             tem  = 0.5 * xlamue(i,k-1) * dz
             factor = 1. + tem
 !
-            thlu(i,k) = ((1.-tem)*thlu(i,k-1)+tem*
-     &                  (thlx(i,k-1)+thlx(i,k)))/factor
+            thlu(i,k) = ((1.-tem)*thlu(i,k-1)+tem* &
+      &                  (thlx(i,k-1)+thlx(i,k)))/factor
 !
             tem  = 0.5 * xlamueq(i,k-1) * dz
             factor = 1. + tem
-            qtu(i,k) = ((1.-tem)*qtu(i,k-1)+tem*
-     &                  (qtx(i,k-1)+qtx(i,k)))/factor
+            qtu(i,k) = ((1.-tem)*qtu(i,k-1)+tem* &
+      &                  (qtx(i,k-1)+qtx(i,k)))/factor
 !
             tlu = thlu(i,k) / pix(i,k)
             es = 0.01 * fpvs(tlu)      ! fpvs in pa
@@ -413,13 +413,13 @@ c  local variables and arrays
             tem  = 0.5 * xlamue(i,k-1) * dz
             factor = 1. + tem
 !
-            thlu(i,k) = ((1.-tem)*thlu(i,k-1)+tem*
-     &                  (thlx(i,k-1)+thlx(i,k)))/factor
+            thlu(i,k) = ((1.-tem)*thlu(i,k-1)+tem* &
+      &                  (thlx(i,k-1)+thlx(i,k)))/factor
 !
             tem  = 0.5 * xlamueq(i,k-1) * dz
             factor = 1. + tem
-            qtu(i,k) = ((1.-tem)*qtu(i,k-1)+tem*
-     &                  (qtx(i,k-1)+qtx(i,k)))/factor
+            qtu(i,k) = ((1.-tem)*qtu(i,k-1)+tem* &
+      &                  (qtx(i,k-1)+qtx(i,k)))/factor
 !
             tlu = thlu(i,k) / pix(i,k)
             es = 0.01 * fpvs(tlu)      ! fpvs in pa
@@ -451,10 +451,10 @@ c  local variables and arrays
              factor = 1. + tem
              ptem = tem + pgcon
              ptem1= tem - pgcon
-             ucko(i,k) = ((1.-tem)*ucko(i,k-1)+ptem*u1(i,k)
-     &                    +ptem1*u1(i,k-1))/factor
-             vcko(i,k) = ((1.-tem)*vcko(i,k-1)+ptem*v1(i,k)
-     &                    +ptem1*v1(i,k-1))/factor
+             ucko(i,k) = ((1.-tem)*ucko(i,k-1)+ptem*u1(i,k) &
+      &                    +ptem1*u1(i,k-1))/factor
+             vcko(i,k) = ((1.-tem)*vcko(i,k-1)+ptem*v1(i,k) &
+      &                    +ptem1*v1(i,k-1))/factor
           endif
         enddo
       enddo
@@ -469,8 +469,8 @@ c  local variables and arrays
              tem  = 0.5 * xlamueq(i,k-1) * dz
              factor = 1. + tem
 ! 
-             qcko(i,k,n) = ((1.-tem)*qcko(i,k-1,n)+tem*
-     &                    (q1(i,k,n)+q1(i,k-1,n)))/factor
+             qcko(i,k,n) = ((1.-tem)*qcko(i,k-1,n)+tem* &
+      &                    (q1(i,k,n)+q1(i,k-1,n)))/factor
           endif
         enddo
       enddo
@@ -490,8 +490,8 @@ c  local variables and arrays
              tem  = 0.5 * xlamueq(i,k-1) * dz
              factor = 1. + tem
 ! 
-             qcko(i,k,n) = ((1.-tem)*qcko(i,k-1,n)+tem*
-     &                    (q1(i,k,n)+q1(i,k-1,n)))/factor
+             qcko(i,k,n) = ((1.-tem)*qcko(i,k-1,n)+tem* &
+      &                    (q1(i,k,n)+q1(i,k-1,n)))/factor
           endif
         enddo
       enddo
