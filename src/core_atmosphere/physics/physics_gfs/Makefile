@@ -8,6 +8,7 @@ OBJS = \
 	canopy_utils_mod.o    \
 	satmedmfvdifq.o       \
 	progsigma_calc.o     \
+	progomega_calc.o     \
 	samfaerosols.o        \
 	samfdeepcnv.o         \
 	samfshalcnv.o
@@ -72,7 +73,8 @@ GFS_FREE_F_OBJECTS = samfdeepcnv.o samfshalcnv.o
 $(GFS_FREE_F_OBJECTS): GFS_SOURCE_FORM_FLAGS = -ffree-form -ffree-line-length-none
 
 clean:
-	$(RM) *.o *.mod *.f90 *.i libphys_gfs.a
+	$(RM) *.o *.mod *.i libphys_gfs.a
+	$(RM) -f gfs_tke_edmf_compat.f90 tridi_mod.f90 mfpbltq_mod.f90 mfscuq_mod.f90 canopy_utils_mod.f90 satmedmfvdifq.f90 samfaerosols.f90
 
 .F.o:
 	$(RM) $@ $*.mod
@@ -85,7 +87,7 @@ endif
 
 .f.o:
 	$(RM) $@ $*.mod
-	$(FC) $(FFLAGS) -ffixed-form -ffixed-line-length-none -c $< $(FCINCLUDES) -I. -I.. -I../physics_mmm -I../physics_wrf -I../../../framework -I../../../external/esmf_time_f90
+	$(FC) $(FFLAGS) $(GFS_SOURCE_FORM_FLAGS) -c $< $(FCINCLUDES) -I. -I.. -I../physics_mmm -I../physics_wrf -I../../../framework -I../../../external/esmf_time_f90
 
 .f90.o:
 	$(RM) $@ $*.mod
