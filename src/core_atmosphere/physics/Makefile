@@ -107,7 +107,7 @@ core_physics: core_microphysics core_mynnedmf core_mynnsfc core_RUCLSM core_GFL 
 	ar -ru libphys.a $(OBJS_init) $(OBJS)
 	($(MAKE) -C ./physics_mmm -f Makefile.mpas physics_mmm_lib)
 	($(MAKE) -C ./physics_wrf physics_wrf_lib)
-	($(MAKE) -C ./physics_gfs -f Makefile.mpas physics_gfs_lib)
+	($(MAKE) -C ./physics_gfs -f Makefile physics_gfs_lib)
 	($(MAKE) -C ./physics_noahmp/drivers/mpas driver_lib)
 	($(MAKE) -C ./physics_noahmp/src src_lib)
 	($(MAKE) -C ./physics_noahmp/utility utility_lib)
@@ -315,7 +315,7 @@ mpas_atmphys_update.o: \
 clean:
 	$(RM) *.o *.mod *.f90 libphys.a
 	( cd physics_wrf; $(MAKE) clean )
-	( if [ -d physics_gfs ]; then cd physics_gfs; $(MAKE) -f Makefile.mpas clean; fi; )
+	( if [ -d physics_gfs ]; then cd physics_gfs; $(MAKE) -f Makefile clean; fi; )
 	( if [ -d physics_mmm ]; then cd physics_mmm; $(MAKE) -f Makefile.mpas clean; fi; )
 	( cd physics_noahmp/drivers/mpas; $(MAKE) clean )
 	( cd physics_noahmp/src; $(MAKE) clean )
