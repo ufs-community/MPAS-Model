@@ -22,7 +22,7 @@
  use module_mp_kessler
  use module_mp_thompson
  use module_mp_tempo_cfgs,only: ty_tempo_cfgs
- use module_mp_tempo_driver,only: tempo_init,tempo_run,ty_tempo_driver_diags,tempo_aerosol_surface_emissions
+ use module_mp_tempo_driver,only: tempo_init,tempo_run,ty_tempo_driver_diags,tempo_aerosol_surface_emissions,tempo_diagnose_refl
  use module_mp_wsm6,only: wsm6
  use mp_wsm6,only: mp_wsm6_init,refl10cm_wsm6
  use module_mp_nssl_2mom
@@ -32,7 +32,8 @@
  public:: allocate_microphysics,   &
           deallocate_microphysics, &
           driver_microphysics,     &
-          init_microphysics
+          init_microphysics,       &
+          init_reflectivity_diagnostic
 
 
 !MPAS driver for parameterization of cloud microphysics processes.
@@ -1492,6 +1493,119 @@ end subroutine compute_accumulated_max_hail
  if(allocated(qvs1d)) deallocate(qvs1d)
 
  end subroutine compute_relhum
+
+!=================================================================================================================
+ subroutine init_reflectivity_diagnostic(configs,state,time_lev,diag_physics,diag,mesh)
+!=================================================================================================================
+!
+! Recompute refl10cm from the initial hydrometeor state before the first output.
+! TEMPO uses reflectivity_10cm, the same diagnostic tempo_run writes during integration.
+! Hydrometeor state is not modified.
+
+ type(mpas_pool_type),intent(in):: configs,state,mesh
+ integer,intent(in):: time_lev
+ type(mpas_pool_type),intent(inout):: diag_physics,diag
+
+ character(len=StrKIND),pointer:: microp_scheme
+ integer,pointer:: index_qv,index_qr,index_qs,index_qg,index_nr,index_ng,index_volg
+ integer,pointer:: nVertLevels
+ real(kind=RKIND),dimension(:,:),pointer:: theta_m,exner,pressure_p,pressure_base
+ real(kind=RKIND),dimension(:,:),pointer:: refl10cm
+ real(kind=RKIND),dimension(:),pointer:: refl10cm_max
+ real(kind=RKIND),dimension(:,:,:),pointer:: scalars
+
+ integer:: i,k
+ real(kind=RKIND),allocatable:: th3(:,:,:),pii3(:,:,:),p3(:,:,:)
+ real(kind=RKIND),allocatable:: qv3(:,:,:),qr3(:,:,:),nr3(:,:,:),qs3(:,:,:),qg3(:,:,:)
+ real(kind=RKIND),allocatable:: ng3(:,:,:),qb3(:,:,:),dbz3(:,:,:)
+
+ call mpas_pool_get_config(configs,'config_microp_scheme',microp_scheme)
+ call mpas_pool_get_dimension(mesh,'nVertLevels',nVertLevels)
+ if (trim(microp_scheme) /= 'mp_tempo') return
+
+ call mpas_log_write('TEMPO t=0 reflectivity diagnostic, nVertLevels=$i', intArgs=(/nVertLevels/))
+
+ call mpas_pool_get_dimension(state,'index_qv',index_qv)
+ call mpas_pool_get_dimension(state,'index_qr',index_qr)
+ call mpas_pool_get_dimension(state,'index_qs',index_qs)
+ call mpas_pool_get_dimension(state,'index_qg',index_qg)
+ call mpas_pool_get_dimension(state,'index_nr',index_nr)
+
+ call mpas_pool_get_array(state,'theta_m',theta_m,time_lev)
+ call mpas_pool_get_array(state,'scalars',scalars,time_lev)
+ call mpas_pool_get_array(diag,'exner',exner)
+ call mpas_pool_get_array(diag,'pressure_base',pressure_base)
+ call mpas_pool_get_array(diag,'pressure_p',pressure_p)
+ call mpas_pool_get_array(diag_physics,'refl10cm',refl10cm)
+ call mpas_pool_get_array(diag_physics,'refl10cm_max',refl10cm_max)
+
+ allocate(th3(its:ite,kts:kte,jts:jte))
+ allocate(pii3(its:ite,kts:kte,jts:jte))
+ allocate(p3(its:ite,kts:kte,jts:jte))
+ allocate(qv3(its:ite,kts:kte,jts:jte))
+ allocate(qr3(its:ite,kts:kte,jts:jte))
+ allocate(nr3(its:ite,kts:kte,jts:jte))
+ allocate(qs3(its:ite,kts:kte,jts:jte))
+ allocate(qg3(its:ite,kts:kte,jts:jte))
+ allocate(dbz3(its:ite,kts:kte,jts:jte))
+
+ do k = kts,kte
+ do i = its,ite
+    qv3(i,k,1) = scalars(index_qv,k,i)
+    qr3(i,k,1) = 0._RKIND
+    nr3(i,k,1) = 0._RKIND
+    qs3(i,k,1) = 0._RKIND
+    qg3(i,k,1) = 0._RKIND
+    if (index_qr > 0) qr3(i,k,1) = scalars(index_qr,k,i)
+    if (index_nr > 0) nr3(i,k,1) = scalars(index_nr,k,i)
+    if (index_qs > 0) qs3(i,k,1) = scalars(index_qs,k,i)
+    if (index_qg > 0) qg3(i,k,1) = scalars(index_qg,k,i)
+    th3(i,k,1) = theta_m(k,i) / (1._RKIND + R_v/R_d * max(0._RKIND,qv3(i,k,1)))
+    pii3(i,k,1) = exner(k,i)
+    p3(i,k,1) = pressure_base(k,i) + pressure_p(k,i)
+ enddo
+ enddo
+
+ if (tempo_cfgs%hailaware_flag) then
+    call mpas_pool_get_dimension(state,'index_ng',index_ng)
+    call mpas_pool_get_dimension(state,'index_volg',index_volg)
+    allocate(ng3(its:ite,kts:kte,jts:jte))
+    allocate(qb3(its:ite,kts:kte,jts:jte))
+    ng3 = 0._RKIND
+    qb3 = 0._RKIND
+    if (index_ng > 0) then
+       do k = kts,kte
+       do i = its,ite
+          ng3(i,k,1) = scalars(index_ng,k,i)
+       enddo
+       enddo
+    endif
+    if (index_volg > 0) then
+       do k = kts,kte
+       do i = its,ite
+          qb3(i,k,1) = scalars(index_volg,k,i)
+       enddo
+       enddo
+    endif
+    call tempo_diagnose_refl(tempo_cfgs, th3, pii3, p3, qv3, qr3, nr3, qs3, qg3, dbz3, &
+         ng=ng3, qb=qb3, its=its, ite=ite, jts=jts, jte=jte, kts=kts, kte=kte)
+ else
+    call tempo_diagnose_refl(tempo_cfgs, th3, pii3, p3, qv3, qr3, nr3, qs3, qg3, dbz3, &
+         its=its, ite=ite, jts=jts, jte=jte, kts=kts, kte=kte)
+ endif
+
+ do i = its,ite
+    do k = kts,kte
+       refl10cm(k,i) = dbz3(i,k,1)
+    enddo
+    if (associated(refl10cm_max)) refl10cm_max(i) = maxval(dbz3(i,kts:kte,1))
+ enddo
+
+ if (allocated(ng3)) deallocate(ng3)
+ if (allocated(qb3)) deallocate(qb3)
+ deallocate(th3,pii3,p3,qv3,qr3,nr3,qs3,qg3,dbz3)
+
+ end subroutine init_reflectivity_diagnostic
 
 !=================================================================================================================
  end module mpas_atmphys_driver_microphysics
