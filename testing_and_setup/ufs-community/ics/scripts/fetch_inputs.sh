@@ -56,6 +56,11 @@ fetch() {  # fetch asset names into $dl
   fi
 }
 
+if [ -e "$input_dir/INPUTS_TAG" ] && [ "$(cat "$input_dir/INPUTS_TAG")" != "$repo@$tag" ]; then
+    die "$input_dir contains inputs from another release; use a fresh input directory"
+fi
+echo "$repo@$tag" > "$input_dir/INPUTS_TAG"
+ 
 [ -s "$dl/MANIFEST.sha256" ] || fetch MANIFEST.sha256
 
 # "geog" also brings in extra datasets added later as geog-<dataset> bundles.

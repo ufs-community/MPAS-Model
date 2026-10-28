@@ -88,6 +88,7 @@ def main():
         with Dataset(init) as nc:
             for v in INIT_FIELDS:
                 if v not in nc.variables:
+                    failures.append(f"{os.path.basename(init)}: missing required init field {v}")
                     continue
                 x = np.asarray(nc.variables[v][:], dtype=np.float64)
                 bad = int((~np.isfinite(x)).sum())

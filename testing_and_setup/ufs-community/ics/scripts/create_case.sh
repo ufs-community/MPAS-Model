@@ -110,6 +110,7 @@ case_root="$output_dir/$case_dir"
 work=${work_root:-$case_root}
 final="$case_root/case_files"
 mkdir -p "$work" "$final"
+work="$(cd "$work" && pwd)"
 
 grid_file="$input_dir/grids/$mesh.grid.nc"
 graph_file="$input_dir/grids/$mesh.graph.info"
