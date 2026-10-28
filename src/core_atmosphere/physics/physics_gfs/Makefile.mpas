@@ -62,15 +62,30 @@ samfshalcnv.o: \
 	progomega_calc.o \
 	samfaerosols.o
 
-# GNU Make inherits -ffree-form from MPAS. Override for fixed-form sources.
-# tridi_mod.F, converted mfpbltq_mod.F, and satmedmfvdifq.F are free-form.
+# Select source-form options for the active compiler.  MPAS supplies
+# -free (Intel) or -ffree-form (GNU) in FFLAGS; these per-target flags
+# must appear afterwards to override the inherited default.
+# Avoid passing GNU-only flags to Intel classic ifort.
+ifneq (,$(findstring intel,$(BUILD_TARGET)))
+  GFS_FIXED_FLAGS = -fixed -extend-source 132
+  GFS_FREE_FLAGS  = -free
+else ifneq (,$(findstring ifort,$(notdir $(FC))))
+  GFS_FIXED_FLAGS = -fixed -extend-source 132
+  GFS_FREE_FLAGS  = -free
+else ifneq (,$(findstring mpiifort,$(notdir $(FC))))
+  GFS_FIXED_FLAGS = -fixed -extend-source 132
+  GFS_FREE_FLAGS  = -free
+else
+  GFS_FIXED_FLAGS = -ffixed-form -ffixed-line-length-none
+  GFS_FREE_FLAGS  = -ffree-form -ffree-line-length-none
+endif
+
 GFS_FIXED_OBJECTS = gfs_tke_edmf_compat.o mfscuq_mod.o \
                     canopy_utils_mod.o samfaerosols.o
-$(GFS_FIXED_OBJECTS): GFS_SOURCE_FORM_FLAGS = -ffixed-form -ffixed-line-length-none
+$(GFS_FIXED_OBJECTS): GFS_SOURCE_FORM_FLAGS = $(GFS_FIXED_FLAGS)
 
-# Converted legacy .f sources must override the inherited -ffree-form explicitly.
 GFS_FREE_F_OBJECTS = samfdeepcnv.o samfshalcnv.o
-$(GFS_FREE_F_OBJECTS): GFS_SOURCE_FORM_FLAGS = -ffree-form -ffree-line-length-none
+$(GFS_FREE_F_OBJECTS): GFS_SOURCE_FORM_FLAGS = $(GFS_FREE_FLAGS)
 
 clean:
 	$(RM) *.o *.mod *.i libphys_gfs.a
