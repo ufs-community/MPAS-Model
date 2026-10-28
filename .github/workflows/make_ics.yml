@@ -28,7 +28,7 @@ on: [push, pull_request, workflow_dispatch]
 
 env:
   INPUTS_REPO: ${{ github.repository }}
-  INPUTS_TAG: v8.4.2-1.20
+  INPUTS_TAG: MPAS-v8.4.2-1.20
   ICS_DIR: testing_and_setup/ufs-community/ics
   IMAGE: dustinswales/ufs-community-mpas-ci:gnu
 
