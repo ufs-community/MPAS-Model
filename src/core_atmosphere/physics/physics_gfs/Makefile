@@ -61,6 +61,12 @@ samfshalcnv.o: \
 	progomega_calc.o \
 	samfaerosols.o
 
+# GNU Make builds inherit -ffree-form from MPAS. Override it only for
+# legacy fixed-form GFS routines. The converted mfpbltq_mod.F stays free-form.
+GFS_FIXED_OBJECTS = gfs_tke_edmf_compat.o tridi_mod.o mfscuq_mod.o \
+                    canopy_utils_mod.o satmedmfvdifq.o samfaerosols.o
+$(GFS_FIXED_OBJECTS): GFS_SOURCE_FORM_FLAGS = -ffixed-form -ffixed-line-length-none
+
 clean:
 	$(RM) *.o *.mod *.f90 *.i libphys_gfs.a
 
@@ -68,9 +74,9 @@ clean:
 	$(RM) $@ $*.mod
 ifeq "$(GEN_F90)" "true"
 	$(CPP) $(CPPFLAGS) $(COREDEF) $(HYDROSTATIC) $(CPPINCLUDES) $< > $*.f90
-	$(FC) $(FFLAGS) -c $*.f90 $(FCINCLUDES) -I. -I.. -I../physics_mmm -I../physics_wrf -I../../../framework -I../../../external/esmf_time_f90
+	$(FC) $(FFLAGS) $(GFS_SOURCE_FORM_FLAGS) -c $*.f90 $(FCINCLUDES) -I. -I.. -I../physics_mmm -I../physics_wrf -I../../../framework -I../../../external/esmf_time_f90
 else
-	$(FC) $(CPPFLAGS) $(COREDEF) $(HYDROSTATIC) $(FFLAGS) -c $*.F $(CPPINCLUDES) $(FCINCLUDES) -I. -I.. -I../physics_mmm -I../physics_wrf -I../../../framework -I../../../external/esmf_time_f90
+	$(FC) $(CPPFLAGS) $(COREDEF) $(HYDROSTATIC) $(FFLAGS) $(GFS_SOURCE_FORM_FLAGS) -c $*.F $(CPPINCLUDES) $(FCINCLUDES) -I. -I.. -I../physics_mmm -I../physics_wrf -I../../../framework -I../../../external/esmf_time_f90
 endif
 
 .f.o:
