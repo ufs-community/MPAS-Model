@@ -4154,6 +4154,7 @@ module init_atm_cases
 
       real(kind=RKIND), dimension(:), pointer :: hs, hs1, sm0
       real(kind=RKIND) :: hm, hm_global, zh, dzmin, dzmina, dzminf, dzminf_global, sm
+      real(kind=RKIND) :: coordinate_smoothing_height
       real(kind=RKIND) :: dcsum
       integer :: nsmterrain, kz, sfc_k
       logical :: hybrid, smooth
@@ -4203,6 +4204,7 @@ module init_atm_cases
       real (kind=RKIND), pointer :: config_ztop
       logical, pointer :: config_hybrid_coordinate
       real (kind=RKIND), pointer :: config_hybrid_top_z
+      real (kind=RKIND), pointer :: config_coordinate_smoothing_height
       logical, pointer :: config_tc_vertical_grid
       character (len=StrKIND), pointer :: config_specified_zeta_levels
       logical, pointer :: config_use_spechumd
@@ -4307,6 +4309,7 @@ module init_atm_cases
       call mpas_pool_get_config(configs, 'config_ztop', config_ztop)
       call mpas_pool_get_config(configs, 'config_hybrid_coordinate', config_hybrid_coordinate)
       call mpas_pool_get_config(configs, 'config_hybrid_top_z', config_hybrid_top_z)
+      call mpas_pool_get_config(configs, 'config_coordinate_smoothing_height', config_coordinate_smoothing_height)
       call mpas_pool_get_config(configs, 'config_tc_vertical_grid', config_tc_vertical_grid)
       call mpas_pool_get_config(configs, 'config_specified_zeta_levels', config_specified_zeta_levels)
       call mpas_pool_get_config(configs, 'config_use_spechumd', config_use_spechumd)
@@ -4755,9 +4758,18 @@ module init_atm_cases
 
       if (smooth) then
 
+         if (config_coordinate_smoothing_height == 0.0_RKIND) then
+            coordinate_smoothing_height = zh
+         else if (config_coordinate_smoothing_height > 0.0_RKIND) then
+            coordinate_smoothing_height = config_coordinate_smoothing_height
+         else
+            call mpas_log_write('config_coordinate_smoothing_height must be zero or positive.', messageType=MPAS_LOG_CRIT)
+         end if
+
          call mpas_log_write(' ')
          call mpas_log_write(' surfaces will be smoothed, dzmin = $r ',realArgs=(/config_dzmin/))
          call mpas_log_write(' base number of smoothing passes = $i ',intArgs=(/config_nsm/))
+         call mpas_log_write(' coordinate smoothing height (m) = $r ',realArgs=(/coordinate_smoothing_height/))
          call mpas_log_write(' ')
          call mpas_log_write(' level, smoothing steps, smoothing factor, smallest fractional dz ')
 
@@ -4781,7 +4793,7 @@ module init_atm_cases
             do i=1,config_nsm + k
                do iCell=1,nCells
 
-                  sm = sm0(iCell) * min((3.0*zw(k)/zh)**2.0, 1.0_RKIND)
+                  sm = sm0(iCell) * min((3.0*zw(k)/coordinate_smoothing_height)**2.0, 1.0_RKIND)
 
                   hs1(iCell) = 0.
                   do j = 1,nEdgesOnCell(iCell)
