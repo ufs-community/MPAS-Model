@@ -4331,6 +4331,8 @@ module init_atm_cases
          extrap_airtemp = 1
       else if (trim(config_extrap_airtemp) == 'lapse-rate') then
          extrap_airtemp = 2
+      else if (trim(config_extrap_airtemp) == 'gfs') then
+         extrap_airtemp = 3
       else
           call mpas_log_write('*************************************************************', messageType=MPAS_LOG_ERR)
           call mpas_log_write('* Invalid value for namelist variable config_extrap_airtemp *', messageType=MPAS_LOG_ERR)
@@ -7224,8 +7226,8 @@ call mpas_log_write('Done with soil consistency check')
 
       call mpas_log_write('min lon $r max lon $r min lat $r max lat $r',realArgs=(/minval(lonPoints),maxval(lonPoints),minval(latPoints),maxval(latPoints)/))
       do iCell=1,nCells
-         lat = latPoints(i)*DEG_PER_RAD
-         lon = lonPoints(i)*DEG_PER_RAD
+         lat = latPoints(iCell)*DEG_PER_RAD
+         lon = lonPoints(iCell)*DEG_PER_RAD
          ! T
          sorted_arr(:,:) = -999.0
          do k = 1, nfglevels_actual
@@ -7958,6 +7960,8 @@ call mpas_log_write('Done with soil consistency check')
          extrap_airtemp = 1
       else if (trim(config_extrap_airtemp) == 'lapse-rate') then
          extrap_airtemp = 2
+      else if (trim(config_extrap_airtemp) == 'gfs') then
+         extrap_airtemp = 3
       else
           call mpas_log_write('*************************************************************', messageType=MPAS_LOG_ERR)
           call mpas_log_write('* Invalid value for namelist variable config_extrap_airtemp *', messageType=MPAS_LOG_ERR)
