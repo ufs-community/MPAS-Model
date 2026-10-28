@@ -117,7 +117,6 @@ list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_WRF_SOURCES PREPEND physics/physics_wrf/)
 # MPAS wrappers remain in physics/ and are compiled as free-form Fortran.
 set(ATMOSPHERE_CORE_PHYSICS_GFS_FIXED_SOURCES
     gfs_tke_edmf_compat.F
-    tridi_mod.F
     mfscuq_mod.F
     canopy_utils_mod.F
     satmedmfvdifq.F
@@ -127,6 +126,7 @@ set(ATMOSPHERE_CORE_PHYSICS_GFS_FIXED_SOURCES
 )
 
 set(ATMOSPHERE_CORE_PHYSICS_GFS_FREE_SOURCES
+    tridi_mod.F
     mfpbltq_mod.F
     progsigma_calc.f90
     progomega_calc.f90

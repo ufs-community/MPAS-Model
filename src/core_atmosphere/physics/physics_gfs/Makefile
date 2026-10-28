@@ -61,9 +61,9 @@ samfshalcnv.o: \
 	progomega_calc.o \
 	samfaerosols.o
 
-# GNU Make builds inherit -ffree-form from MPAS. Override it only for
-# legacy fixed-form GFS routines. The converted mfpbltq_mod.F stays free-form.
-GFS_FIXED_OBJECTS = gfs_tke_edmf_compat.o tridi_mod.o mfscuq_mod.o \
+# GNU Make inherits -ffree-form from MPAS. Override for fixed-form sources.
+# tridi_mod.F and converted mfpbltq_mod.F are free-form.
+GFS_FIXED_OBJECTS = gfs_tke_edmf_compat.o mfscuq_mod.o \
                     canopy_utils_mod.o satmedmfvdifq.o samfaerosols.o
 $(GFS_FIXED_OBJECTS): GFS_SOURCE_FORM_FLAGS = -ffixed-form -ffixed-line-length-none
 
@@ -81,7 +81,7 @@ endif
 
 .f.o:
 	$(RM) $@ $*.mod
-	$(FC) $(FFLAGS) -c $< $(FCINCLUDES) -I. -I.. -I../physics_mmm -I../physics_wrf -I../../../framework -I../../../external/esmf_time_f90
+	$(FC) $(FFLAGS) -ffixed-form -ffixed-line-length-none -c $< $(FCINCLUDES) -I. -I.. -I../physics_mmm -I../physics_wrf -I../../../framework -I../../../external/esmf_time_f90
 
 .f90.o:
 	$(RM) $@ $*.mod
