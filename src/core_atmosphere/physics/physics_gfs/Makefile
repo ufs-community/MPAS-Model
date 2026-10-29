@@ -84,6 +84,9 @@ else ifneq (,$(findstring intel,$(BUILD_TARGET)))
 else ifneq (,$(filter ifort ifx mpiifort mpiifx,$(GFS_COMPILER)))
   GFS_FIXED_FLAGS = -fixed -extend-source 132
   GFS_FREE_FLAGS  = -free
+else ifneq (,$(filter gfortran gnu,$(BUILD_TARGET)))
+  GFS_FIXED_FLAGS = -ffixed-form -ffixed-line-length-none
+  GFS_FREE_FLAGS  = -ffree-form -ffree-line-length-none
 else ifneq (,$(findstring gnu,$(BUILD_TARGET)))
   GFS_FIXED_FLAGS = -ffixed-form -ffixed-line-length-none
   GFS_FREE_FLAGS  = -ffree-form -ffree-line-length-none
