@@ -10,7 +10,7 @@ CONTAINS
 		 CP,dz8w,mavail,ROVCP,R,XLV,PSFC,CHS,CHS2,CQS2,CPM,     &
                      ZNT,UST,PSIM,PSIH,                                 &
 		 XLAND,HFX,QFX,LH,TSK,FLHC,FLQC,                    &
-                     QGH,QSFC,U10,V10,                                  &
+                     QGH,QSFC,U10,V10,T2_DIAG,TH2_DIAG,Q2_DIAG,          &
                      GZ1OZ0,WSPD,BR,ISFFLX,                             &
                      EP1,EP2,KARMAN,itimestep,                          &
                      ids,ide, jds,jde, kds,kde,                         &
@@ -103,6 +103,9 @@ CONTAINS
       REAL,    DIMENSION(ims:ime, jms:jme), INTENT(INOUT) ::            &
                                         UST,                            &
                                         ZNT
+
+      REAL, DIMENSION(ims:ime,jms:jme), INTENT(OUT) ::                  &
+                                        T2_DIAG, TH2_DIAG, Q2_DIAG
 
       REAL, DIMENSION(ims:ime, jms:jme), INTENT(OUT) ::                 &
                                         BR,                             &
@@ -246,6 +249,20 @@ CONTAINS
         esat = fpvs(t1(i))
         QGH(I,J)=ep2*esat/(1000.*ps(i)-esat)
         QSFC(I,J)=qss(i)
+        ! Reconstruct 2-m diagnostics using PROGTM's heat similarity
+        ! functions.  THGB and THX are potential temperatures referenced
+        ! to 100 kPa; FH2/FH is the 2-m interpolation weight.
+        ! Q1 was converted above from mixing ratio to specific humidity.
+        TH2_DIAG(i,j) = THGB(i) + (THX(i)-THGB(i)) * &
+                         max(0._kind_phys,min(1._kind_phys, &
+                         FH2(i)/max(FH(i),1.e-10_kind_phys)))
+        T2_DIAG(i,j) = TH2_DIAG(i,j) * &
+                        (PS(i)/100._kind_phys)**ROVCP
+        Q2_DIAG(i,j) = max(0._kind_phys, &
+                         QSS(i) + (Q1(i)-QSS(i)) * &
+                         max(0._kind_phys,min(1._kind_phys, &
+                         FH2(i)/max(FH(i),1.e-10_kind_phys))))
+
         ! jdong pass out FH/FM
         PSIH(i,j)=FH(i)
         PSIM(i,j)=FM(i)

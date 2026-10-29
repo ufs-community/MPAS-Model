@@ -1352,7 +1352,9 @@
                   xland    = xland_p, hfx   = hfx_p     , qfx            = qfx_p    , &
                   lh       = lh_p   , tsk   = tsk_p     , flhc           = flhc_p   , &
                   flqc     = flqc_p , qgh   = qgh_p     , qsfc           = qsfc_p   , &
-                  u10      = u10_p  , v10   = v10_p     , gz1oz0         = gz1oz0_p , &
+                  u10      = u10_p  , v10   = v10_p     , &
+                  t2_diag = t2m_p, th2_diag = th2m_p, q2_diag = q2_p, &
+                  gz1oz0         = gz1oz0_p , &
                   wspd     = wspd_p , br    = br_p      , isfflx         = isfflx   , &
                   ep1      = ep_1   , ep2   = ep_2      , karman         = karman   , &
                   itimestep= itimestep                                              , &     
@@ -1373,7 +1375,9 @@
                   xland    = xland_sea, hfx   = hfx_sea , qfx            = qfx_sea  , &
                   lh       = lh_sea   , tsk   = tsk_sea , flhc           = flhc_sea , &
                   flqc     = flqc_sea , qgh   = qgh_sea , qsfc           = qsfc_sea , &
-                  u10      = u10_sea  , v10   = v10_sea , gz1oz0         = gz1oz0_sea, &
+                  u10      = u10_sea  , v10   = v10_sea , &
+                  t2_diag = t2m_sea, th2_diag = th2m_sea, q2_diag = q2_sea, &
+                  gz1oz0         = gz1oz0_sea, &
                   wspd     = wspd_sea , br    = br_sea      , isfflx         = isfflx   , &
                   ep1      = ep_1   , ep2   = ep_2      , karman         = karman   , &
                   itimestep= itimestep                                              , &

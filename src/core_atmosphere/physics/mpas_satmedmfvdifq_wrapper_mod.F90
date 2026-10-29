@@ -104,6 +104,7 @@ contains
     real(kind=RKIND), parameter :: z0up = 1.0_RKIND
 
     real(kind=RKIND), allocatable :: rtg(:,:,:), q1(:,:,:)
+    real(kind=RKIND) :: rsum, inv_mass, qv_new, qc_new, qi_new, dryfrac
     real(kind=RKIND), allocatable :: u1(:,:), v1(:,:), t1(:,:)
     real(kind=RKIND), allocatable :: swh(:,:), hlw(:,:), xmu(:)
     real(kind=RKIND), allocatable :: garea(:), zvfun(:), sigmaf(:)
@@ -219,9 +220,14 @@ contains
         v1(i,k) = v_mpas(i,kk)
         t1(i,k) = t_mpas(i,kk)
 
-        q1(i,k,ntqv) = max(qv_mpas(i,kk), 1.0e-12_RKIND)
-        q1(i,k,ntcw) = max(qc_mpas(i,kk), 0.0_RKIND)
-        q1(i,k,ntiw) = max(qi_mpas(i,kk), 0.0_RKIND)
+        ! MPAS dry-air mixing ratios -> GFS moist-air mass fractions.
+        ! NOTE: add rain/snow/graupel to rsum when those inputs are exposed.
+        rsum = max(qv_mpas(i,kk),0._RKIND) + &
+               max(qc_mpas(i,kk),0._RKIND) + max(qi_mpas(i,kk),0._RKIND)
+        inv_mass = 1._RKIND / (1._RKIND + rsum)
+        q1(i,k,ntqv) = max(qv_mpas(i,kk),1.e-12_RKIND)*inv_mass
+        q1(i,k,ntcw) = max(qc_mpas(i,kk),0._RKIND)*inv_mass
+        q1(i,k,ntiw) = max(qi_mpas(i,kk),0._RKIND)*inv_mass
         q1(i,k,ntke) = max(tke_mpas(i,kk), 1.0e-9_RKIND)
 
         prsl(i,k)  = p_mid(i,kk)
@@ -285,13 +291,13 @@ contains
       ! surface sensible/latent heat fluxes to the kinematic fluxes
       ! expected by GFS TKE-EDMF.
       !
-      ! q1(:,:,ntqv) is the MPAS water-vapor mixing ratio [kg/kg].
+      ! q1(:,:,ntqv) is now a GFS moist-air mass fraction [kg/kg].
       ! For mixing ratio r_v:
       !   T_v = T * (1 + (R_v/R_d - 1) * r_v)
       !       = T * (1 + fv * r_v)
       ! and
       !   rho = p / (R_d * T_v)
-      tem1 = 1.0_RKIND + fv * q1(i,kk,ntqv)
+      tem1 = (1._RKIND + fv*q1(i,kk,ntqv))
       rho1 = prsl(i,kk) / (rd * t1(i,kk) * tem1)
 
       tsea(i) = skin_temp(i)
@@ -379,9 +385,19 @@ contains
         ten_u_out(i,kk) = du(i,k)
         ten_v_out(i,kk) = dv(i,k)
 
-        ten_qv_out(i,kk) = rtg(i,k,ntqv)
-        ten_qc_out(i,kk) = rtg(i,k,ntcw)
-        ten_qi_out(i,kk) = rtg(i,k,ntiw)
+        ! Advance GFS mass fractions, then recover MPAS dry mixing ratios.
+        qv_new = q1(i,k,ntqv) + dt*rtg(i,k,ntqv)
+        qc_new = q1(i,k,ntcw) + dt*rtg(i,k,ntcw)
+        qi_new = q1(i,k,ntiw) + dt*rtg(i,k,ntiw)
+        dryfrac = 1._RKIND - (qv_new + qc_new + qi_new)
+        if (.not.ieee_is_finite(dryfrac) .or. dryfrac <= 0._RKIND) then
+          errflg = 1
+          errmsg = 'Invalid dry-air fraction after GFS PBL moisture update'
+          return
+        endif
+        ten_qv_out(i,kk) = (qv_new/dryfrac - qv_mpas(i,kk))/dt
+        ten_qc_out(i,kk) = (qc_new/dryfrac - qc_mpas(i,kk))/dt
+        ten_qi_out(i,kk) = (qi_new/dryfrac - qi_mpas(i,kk))/dt
 
         ! satmedmfvdifq treats q1(:,:,ntke) as the INPUT prognostic TKE.
         ! The updated TKE is returned as a tendency in rtg(:,:,ntke):

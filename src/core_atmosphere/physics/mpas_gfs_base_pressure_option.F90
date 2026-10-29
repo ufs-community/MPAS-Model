@@ -7,6 +7,7 @@ contains
  logical function gfs_fixed_base_mode()
    character(len=32) :: value
    integer :: status
+   !$omp critical(gfs_pressure_mode_init)
    if (.not.initialized) then
      call get_environment_variable('MPAS_GFS_PRESSURE_MODE',value,status=status)
      if (status==0) then
@@ -20,5 +21,6 @@ contains
      initialized=.true.
    endif
    gfs_fixed_base_mode=fixed
+   !$omp end critical(gfs_pressure_mode_init)
  end function
 end module

@@ -104,6 +104,7 @@ contains
       real(kind=RKIND) :: raw_t
       real(kind=RKIND) :: dtemp_sas, rth_test, dtdt_test
       real(kind=RKIND) :: rqv_raw, rqc_raw, rqi_raw, ru_raw, rv_raw
+      real(kind=RKIND) :: rsum, inv_mass, qv_new, qc_new, qi_new, dryfrac
 
       real(kind=RKIND) :: psp(im), delp(im,km), prslp(im,km), phil(im,km)
       real(kind=RKIND) :: dot(im,km)
@@ -391,8 +392,13 @@ contains
 
          dot(i,k) = -rho * gravity * w(i,kk)
 
-         qlc(i,k) = max(0._RKIND, qc(i,kk))
-         qli(i,k) = max(0._RKIND, qi(i,kk))
+         ! MPAS dry-air mixing ratios -> GFS moist-air mass fractions.
+         ! NOTE: include other hydrometeors in rsum when available.
+         rsum = max(qv(i,kk),0._RKIND) + max(qc(i,kk),0._RKIND) &
+              + max(qi(i,kk),0._RKIND)
+         inv_mass = 1._RKIND/(1._RKIND + rsum)
+         qlc(i,k) = max(0._RKIND, qc(i,kk))*inv_mass
+         qli(i,k) = max(0._RKIND, qi(i,kk))*inv_mass
          qlc_old(i,k) = qlc(i,k)
          qli_old(i,k) = qli(i,k)
          qtr(i,k,1) = qli(i,k)
@@ -400,7 +406,7 @@ contains
          qtr_sh(i,k,1) = qtr(i,k,1)
          qtr_sh(i,k,2) = qtr(i,k,2)
 
-         q1(i,k) = max(qmin, qv(i,kk))
+         q1(i,k) = max(qmin, qv(i,kk)*inv_mass)
          u1(i,k) = u(i,kk)
          v1(i,k) = v(i,kk)
 
@@ -533,9 +539,19 @@ contains
 
 
             rthcuten(i,kk) = rth_test
-            rqvcuten(i,kk) = rqv_raw
-            rqccuten(i,kk) = rqc_raw
-            rqicuten(i,kk) = rqi_raw
+            ! Deep + shallow increments are on GFS moist-air basis.
+            qv_new = q1_old(i,k) + dt*rqv_raw
+            qc_new = qlc_old(i,k) + dt*rqc_raw
+            qi_new = qli_old(i,k) + dt*rqi_raw
+            dryfrac = 1._RKIND - (qv_new + qc_new + qi_new)
+            if (dryfrac /= dryfrac .or. dryfrac <= 0._RKIND) then
+               ierr = 99
+               errmsg = 'Invalid dry-air fraction after GFS convection'
+               return
+            endif
+            rqvcuten(i,kk) = (qv_new/dryfrac - qv(i,kk))/dt
+            rqccuten(i,kk) = (qc_new/dryfrac - qc(i,kk))/dt
+            rqicuten(i,kk) = (qi_new/dryfrac - qi(i,kk))/dt
             rucuten(i,kk)  = ru_raw
             rvcuten(i,kk)  = rv_raw
          endif
@@ -557,7 +573,7 @@ contains
             kbot(i) = 0
             ktop(i) = 0
          else
-            raincv(i) = raincv(i) + 1000._RKIND * (rn_deep(i) + rn_shal(i))
+            raincv(i) = 1000._RKIND * (rn_deep(i) + rn_shal(i))
             pratec(i) = 1000._RKIND * (rn_deep(i) + rn_shal(i)) / dt
          endif
 

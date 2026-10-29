@@ -62,22 +62,36 @@ samfshalcnv.o: \
 	progomega_calc.o \
 	samfaerosols.o
 
-# Select source-form options for the active compiler.  MPAS supplies
-# -free (Intel) or -ffree-form (GNU) in FFLAGS; these per-target flags
-# must appear afterwards to override the inherited default.
-# Avoid passing GNU-only flags to Intel classic ifort.
-ifneq (,$(findstring intel,$(BUILD_TARGET)))
+# Select source-form flags for supported compiler families.
+# Keep these flags after FFLAGS so they override the global source form.
+# BUILD_TARGET identifies the toolchain even when FC is an MPI wrapper.
+GFS_COMPILER = $(notdir $(firstword $(FC)))
+ifneq (,$(filter nvhpc pgi,$(BUILD_TARGET)))
+  GFS_FIXED_FLAGS = -Mfixed -Mextend
+  GFS_FREE_FLAGS  = -Mfree
+else ifneq (,$(findstring nvhpc,$(BUILD_TARGET)))
+  GFS_FIXED_FLAGS = -Mfixed -Mextend
+  GFS_FREE_FLAGS  = -Mfree
+else ifneq (,$(findstring pgi,$(BUILD_TARGET)))
+  GFS_FIXED_FLAGS = -Mfixed -Mextend
+  GFS_FREE_FLAGS  = -Mfree
+else ifneq (,$(filter nvfortran pgf90 mpipgf90,$(GFS_COMPILER)))
+  GFS_FIXED_FLAGS = -Mfixed -Mextend
+  GFS_FREE_FLAGS  = -Mfree
+else ifneq (,$(findstring intel,$(BUILD_TARGET)))
   GFS_FIXED_FLAGS = -fixed -extend-source 132
   GFS_FREE_FLAGS  = -free
-else ifneq (,$(findstring ifort,$(notdir $(FC))))
+else ifneq (,$(filter ifort ifx mpiifort mpiifx,$(GFS_COMPILER)))
   GFS_FIXED_FLAGS = -fixed -extend-source 132
   GFS_FREE_FLAGS  = -free
-else ifneq (,$(findstring mpiifort,$(notdir $(FC))))
-  GFS_FIXED_FLAGS = -fixed -extend-source 132
-  GFS_FREE_FLAGS  = -free
-else
+else ifneq (,$(findstring gnu,$(BUILD_TARGET)))
   GFS_FIXED_FLAGS = -ffixed-form -ffixed-line-length-none
   GFS_FREE_FLAGS  = -ffree-form -ffree-line-length-none
+else ifneq (,$(filter gfortran mpif90-gfortran,$(GFS_COMPILER)))
+  GFS_FIXED_FLAGS = -ffixed-form -ffixed-line-length-none
+  GFS_FREE_FLAGS  = -ffree-form -ffree-line-length-none
+else
+  $(error Unsupported GFS Fortran compiler: BUILD_TARGET=$(BUILD_TARGET) FC=$(FC))
 endif
 
 GFS_FIXED_OBJECTS = gfs_tke_edmf_compat.o mfscuq_mod.o \

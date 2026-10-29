@@ -27,23 +27,40 @@
 
       module funcphys
       use gfs_tke_edmf_machine, only: kind_phys
+      use physcons, only: con_rv, con_hvap, con_hfus
       implicit none
-
+      private
+      public :: fpvs
+!     GFS mixed-phase formula from module_gfs_funcphys.F fpvsx.
+!     GFS physical constants; keep in sync with source physcons.
+      real(kind=kind_phys), parameter :: ttp=273.16_kind_phys
+      real(kind=kind_phys), parameter :: psat=610.78_kind_phys
+      real(kind=kind_phys), parameter :: cvap=1846._kind_phys
+      real(kind=kind_phys), parameter :: cliq=4185.5_kind_phys
+      real(kind=kind_phys), parameter :: csol=2106._kind_phys
       contains
-
       real(kind=kind_phys) function fpvs(t)
       real(kind=kind_phys), intent(in) :: t
-      real(kind=kind_phys) :: tc
-      real(kind=kind_phys) :: a1
-      real(kind=kind_phys) :: a2
-      real(kind=kind_phys) :: a3
-
-      tc = t - 273.15_kind_phys
-      a1 = 611.2_kind_phys
-      a2 = 17.67_kind_phys * tc
-      a3 = tc + 243.5_kind_phys
-      fpvs = a1 * exp(a2 / a3)
-
+      real(kind=kind_phys), parameter :: tice=ttp-20._kind_phys
+      real(kind=kind_phys), parameter :: dldtl=cvap-cliq
+      real(kind=kind_phys), parameter :: dldti=cvap-csol
+      real(kind=kind_phys), parameter :: xponal=-dldtl/con_rv
+      real(kind=kind_phys), parameter :: xponbl=xponal+
+     &                         con_hvap/(con_rv*ttp)
+      real(kind=kind_phys), parameter :: xponai=-dldti/con_rv
+      real(kind=kind_phys), parameter :: xponbi=xponai+
+     &                   (con_hvap+con_hfus)/(con_rv*ttp)
+      real(kind=kind_phys) :: tr,w,pvl,pvi
+      tr=ttp/t
+      if (t.ge.ttp) then
+         fpvs=psat*(tr**xponal)*exp(xponbl*(1._kind_phys-tr))
+      else if (t.lt.tice) then
+         fpvs=psat*(tr**xponai)*exp(xponbi*(1._kind_phys-tr))
+      else
+         w=(t-tice)/(ttp-tice)
+         pvl=psat*(tr**xponal)*exp(xponbl*(1._kind_phys-tr))
+         pvi=psat*(tr**xponai)*exp(xponbi*(1._kind_phys-tr))
+         fpvs=w*pvl+(1._kind_phys-w)*pvi
+      endif
       end function fpvs
-
       end module funcphys

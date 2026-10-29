@@ -632,7 +632,7 @@ integer, dimension(:,:), pointer :: cellsOnCell_gfs
 
 !local pointers:
  logical,pointer:: config_do_restart
- integer,pointer:: gfconv_closure_deep,gfconv_closure_shallow,config_gfl_sub3d
+ integer,pointer:: gfconv_closure_deep,gfconv_closure_shallow,config_gfl_sub3d,nCellsSolve
  character(len=StrKIND),pointer:: convection_scheme
  character(len=StrKIND),pointer:: pbl_scheme
  real(kind=RKIND),pointer:: len_disp
@@ -657,6 +657,7 @@ integer, dimension(:,:), pointer :: cellsOnCell_gfs
  errmsg = ' '
  errflg = 0
 
+ call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
  call mpas_pool_get_config(configs,'config_gfconv_closure_deep',gfconv_closure_deep)
  call mpas_pool_get_config(configs,'config_gfl_sub3d',config_gfl_sub3d)
  sub3d=0
@@ -843,11 +844,11 @@ integer, dimension(:,:), pointer :: cellsOnCell_gfs
             pres_int_gfs_sas(:,:) = pres_base_int_gfs_p(its:ite,kts:kte+1,j)
          else
          call repair_gfs_pressure_columns(                         &
-     &      pres_hyd_p(its:ite,kts:kte,j),                           &
-     &      pres2_hyd_p(its:ite,kts:kte+1,j),                        &
+     &      pres_hyd_p(1:nCellsSolve,kts:kte,j),                     &
+     &      pres2_hyd_p(1:nCellsSolve,kts:kte+1,j),                        &
      &      pres_mid_gfs_sas, pres_int_gfs_sas,                     &
      &      nEdgesOnCell_gfs, cellsOnCell_gfs,                       &
-     &      its, ite, kts, kte)
+     &      its, ite, kts, kte, 1, nCellsSolve)
 
          endif
 

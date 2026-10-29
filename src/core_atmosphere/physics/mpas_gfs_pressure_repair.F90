@@ -10,12 +10,12 @@ contains
  subroutine repair_gfs_pressure_columns(p_mid_native,p_int_native,       &
                                         p_mid_gfs,p_int_gfs,             &
                                         nEdgesOnCell,cellsOnCell,        &
-                                        its,ite,kts,kte)
-   integer,intent(in) :: its,ite,kts,kte
+                                        its,ite,kts,kte,owned_start,owned_end)
+   integer,intent(in) :: its,ite,kts,kte,owned_start,owned_end
    integer,intent(in) :: nEdgesOnCell(:)
    integer,intent(in) :: cellsOnCell(:,:)
-   real(kind=RKIND),intent(in)  :: p_mid_native(its:ite,kts:kte)
-   real(kind=RKIND),intent(in)  :: p_int_native(its:ite,kts:kte+1)
+   real(kind=RKIND),intent(in)  :: p_mid_native(owned_start:owned_end,kts:kte)
+   real(kind=RKIND),intent(in)  :: p_int_native(owned_start:owned_end,kts:kte+1)
    real(kind=RKIND),intent(out) :: p_mid_gfs(its:ite,kts:kte)
    real(kind=RKIND),intent(out) :: p_int_gfs(its:ite,kts:kte+1)
 
@@ -24,14 +24,14 @@ contains
    real(kind=RKIND) :: min_dp_press,p_lower,p_upper
 
    min_dp_press=1.0_RKIND
-   allocate(press_valid(its:ite))
+   allocate(press_valid(owned_start:owned_end))
 
-   p_mid_gfs(:,:) = p_mid_native(:,:)
-   p_int_gfs(:,:) = p_int_native(:,:)
+   p_mid_gfs(:,:) = p_mid_native(its:ite,kts:kte)
+   p_int_gfs(:,:) = p_int_native(its:ite,kts:kte+1)
    press_valid(:)=.true.
 
-   ! Same validity test used by the previous common-interface repair.
-   do i=its,ite
+   ! Validate all eligible owned donor columns.
+   do i=owned_start,owned_end
       do k=kts,kte
          if (.not.ieee_is_finite(p_mid_native(i,k)) .or. &
              .not.ieee_is_finite(p_int_native(i,k)) .or. &
@@ -60,7 +60,7 @@ contains
       ! Preserve previous behavior: use only valid owned neighbors.
       do n=1,nEdgesOnCell(i)
          nbr=cellsOnCell(n,i)
-         if (nbr < its .or. nbr > ite) cycle
+         if (nbr < owned_start .or. nbr > owned_end) cycle
          if (.not.press_valid(nbr)) cycle
          ngood=ngood+1
          p_mid_gfs(i,kts:kte)=p_mid_gfs(i,kts:kte)+p_mid_native(nbr,kts:kte)

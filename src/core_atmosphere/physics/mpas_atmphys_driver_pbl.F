@@ -557,12 +557,12 @@
 
 !local pointers for tke_edmf
 ! Prognostic TKE index is obtained from the Registry-generated state dimension
-! index_tke.  Never hard-code a scalar slot here: scalar ordering changes when
+! index_tke_gfs.  Never hard-code a scalar slot here: scalar ordering changes when
 ! hydrometeors/packages are added or reordered.
 
 !local pointers for chemistry
  integer,pointer                           :: chemistry_start,chemistry_end
- integer,pointer                           :: index_tke
+ integer,pointer                           :: index_tke_gfs
  real(kind=RKIND),dimension(:,:,:),pointer :: scalars
  real(kind=RKIND),dimension(:,:,:),pointer :: tend_chem_settle
  real(kind=RKIND),dimension(:,:  ),pointer :: ddvel
@@ -750,12 +750,12 @@
 ! Prognostic TKE for GFS TKE-EDMF
 !
 ! In the Registry, tke is a member of var_array scalars:
-!   qv, qc, qr, qi, tke, ...
+!   qv, qc, qr, qi, tke_gfs, ...
 ! Therefore it cannot be retrieved with mpas_pool_get_array(scalars,'tke',...).
-! Get the parent state scalar array and use scalar index 5 for tke.
+! Get the parent state scalar array and use index_tke_gfs.
 ! ------------------------------------------------------------------
        call mpas_pool_get_array(state,'scalars',scalars,1)
-       call mpas_pool_get_dimension(state,'index_tke',index_tke)
+       call mpas_pool_get_dimension(state,'index_tke_gfs',index_tke_gfs)
 
        do j = jts,jte
        do i = its,ite
@@ -776,9 +776,9 @@
 ! diagnostic is not allocated before the TKE-EDMF call, and reading
 ! tke_pbl(k,i) causes the SIGSEGV seen near this block.  The wrapper
 ! advances TKE using rtg(:,:,ntke), updates tkepbl_p, and pbl_to_MPAS
-! writes that advanced prognostic state back to scalars(index_tke).
+! writes that advanced prognostic state back to scalars(index_tke_gfs).
 !         tkepbl_p(i,k,j)   = 0.0_RKIND
-          tkepbl_p(i,k,j)   = max(1.0e-9_RKIND, scalars(index_tke,k,i))
+          tkepbl_p(i,k,j)   = max(1.0e-9_RKIND, scalars(index_tke_gfs,k,i))
        enddo
        enddo
        enddo
@@ -1101,7 +1101,7 @@
 
 !local pointers for tke_edmf
 ! Prognostic TKE index is obtained from the Registry-generated state dimension
-! index_tke.  Never hard-code a scalar slot here.
+! index_tke_gfs.  Never hard-code a scalar slot here.
 
 !local pointers for chemistry
  real(kind=RKIND),dimension(:,:,:),pointer:: scalars
@@ -1109,7 +1109,7 @@
  real(kind=RKIND),dimension(:,:,:),pointer:: tend_chem_settle
  real(kind=RKIND),dimension(:,:),pointer  :: ddvel
  integer,pointer :: chemistry_start,chemistry_end
- integer,pointer :: index_tke
+ integer,pointer :: index_tke_gfs
 
 !local pointers for MYJ scheme:
  real(kind=RKIND),dimension(:),pointer   :: thz0,qz0,uz0,vz0,akhs,akms,ct,mixht,qsfc,ust,znt
@@ -1186,17 +1186,17 @@ endif
     case("bl_tke_edmf")
 ! ------------------------------------------------------------------
 ! Copy updated prognostic TKE back to the Registry-defined TKE scalar.
-! Do not hard-code the scalar slot: in the current configuration index_tke
+! Do not hard-code the scalar slot: in the current configuration index_tke_gfs
 ! is outside moist_start:moist_end, while scalar slot 5 is a moist species.
 ! This path is only active for bl_tke_edmf; other PBL schemes are unchanged.
 ! ------------------------------------------------------------------
        call mpas_pool_get_array(state,'scalars',scalars,1)
-       call mpas_pool_get_dimension(state,'index_tke',index_tke)
+       call mpas_pool_get_dimension(state,'index_tke_gfs',index_tke_gfs)
 
        do j = jts,jte
        do k = kts,kte
        do i = its,ite
-          scalars(index_tke,k,i) = max(1.0e-9_RKIND, tkepbl_p(i,k,j))
+          scalars(index_tke_gfs,k,i) = max(1.0e-9_RKIND, tkepbl_p(i,k,j))
        enddo
        enddo
        enddo
@@ -1532,6 +1532,7 @@ endif
  type(mpas_pool_type),intent(inout):: state
 
  integer,intent(in):: its,ite
+ integer,pointer:: nCellsSolve
  integer,intent(in):: itimestep
 
 !inout arguments:
@@ -1604,6 +1605,7 @@ endif
 
  mix_chem  = .false.
 
+ call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
  call mpas_pool_get_config(configs,'config_do_DAcycling',config_do_DAcycling)
  call mpas_pool_get_config(configs,'config_do_restart'  ,config_do_restart  )
  call mpas_pool_get_config(configs,'config_pbl_scheme'  ,pbl_scheme         )
@@ -1722,11 +1724,11 @@ endif
           p_int_tkeedmf(:,:) = pres_base_int_gfs_p(its:ite,kts:kte+1,jts)
        else
        call repair_gfs_pressure_columns(                           &
-     &      pres_hyd_p(its:ite,kts:kte,jts),                         &
-     &      pres2_hyd_p(its:ite,kts:kte+1,jts),                      &
+     &      pres_hyd_p(1:nCellsSolve,kts:kte,jts),                   &
+     &      pres2_hyd_p(1:nCellsSolve,kts:kte+1,jts),                      &
      &      p_mid_tkeedmf, p_int_tkeedmf,                            &
      &      nEdgesOnCell, cellsOnCell,                              &
-     &      its, ite, kts, kte)
+     &      its, ite, kts, kte, 1, nCellsSolve)
        endif
        pi_tkeedmf(:,:) = pi_p(its:ite,kts:kte,jts)
 
