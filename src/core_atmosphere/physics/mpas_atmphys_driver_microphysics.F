@@ -592,7 +592,7 @@
     case ("mp_tempo")
        if (allocated(nwfa_p) .and. allocated(nwfa2d_p)) then
          call tempo_aerosol_surface_emissions(dt=dt_microp, nwfa=nwfa_p, nwfa2d=nwfa2d_p, &
-            ims=ims, ime=ime, jms=jms, jme=jme, kms=kms, kme=kme, kts=kts)
+            ims=ims, ime=ime, jms=jms, jme=jme, kms=kms, kme=kme, its=its, ite=ite, jts=jts, jte=jte, kts=kts)
        endif   
 
        call mpas_timer_start('mp_tempo')
