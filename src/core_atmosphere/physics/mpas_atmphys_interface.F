@@ -163,6 +163,8 @@
 !... arrays used for calculating the hydrostatic pressure and exner function:
  if(.not.allocated(psfc_hyd_p)  ) allocate(psfc_hyd_p(ims:ime,jms:jme)          )
  if(.not.allocated(psfc_hydd_p) ) allocate(psfc_hydd_p(ims:ime,jms:jme)         )
+ if(.not.allocated(pres_base_mid_gfs_p)) allocate(pres_base_mid_gfs_p(ims:ime,kms:kme,jms:jme))
+ if(.not.allocated(pres_base_int_gfs_p)) allocate(pres_base_int_gfs_p(ims:ime,kms:kme,jms:jme))
  if(.not.allocated(pres_hyd_p)  ) allocate(pres_hyd_p(ims:ime,kms:kme,jms:jme)  )
  if(.not.allocated(pres_hydd_p) ) allocate(pres_hydd_p(ims:ime,kms:kme,jms:jme) )
  if(.not.allocated(pres2_hyd_p) ) allocate(pres2_hyd_p(ims:ime,kms:kme,jms:jme) )
@@ -251,6 +253,8 @@
 
  if(allocated(psfc_hyd_p)  ) deallocate(psfc_hyd_p  )
  if(allocated(psfc_hydd_p) ) deallocate(psfc_hydd_p )
+ if(allocated(pres_base_mid_gfs_p)) deallocate(pres_base_mid_gfs_p)
+ if(allocated(pres_base_int_gfs_p)) deallocate(pres_base_int_gfs_p)
  if(allocated(pres_hyd_p)  ) deallocate(pres_hyd_p  )
  if(allocated(pres_hydd_p) ) deallocate(pres_hydd_p )
  if(allocated(pres2_hyd_p) ) deallocate(pres2_hyd_p )
@@ -616,6 +620,16 @@
  enddo
  enddo
 
+! Fixed base-state reference coordinate: reconstruct from cell-center pressure_base.
+! Recomputed from invariant base state at each call (no persistent per-cell cache).
+! Any time variation of pressure_base or zgrid will change this reference profile.
+ do j = jts,jte
+   do i = its,ite
+     call gfs_base_pressure_column(pressure_b(kts:kte,i), zgrid(kts:kte+1,i), &
+          pres_base_mid_gfs_p(i,kts:kte,j), pres_base_int_gfs_p(i,kts:kte+1,j))
+   enddo
+ enddo
+
 !calculation of the hydrostatic pressure:
  do j = jts,jte
  do i = its,ite
@@ -642,6 +656,12 @@
     enddo
  enddo
  enddo
+
+!-----------------------------------------------------------------------------------------------------------------
+! Keep native MPAS hydrostatic pressure for the general physics suite.
+! GFS TKE-EDMF and GFS SAS repair temporary pressure copies in their drivers.
+!-----------------------------------------------------------------------------------------------------------------
+
 
 !save the model-top pressure:
  do j = jts,jte
@@ -1781,5 +1801,40 @@ end subroutine pre_microphysics
 end subroutine post_microphysics
 
 !=================================================================================================================
+
+! Construct strictly monotone reference interfaces using geometric-height
+! interpolation/extrapolation of ln(pressure_base). MPAS vertical index increases
+! upward. The routine rejects invalid reference states rather than repairing them.
+ subroutine gfs_base_pressure_column(pc, zi, pm, pi)
+ use, intrinsic :: ieee_arithmetic, only: ieee_is_finite
+ real(kind=RKIND), intent(in) :: pc(:),zi(:)
+ real(kind=RKIND), intent(out) :: pm(:),pi(:)
+ real(kind=RKIND) :: zc(size(pc)), slope(size(pc)-1), sl, zr
+ integer :: n,k
+ n=size(pc)
+ if(n<2 .or. size(zi)/=n+1) error stop 'GFS_BASE_PRESSURE: bad column dimensions'
+ do k=1,n
+   if (.not.ieee_is_finite(pc(k)) .or. pc(k)<=0._RKIND) error stop 'GFS_BASE_PRESSURE: invalid base pressure'
+   if (.not.ieee_is_finite(zi(k)) .or. .not.ieee_is_finite(zi(k+1))) &
+      error stop 'GFS_BASE_PRESSURE: nonfinite zgrid'
+   if (zi(k+1)<=zi(k)) error stop 'GFS_BASE_PRESSURE: nonpositive dz'
+   zc(k)=0.5_RKIND*(zi(k)+zi(k+1))
+ enddo
+ do k=1,n-1
+   if (pc(k+1)>=pc(k)) error stop 'GFS_BASE_PRESSURE: nonmonotone pressure_base'
+   slope(k)=(log(pc(k+1))-log(pc(k)))/(zc(k+1)-zc(k))
+ enddo
+ pi(1)=exp(log(pc(1))+slope(1)*(zi(1)-zc(1)))
+ do k=2,n
+   sl=(log(pc(k))-log(pc(k-1)))/(zc(k)-zc(k-1))
+   pi(k)=exp(log(pc(k-1))+sl*(zi(k)-zc(k-1)))
+ enddo
+ pi(n+1)=exp(log(pc(n))+slope(n-1)*(zi(n+1)-zc(n)))
+ do k=1,n
+   if (pi(k)<=pi(k+1)) error stop 'GFS_BASE_PRESSURE: nonpositive delp'
+   pm(k)=pc(k)
+ enddo
+ end subroutine gfs_base_pressure_column
+
  end module mpas_atmphys_interface
 !=================================================================================================================

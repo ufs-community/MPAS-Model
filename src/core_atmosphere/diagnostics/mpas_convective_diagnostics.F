@@ -506,9 +506,12 @@ module mpas_convective_diagnostics
                 do iCell=1, nCellsSolve
                   z_agl(1:nVertLevels) = 0.5*(zgrid(1:nVertLevels,iCell)+zgrid(2:nVertlevelsP1,iCell)) - zgrid(1,iCell)
                   if (column_height_value(refl10cm(:,iCell),z_agl(1:nVertLevels),1000.0_RKIND,nVertLevels) > 20.0_RKIND) then
+                    ! integral_zstaggered requires all nVertLevelsP1 interface heights.
+                    ! z_agl above contains only nVertLevels layer-center heights.
+                    z_agl(1:nVertLevelsP1) = zgrid(1:nVertLevelsP1,iCell) - zgrid(1,iCell)
                     wind02_integral_max(iCell) = max(wind02_integral_max(iCell), &
                                                      sqrt(integral_zstaggered(uzonal(:,iCell),z_agl,0.0_RKIND, 2000.0_RKIND, nVertLevels,nVertLevelsP1)**2 + &
-                                                     integral_zstaggered(uzonal(:,iCell),z_agl,0.0_RKIND, 2000.0_RKIND, nVertLevels,nVertLevelsP1)**2))
+                                                     integral_zstaggered(umeridional(:,iCell),z_agl,0.0_RKIND, 2000.0_RKIND, nVertLevels,nVertLevelsP1)**2))
                   endif
                 enddo
             endif

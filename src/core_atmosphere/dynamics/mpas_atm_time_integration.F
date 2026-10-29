@@ -2795,7 +2795,8 @@ module atm_time_integration
       MPAS_ACC_TIMER_STOP('atm_srk3: physics ACC_data_xfer')
 
       if(config_convection_scheme == 'cu_grell_freitas' .or. &
-         config_convection_scheme == 'cu_ntiedtke') then
+         config_convection_scheme == 'cu_ntiedtke'      .or. &
+         config_convection_scheme == 'cu_gfs_sas') then
 
          MPAS_ACC_TIMER_START('atm_srk3: physics ACC_data_xfer')
          call mpas_pool_get_array(tend_physics, 'rqvdynten', rqvdynten)
@@ -4046,7 +4047,7 @@ module atm_time_integration
             ! this follows Klemp et al MWR 2007, with the addition of an implicit Rayleigh damping of w
             ! serves as a gravity-wave absorbing layer, from Klemp et al 2008.
 
-!DIR$ IVDEP
+!!!DIR$ IVDEP
             !$acc loop vector
             do k=1, nVertLevels
                rs(k) = rho_pp(k,iCell) + dts*tend_rho(k,iCell) + rs(k)                  &

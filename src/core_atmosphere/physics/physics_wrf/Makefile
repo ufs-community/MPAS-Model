@@ -55,7 +55,12 @@ OBJS = \
 	cu_ntiedtke_post.o             \
 	cu_ntiedtke_pre.o	       \
 	sf_mynn_pre.o                  \
-	sf_sfclayrev_pre.o
+	sf_sfclayrev_pre.o             \
+        module_gfs_machine.o           \
+        module_gfs_physcons.o          \
+        module_gfs_funcphys.o          \
+        module_progtm.o                \
+        module_sf_gfs.o
 
 
 physics_wrf: $(OBJS)
@@ -117,6 +122,22 @@ module_sf_noah_seaice_drv.o: \
 
 module_sf_noah_seaice.o: \
 	module_sf_noahlsm.o
+
+module_gfs_physcons.o: \
+        module_gfs_machine.o
+
+module_gfs_funcphys.o: \
+        module_gfs_machine.o \
+        module_gfs_physcons.o
+
+module_progtm.o: \
+        module_gfs_machine.o
+
+module_sf_gfs.o: \
+        module_gfs_machine.o \
+        module_gfs_physcons.o \
+        module_gfs_funcphys.o \
+        module_progtm.o
 
 clean:
 	$(RM) *.f90 *.o *.mod
