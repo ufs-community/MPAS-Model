@@ -1,0 +1,208 @@
+name: Make MPAS ICs (init_atmosphere)
+
+on: [push, pull_request, workflow_dispatch]
+
+#############################################################################################
+# Build init_atmosphere_model from this branch and create the static, initial-condition,
+# lateral-boundary files for 120 km CONUS test cases (GFS and RAP, with and without lakes).
+#
+# Jobs
+#   build   - make gfortran CORE=init_atmosphere (in the CI container)
+#   static  - one static file per variant (20-class MODIS land use, and 21-class with
+#             lakes); cached on the init_atmosphere source, the static namelist and the
+#             inputs release, so it only reruns when one of those changes
+#   case    - init / lbc / sfc_update for each case, sanity checks, artifacts
+#
+# Cases          source   date        static land use
+#   conus_gfs       gfs   2023031015  20-class MODIS (also makes sfc_update)
+#   conus_gfs_lake  gfs   2023031015  21-class MODIS with lakes (also makes sfc_update)
+#   conus_raps      rap   2024081518  20-class MODIS
+#   conus_raps_lake rap   2024081518  21-class MODIS with lakes
+# (cases/ also has conus_rapw and conus_rapw_lake for running by hand)
+#
+# Inputs (mesh, geographic data, ungrib intermediate files, aerosol climatology) come
+# from release INPUTS_TAG of this repository (copy them with
+# testing_and_setup/ufs-community/ics/copy_inputs_release.sh). Scripts and namelists
+# are in testing_and_setup/ufs-community/ics/ (from dustinswales/mpas-ic-factory).
+#############################################################################################
+
+env:
+  INPUTS_REPO: ${{ github.repository }}
+  INPUTS_TAG: MPAS-v8.4.2-1.20
+  ICS_DIR: testing_and_setup/ufs-community/ics
+  IMAGE: dustinswales/ufs-community-mpas-ci:gnu
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    container:
+      image: dustinswales/ufs-community-mpas-ci:gnu
+    defaults:
+      run:
+        shell: bash -el {0}
+    env:
+      PNETCDF: /opt/pnetcdf
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+      - name: Build init_atmosphere_model
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          make gfortran CORE=init_atmosphere > build.log 2>&1 || { tail -80 build.log; exit 1; }
+          test -x init_atmosphere_model
+          mkdir -p bin && cp init_atmosphere_model bin/
+          {
+            echo "code commit:        ${{ github.repository }}@${{ github.sha }}"
+            echo "compiler:           $(mpif90 --version | head -1)"
+            echo "image:              $IMAGE"
+            echo "workflow run:       ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          } > bin/build-info.txt
+          cat bin/build-info.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: init-exe
+          path: bin/
+          retention-days: 7
+
+  static:
+    needs: build
+    runs-on: ubuntu-22.04
+    container:
+      image: dustinswales/ufs-community-mpas-ci:gnu
+    defaults:
+      run:
+        shell: bash -el {0}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - static_key: conus-120km
+            case: conus_raps
+            nml_dir: step1_static
+          - static_key: conus-120km-lakes
+            case: conus_raps_lake
+            nml_dir: step1_static_lakes
+    name: static (${{ matrix.static_key }})
+    steps:
+      - uses: actions/checkout@v6
+      - name: Restore static files
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: static/${{ matrix.static_key }}
+          key: static-v1-${{ matrix.static_key }}-${{ env.INPUTS_TAG }}-${{ hashFiles('src/core_init_atmosphere/**', 'src/framework/**', 'src/operators/**', 'src/external/**', 'src/tools/**', 'Makefile', format('testing_and_setup/ufs-community/ics/case_files/{0}/*', matrix.nml_dir), 'testing_and_setup/ufs-community/ics/scripts/create_case.sh') }}
+      - uses: actions/download-artifact@v4
+        if: steps.cache.outputs.cache-hit != 'true'
+        with:
+          name: init-exe
+          path: bin/
+      - name: Fetch mesh and geographic data
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          df -h .
+          bash "$ICS_DIR/scripts/fetch_inputs.sh" -r "$INPUTS_REPO" -t "$INPUTS_TAG" -d inputs grids geog
+          df -h .
+      - name: Create static file
+        if: steps.cache.outputs.cache-hit != 'true'
+        env:
+          MPIRUN: mpiexec --allow-run-as-root --oversubscribe -np
+        run: |
+          chmod +x bin/init_atmosphere_model
+          DESCRIBE_EXTRA=$PWD/bin/build-info.txt \
+            bash "$ICS_DIR/scripts/create_case.sh" -c ${{ matrix.case }} -e bin/init_atmosphere_model \
+              -i inputs -o out -n 4 -s static
+          mkdir -p static/${{ matrix.static_key }}
+          cp out/*/case_files/mpas.*.nc out/*/case_files/log.static static/${{ matrix.static_key }}/
+          ls -l static/${{ matrix.static_key }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: static-${{ matrix.static_key }}
+          path: static/${{ matrix.static_key }}/
+          retention-days: 7
+
+  case:
+    needs: [build, static]
+    runs-on: ubuntu-22.04
+    container:
+      image: dustinswales/ufs-community-mpas-ci:gnu
+    defaults:
+      run:
+        shell: bash -el {0}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - case: conus_gfs
+            source: gfs
+            static_key: conus-120km
+            bundles: ungrib-gfs.2023031015 ungrib-sst.2023031015
+            lbc_times: 17
+            lakes: ''
+          - case: conus_gfs_lake
+            source: gfs
+            static_key: conus-120km-lakes
+            bundles: ungrib-gfs.2023031015 ungrib-sst.2023031015
+            lbc_times: 17
+            lakes: --lakes
+          - case: conus_raps
+            source: rap
+            static_key: conus-120km
+            bundles: ungrib-rap.2024081518
+            lbc_times: 2
+            lakes: ''
+          - case: conus_raps_lake
+            source: rap
+            static_key: conus-120km-lakes
+            bundles: ungrib-rap.2024081518
+            lbc_times: 2
+            lakes: --lakes
+    name: ${{ matrix.case }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/download-artifact@v4
+        with:
+          name: init-exe
+          path: bin/
+      - uses: actions/download-artifact@v4
+        with:
+          name: static-${{ matrix.static_key }}
+          path: static/
+      - name: Fetch inputs
+        run: |
+          df -h .
+          # shellcheck disable=SC2086
+          bash "$ICS_DIR/scripts/fetch_inputs.sh" -r "$INPUTS_REPO" -t "$INPUTS_TAG" -d inputs \
+            grids aerosols ${{ matrix.bundles }}
+          df -h .
+      - name: Create init / lbc / sfc_update files
+        env:
+          MPIRUN: mpiexec --allow-run-as-root --oversubscribe -np
+        run: |
+          chmod +x bin/init_atmosphere_model
+          DESCRIBE_EXTRA=$PWD/bin/build-info.txt \
+            bash "$ICS_DIR/scripts/create_case.sh" -c ${{ matrix.case }} -e bin/init_atmosphere_model \
+              -i inputs -o out -n 4 -S static
+          case_dir=$(basename out/*)
+          echo "CASE_DIR=$case_dir" >> "$GITHUB_ENV"
+          ls -l "out/$case_dir/case_files"
+      - name: Set up Python (netCDF4) for checks
+        uses: conda-incubator/setup-miniconda@v4
+        with:
+          python-version: '3.11'
+          auto-update-conda: true
+          auto-activate-base: false
+          environment-file: testing_and_setup/ufs-community/environment.yml
+          activate-environment: mpas-ci-env
+      - name: Check files
+        run: |
+          python "$ICS_DIR/check_ics.py" "out/$CASE_DIR/case_files" \
+            --source ${{ matrix.source }} --lbc-times ${{ matrix.lbc_times }} ${{ matrix.lakes }}
+      - name: Upload files
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ics-${{ matrix.case }}
+          path: out/
+          retention-days: 14
+          if-no-files-found: ignore

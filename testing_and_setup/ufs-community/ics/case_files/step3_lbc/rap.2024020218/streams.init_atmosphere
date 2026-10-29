@@ -1,0 +1,15 @@
+<streams>
+<immutable_stream name="input"
+                  type="input"
+                  precision="single"
+                  filename_template="init.nc"
+                  input_interval="initial_only" />
+
+<immutable_stream name="lbc"
+                  type="output"
+                  filename_template="lbc.nc"
+                  filename_interval="none"
+                  packages="lbcs"
+                  output_interval="3:00:00" />
+
+</streams>

@@ -1,0 +1,20 @@
+<streams>
+<immutable_stream name="input"
+                  type="input"
+                  precision="single"
+                  filename_template="grid.nc"
+                  input_interval="initial_only" />
+
+<immutable_stream name="output"
+                  type="output"
+                  filename_template="static.nc"
+                  packages="initial_conds"
+                  output_interval="initial_only" />
+
+<immutable_stream name="ugwp_oro_data"
+                  type="output"
+                  filename_template="ugwp_oro_data.nc"
+                  output_interval="initial_only" 
+                  packages="gwd_gsl_stage_out" />
+
+</streams>
