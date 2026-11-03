@@ -570,7 +570,7 @@ end subroutine init_soil_layers_properties
     ifgSoil = 1
     zhave(ifgSoil,iCell)    = 0._RKIND
     st_input(ifgSoil,iCell) = skintemp(iCell)
-    sm_input(ifgSoil,iCell) = sm_fg(ifgSoil+1,iCell)
+    sm_input(ifgSoil,iCell) = sm_fg(ifgSoil,iCell)
 
     do ifgSoil = 1, nFGSoilLevels
        zhave(ifgSoil+1,iCell) = zs_fg(ifgSoil,iCell) / 100._RKIND
@@ -586,7 +586,7 @@ end subroutine init_soil_layers_properties
 
     endif
     st_input(nFGSoilLevels+2,iCell) = tmn(iCell)
-    sm_input(nFGSoilLevels+2,iCell) = sm_input(nFGSoilLevels,iCell)
+    sm_input(nFGSoilLevels+2,iCell) = sm_input(nFGSoilLevels+1,iCell)
 
     if(iCell .eq. 1) then
        do ifgSoil = 1,nFGSoilLevels+2
