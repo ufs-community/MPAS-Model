@@ -546,6 +546,11 @@
     kzm_p,            &!
     kzq_p              !
 
+! Persistent MYNN-EDMF -> GFS SAMF coupling diagnostics. These survive
+! deallocate_pbl and are reset before each PBL call. QKE is 2*TKE.
+ real(kind=RKIND), dimension(:,:,:), allocatable :: mynn_samf_tke_p
+ real(kind=RKIND), dimension(:,:), allocatable :: mynn_samf_maxmf_p
+
 !... MYNN PBL scheme (module_bl_mynn.F):
  integer,parameter:: spp_pbl   = 0          !generate array with random perturbations (0=off,1=on).
  integer,parameter:: icloud_bl = 0          !no coupling of subgrid-scale clouds with radiation.

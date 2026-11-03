@@ -891,9 +891,7 @@ integer, dimension(:,:), pointer :: cellsOnCell_gfs
             call mpas_pool_get_array(tend_physics,'rvblten',rvblten_stage)
             if (.not. associated(rublten_stage) .or. &
                 .not. associated(rvblten_stage)) then
-               write(0,*) 'TEST2 ERROR: momentum tendency pointer missing'
-               flush(0)
-               error stop 'TEST2 momentum tendency pointer missing'
+               error stop 'GFS SAS: missing momentum tendency pointer'
             endif
             if (kts < lbound(rublten_stage,1) .or. &
                 kte > ubound(rublten_stage,1) .or. &
@@ -903,9 +901,7 @@ integer, dimension(:,:), pointer :: cellsOnCell_gfs
                 kte > ubound(rvblten_stage,1) .or. &
                 its < lbound(rvblten_stage,2) .or. &
                 ite > ubound(rvblten_stage,2)) then
-               write(0,*) 'TEST2 ERROR: momentum tendency bounds mismatch'
-               flush(0)
-               error stop 'TEST2 momentum tendency bounds mismatch'
+               error stop 'GFS SAS: momentum tendency bounds mismatch'
             endif
          endif
 
@@ -932,41 +928,26 @@ integer, dimension(:,:), pointer :: cellsOnCell_gfs
                v_gfs_sas(i,k) = v_p(i,k,j) + dt_dyn * rvblten_stage(k,i)
             endif
 
-            if (t_gfs_sas(i,k) /= t_gfs_sas(i,k)) then
-               write(0,*) 'NONFINITE T BEFORE GFS SAS'
-               write(0,*) 'i,j,k=', i,j,k
-               write(0,*) 'p_mid,t=', pres_mid_gfs_sas(i,k), &
-                    t_gfs_sas(i,k)
-               call flush(0)
-            endif
          enddo
          enddo
 
          !---------------------------------------------------------------
-         ! TKE-EDMF/MYNN-EDMF coupling for latest SAMF convection.
-         ! SAMF expects interface TKE tkeh(im,km+1).  MPAS stores the
-         ! prognostic TKE at layer centers in tkepbl_p for bl_tke_edmf;
-         ! build a simple interface estimate by averaging neighboring
-         ! layers.  If no PBL TKE is available, pass zeros and set
-         ! do_mynnedmf false.
-         !---------------------------------------------------------------
-         if (do_mynnedmf_gfs_sas .and. allocated(tkepbl_p)) then
+         ! MYNN-EDMF coupling diagnostics were saved by driver_pbl before
+         ! its scratch arrays were deallocated. SAMF expects interface TKE.
+         if (do_mynnedmf_gfs_sas .and. &
+             allocated(mynn_samf_tke_p) .and. &
+             allocated(mynn_samf_maxmf_p)) then
             do i = its, ite
-               tkeh_gfs_sas(i,kts) = max(0._RKIND, tkepbl_p(i,kts,j))
+               tkeh_gfs_sas(i,kts) = mynn_samf_tke_p(i,kts,j)
                do k = kts+1, kte
-                  tkeh_gfs_sas(i,k) = max(0._RKIND, 0.5_RKIND * &
-                       (tkepbl_p(i,k-1,j) + tkepbl_p(i,k,j)))
+                  tkeh_gfs_sas(i,k) = 0.5_RKIND * &
+                       (mynn_samf_tke_p(i,k-1,j) + mynn_samf_tke_p(i,k,j))
                enddo
-               tkeh_gfs_sas(i,kte+1) = max(0._RKIND, tkepbl_p(i,kte,j))
+               tkeh_gfs_sas(i,kte+1) = mynn_samf_tke_p(i,kte,j)
+               maxmf_gfs_sas(i) = mynn_samf_maxmf_p(i,j)
             enddo
          else
             do_mynnedmf_gfs_sas = .false.
-         endif
-
-         if (allocated(maxmfbl_p)) then
-            do i = its, ite
-               maxmf_gfs_sas(i) = max(0._RKIND, maxmfbl_p(i,j))
-            enddo
          endif
 
          call mpas_call_gfs_convection(                                      &

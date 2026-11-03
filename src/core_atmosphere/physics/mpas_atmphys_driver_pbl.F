@@ -139,6 +139,20 @@
     if(.not.allocated(aero_emis_for_enhmix_p)) allocate(aero_emis_for_enhmix_p(ims:ime,jms:jme))
  endif
 
+ ! Stage MYNN diagnostics for subsequent SAMF convection, after PBL scratch
+ ! arrays are freed. Allocation and reset occur outside the OpenMP loop.
+ if (trim(pbl_scheme) == 'bl_mynnedmf') then
+    if (.not. allocated(mynn_samf_tke_p)) &
+         allocate(mynn_samf_tke_p(ims:ime,kms:kme,jms:jme))
+    if (.not. allocated(mynn_samf_maxmf_p)) &
+         allocate(mynn_samf_maxmf_p(ims:ime,jms:jme))
+    mynn_samf_tke_p = 0._RKIND
+    mynn_samf_maxmf_p = 0._RKIND
+ else
+    if (allocated(mynn_samf_tke_p)) deallocate(mynn_samf_tke_p)
+    if (allocated(mynn_samf_maxmf_p)) deallocate(mynn_samf_maxmf_p)
+ endif
+
  pbl_select: select case (trim(pbl_scheme))
 
     case("bl_ysu")
@@ -770,8 +784,11 @@
        enddo
        do k = kts,kte
        do i = its,ite
-          rthraten_p(i,k,j) = rthratensw(k,i)
-          exch_p(i,k,j)     = rthratenlw(k,i)
+          ! MPAS radiation supplies potential-temperature tendencies [K/s].
+          ! GFS TKE-EDMF expects physical-temperature heating rates [K/s].
+          ! Convert with the local Exner function (dT/dt = Exner*dtheta/dt).
+          rthraten_p(i,k,j) = rthratensw(k,i) * pi_p(i,k,j)
+          exch_p(i,k,j)     = rthratenlw(k,i) * pi_p(i,k,j)
 ! Do not read tke_pbl from MPAS here.  In some MPAS builds this
 ! diagnostic is not allocated before the TKE-EDMF call, and reading
 ! tke_pbl(k,i) causes the SIGSEGV seen near this block.  The wrapper
@@ -1192,11 +1209,13 @@ endif
 ! ------------------------------------------------------------------
        call mpas_pool_get_array(state,'scalars',scalars,1)
        call mpas_pool_get_dimension(state,'index_tke_gfs',index_tke_gfs)
+       call mpas_pool_get_array(diag_physics,'tke_pbl',tke_pbl)
 
        do j = jts,jte
        do k = kts,kte
        do i = its,ite
           scalars(index_tke_gfs,k,i) = max(1.0e-9_RKIND, tkepbl_p(i,k,j))
+          tke_pbl(k,i) = scalars(index_tke_gfs,k,i)
        enddo
        enddo
        enddo
@@ -2112,6 +2131,21 @@ endif
     case default
 
  end select pbl_select
+
+! Save MYNN-EDMF diagnostics before deallocate_pbl releases its scratch.
+! QKE = 2*TKE; SAMF expects TKE at vertical interfaces, constructed later.
+ if (trim(pbl_scheme) == 'bl_mynnedmf') then
+    if (allocated(qke_p) .and. allocated(maxmfbl_p)) then
+       do j = jts, jte
+          do i = its, ite
+             mynn_samf_maxmf_p(i,j) = max(0._RKIND, maxmfbl_p(i,j))
+             do k = kts, kte
+                mynn_samf_tke_p(i,k,j) = max(0._RKIND, 0.5_RKIND*qke_p(i,k,j))
+             enddo
+          enddo
+       enddo
+    endif
+ endif
 
 !copy local arrays to MPAS grid:
  call pbl_to_MPAS(configs,state,diag_physics,tend_physics,its,ite)
