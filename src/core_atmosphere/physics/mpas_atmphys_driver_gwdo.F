@@ -708,7 +708,7 @@
 !local variables:
  character(len=StrKIND),pointer:: gwdo_scheme
  logical,pointer:: ugwp_diags,ngw_scheme
- real,pointer:: alpha_fd
+ real(kind=RKIND),pointer:: alpha_fd
  integer,pointer:: ntau_d1y_ptr,ntau_d2t_ptr
  real(kind=RKIND),dimension(:),pointer :: days_limb_ptr
  real(kind=RKIND),dimension(:,:),pointer:: tau_limb_ptr
