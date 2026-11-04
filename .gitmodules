@@ -3,7 +3,7 @@
 	url = https://github.com/NOAA-GSL/UGWP
 [submodule "src/core_atmosphere/physics/physics_noaa/TEMPO"]
 	path = src/core_atmosphere/physics/physics_noaa/TEMPO
-	url = https://github.com/NCAR/TEMPO
+	url = https://github.com/ywangwof/TEMPO
 [submodule "src/core_atmosphere/physics/physics_noaa/MYNN-EDMF"]
 	path = src/core_atmosphere/physics/physics_noaa/MYNN-EDMF
 	url = https://github.com/NCAR/MYNN-EDMF
