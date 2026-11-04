@@ -5,7 +5,7 @@ on: [push, pull_request, workflow_dispatch]
 #############################################################################################
 # Build init_atmosphere_model from this branch and create the static, initial-condition,
 # lateral-boundary files for 120 km CONUS test cases (GFS and RAP, with and without lakes,
-# and GFS for Noah-MP).
+# and GFS for Noah-MP with 4 and 10 soil layers).
 #
 # Jobs
 #   build   - make gfortran CORE=init_atmosphere (in the CI container)
@@ -19,6 +19,7 @@ on: [push, pull_request, workflow_dispatch]
 #   conus_gfs_lake  gfs   2023031015  21-class MODIS with lakes (also makes sfc_update)
 #   conus_gfs_noahmp gfs  2023031015  20-class MODIS; NCAR namelists with 4 soil levels
 #                                     for Noah-MP (also makes sfc_update)
+#   conus_gfs_noahmp10 gfs 2023031015 as conus_gfs_noahmp, with 10 soil layers
 #   conus_raps      rap   2024081518  20-class MODIS
 #   conus_raps_lake rap   2024081518  21-class MODIS with lakes
 # (cases/ also has conus_rapw and conus_rapw_lake for running by hand)
@@ -154,6 +155,12 @@ jobs:
             bundles: ungrib-gfs.2023031015 ungrib-sst.2023031015
             lbc_times: 17
             checks: --noahmp
+          - case: conus_gfs_noahmp10
+            source: gfs
+            static_key: conus-120km
+            bundles: ungrib-gfs.2023031015 ungrib-sst.2023031015
+            lbc_times: 17
+            checks: --noahmp --soil-levels 10
           - case: conus_raps
             source: rap
             static_key: conus-120km
