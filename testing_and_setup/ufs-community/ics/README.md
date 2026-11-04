@@ -1,21 +1,26 @@
 # make_ics: init_atmosphere tests
 
-`.github/workflows/make_ics.yml` builds `init_atmosphere_model` from the branch under test and creates the static, initial-condition, lateral-boundary (and, for GFS, surface-update) files for four 120 km CONUS cases:
+`.github/workflows/make_ics.yml` builds `init_atmosphere_model` from the branch under test and creates the static, initial-condition, lateral-boundary (and, for GFS, surface-update) files for five 120 km CONUS cases:
 
 | case | source | date | static land use |
 |---|---|---|---|
 | `conus_gfs` | GFS | 2023-03-10 15Z | 20-class MODIS |
 | `conus_gfs_lake` | GFS | 2023-03-10 15Z | 21-class MODIS with lakes |
+| `conus_gfs_noahmp` | GFS | 2023-03-10 15Z | 20-class MODIS; ICs for Noah-MP (see below) |
 | `conus_raps` | RAP | 2024-08-15 18Z | 20-class MODIS |
 | `conus_raps_lake` | RAP | 2024-08-15 18Z | 21-class MODIS with lakes (`config_landuse_data = 'MODIFIED_IGBP_MODIS_NOAH_LAKES'`) |
 
-`conus_gfs` and `conus_raps` share the 20-class static file, and `conus_gfs_lake` and `conus_raps_lake` share the 21-class one, so there are two static jobs. The summer RAP date is used because its inputs are small (1.3 GB of ungrib files, against 16 GB for winter RAP). `cases/` also defines `conus_rapw` and `conus_rapw_lake`, which can be run by hand or added to the workflow matrix.
+`conus_gfs`, `conus_gfs_noahmp` and `conus_raps` share the 20-class static file, and `conus_gfs_lake` and `conus_raps_lake` share the 21-class one, so there are two static jobs. The summer RAP date is used because its inputs are small (1.3 GB of ungrib files, against 16 GB for winter RAP). `cases/` also defines `conus_rapw` and `conus_rapw_lake`, which can be run by hand or added to the workflow matrix.
+
+`conus_gfs_noahmp` makes ICs for Noah-MP, which needs 4 soil levels (the GSL namelists use 9, for RUC). Its init, LBC and sfc_update namelists are the NCAR ones from barlage/mpas_testcase (55 levels, 30 km model top, `case_files/step*/gfs.2023031015.noahmp`), as used for the `mesoscale_reference_noahmp` run tests. The Noah-MP static fields (`soilcomp`, `soilcl1`-`soilcl4`) are already in every static file, because `config_noahmp_static` defaults to true. A case picks its own init/LBC/sfc_update namelists with `nml_variant` in `cases/<case>.sh`.
 
 Each case is checked with `check_ics.py`:
 - the expected files exist;
 - `nlcat` is 21 for the `_lake` cases and 20 for the others;
 - `islake_lu` is 21 for the `_lake` cases and -1 for the others;
 - in the `_lake` cases the lake points (category 21) exist and all have `landmask` 0; the others have none;
+- the init file has 4 soil levels for `conus_gfs_noahmp` and 9 for the others;
+- for `conus_gfs_noahmp`, the static and init files hold valid `soilcomp` and `soilcl1`-`soilcl4` values over land;
 - the main init fields contain no NaN or Inf;
 - the LBC file has the expected number of times (17 for GFS over 48 h, 2 for RAP), and GFS has an `sfc_update` file.
 
@@ -30,7 +35,7 @@ cases/<case>.sh              case settings (sourced by create_case.sh)
 case_files/                  init_atmosphere namelists and streams per step
   step1_static/              20-class static file
   step1_static_lakes/        21-class static file with lakes
-  step2_init/, step3_lbc/, step4_sst/   per source and date
+  step2_init/, step3_lbc/, step4_sst/   per source and date (<source>.<date>[.<nml_variant>])
 scripts/create_case.sh       runs the steps for one case
 scripts/fetch_inputs.sh      downloads and unpacks input bundles from a release
 check_ics.py                 sanity checks on one case's files

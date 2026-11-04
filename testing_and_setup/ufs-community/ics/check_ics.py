@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Sanity checks on the files made by scripts/create_case.sh for one make_ics case.
 
-  check_ics.py CASE_FILES_DIR --source {gfs,rap} [--lakes] [--lbc-times N]
+  check_ics.py CASE_FILES_DIR --source {gfs,rap} [--lakes] [--noahmp] [--lbc-times N]
 
 Checks:
   - static, ugwp_oro_data, init and lbc files exist (and sfc_update for gfs)
@@ -9,6 +9,9 @@ Checks:
   - islake_lu is 21 with --lakes, -1 (no lake category) otherwise
   - with --lakes: lake points (ivgtyp == 21) exist and are all water (landmask 0);
     without: no point has category 21
+  - the init file has 4 soil levels with --noahmp (Noah-MP), 9 otherwise (RUC)
+  - with --noahmp: the Noah-MP static fields (soilcomp, soilcl1-4) are in the static
+    and init files and hold valid values over land
   - no NaN/Inf in the main init fields
   - the lbc file has --lbc-times time records (when given)
 Exit status 1 if any check fails.
@@ -21,6 +24,7 @@ import sys
 import numpy as np
 from netCDF4 import Dataset
 
+NOAHMP_FIELDS = ["soilcomp", "soilcl1", "soilcl2", "soilcl3", "soilcl4"]
 INIT_FIELDS = ["theta", "rho", "u", "w", "qv", "surface_pressure", "skintemp", "tslb", "smois"]
 
 
@@ -37,6 +41,7 @@ def main():
     p.add_argument("case_files")
     p.add_argument("--source", choices=["gfs", "rap"], required=True)
     p.add_argument("--lakes", action="store_true")
+    p.add_argument("--noahmp", action="store_true")
     p.add_argument("--lbc-times", type=int)
     a = p.parse_args()
 
@@ -84,8 +89,34 @@ def main():
             elif nlake:
                 failures.append(f"{name}: {nlake} points with ivgtyp == 21 without the lakes option")
 
+            if a.noahmp:
+                land = lm == 1
+                for v in NOAHMP_FIELDS:
+                    if v not in nc.variables:
+                        failures.append(f"{name}: no {v} variable (Noah-MP static field)")
+                        continue
+                    var = nc.variables[v]
+                    x = np.asarray(var[:], dtype=np.float64)
+                    # land points only: move the nCells axis first, then select
+                    x = np.moveaxis(x, var.dimensions.index("nCells"), 0)
+                    xl = x[land]
+                    if not np.all(np.isfinite(xl)):
+                        failures.append(f"{name}: {v} has NaN/Inf over land")
+                    elif v == "soilcomp" and not np.any((xl > 0) & (xl <= 100)):
+                        failures.append(f"{name}: soilcomp has no values in (0, 100] over land")
+                    elif v != "soilcomp" and not np.any(xl >= 1):
+                        failures.append(f"{name}: {v} has no soil texture class >= 1 over land")
+                    else:
+                        ok.append(f"{name}: {v} valid over land")
+
     if init:
         with Dataset(init) as nc:
+            want_soil = 4 if a.noahmp else 9
+            nsoil = len(nc.dimensions["nSoilLevels"]) if "nSoilLevels" in nc.dimensions else None
+            if nsoil != want_soil:
+                failures.append(f"{os.path.basename(init)}: nSoilLevels = {nsoil}, expected {want_soil}")
+            else:
+                ok.append(f"{os.path.basename(init)}: nSoilLevels = {nsoil}")
             for v in INIT_FIELDS:
                 if v not in nc.variables:
                     failures.append(f"{os.path.basename(init)}: missing required init field {v}")
