@@ -11,7 +11,7 @@
  use, intrinsic :: ieee_arithmetic, only : ieee_is_finite
  use mpas_pool_routines
  use mpas_gfs_pressure_repair, only : repair_gfs_pressure_columns
- use mpas_gfs_base_pressure_option, only : gfs_fixed_base_mode
+ use mpas_gfs_base_pressure_option, only : gfs_pressure_mode
  use mpas_timer, only : mpas_timer_start, mpas_timer_stop
 
  use mpas_atmphys_constants
@@ -839,10 +839,14 @@ integer, dimension(:,:), pointer :: cellsOnCell_gfs
          !---------------------------------------------------------------
          ! Repair pressure only for the GFS SAS temporary input arrays.
          ! Native pres_hyd_p/pres2_hyd_p remain unchanged for other physics.
-         if (gfs_fixed_base_mode()) then
+         select case (gfs_pressure_mode())
+         case (1)  ! Reconstructed base pressure (existing behavior)
             pres_mid_gfs_sas(:,:) = pres_base_mid_gfs_p(its:ite,kts:kte,j)
             pres_int_gfs_sas(:,:) = pres_base_int_gfs_p(its:ite,kts:kte+1,j)
-         else
+         case (2)  ! Native MPAS full pressure, no pressure repair
+            pres_mid_gfs_sas(:,:) = pres_p(its:ite,kts:kte,j)
+            pres_int_gfs_sas(:,:) = pres2_p(its:ite,kts:kte+1,j)
+         case (0)  ! Existing repaired hydrostatic pressure
          call repair_gfs_pressure_columns(                         &
      &      pres_hyd_p(1:nCellsSolve,kts:kte,j),                     &
      &      pres2_hyd_p(1:nCellsSolve,kts:kte+1,j),                        &
@@ -850,7 +854,9 @@ integer, dimension(:,:), pointer :: cellsOnCell_gfs
      &      nEdgesOnCell_gfs, cellsOnCell_gfs,                       &
      &      its, ite, kts, kte, 1, nCellsSolve)
 
-         endif
+         case default
+            error stop 'Invalid GFS pressure mode in SAS driver'
+         end select
 
          ! Initialize MPAS cloud-base/cloud-top diagnostics before the wrapper.
          if (allocated(cubot_p)) cubot_p(its:ite,j) = real(kte+1, RKIND)

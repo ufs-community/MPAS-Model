@@ -10,7 +10,7 @@
  use mpas_kind_types
  use mpas_pool_routines
  use mpas_gfs_pressure_repair, only : repair_gfs_pressure_columns
- use mpas_gfs_base_pressure_option, only : gfs_fixed_base_mode
+ use mpas_gfs_base_pressure_option, only : gfs_pressure_mode
  use mpas_timer,only: mpas_timer_start,mpas_timer_stop
  use, intrinsic :: ieee_arithmetic, only : ieee_is_finite
 
@@ -1738,17 +1738,23 @@ endif
        !---------------------------------------------------------------
        ! Repair pressure only for the GFS TKE-EDMF temporary input arrays.
        ! Native pres_hyd_p/pres2_hyd_p remain unchanged for other physics.
-       if (gfs_fixed_base_mode()) then
+       select case (gfs_pressure_mode())
+       case (1)  ! Reconstructed base pressure (existing behavior)
           p_mid_tkeedmf(:,:) = pres_base_mid_gfs_p(its:ite,kts:kte,jts)
           p_int_tkeedmf(:,:) = pres_base_int_gfs_p(its:ite,kts:kte+1,jts)
-       else
+       case (2)  ! Native MPAS full pressure, no pressure repair
+          p_mid_tkeedmf(:,:) = pres_p(its:ite,kts:kte,jts)
+          p_int_tkeedmf(:,:) = pres2_p(its:ite,kts:kte+1,jts)
+       case (0)  ! Existing repaired hydrostatic pressure
        call repair_gfs_pressure_columns(                           &
      &      pres_hyd_p(1:nCellsSolve,kts:kte,jts),                   &
      &      pres2_hyd_p(1:nCellsSolve,kts:kte+1,jts),                      &
      &      p_mid_tkeedmf, p_int_tkeedmf,                            &
      &      nEdgesOnCell, cellsOnCell,                              &
      &      its, ite, kts, kte, 1, nCellsSolve)
-       endif
+       case default
+          error stop 'Invalid GFS pressure mode in PBL driver'
+       end select
        pi_tkeedmf(:,:) = pi_p(its:ite,kts:kte,jts)
 
        call mpas_call_satmedmfvdifq(                                  &
