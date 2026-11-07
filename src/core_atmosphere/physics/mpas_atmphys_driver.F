@@ -24,9 +24,12 @@
  use mpas_atmphys_driver_smoke
  use mpas_atmphys_constants
  use mpas_atmphys_interface
+ use mpas_gfs_base_pressure_option, only: gfs_fixed_base_mode
  use mpas_atmphys_sfc_diagnostics,only: atmphys_sfc_diagnostics
  use mpas_atmphys_update
- use mpas_atmphys_vars, only: l_camlw,l_conv,l_radtlw,l_radtsw,do_chemistry
+ use mpas_atmphys_vars, only: l_camlw,l_conv,l_radtlw,l_radtsw,do_chemistry, &
+      pres_base_mid_gfs_p, pres_base_int_gfs_p, &
+      ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte
  use mpas_timer
 
  implicit none
@@ -219,6 +222,28 @@
     end do
 !$OMP END PARALLEL DO
 
+    ! GFS-specific base-pressure preparation (mode 1 only).
+    ! Keep all reconstruction outside the common MPAS_to_physics interface.
+    ! Modes 0 and 2, and non-GFS physics, do not use these arrays.
+    if ((trim(config_pbl_scheme) == 'bl_tke_edmf' .or. &
+         trim(config_convection_scheme) == 'cu_gfs_sas') .and. &
+         gfs_fixed_base_mode()) then
+
+       if (.not.allocated(pres_base_mid_gfs_p)) then
+          allocate(pres_base_mid_gfs_p(ims:ime,kms:kme,jms:jme))
+       endif
+       if (.not.allocated(pres_base_int_gfs_p)) then
+          allocate(pres_base_int_gfs_p(ims:ime,kms:kme,jms:jme))
+       endif
+
+!$OMP PARALLEL DO
+       do thread=1,nThreads
+          call prepare_gfs_base_pressure(mesh,diag, &
+               cellSolveThreadStart(thread),cellSolveThreadEnd(thread))
+       enddo
+!$OMP END PARALLEL DO
+    endif
+
     !call to cloud scheme:
     if(l_radtlw .or. l_radtsw) then
        call allocate_cloudiness(block%configs)
@@ -390,6 +415,11 @@
 !$OMP END PARALLEL DO
     end if
 
+    ! Release mode-1 GFS pressure arrays after all physics drivers finish.
+    ! No mode check is needed: these tests are safe for modes 0 and 2.
+    if (allocated(pres_base_mid_gfs_p)) deallocate(pres_base_mid_gfs_p)
+    if (allocated(pres_base_int_gfs_p)) deallocate(pres_base_int_gfs_p)
+
     !deallocate arrays shared by all physics parameterizations:
     call deallocate_forall_physics(block%configs)
 
@@ -406,5 +436,66 @@
  end subroutine physics_driver
 
 !=================================================================================================================
+!=================================================================================================================
+!=================================================================================================================
+! GFS-only base-pressure preparation. Called by physics driver, not MPAS_to_physics.
+! This routine is tile-safe when each OpenMP thread owns disjoint [its:ite].
+ subroutine prepare_gfs_base_pressure(mesh,diag,its,ite)
+   type(mpas_pool_type), intent(in) :: mesh,diag
+   integer, intent(in) :: its,ite
+   real(kind=RKIND), dimension(:,:), pointer :: pressure_b,zgrid
+   integer :: i,j
+
+   call mpas_pool_get_array(diag,'pressure_base',pressure_b)
+   call mpas_pool_get_array(mesh,'zgrid',zgrid)
+
+   if (kte+1 > kme) error stop 'GFS_BASE_PRESSURE: kme must include kte+1'
+   if (.not.allocated(pres_base_mid_gfs_p) .or. &
+       .not.allocated(pres_base_int_gfs_p)) &
+       error stop 'GFS_BASE_PRESSURE: reference arrays not allocated'
+   do j=jts,jte
+      do i=its,ite
+         call gfs_base_pressure_column( &
+              pressure_b(kts:kte,i), zgrid(kts:kte+1,i), &
+              pres_base_mid_gfs_p(i,kts:kte,j), &
+              pres_base_int_gfs_p(i,kts:kte+1,j))
+      enddo
+   enddo
+ end subroutine prepare_gfs_base_pressure
+
+! Construct strictly monotone reference interfaces using geometric-height
+! interpolation/extrapolation of ln(pressure_base). MPAS vertical index increases
+! upward. The routine rejects invalid reference states rather than repairing them.
+ subroutine gfs_base_pressure_column(pc, zi, pm, pi)
+ use, intrinsic :: ieee_arithmetic, only: ieee_is_finite
+ real(kind=RKIND), intent(in) :: pc(:),zi(:)
+ real(kind=RKIND), intent(out) :: pm(:),pi(:)
+ real(kind=RKIND) :: zc(size(pc)), slope(size(pc)-1), sl, zr
+ integer :: n,k
+ n=size(pc)
+ if(n<2 .or. size(zi)/=n+1) error stop 'GFS_BASE_PRESSURE: bad column dimensions'
+ do k=1,n
+   if (.not.ieee_is_finite(pc(k)) .or. pc(k)<=0._RKIND) error stop 'GFS_BASE_PRESSURE: invalid base pressure'
+   if (.not.ieee_is_finite(zi(k)) .or. .not.ieee_is_finite(zi(k+1))) &
+      error stop 'GFS_BASE_PRESSURE: nonfinite zgrid'
+   if (zi(k+1)<=zi(k)) error stop 'GFS_BASE_PRESSURE: nonpositive dz'
+   zc(k)=0.5_RKIND*(zi(k)+zi(k+1))
+ enddo
+ do k=1,n-1
+   if (pc(k+1)>=pc(k)) error stop 'GFS_BASE_PRESSURE: nonmonotone pressure_base'
+   slope(k)=(log(pc(k+1))-log(pc(k)))/(zc(k+1)-zc(k))
+ enddo
+ pi(1)=exp(log(pc(1))+slope(1)*(zi(1)-zc(1)))
+ do k=2,n
+   sl=(log(pc(k))-log(pc(k-1)))/(zc(k)-zc(k-1))
+   pi(k)=exp(log(pc(k-1))+sl*(zi(k)-zc(k-1)))
+ enddo
+ pi(n+1)=exp(log(pc(n))+slope(n-1)*(zi(n+1)-zc(n)))
+ do k=1,n
+   if (pi(k)<=pi(k+1)) error stop 'GFS_BASE_PRESSURE: nonpositive delp'
+   pm(k)=pc(k)
+ enddo
+ end subroutine gfs_base_pressure_column
+
  end module mpas_atmphys_driver
 !=================================================================================================================

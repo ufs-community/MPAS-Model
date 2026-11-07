@@ -1,4 +1,3 @@
-
 ## Source files
 # physics/
 if (${DO_PHYSICS})
@@ -26,9 +25,13 @@ set(ATMOSPHERE_CORE_PHYSICS_SOURCES
     mpas_atmphys_update_surface.F
     mpas_atmphys_utilities.F
     mpas_atmphys_driver.F
+    mpas_gfs_pressure_repair.F90
     mpas_atmphys_driver_convection.F
     mpas_atmphys_driver_gwdo.F
     mpas_atmphys_driver_lsm.F
+    mpas_satmedmfvdifq_wrapper_mod.F90
+    mpas_gfs_convection_wrapper_mod.F90
+    mpas_gfs_base_pressure_option.F90
     mpas_atmphys_driver_pbl.F
     mpas_atmphys_driver_radiation_lw.F
     mpas_atmphys_driver_radiation_sw.F
@@ -100,9 +103,47 @@ set(ATMOSPHERE_CORE_PHYSICS_WRF_SOURCES
     module_sf_mynn.F
     sf_mynn_pre.F
     sf_sfclayrev_pre.F
+    module_gfs_machine.F
+    module_gfs_physcons.F
+    module_gfs_funcphys.F
+    module_progtm.F
+    module_sf_gfs.F
 )
 
 list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_WRF_SOURCES PREPEND physics/physics_wrf/)
+
+# physics/physics_gfs/
+# Imported GFS/UFS TKE-EDMF and latest SAMF deep/shallow convection science/helper routines.
+# MPAS wrappers remain in physics/ and are compiled as free-form Fortran.
+set(ATMOSPHERE_CORE_PHYSICS_GFS_FIXED_SOURCES
+    gfs_tke_edmf_compat.F
+    mfscuq_mod.F
+    canopy_utils_mod.F
+    samfaerosols.F
+)
+
+set(ATMOSPHERE_CORE_PHYSICS_GFS_FREE_SOURCES
+    tridi_mod.F
+    mfpbltq_mod.F
+    satmedmfvdifq.F
+    samfdeepcnv.f
+    samfshalcnv.f
+    progsigma_calc.f90
+    progomega_calc.f90
+)
+
+list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_GFS_FIXED_SOURCES PREPEND physics/physics_gfs/)
+list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_GFS_FREE_SOURCES  PREPEND physics/physics_gfs/)
+
+set_source_files_properties(${ATMOSPHERE_CORE_PHYSICS_GFS_FIXED_SOURCES}
+    PROPERTIES Fortran_FORMAT FIXED)
+set_source_files_properties(${ATMOSPHERE_CORE_PHYSICS_GFS_FREE_SOURCES}
+    PROPERTIES Fortran_FORMAT FREE)
+
+set(ATMOSPHERE_CORE_PHYSICS_GFS_SOURCES
+    ${ATMOSPHERE_CORE_PHYSICS_GFS_FIXED_SOURCES}
+    ${ATMOSPHERE_CORE_PHYSICS_GFS_FREE_SOURCES}
+)
 
 
 # physics/physics_noaa/GFL/
@@ -553,6 +594,7 @@ if (${DO_PHYSICS})
               ${ATMOSPHERE_CORE_PHYSICS_SOURCES}
               ${ATMOSPHERE_CORE_PHYSICS_MMM_SOURCES}
               ${ATMOSPHERE_CORE_PHYSICS_WRF_SOURCES}
+              ${ATMOSPHERE_CORE_PHYSICS_GFS_SOURCES}
               ${ATMOSPHERE_CORE_PHYSICS_UGWP_SOURCES}
               ${ATMOSPHERE_CORE_PHYSICS_TEMPO_SOURCES}
               ${ATMOSPHERE_CORE_PHYSICS_MYNN-EDMF_SOURCES}
@@ -567,6 +609,9 @@ else ()
               ${ATMOSPHERE_CORE_DIAGNOSTIC_SOURCES}
               ${ATMOSPHERE_CORE_DYNAMICS_SOURCES})
 endif()
+
+target_include_directories(core_atmosphere PRIVATE
+            ${CMAKE_CURRENT_SOURCE_DIR}/physics/physics_gfs)
 
 set(CORE_ATMOSPHERE_COMPILE_DEFINITIONS
     mpas=1
