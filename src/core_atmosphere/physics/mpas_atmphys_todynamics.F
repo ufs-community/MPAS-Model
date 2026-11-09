@@ -487,7 +487,7 @@
           enddo
           enddo
 
-       case('cu_tiedtke','cu_ntiedtke')
+       case('cu_tiedtke','cu_ntiedtke','cu_gfs_sas')
           if(rk_step == 1 .and. dynamics_substep == 1) then
              call exchange_halo_group(block%domain,'physics:cuten')
              call tend_toEdges(block,mesh,rucuten,rvcuten,rucuten_Edge)

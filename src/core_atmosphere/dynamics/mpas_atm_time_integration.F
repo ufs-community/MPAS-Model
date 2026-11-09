@@ -2795,7 +2795,8 @@ module atm_time_integration
       MPAS_ACC_TIMER_STOP('atm_srk3: physics ACC_data_xfer')
 
       if(config_convection_scheme == 'cu_grell_freitas' .or. &
-         config_convection_scheme == 'cu_ntiedtke') then
+         config_convection_scheme == 'cu_ntiedtke'      .or. &
+         config_convection_scheme == 'cu_gfs_sas') then
 
          MPAS_ACC_TIMER_START('atm_srk3: physics ACC_data_xfer')
          call mpas_pool_get_array(tend_physics, 'rqvdynten', rqvdynten)

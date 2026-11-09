@@ -643,6 +643,12 @@
  enddo
  enddo
 
+!-----------------------------------------------------------------------------------------------------------------
+! Keep native MPAS hydrostatic pressure for the general physics suite.
+! GFS TKE-EDMF and GFS SAS repair temporary pressure copies in their drivers.
+!-----------------------------------------------------------------------------------------------------------------
+
+
 !save the model-top pressure:
  do j = jts,jte
  do i = its,ite
@@ -1780,6 +1786,5 @@ end subroutine pre_microphysics
 
 end subroutine post_microphysics
 
-!=================================================================================================================
  end module mpas_atmphys_interface
 !=================================================================================================================
