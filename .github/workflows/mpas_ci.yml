@@ -1,0 +1,537 @@
+name: MPAS CI
+
+on: [push, pull_request, workflow_dispatch]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+#############################################################################################
+# CI for the ufs-community fork of MPAS-Dev/MPAS-A: make initial conditions with
+# init_atmosphere_model from this branch, then run atmosphere_model from this branch and from
+# a baseline codebase on those ICs and compare the output.
+#
+# Jobs (all GNU jobs run in the CI container, dustinswales/ufs-community-mpas-ci:gnu)
+#   build_init        make gfortran CORE=init_atmosphere (this branch)
+#   build_atmosphere  make gfortran CORE=atmosphere for this branch (Release, Debug, and
+#                     Release with stochastic physics) and for the baselines (MPAS-Dev v8.4.2
+#                     and ufs-community noaa/develop, Release and Debug). Each build is
+#                     cached on its source (this branch: hash of src/ and Makefile; baselines:
+#                     commit SHA), and uploaded with its run-time tables as atm-<variant>.
+#   build_intel       build-only coverage: Intel make/cmake, with and without stochastic
+#                     physics (pull requests and manual runs only).
+#   static            one static file per land-use variant (20-class MODIS, and 21-class with
+#                     lakes); cached on the init_atmosphere source, the static namelist and
+#                     the inputs release.
+#   ics               init / lbc / sfc_update files for each IC case, sanity-checked with
+#                     check_ics.py and uploaded as ics-<case>.
+#   run               baseline and feature-branch runs of atmosphere_model on the ICs from
+#                     `ics`, compared with cmp_rt2bl.py; output uploaded as mpas-<test>.
+#
+# IC cases (120 km CONUS)  source  date        static land use
+#   conus_gfs              gfs     2023031015  20-class MODIS; GSL namelists (59 levels, 9 soil)
+#   conus_gfs_lake         gfs     2023031015  21-class MODIS with lakes
+#   conus_gfs_noahmp       gfs     2023031015  20-class MODIS; NCAR namelists (55 levels, 4 soil)
+#   conus_gfs_noahmp10     gfs     2023031015  as conus_gfs_noahmp, with 10 soil layers
+#   conus_raps             rap     2024081518  20-class MODIS
+#   conus_raps_lake        rap     2024081518  21-class MODIS with lakes
+# (ics/cases/ also has conus_rapw and conus_rapw_lake for running by hand)
+#
+# Run tests             run config (testing_and_setup/ufs-community/cases/)   ICs               baselines
+#   <physics>.<bl>.<bt>  mpasdev.<physics>.gfs.winter                         conus_gfs_noahmp  v8.4.2 (NCAR namelist),
+#                        physics: mesoscale_reference, convection_permitting,                    develop (GSL namelist);
+#                                 mesoscale_reference_noahmp                                     Release and Debug
+#   hrrrv5.gfs           ufscommunity.hrrrv5.gfs.winter                       conus_gfs         develop, Release
+#   hrrrv5.rap           ufscommunity.hrrrv5.rap.summer                       conus_raps        develop, Release
+#   <physics>.stoch      ufscommunity.<physics>.gfs.winter.stoch              conus_gfs         develop, Release
+#                        physics: convection_permitting, hrrrv5; the feature run uses stochastic
+#                        physics, the baseline runs without it (nam_stochy removed)
+#
+# Inputs (mesh, geographic data, ungrib intermediate files, aerosol climatology) come from
+# release INPUTS_TAG of this repository (copy them with
+# testing_and_setup/ufs-community/ics/copy_inputs_release.sh). IC scripts and namelists are in
+# testing_and_setup/ufs-community/ics/ (from dustinswales/mpas-ic-factory).
+#############################################################################################
+
+env:
+  INPUTS_REPO: ${{ github.repository }}
+  INPUTS_TAG: MPAS-v8.4.2-1.20
+  ICS_DIR: testing_and_setup/ufs-community/ics
+  IMAGE: dustinswales/ufs-community-mpas-ci:gnu
+
+jobs:
+  ###########################################################################################
+  # Builds
+  ###########################################################################################
+  build_init:
+    name: build init_atmosphere
+    runs-on: ubuntu-22.04
+    container:
+      image: dustinswales/ufs-community-mpas-ci:gnu
+    defaults:
+      run:
+        shell: bash -el {0}
+    env:
+      PNETCDF: /opt/pnetcdf
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+      - name: Build init_atmosphere_model
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          make gfortran CORE=init_atmosphere > build.log 2>&1 || { tail -80 build.log; exit 1; }
+          test -x init_atmosphere_model
+          mkdir -p bin && cp init_atmosphere_model bin/
+          {
+            echo "code commit:        ${{ github.repository }}@${{ github.sha }}"
+            echo "compiler:           $(mpif90 --version | head -1)"
+            echo "image:              $IMAGE"
+            echo "workflow run:       ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          } > bin/build-info.txt
+          cat bin/build-info.txt
+      - uses: actions/upload-artifact@v7
+        with:
+          name: init-exe
+          path: bin/
+          retention-days: 7
+
+  build_atmosphere:
+    name: build atmosphere (${{ matrix.variant }})
+    runs-on: ubuntu-22.04
+    container:
+      image: dustinswales/ufs-community-mpas-ci:gnu
+    defaults:
+      run:
+        shell: bash -el {0}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # repo/ref empty = the commit under test
+          - { variant: feature-release,       repo: '',                       ref: '',           make_flags: '' }
+          - { variant: feature-debug,         repo: '',                       ref: '',           make_flags: DEBUG=true }
+          - { variant: feature-stoch-release, repo: '',                       ref: '',           make_flags: STOCHASTIC_PHYSICS=true }
+          - { variant: develop-release,       repo: ufs-community/MPAS-Model, ref: noaa/develop, make_flags: '' }
+          - { variant: develop-debug,         repo: ufs-community/MPAS-Model, ref: noaa/develop, make_flags: DEBUG=true }
+          - { variant: v8.4.2-release,        repo: MPAS-Dev/MPAS-Model,      ref: v8.4.2,       make_flags: '' }
+          - { variant: v8.4.2-debug,          repo: MPAS-Dev/MPAS-Model,      ref: v8.4.2,       make_flags: DEBUG=true }
+    env:
+      PNETCDF: /opt/pnetcdf
+      BUNDLE: atm-${{ matrix.variant }}
+    steps:
+      - name: Resolve baseline commit
+        id: baseline
+        if: matrix.repo != ''
+        run: |
+          sha=$(git ls-remote https://github.com/${{ matrix.repo }}.git "${{ matrix.ref }}" | head -1 | cut -f1)
+          [ -n "$sha" ] || { echo "::error::cannot resolve ${{ matrix.repo }}@${{ matrix.ref }}"; exit 1; }
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout this branch
+        if: matrix.repo == ''
+        uses: actions/checkout@v7
+        with:
+          path: src
+          submodules: recursive
+
+      - name: Restore build
+        id: cache
+        uses: actions/cache@v6
+        with:
+          path: ${{ env.BUNDLE }}
+          key: ${{ env.BUNDLE }}-v1-${{ matrix.repo != '' && steps.baseline.outputs.sha || hashFiles('src/Makefile', 'src/src/**') }}
+
+      - name: Checkout baseline (${{ matrix.repo }}@${{ matrix.ref }})
+        if: matrix.repo != '' && steps.cache.outputs.cache-hit != 'true'
+        run: git clone --recursive --depth 1 --branch "${{ matrix.ref }}" https://github.com/${{ matrix.repo }}.git src
+
+      - name: Install LAPACK/BLAS and NetCDF-Fortran (stochastic physics)
+        if: contains(matrix.make_flags, 'STOCHASTIC') && steps.cache.outputs.cache-hit != 'true'
+        run: |
+          apt-get update -y
+          apt-get install -y liblapack-dev libblas-dev libnetcdff-dev
+          # The stochastic build expects a single NETCDF root, so gather the apt-installed
+          # NetCDF-C and NetCDF-Fortran headers and libraries under one directory.
+          NETCDF_DIR=/home/runner/NetCDF
+          mkdir -p ${NETCDF_DIR}/lib ${NETCDF_DIR}/include
+          for f in /usr/include/netcdf*.h /usr/include/netcdf*.inc /usr/include/netcdf*.mod; do
+            [ -e "$f" ] && ln -sf "$f" ${NETCDF_DIR}/include/ || true
+          done
+          for f in /usr/lib/x86_64-linux-gnu/libnetcdf*.so; do
+            [ -e "$f" ] && ln -sf "$f" ${NETCDF_DIR}/lib/ || true
+          done
+          echo "NETCDF=${NETCDF_DIR}" >> "$GITHUB_ENV"
+
+      - name: Build atmosphere_model
+        if: steps.cache.outputs.cache-hit != 'true'
+        working-directory: src
+        run: |
+          git config --global --add safe.directory "$PWD"
+          make gfortran CORE=atmosphere ${{ matrix.make_flags }}
+
+      - name: Bundle executable and run-time tables
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          phys=src/src/core_atmosphere/physics
+          mkdir -p ${BUNDLE}
+          cp src/atmosphere_model ${BUNDLE}/
+          cp ${phys}/physics_wrf/files/{*.TBL,*.DBL,*DATA} ${BUNDLE}/
+          for f in ${phys}/physics_noahmp/parameters/NoahmpTable.TBL \
+                   ${phys}/physics_noaa/TEMPO/tables/ccn_activate.bin; do
+            if [ -f "$f" ]; then cp "$f" ${BUNDLE}/; else echo "::warning::${f#src/} not in this source tree"; fi
+          done
+          {
+            echo "source:      ${{ matrix.repo || github.repository }}@$(git -C src rev-parse HEAD)"
+            echo "make flags:  gfortran CORE=atmosphere ${{ matrix.make_flags }}"
+            echo "image:       $IMAGE"
+          } > ${BUNDLE}/build-info.txt
+          cat ${BUNDLE}/build-info.txt
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ${{ env.BUNDLE }}
+          path: ${{ env.BUNDLE }}/
+          retention-days: 7
+
+  build_intel:
+    name: build only (intel, ${{ matrix.build-system }}${{ matrix.stochastic && ', stochastic' || '' }})
+    if: github.event_name != 'push'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        build-system: [make, cmake]
+        stochastic: [false, true]
+    env:
+      INTEL_MPI: /opt/intel/oneapi/mpi/2021.10.0
+      NETCDF_F_VERSION: 4.6.1
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+
+      - name: Install Intel compilers & MPI${{ matrix.stochastic && ' & MKL' || '' }}
+        uses: NOAA-EMC/ci-install-intel-toolkit@ufs-community-mpas-ci-v2.0
+        with:
+          install-mpi: true
+          install-oneapi: false
+          mpi-wrapper-setup: classic
+          install-mkl: ${{ matrix.stochastic }}
+
+      - name: Build PnetCDF
+        uses: ./.github/actions/build-pnetcdf
+        with:
+          mpi-root: ${{ env.INTEL_MPI }}
+          cache-tag: intel-mpi-2021.10.0
+
+      - name: Setup environment
+        run: |
+          echo "FC=mpiifort" >> "$GITHUB_ENV"
+          echo "CC=mpiicc"   >> "$GITHUB_ENV"
+
+      # Stochastic physics also needs NetCDF (C from apt, Fortran built with Intel)
+      - name: Install NetCDF-C library
+        if: matrix.stochastic
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libnetcdf-dev
+          echo "NETCDF=/home/runner/NetCDF" >> "$GITHUB_ENV"
+
+      - name: Cache NetCDF-Fortran
+        id: cache-netcdf-fortran
+        if: matrix.stochastic
+        uses: actions/cache@v6
+        with:
+          path: /home/runner/NetCDF
+          key: netcdf-fortran-${{ env.NETCDF_F_VERSION }}-${{ runner.os }}-intel-mpi-2021.10.0
+
+      - name: Build NetCDF-Fortran
+        if: matrix.stochastic && steps.cache-netcdf-fortran.outputs.cache-hit != 'true'
+        working-directory: ${{ runner.temp }}
+        run: |
+          wget -q https://github.com/Unidata/netcdf-fortran/archive/refs/tags/v${NETCDF_F_VERSION}.tar.gz
+          tar -xf v${NETCDF_F_VERSION}.tar.gz
+          cd netcdf-fortran-${NETCDF_F_VERSION}
+          autoreconf -i
+          CPPFLAGS="-I$(nc-config --includedir)" \
+          LDFLAGS="-L$(nc-config --libdir)" \
+            ./configure --prefix=${NETCDF}
+          make -j"$(nproc)" install
+          # Put libnetcdf (C) next to libnetcdff so a single NETCDF root works for MPAS.
+          ln -sf "$(nc-config --libdir)/libnetcdf.so" ${NETCDF}/lib/libnetcdf.so
+
+      - name: Build MPAS (make)
+        if: matrix.build-system == 'make'
+        run: |
+          make intel-mpi CORE=init_atmosphere
+          make intel-mpi CORE=atmosphere ${{ matrix.stochastic && 'STOCHASTIC_PHYSICS=true AUTOCLEAN=true' || '' }}
+
+      - name: Build MPAS (cmake)
+        if: matrix.build-system == 'cmake'
+        run: |
+          cmake -S . -B build -DMPAS_DOUBLE_PRECISION=OFF -DMPAS_CORES="init_atmosphere;atmosphere" \
+            ${{ matrix.stochastic && '-DSTOCHASTIC_PHYSICS=ON' || '' }}
+          cmake --build build -j"$(nproc)"
+
+  ###########################################################################################
+  # Step 1: make ICs with init_atmosphere
+  ###########################################################################################
+  static:
+    needs: build_init
+    runs-on: ubuntu-22.04
+    container:
+      image: dustinswales/ufs-community-mpas-ci:gnu
+    defaults:
+      run:
+        shell: bash -el {0}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { static_key: conus-120km,       case: conus_raps,      nml_dir: step1_static }
+          - { static_key: conus-120km-lakes, case: conus_raps_lake, nml_dir: step1_static_lakes }
+    name: static (${{ matrix.static_key }})
+    steps:
+      - uses: actions/checkout@v7
+      - name: Restore static files
+        id: cache
+        uses: actions/cache@v6
+        with:
+          path: static/${{ matrix.static_key }}
+          key: static-v1-${{ matrix.static_key }}-${{ env.INPUTS_TAG }}-${{ hashFiles('src/core_init_atmosphere/**', 'src/framework/**', 'src/operators/**', 'src/external/**', 'src/tools/**', 'Makefile', format('testing_and_setup/ufs-community/ics/case_files/{0}/*', matrix.nml_dir), 'testing_and_setup/ufs-community/ics/scripts/create_case.sh') }}
+      - uses: actions/download-artifact@v8
+        if: steps.cache.outputs.cache-hit != 'true'
+        with:
+          name: init-exe
+          path: bin/
+      - name: Fetch mesh and geographic data
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          df -h .
+          bash "$ICS_DIR/scripts/fetch_inputs.sh" -r "$INPUTS_REPO" -t "$INPUTS_TAG" -d inputs grids geog
+          df -h .
+      - name: Create static file
+        if: steps.cache.outputs.cache-hit != 'true'
+        env:
+          MPIRUN: mpiexec --allow-run-as-root --oversubscribe -np
+        run: |
+          chmod +x bin/init_atmosphere_model
+          DESCRIBE_EXTRA=$PWD/bin/build-info.txt \
+            bash "$ICS_DIR/scripts/create_case.sh" -c ${{ matrix.case }} -e bin/init_atmosphere_model \
+              -i inputs -o out -n 4 -s static
+          mkdir -p static/${{ matrix.static_key }}
+          cp out/*/case_files/mpas.*.nc out/*/case_files/log.static static/${{ matrix.static_key }}/
+          ls -l static/${{ matrix.static_key }}
+      - uses: actions/upload-artifact@v7
+        with:
+          name: static-${{ matrix.static_key }}
+          path: static/${{ matrix.static_key }}/
+          retention-days: 7
+
+  ics:
+    needs: [build_init, static]
+    runs-on: ubuntu-22.04
+    container:
+      image: dustinswales/ufs-community-mpas-ci:gnu
+    defaults:
+      run:
+        shell: bash -el {0}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { case: conus_gfs,          source: gfs, static_key: conus-120km,       lbc_times: 17, checks: '',                          bundles: ungrib-gfs.2023031015 ungrib-sst.2023031015 }
+          - { case: conus_gfs_lake,     source: gfs, static_key: conus-120km-lakes, lbc_times: 17, checks: --lakes,                     bundles: ungrib-gfs.2023031015 ungrib-sst.2023031015 }
+          - { case: conus_gfs_noahmp,   source: gfs, static_key: conus-120km,       lbc_times: 17, checks: --noahmp,                    bundles: ungrib-gfs.2023031015 ungrib-sst.2023031015 }
+          - { case: conus_gfs_noahmp10, source: gfs, static_key: conus-120km,       lbc_times: 17, checks: --noahmp --soil-levels 10,   bundles: ungrib-gfs.2023031015 ungrib-sst.2023031015 }
+          - { case: conus_raps,         source: rap, static_key: conus-120km,       lbc_times: 2,  checks: '',                          bundles: ungrib-rap.2024081518 }
+          - { case: conus_raps_lake,    source: rap, static_key: conus-120km-lakes, lbc_times: 2,  checks: --lakes,                     bundles: ungrib-rap.2024081518 }
+    name: ics (${{ matrix.case }})
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: init-exe
+          path: bin/
+      - uses: actions/download-artifact@v8
+        with:
+          name: static-${{ matrix.static_key }}
+          path: static/
+      - name: Fetch inputs
+        run: |
+          df -h .
+          # shellcheck disable=SC2086
+          bash "$ICS_DIR/scripts/fetch_inputs.sh" -r "$INPUTS_REPO" -t "$INPUTS_TAG" -d inputs \
+            grids aerosols ${{ matrix.bundles }}
+          df -h .
+      - name: Create init / lbc / sfc_update files
+        env:
+          MPIRUN: mpiexec --allow-run-as-root --oversubscribe -np
+        run: |
+          chmod +x bin/init_atmosphere_model
+          DESCRIBE_EXTRA=$PWD/bin/build-info.txt \
+            bash "$ICS_DIR/scripts/create_case.sh" -c ${{ matrix.case }} -e bin/init_atmosphere_model \
+              -i inputs -o out -n 4 -S static
+          case_dir=$(basename out/*)
+          echo "CASE_DIR=$case_dir" >> "$GITHUB_ENV"
+          ls -l "out/$case_dir/case_files"
+      - name: Set up Python (netCDF4) for checks
+        uses: conda-incubator/setup-miniconda@v4
+        with:
+          python-version: '3.11'
+          auto-update-conda: true
+          auto-activate-base: false
+          environment-file: testing_and_setup/ufs-community/environment.yml
+          activate-environment: mpas-ci-env
+      - name: Check files
+        run: |
+          python "$ICS_DIR/check_ics.py" "out/$CASE_DIR/case_files" \
+            --source ${{ matrix.source }} --lbc-times ${{ matrix.lbc_times }} ${{ matrix.checks }}
+      - name: Upload files
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: ics-${{ matrix.case }}
+          path: out/
+          retention-days: 14
+          if-no-files-found: ignore
+
+  ###########################################################################################
+  # Step 2: run atmosphere_model (baseline and this branch) on those ICs and compare
+  ###########################################################################################
+  run:
+    needs: [build_atmosphere, ics]
+    # Run every test whose own inputs exist, even if another IC case or build failed (a test
+    # whose inputs are missing fails at the download step).
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-22.04
+    container:
+      image: dustinswales/ufs-community-mpas-ci:gnu
+    defaults:
+      run:
+        shell: bash -el {0}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # test: <physics>.<baseline>.<build type>; nml_*: namelist.atmosphere.<suffix> to use
+          # ('' = the case's namelist.atmosphere); stoch: feature run has stochastic physics.
+          - { test: mesoscale_reference.v8.4.2.release,          case: mpasdev.mesoscale_reference.gfs.winter,          ics: conus_gfs_noahmp, bl: v8.4.2-release,  ft: feature-release,       nml_bl: ncar, nml_ft: gsl, stoch: false }
+          - { test: convection_permitting.v8.4.2.release,        case: mpasdev.convection_permitting.gfs.winter,        ics: conus_gfs_noahmp, bl: v8.4.2-release,  ft: feature-release,       nml_bl: ncar, nml_ft: gsl, stoch: false }
+          - { test: mesoscale_reference_noahmp.v8.4.2.release,   case: mpasdev.mesoscale_reference_noahmp.gfs.winter,   ics: conus_gfs_noahmp, bl: v8.4.2-release,  ft: feature-release,       nml_bl: ncar, nml_ft: gsl, stoch: false }
+          - { test: mesoscale_reference.develop.release,         case: mpasdev.mesoscale_reference.gfs.winter,          ics: conus_gfs_noahmp, bl: develop-release, ft: feature-release,       nml_bl: gsl,  nml_ft: gsl, stoch: false }
+          - { test: convection_permitting.develop.release,       case: mpasdev.convection_permitting.gfs.winter,        ics: conus_gfs_noahmp, bl: develop-release, ft: feature-release,       nml_bl: gsl,  nml_ft: gsl, stoch: false }
+          - { test: mesoscale_reference_noahmp.develop.release,  case: mpasdev.mesoscale_reference_noahmp.gfs.winter,   ics: conus_gfs_noahmp, bl: develop-release, ft: feature-release,       nml_bl: gsl,  nml_ft: gsl, stoch: false }
+          - { test: mesoscale_reference.v8.4.2.debug,            case: mpasdev.mesoscale_reference.gfs.winter,          ics: conus_gfs_noahmp, bl: v8.4.2-debug,    ft: feature-debug,         nml_bl: ncar, nml_ft: gsl, stoch: false }
+          - { test: convection_permitting.v8.4.2.debug,          case: mpasdev.convection_permitting.gfs.winter,        ics: conus_gfs_noahmp, bl: v8.4.2-debug,    ft: feature-debug,         nml_bl: ncar, nml_ft: gsl, stoch: false }
+          - { test: mesoscale_reference_noahmp.v8.4.2.debug,     case: mpasdev.mesoscale_reference_noahmp.gfs.winter,   ics: conus_gfs_noahmp, bl: v8.4.2-debug,    ft: feature-debug,         nml_bl: ncar, nml_ft: gsl, stoch: false }
+          - { test: mesoscale_reference.develop.debug,           case: mpasdev.mesoscale_reference.gfs.winter,          ics: conus_gfs_noahmp, bl: develop-debug,   ft: feature-debug,         nml_bl: gsl,  nml_ft: gsl, stoch: false }
+          - { test: convection_permitting.develop.debug,         case: mpasdev.convection_permitting.gfs.winter,        ics: conus_gfs_noahmp, bl: develop-debug,   ft: feature-debug,         nml_bl: gsl,  nml_ft: gsl, stoch: false }
+          - { test: mesoscale_reference_noahmp.develop.debug,    case: mpasdev.mesoscale_reference_noahmp.gfs.winter,   ics: conus_gfs_noahmp, bl: develop-debug,   ft: feature-debug,         nml_bl: gsl,  nml_ft: gsl, stoch: false }
+          - { test: hrrrv5.gfs.develop.release,                  case: ufscommunity.hrrrv5.gfs.winter,                  ics: conus_gfs,        bl: develop-release, ft: feature-release,       nml_bl: '',   nml_ft: '',  stoch: false }
+          - { test: hrrrv5.rap.develop.release,                  case: ufscommunity.hrrrv5.rap.summer,                  ics: conus_raps,       bl: develop-release, ft: feature-release,       nml_bl: '',   nml_ft: '',  stoch: false }
+          - { test: convection_permitting.stoch.develop.release, case: ufscommunity.convection_permitting.gfs.winter.stoch, ics: conus_gfs,     bl: develop-release, ft: feature-stoch-release, nml_bl: '',   nml_ft: '',  stoch: true }
+          - { test: hrrrv5.stoch.develop.release,                case: ufscommunity.hrrrv5.gfs.winter.stoch,            ics: conus_gfs,        bl: develop-release, ft: feature-stoch-release, nml_bl: '',   nml_ft: '',  stoch: true }
+    name: run (${{ matrix.test }})
+    env:
+      UFS_COMMUNITY: testing_and_setup/ufs-community
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Download baseline build (${{ matrix.bl }})
+        uses: actions/download-artifact@v8
+        with:
+          name: atm-${{ matrix.bl }}
+          path: build_bl/
+      - name: Download feature-branch build (${{ matrix.ft }})
+        uses: actions/download-artifact@v8
+        with:
+          name: atm-${{ matrix.ft }}
+          path: build_ft/
+      - name: Download ICs (${{ matrix.ics }})
+        uses: actions/download-artifact@v8
+        with:
+          name: ics-${{ matrix.ics }}
+          path: ics/
+
+      - name: Download UFS physics tables (TEMPO, Thompson, UGW)
+        run: ${UFS_COMMUNITY}/data/get_data.sh --tables-only
+
+      - name: Create and populate run directories
+        run: |
+          ics_dir=$(echo "$PWD"/ics/*/case_files)
+          tables=$PWD/${UFS_COMMUNITY}/data/tables
+          case_files=$PWD/${UFS_COMMUNITY}/cases/${{ matrix.case }}
+          # setup_rundir <run dir> <build dir> <namelist suffix>
+          setup_rundir() {
+            local rundir=$1 build=$PWD/$2 nml=$3
+            mkdir -p "$rundir" && cd "$rundir"
+            cp "$case_files"/* .
+            [ -n "$nml" ] && ln -sf namelist.atmosphere.$nml namelist.atmosphere
+            chmod +x "$build/atmosphere_model"
+            ln -sf "$build"/* .
+            ln -sf "$tables"/{tempo,thompson,ugw}/* .
+            ln -sf "$ics_dir"/*.init.*.nc         mpas.init.nc
+            ln -sf "$ics_dir"/*.lbc.*.nc          mpas.lbc.nc
+            ln -sf "$ics_dir"/*.ugwp_oro_data.nc  mpas.ugwp_oro_data.nc
+            for f in "$ics_dir"/*.sfc_update.*.nc; do [ -e "$f" ] && ln -sf "$f" mpas.sfc_update.nc; done
+            cd - > /dev/null
+          }
+          setup_rundir run_bl build_bl "${{ matrix.nml_bl }}"
+          setup_rundir run_ft build_ft "${{ matrix.nml_ft }}"
+          if [ "${{ matrix.stoch }}" = "true" ]; then
+            # The baseline runs without stochastic physics: drop the nam_stochy namelist and the
+            # stochastic fields from its stream lists.
+            sed -i '/^[[:space:]]*&nam_stochy/,/^[[:space:]]*\//d' run_bl/namelist.atmosphere
+            sed -i '/stoch/d' run_bl/stream_list.*
+          fi
+          cat build_bl/build-info.txt build_ft/build-info.txt
+
+      - name: Run MPAS -- baseline (${{ matrix.bl }})
+        working-directory: run_bl
+        run: |
+          ls -l
+          mpiexec --allow-run-as-root -np 1 ./atmosphere_model
+
+      - name: Run MPAS -- feature branch (${{ matrix.ft }})
+        working-directory: run_ft
+        run: |
+          ls -l
+          mpiexec --allow-run-as-root -np 1 ./atmosphere_model
+
+      - name: Set up Python (nccmp) for comparison
+        uses: conda-incubator/setup-miniconda@v4
+        with:
+          python-version: '3.11'
+          auto-update-conda: true
+          auto-activate-base: false
+          environment-file: testing_and_setup/ufs-community/environment.yml
+          activate-environment: mpas-ci-env
+
+      - name: Compare feature branch to baseline
+        run: |
+          # cmp_rt2bl.py passes when the baseline produced nothing, so check for output first.
+          compgen -G "run_bl/history.*.nc" > /dev/null || { echo "::error::baseline run produced no history files"; exit 1; }
+          ${UFS_COMMUNITY}/cmp_rt2bl.py --dir_rt "$PWD/run_ft" --dir_bl "$PWD/run_bl"
+
+      - name: Collect output for artifact
+        if: ${{ !cancelled() }}
+        run: |
+          for t in bl ft; do
+            out=artifact/data_${t}
+            mkdir -p ${out}
+            cp run_${t}/namelist.atmosphere ${out}/ 2>/dev/null || true
+            cp run_${t}/log.atmosphere.* run_${t}/history.*.nc run_${t}/diag.*.nc ${out}/ 2>/dev/null || true
+          done
+
+      - name: Upload output as GitHub artifact
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: mpas-${{ matrix.test }}
+          path: artifact/
+          if-no-files-found: warn

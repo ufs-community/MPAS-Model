@@ -1,6 +1,6 @@
-# make_ics: init_atmosphere tests
+# Initial conditions for MPAS CI (init_atmosphere tests)
 
-`.github/workflows/make_ics.yml` builds `init_atmosphere_model` from the branch under test and creates the static, initial-condition, lateral-boundary (and, for GFS, surface-update) files for six 120 km CONUS cases:
+Step 1 of `.github/workflows/mpas_ci.yml` builds `init_atmosphere_model` from the branch under test and creates the static, initial-condition, lateral-boundary (and, for GFS, surface-update) files for six 120 km CONUS cases:
 
 | case | source | date | static land use |
 |---|---|---|---|
@@ -29,7 +29,7 @@ Each case is checked with `check_ics.py`:
 
 The files are uploaded as `ics-<case>` artifacts.
 
-The existing `run_mpas*` workflows still use the staged files from `data/get_data.sh` and are unchanged.
+Step 2 of the workflow (the `run` job) runs `atmosphere_model` from the branch under test and from a baseline on these files: the `mpasdev.*` run tests use `conus_gfs_noahmp` (NCAR levels), `ufscommunity.hrrrv5.gfs.winter` and the stochastic tests use `conus_gfs`, and `ufscommunity.hrrrv5.rap.summer` uses `conus_raps`. Only the physics tables still come from `data/get_data.sh` (`--tables-only`).
 
 ## Layout
 
@@ -49,7 +49,7 @@ copy_inputs_release.sh       copies the input release from mpas-ic-factory
 
 ## Inputs
 
-The workflow downloads its inputs from the release named by `INPUTS_TAG` in `make_ics.yml` (`v8.4.2-1.19`) of the repository it runs in. Copy them once from the factory release, then do the same for any other repository that runs the workflow, such as ufs-community/MPAS-Model. By default only the bundles the workflow uses are copied (grids, aerosols, geographic data including the lakes dataset, summer RAP, GFS and its SST: about 14 GB). Bundles already in the release are skipped, so re-running adds only what is missing. Add `-a` for every bundle (about 30 GB), or `-b "..."` to choose:
+The workflow downloads its inputs from the release named by `INPUTS_TAG` in `mpas_ci.yml` of the repository it runs in. Copy them once from the factory release, then do the same for any other repository that runs the workflow, such as ufs-community/MPAS-Model. By default only the bundles the workflow uses are copied (grids, aerosols, geographic data including the lakes dataset, summer RAP, GFS and its SST: about 14 GB). Bundles already in the release are skipped, so re-running adds only what is missing. Add `-a` for every bundle (about 30 GB), or `-b "..."` to choose:
 
 ```bash
 bash testing_and_setup/ufs-community/ics/copy_inputs_release.sh dustinswales/MPAS-Model /path/to/work
