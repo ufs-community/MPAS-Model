@@ -42,8 +42,8 @@ permissions:
 #
 # Run tests             run config (testing_and_setup/ufs-community/cases/)   ICs               baselines
 #   <physics>.<bl>.<bt>  mpasdev.<physics>.gfs.winter                         conus_gfs_noahmp  v8.4.2 (NCAR namelist),
-#                        physics: mesoscale_reference, convection_permitting,                   develop (GSL namelist);
-#                                 mesoscale_reference_noahmp                                    Release and Debug
+#                        physics: mesoscale_reference, convection_permitting,                    develop (GSL namelist);
+#                                 mesoscale_reference_noahmp                                     Release and Debug
 #   hrrrv5.gfs           ufscommunity.hrrrv5.gfs.winter                       conus_gfs         develop, Release
 #   hrrrv5.rap           ufscommunity.hrrrv5.rap.summer                       conus_raps        develop, Release
 #   <physics>.stoch      ufscommunity.<physics>.gfs.winter.stoch              conus_gfs         develop, Release
