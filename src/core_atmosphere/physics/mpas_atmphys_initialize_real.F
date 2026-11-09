@@ -934,7 +934,7 @@ end subroutine init_soil_layers_properties
  character(len=StrKIND):: mess
  integer, pointer:: nCellsSolve,nSoilLevels
  integer:: iCell,iSoil
- integer:: num_seaice_changes
+ integer:: num_seaice_changes, num_lake_ice
  integer,dimension(:),pointer:: landmask,isltyp,ivgtyp
 
  real(kind=RKIND):: xice_threshold
@@ -948,7 +948,8 @@ end subroutine init_soil_layers_properties
 
  logical, pointer :: config_frac_seaice
  character(len=StrKIND),pointer:: config_landuse_data
- integer,pointer:: isice_lu
+ integer,pointer:: isice_lu, islake_lu
+ logical:: lake_point
 
 !note that this threshold is also defined in module_physics_vars.F.It is defined here to avoid
 !adding "use module_physics_vars" since this subroutine is only used for the initialization of
@@ -967,6 +968,7 @@ end subroutine init_soil_layers_properties
  call mpas_pool_get_dimension(dims, 'nSoilLevels', nSoilLevels)
 
  call mpas_pool_get_array(mesh, 'isice_lu', isice_lu)
+ call mpas_pool_get_array(mesh, 'islake_lu', islake_lu)
  call mpas_pool_get_array(mesh, 'landmask', landmask)
  call mpas_pool_get_array(mesh, 'lu_index', ivgtyp)
  call mpas_pool_get_array(mesh, 'soilcat_top', isltyp)
@@ -992,6 +994,7 @@ end subroutine init_soil_layers_properties
  call mpas_pool_get_array(input, 'smcrel', smcrel)
 
  call mpas_log_write('--- isice_lu   = $i', intArgs=(/isice_lu/))
+ call mpas_log_write('--- islake_lu  = $i', intArgs=(/islake_lu/))
 
 !assign the threshold value for xice as a function of config_frac_seaice:
  if(.not. config_frac_seaice) then
@@ -1011,12 +1014,31 @@ end subroutine init_soil_layers_properties
  call mpas_log_write('--- tsk_seaice_threshold    : $r', realArgs=(/tsk_seaice_threshold/))
 
 !convert seaice points to land points when the sea-ice fraction is greater than the
-!prescribed threshold:
+!prescribed threshold. Frozen lakes (lu_index = islake_lu) are the exception: they stay lakes.
  num_seaice_changes = 0
+ num_lake_ice       = 0
  do iCell = 1, nCellsSolve
     seaice(iCell) = 0._RKIND
+    lake_point = (islake_lu > 0 .and. ivgtyp(iCell) == islake_lu)
+
     if(xice(iCell) .ge. xice_threshold .or. &
       (landmask(iCell).eq.0 .and. skintemp(iCell).lt.tsk_seaice_threshold)) then
+
+       if(lake_point) then
+          !... frozen lakes stay lakes: keep the lake land use category, the water soil category,
+          !    landmask and xland, and the deep soil temperature; only record the ice state.
+          !    The lake model handles lake ice itself.
+          num_lake_ice  = num_lake_ice + 1
+          seaice(iCell) = 1._RKIND
+          !cold skin temperature without an ice analysis: treat the lake as fully ice covered.
+          if(xice(iCell) .lt. xice_threshold) xice(iCell) = 1._RKIND
+          snoalb(iCell) = 0.75
+          vegfra(iCell) = 0._RKIND
+          !top limit on snow depth on lake ice: 1.2 m or 360 mm swe
+          snowh(iCell)  = min(snowh(iCell),1.2_RKIND)
+          snow(iCell)   = min(snow(iCell),360._RKIND)
+          cycle
+       endif
 
        num_seaice_changes = num_seaice_changes + 1
        !... sea-ice points are converted to land points:
@@ -1059,6 +1081,9 @@ end subroutine init_soil_layers_properties
  call mpas_log_write('')
  write(mess,fmt='(A,i12)') 'number of seaice cells converted to land cells 2 =', &
        num_seaice_changes
+ call physics_message(mess)
+ write(mess,fmt='(A,i12)') 'number of frozen lake cells kept as lakes =', &
+       num_lake_ice
  call physics_message(mess)
 
 !call mpas_log_write('--- end physics_init_seaice:')
