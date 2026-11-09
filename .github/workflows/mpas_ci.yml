@@ -14,13 +14,18 @@ permissions:
 # init_atmosphere_model from this branch, then run atmosphere_model from this branch and from
 # a baseline codebase on those ICs and compare the output.
 #
-# Jobs (all GNU jobs run in the CI container, dustinswales/ufs-community-mpas-ci:gnu)
-#   build_init        make gfortran CORE=init_atmosphere (this branch)
-#   build_atmosphere  make gfortran CORE=atmosphere for this branch (Release, Debug, and
-#                     Release with stochastic physics) and for the baselines (MPAS-Dev v8.4.2
-#                     and ufs-community noaa/develop, Release and Debug). Each build is
-#                     cached on its source (this branch: hash of src/ and Makefile; baselines:
-#                     commit SHA), and uploaded with its run-time tables as atm-<variant>.
+# The run tests, the atmosphere builds they need and the toolchains (CI containers
+# dustinswales/ufs-community-mpas-ci:gnu and :oneapi) are listed in
+# testing_and_setup/ufs-community/ci_tests.json.
+#
+# Jobs
+#   plan              make the build_atmosphere and run matrices from ci_tests.json
+#   build_init        make gfortran CORE=init_atmosphere (this branch; GNU container)
+#   build_atmosphere  make <target> CORE=atmosphere for this branch and the baselines (MPAS-Dev
+#                     v8.4.2, ufs-community noaa/develop) with each toolchain a test needs.
+#                     Each build is cached on its source (this branch: hash of src/ and
+#                     Makefile; baselines: commit SHA), and uploaded with its run-time tables
+#                     as atm-<toolchain>-<variant>.
 #   build_intel       build-only coverage: Intel make/cmake, with and without stochastic
 #                     physics (pull requests and manual runs only).
 #   static            one static file per land-use variant (20-class MODIS, and 21-class with
@@ -29,7 +34,9 @@ permissions:
 #   ics               init / lbc / sfc_update files for each IC case, sanity-checked with
 #                     check_ics.py and uploaded as ics-<case>.
 #   run               baseline and feature-branch runs of atmosphere_model on the ICs from
-#                     `ics`, compared with cmp_rt2bl.py; output uploaded as mpas-<test>.
+#                     `ics` (made with GNU and shared by all toolchains), compared with
+#                     cmp_rt2bl.py; output uploaded as mpas-<toolchain>-<test>.
+#   summary           one table of all run results on the workflow run's summary page.
 #
 # IC cases (120 km CONUS)  source  date        static land use
 #   conus_gfs              gfs     2023031015  20-class MODIS; GSL namelists (59 levels, 9 soil)
@@ -40,7 +47,8 @@ permissions:
 #   conus_raps_lake        rap     2024081518  21-class MODIS with lakes
 # (ics/cases/ also has conus_rapw and conus_rapw_lake for running by hand)
 #
-# Run tests             run config (testing_and_setup/ufs-community/cases/)   ICs               baselines
+# Run tests (GNU; oneapi runs the Release tests without stochastic physics)
+#                       run config (testing_and_setup/ufs-community/cases/)   ICs               baselines
 #   <physics>.<bl>.<bt>  mpasdev.<physics>.gfs.winter                         conus_gfs_noahmp  v8.4.2 (NCAR namelist),
 #                        physics: mesoscale_reference, convection_permitting,                    develop (GSL namelist);
 #                                 mesoscale_reference_noahmp                                     Release and Debug
@@ -65,6 +73,20 @@ env:
   IMAGE: dustinswales/ufs-community-mpas-ci:gnu
 
 jobs:
+  plan:
+    name: plan builds and tests
+    runs-on: ubuntu-latest
+    outputs:
+      builds: ${{ steps.plan.outputs.builds }}
+      runs: ${{ steps.plan.outputs.runs }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: testing_and_setup/ufs-community
+      - name: Make matrices from ci_tests.json
+        id: plan
+        run: python3 testing_and_setup/ufs-community/ci_plan.py
+
   ###########################################################################################
   # Builds
   ###########################################################################################
@@ -102,28 +124,20 @@ jobs:
           retention-days: 7
 
   build_atmosphere:
-    name: build atmosphere (${{ matrix.variant }})
+    name: build atmosphere (${{ matrix.toolchain }}, ${{ matrix.variant }})
+    needs: plan
     runs-on: ubuntu-22.04
     container:
-      image: dustinswales/ufs-community-mpas-ci:gnu
+      image: ${{ matrix.image }}
     defaults:
       run:
         shell: bash -el {0}
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          # repo/ref empty = the commit under test
-          - { variant: feature-release,       repo: '',                       ref: '',           make_flags: '' }
-          - { variant: feature-debug,         repo: '',                       ref: '',           make_flags: DEBUG=true }
-          - { variant: feature-stoch-release, repo: '',                       ref: '',           make_flags: STOCHASTIC_PHYSICS=true }
-          - { variant: develop-release,       repo: ufs-community/MPAS-Model, ref: noaa/develop, make_flags: '' }
-          - { variant: develop-debug,         repo: ufs-community/MPAS-Model, ref: noaa/develop, make_flags: DEBUG=true }
-          - { variant: v8.4.2-release,        repo: MPAS-Dev/MPAS-Model,      ref: v8.4.2,       make_flags: '' }
-          - { variant: v8.4.2-debug,          repo: MPAS-Dev/MPAS-Model,      ref: v8.4.2,       make_flags: DEBUG=true }
+      matrix: ${{ fromJSON(needs.plan.outputs.builds) }}
     env:
       PNETCDF: /opt/pnetcdf
-      BUNDLE: atm-${{ matrix.variant }}
+      BUNDLE: atm-${{ matrix.toolchain }}-${{ matrix.variant }}
     steps:
       - name: Resolve baseline commit
         id: baseline
@@ -151,8 +165,22 @@ jobs:
         if: matrix.repo != '' && steps.cache.outputs.cache-hit != 'true'
         run: git clone --recursive --depth 1 --branch "${{ matrix.ref }}" https://github.com/${{ matrix.repo }}.git src
 
-      - name: Install LAPACK/BLAS and NetCDF-Fortran (stochastic physics)
-        if: contains(matrix.make_flags, 'STOCHASTIC') && steps.cache.outputs.cache-hit != 'true'
+      - name: Check MPI compiler wrappers
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          # make gfortran uses mpif90/mpicc, make intel uses mpifort/mpicc (Intel MPI wrappers
+          # that must call ifx/icx; see docker/Dockerfile-oneapi-minimal).
+          for w in mpif90 mpifort mpicc; do
+            command -v $w > /dev/null && echo "$w -> $($w --version 2>&1 | head -1)"
+          done
+          if [ "${{ matrix.toolchain }}" = oneapi ]; then
+            mpifort --version 2>&1 | grep -qi 'ifx' || {
+              echo "::error::mpifort does not call ifx; rebuild the oneapi image with the updated docker/Dockerfile-oneapi-minimal"
+              exit 1; }
+          fi
+
+      - name: Install LAPACK/BLAS and NetCDF-Fortran (stochastic physics, GNU)
+        if: contains(matrix.make_flags, 'STOCHASTIC') && matrix.toolchain == 'gnu' && steps.cache.outputs.cache-hit != 'true'
         run: |
           apt-get update -y
           apt-get install -y liblapack-dev libblas-dev libnetcdff-dev
@@ -173,7 +201,7 @@ jobs:
         working-directory: src
         run: |
           git config --global --add safe.directory "$PWD"
-          make gfortran CORE=atmosphere ${{ matrix.make_flags }}
+          make ${{ matrix.make_target }} CORE=atmosphere ${{ matrix.make_flags }}
 
       - name: Bundle executable and run-time tables
         if: steps.cache.outputs.cache-hit != 'true'
@@ -188,8 +216,9 @@ jobs:
           done
           {
             echo "source:      ${{ matrix.repo || github.repository }}@$(git -C src rev-parse HEAD)"
-            echo "make flags:  gfortran CORE=atmosphere ${{ matrix.make_flags }}"
-            echo "image:       $IMAGE"
+            echo "make:        make ${{ matrix.make_target }} CORE=atmosphere ${{ matrix.make_flags }}"
+            echo "compiler:    $(mpifort --version 2>/dev/null | head -1 || mpif90 --version | head -1)"
+            echo "image:       ${{ matrix.image }}"
           } > ${BUNDLE}/build-info.txt
           cat ${BUNDLE}/build-info.txt
 
@@ -406,39 +435,21 @@ jobs:
   # Step 2: run atmosphere_model (baseline and this branch) on those ICs and compare
   ###########################################################################################
   run:
-    needs: [build_atmosphere, ics]
+    needs: [plan, build_atmosphere, ics]
     # Run every test whose own inputs exist, even if another IC case or build failed (a test
     # whose inputs are missing fails at the download step).
-    if: ${{ !cancelled() }}
+    if: ${{ !cancelled() && needs.plan.result == 'success' }}
     runs-on: ubuntu-22.04
     container:
-      image: dustinswales/ufs-community-mpas-ci:gnu
+      image: ${{ matrix.image }}
     defaults:
       run:
         shell: bash -el {0}
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          # test: <physics>.<baseline>.<build type>; nml_*: namelist.atmosphere.<suffix> to use
-          # ('' = the case's namelist.atmosphere); stoch: feature run has stochastic physics.
-          - { test: mesoscale_reference.v8.4.2.release,          case: mpasdev.mesoscale_reference.gfs.winter,          ics: conus_gfs_noahmp, bl: v8.4.2-release,  ft: feature-release,       nml_bl: ncar, nml_ft: gsl, stoch: false }
-          - { test: convection_permitting.v8.4.2.release,        case: mpasdev.convection_permitting.gfs.winter,        ics: conus_gfs_noahmp, bl: v8.4.2-release,  ft: feature-release,       nml_bl: ncar, nml_ft: gsl, stoch: false }
-          - { test: mesoscale_reference_noahmp.v8.4.2.release,   case: mpasdev.mesoscale_reference_noahmp.gfs.winter,   ics: conus_gfs_noahmp, bl: v8.4.2-release,  ft: feature-release,       nml_bl: ncar, nml_ft: gsl, stoch: false }
-          - { test: mesoscale_reference.develop.release,         case: mpasdev.mesoscale_reference.gfs.winter,          ics: conus_gfs_noahmp, bl: develop-release, ft: feature-release,       nml_bl: gsl,  nml_ft: gsl, stoch: false }
-          - { test: convection_permitting.develop.release,       case: mpasdev.convection_permitting.gfs.winter,        ics: conus_gfs_noahmp, bl: develop-release, ft: feature-release,       nml_bl: gsl,  nml_ft: gsl, stoch: false }
-          - { test: mesoscale_reference_noahmp.develop.release,  case: mpasdev.mesoscale_reference_noahmp.gfs.winter,   ics: conus_gfs_noahmp, bl: develop-release, ft: feature-release,       nml_bl: gsl,  nml_ft: gsl, stoch: false }
-          - { test: mesoscale_reference.v8.4.2.debug,            case: mpasdev.mesoscale_reference.gfs.winter,          ics: conus_gfs_noahmp, bl: v8.4.2-debug,    ft: feature-debug,         nml_bl: ncar, nml_ft: gsl, stoch: false }
-          - { test: convection_permitting.v8.4.2.debug,          case: mpasdev.convection_permitting.gfs.winter,        ics: conus_gfs_noahmp, bl: v8.4.2-debug,    ft: feature-debug,         nml_bl: ncar, nml_ft: gsl, stoch: false }
-          - { test: mesoscale_reference_noahmp.v8.4.2.debug,     case: mpasdev.mesoscale_reference_noahmp.gfs.winter,   ics: conus_gfs_noahmp, bl: v8.4.2-debug,    ft: feature-debug,         nml_bl: ncar, nml_ft: gsl, stoch: false }
-          - { test: mesoscale_reference.develop.debug,           case: mpasdev.mesoscale_reference.gfs.winter,          ics: conus_gfs_noahmp, bl: develop-debug,   ft: feature-debug,         nml_bl: gsl,  nml_ft: gsl, stoch: false }
-          - { test: convection_permitting.develop.debug,         case: mpasdev.convection_permitting.gfs.winter,        ics: conus_gfs_noahmp, bl: develop-debug,   ft: feature-debug,         nml_bl: gsl,  nml_ft: gsl, stoch: false }
-          - { test: mesoscale_reference_noahmp.develop.debug,    case: mpasdev.mesoscale_reference_noahmp.gfs.winter,   ics: conus_gfs_noahmp, bl: develop-debug,   ft: feature-debug,         nml_bl: gsl,  nml_ft: gsl, stoch: false }
-          - { test: hrrrv5.gfs.develop.release,                  case: ufscommunity.hrrrv5.gfs.winter,                  ics: conus_gfs,        bl: develop-release, ft: feature-release,       nml_bl: '',   nml_ft: '',  stoch: false }
-          - { test: hrrrv5.rap.develop.release,                  case: ufscommunity.hrrrv5.rap.summer,                  ics: conus_raps,       bl: develop-release, ft: feature-release,       nml_bl: '',   nml_ft: '',  stoch: false }
-          - { test: convection_permitting.stoch.develop.release, case: ufscommunity.convection_permitting.gfs.winter.stoch, ics: conus_gfs,     bl: develop-release, ft: feature-stoch-release, nml_bl: '',   nml_ft: '',  stoch: true }
-          - { test: hrrrv5.stoch.develop.release,                case: ufscommunity.hrrrv5.gfs.winter.stoch,            ics: conus_gfs,        bl: develop-release, ft: feature-stoch-release, nml_bl: '',   nml_ft: '',  stoch: true }
-    name: run (${{ matrix.test }})
+      # Tests are listed in testing_and_setup/ufs-community/ci_tests.json
+      matrix: ${{ fromJSON(needs.plan.outputs.runs) }}
+    name: run (${{ matrix.toolchain }}, ${{ matrix.test }})
     env:
       UFS_COMMUNITY: testing_and_setup/ufs-community
     steps:
@@ -447,12 +458,12 @@ jobs:
       - name: Download baseline build (${{ matrix.bl }})
         uses: actions/download-artifact@v8
         with:
-          name: atm-${{ matrix.bl }}
+          name: atm-${{ matrix.toolchain }}-${{ matrix.bl }}
           path: build_bl/
       - name: Download feature-branch build (${{ matrix.ft }})
         uses: actions/download-artifact@v8
         with:
-          name: atm-${{ matrix.ft }}
+          name: atm-${{ matrix.toolchain }}-${{ matrix.ft }}
           path: build_ft/
       - name: Download ICs (${{ matrix.ics }})
         uses: actions/download-artifact@v8
@@ -498,14 +509,16 @@ jobs:
         working-directory: run_bl
         run: |
           ls -l
-          mpiexec --allow-run-as-root -np 1 ./atmosphere_model
+          ulimit -s unlimited || true
+          ${{ matrix.mpirun }} 1 ./atmosphere_model
 
       - name: Run MPAS -- feature branch (${{ matrix.ft }})
         id: run_ft
         working-directory: run_ft
         run: |
           ls -l
-          mpiexec --allow-run-as-root -np 1 ./atmosphere_model
+          ulimit -s unlimited || true
+          ${{ matrix.mpirun }} 1 ./atmosphere_model
 
       - name: Set up Python (nccmp) for comparison
         uses: conda-incubator/setup-miniconda@v4
@@ -548,15 +561,16 @@ jobs:
             [ "$miss" -gt 0 ] && detail="${detail}, ${miss} missing from the feature run"
           fi
           mkdir -p result
-          printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$rank" "${{ matrix.test }}" "${{ matrix.bl }}" "${{ matrix.ft }}" \
-            "${{ matrix.ics }}" "$status" "$detail" > "result/${{ matrix.test }}.tsv"
-          echo "**${{ matrix.test }}**: ${status} (${detail})" >> "$GITHUB_STEP_SUMMARY"
+          printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$rank" "${{ matrix.toolchain }}" "${{ matrix.test }}" \
+            "${{ matrix.bl }}" "${{ matrix.ft }}" "${{ matrix.ics }}" "$status" "$detail" \
+            > "result/${{ matrix.toolchain }}.${{ matrix.test }}.tsv"
+          echo "**${{ matrix.test }}** (${{ matrix.toolchain }}): ${status} (${detail})" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload result
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7
         with:
-          name: result-${{ matrix.test }}
+          name: result-${{ matrix.toolchain }}-${{ matrix.test }}
           path: result/
           retention-days: 7
 
@@ -574,7 +588,7 @@ jobs:
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7
         with:
-          name: mpas-${{ matrix.test }}
+          name: mpas-${{ matrix.toolchain }}-${{ matrix.test }}
           path: artifact/
           if-no-files-found: warn
 
@@ -605,14 +619,14 @@ jobs:
             echo "✅ $(count 2) identical · ⚠️ $(count 1) differ · ❌ $(count 0) failed"
             echo
             if [ ${#files[@]} -gt 0 ]; then
-              echo "| Test | Baseline | Feature build | ICs | Result | Details |"
-              echo "|---|---|---|---|---|---|"
-              sort -t$'\t' -k1,1n -k2,2 "${files[@]}" |
-                while IFS=$'\t' read -r rank test bl ft ics status detail; do
-                  echo "| \`${test}\` | ${bl} | ${ft} | ${ics} | ${status} | ${detail} |"
+              echo "| Test | Toolchain | Baseline | Feature build | ICs | Result | Details |"
+              echo "|---|---|---|---|---|---|---|"
+              sort -t$'\t' -k1,1n -k3,3 -k2,2 "${files[@]}" |
+                while IFS=$'\t' read -r rank toolchain test bl ft ics status detail; do
+                  echo "| \`${test}\` | ${toolchain} | ${bl} | ${ft} | ${ics} | ${status} | ${detail} |"
                 done
               echo
-              echo "Output and logs for each test are in the \`mpas-<test>\` artifacts."
+              echo "Output and logs for each test are in the \`mpas-<toolchain>-<test>\` artifacts."
             else
               echo "No test results were recorded; check the build and ics jobs."
             fi
