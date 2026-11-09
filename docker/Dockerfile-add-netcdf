@@ -1,5 +1,5 @@
 #
-# Install NetCDF Fortran and its dependencies
+# Install NetCDF (C from apt, Fortran built with the image's compilers), LAPACK and BLAS
 #
 
 ARG TOOLCHAIN
@@ -11,6 +11,8 @@ RUN apt-get update \
       curl \
       libnetcdf-dev  \
       openmpi-bin \
+      liblapack-dev \
+      libblas-dev \
  && rm -rf /var/lib/apt/lists/*
 
 # Install NetCDF Fortran
@@ -32,3 +34,20 @@ RUN cd netcdf-fortran-$NFVERSION \
   && cd .. \
   && rm -rf netcdf-fortran-$NFVERSION \
   && ldconfig
+
+# One NetCDF root for MPAS (NETCDF): NetCDF-C comes from apt (/usr/lib/<arch>) and
+# NetCDF-Fortran from the build above (/usr/lib), but MPAS expects both libraries and all
+# headers/modules under $NETCDF/lib and $NETCDF/include. Needed by stochastic physics builds.
+ENV NETCDF=/opt/netcdf
+RUN mkdir -p ${NETCDF}/include ${NETCDF}/lib \
+  && for f in /usr/include/netcdf*.h /usr/include/netcdf*.inc /usr/include/netcdf*.mod \
+              /usr/include/typesizes.mod; do \
+       [ -e "$f" ] && ln -sf "$f" ${NETCDF}/include/ || true; \
+     done \
+  && for f in /usr/lib/$(uname -m)-linux-gnu/libnetcdf.so* \
+              /usr/lib/libnetcdff.so* /usr/lib/$(uname -m)-linux-gnu/libnetcdff.so*; do \
+       [ -e "$f" ] && ln -sf "$f" ${NETCDF}/lib/ || true; \
+     done \
+  && ls -l ${NETCDF}/include ${NETCDF}/lib \
+  && test -e ${NETCDF}/lib/libnetcdf.so && test -e ${NETCDF}/lib/libnetcdff.so \
+  && test -e ${NETCDF}/include/netcdf.h && test -e ${NETCDF}/include/netcdf.mod
