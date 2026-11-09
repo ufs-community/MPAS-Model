@@ -563,7 +563,6 @@ jobs:
           printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$rank" "${{ matrix.toolchain }}" "${{ matrix.test }}" \
             "${{ matrix.bl }}" "${{ matrix.ft }}" "${{ matrix.ics }}" "$status" "$detail" \
             > "result/${{ matrix.toolchain }}.${{ matrix.test }}.tsv"
-          echo "**${{ matrix.test }}** (${{ matrix.toolchain }}): ${status} (${detail})" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload result
         if: ${{ !cancelled() }}
