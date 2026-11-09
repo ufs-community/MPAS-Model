@@ -168,15 +168,20 @@ jobs:
       - name: Check MPI compiler wrappers
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
-          # make gfortran uses mpif90/mpicc, make intel uses mpifort/mpicc (Intel MPI wrappers
-          # that must call ifx/icx; see docker/Dockerfile-oneapi-minimal).
-          for w in mpif90 mpifort mpicc; do
-            command -v $w > /dev/null && echo "$w -> $($w --version 2>&1 | head -1)"
+          # make gfortran uses mpif90/mpicc/mpicxx; make intel uses mpifort/mpicc/mpic++, which
+          # must call ifx/icx/icpx with Intel MPI (see docker/Dockerfile-oneapi-minimal).
+          for w in mpif90 mpifort mpicc mpicxx mpic++; do
+            command -v $w > /dev/null && echo "$w ($(command -v $w)) -> $($w --version 2>&1 | head -1)"
           done
           if [ "${{ matrix.toolchain }}" = oneapi ]; then
-            mpifort --version 2>&1 | grep -qi 'ifx' || {
-              echo "::error::mpifort does not call ifx; rebuild the oneapi image with the updated docker/Dockerfile-oneapi-minimal"
-              exit 1; }
+            bad=""
+            mpifort --version 2>&1 | grep -qi ifx  || bad="$bad mpifort"
+            mpicc   --version 2>&1 | grep -qi intel || bad="$bad mpicc"
+            mpic++  --version 2>&1 | grep -qi intel || bad="$bad mpic++"
+            if [ -n "$bad" ]; then
+              echo "::error::${bad# } not using the oneAPI compilers; rebuild the oneapi image with the updated docker/Dockerfile-oneapi-minimal"
+              exit 1
+            fi
           fi
 
       - name: Install LAPACK/BLAS and NetCDF-Fortran (stochastic physics, GNU)

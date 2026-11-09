@@ -54,6 +54,13 @@ ENV FI_PROVIDER_PATH="${I_MPI_ROOT}/opt/mpi/libfabric/lib/prov"
 # compilers instead of GNU; MPAS's "make intel" target calls these.
 ENV I_MPI_CC=icx I_MPI_CXX=icpx I_MPI_FC=ifx I_MPI_F77=ifx I_MPI_F90=ifx
 
+# Intel MPI has no mpifort or mpic++ wrapper, and "make intel" calls both. Without these,
+# they resolve to Open MPI's (installed with NetCDF in a later layer), which use GNU compilers
+# and Open MPI. /usr/local/bin comes before /usr/bin on PATH.
+RUN printf '#!/bin/sh\nexec /opt/intel/oneapi/mpi/latest/bin/mpif90 "$@"\n' > /usr/local/bin/mpifort \
+ && printf '#!/bin/sh\nexec /opt/intel/oneapi/mpi/latest/bin/mpicxx "$@"\n' > /usr/local/bin/mpic++ \
+ && chmod +x /usr/local/bin/mpifort /usr/local/bin/mpic++
+
 # Single-node runs in a container: shared memory only, and launch ranks without ssh.
 ENV I_MPI_FABRICS=shm I_MPI_HYDRA_BOOTSTRAP=fork
 
