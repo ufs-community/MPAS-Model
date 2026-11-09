@@ -13,7 +13,7 @@
 
       n = size(x)
 
-      IntegrateTrapezoid = sum((y(2:n) + y(1:n-1)) *
+      IntegrateTrapezoid = sum((y(2:n) + y(1:n-1)) *    &
      &                   (x(2:n) - x(1:n-1))) / 2.0_kind_phys
 
       end function IntegrateTrapezoid

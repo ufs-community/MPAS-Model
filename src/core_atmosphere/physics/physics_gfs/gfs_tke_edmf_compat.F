@@ -45,10 +45,10 @@
       real(kind=kind_phys), parameter :: dldtl=cvap-cliq
       real(kind=kind_phys), parameter :: dldti=cvap-csol
       real(kind=kind_phys), parameter :: xponal=-dldtl/con_rv
-      real(kind=kind_phys), parameter :: xponbl=xponal+
+      real(kind=kind_phys), parameter :: xponbl=xponal+  &
      &                         con_hvap/(con_rv*ttp)
       real(kind=kind_phys), parameter :: xponai=-dldti/con_rv
-      real(kind=kind_phys), parameter :: xponbi=xponai+
+      real(kind=kind_phys), parameter :: xponbi=xponai+  &
      &                   (con_hvap+con_hfus)/(con_rv*ttp)
       real(kind=kind_phys) :: tr,w,pvl,pvi
       tr=ttp/t
