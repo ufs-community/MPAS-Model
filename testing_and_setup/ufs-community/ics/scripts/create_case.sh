@@ -73,14 +73,16 @@ MPIRUN=${MPIRUN:-"mpirun -n"}
 GPMETIS=${GPMETIS:-gpmetis}
 
 # Case settings: case_id domain resolution source season date mesh case_dir
-#                static_key use_climo_aerosols
+#                static_key use_climo_aerosols; optional static_variant static_nml_dir
+#                nml_variant (init/lbc/sst namelists from case_files/<step>/<source>.<date>.<nml_variant>)
 domain="" resolution="" source="" date="" mesh="" case_dir="" use_climo_aerosols=""
-static_variant="" static_nml_dir="step1_static"
+static_variant="" static_nml_dir="step1_static" nml_variant=""
 case_file="$script_home/cases/$case_id.sh"
 [ -f "$case_file" ] || die "unknown case '$case_id' (no $case_file)"
 # shellcheck source=/dev/null
 . "$case_file"
 
+nml_dir="$source.$date${nml_variant:+.$nml_variant}"
 yyyy=${date:0:4} mm=${date:4:2} dd=${date:6:2} hh=${date:8:2}
 datestring="${yyyy}-${mm}-${dd}_${hh}.00.00"
 prefix="mpas.$domain.$resolution"
@@ -144,6 +146,7 @@ steps:              $steps
 executable:         $exe
 domain/resolution:  $domain/$resolution (mesh $mesh)
 static namelist:    case_files/$static_nml_dir${static_variant:+  (variant $static_variant)}
+namelists:          case_files/step{2_init,3_lbc,4_sst}/$nml_dir
 input source:       $source  date $datestring
 input dir:          $input_dir
 work dir:           $work
@@ -259,7 +262,7 @@ if want init; then
   banner "Start creating: $init_file"
   [ -d "$ungrib_met" ] || die "missing $ungrib_met"
   rm -rf "$init_run"; mkdir -p "$init_run"; cd "$init_run"
-  stage_namelist step2_init "$source.$date"
+  stage_namelist step2_init "$nml_dir"
   partition
   shopt -s nullglob
   met0=("$ungrib_met"/*"${yyyy}-${mm}-${dd}_${hh}")
@@ -281,7 +284,7 @@ if want lbc; then
   banner "Start creating: $lbc_file"
   [ -s "$final/$init_file" ] || die "lbc needs $final/$init_file"
   rm -rf "$lbc_run"; mkdir -p "$lbc_run"; cd "$lbc_run"
-  stage_namelist step3_lbc "$source.$date"
+  stage_namelist step3_lbc "$nml_dir"
   partition
   ln -sf "$ungrib_met"/* .
   ln -sf "$final/$init_file" init.nc
@@ -300,7 +303,7 @@ if want sst; then
   [ -s "$final/$init_file" ] || die "sst needs $final/$init_file"
   [ -d "$ungrib_sst" ] || die "missing $ungrib_sst"
   rm -rf "$sst_run"; mkdir -p "$sst_run"; cd "$sst_run"
-  stage_namelist step4_sst "$source.$date"
+  stage_namelist step4_sst "$nml_dir"
   partition
   ln -sf "$ungrib_sst"/SST* .
   ln -sf "$final/$init_file" init.nc

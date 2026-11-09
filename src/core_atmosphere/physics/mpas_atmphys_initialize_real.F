@@ -324,7 +324,7 @@
  !end select
 
  selectcase (config_nsoillevels)
- case( 4 )
+ case( 4, 10 )
  do iCell = 1, nCellsSolve
     iSoil = 1
     zs_fg(iSoil,iCell) = 0.5_RKIND * dzs_fg(iSoil,iCell)
@@ -336,10 +336,24 @@
  enddo
 
  do iCell = 1, nCellsSolve
-    dzs(1,iCell) = 0.10_RKIND
-    dzs(2,iCell) = 0.30_RKIND
-    dzs(3,iCell) = 0.60_RKIND
-    dzs(4,iCell) = 1.00_RKIND
+    if (config_nsoillevels == 10) then
+       !10-layer set for Noah-MP (5 m total depth):
+       dzs( 1,iCell) = 0.05_RKIND
+       dzs( 2,iCell) = 0.10_RKIND
+       dzs( 3,iCell) = 0.10_RKIND
+       dzs( 4,iCell) = 0.10_RKIND
+       dzs( 5,iCell) = 0.30_RKIND
+       dzs( 6,iCell) = 0.35_RKIND
+       dzs( 7,iCell) = 0.50_RKIND
+       dzs( 8,iCell) = 1.00_RKIND
+       dzs( 9,iCell) = 1.00_RKIND
+       dzs(10,iCell) = 1.50_RKIND
+    else
+       dzs(1,iCell) = 0.10_RKIND
+       dzs(2,iCell) = 0.30_RKIND
+       dzs(3,iCell) = 0.60_RKIND
+       dzs(4,iCell) = 1.00_RKIND
+    endif
 
     iSoil = 1
     zs(iSoil,iCell)  = 0.5_RKIND * dzs(iSoil,iCell)
@@ -458,7 +472,7 @@
  endif 
 
  select case(config_nsoillevels) 
- case ( 4 )
+ case ( 4, 10 )
   ! if(config_nsoillevels .ne. 4) &
   !    call physics_error_fatal('NOAH lsm uses 4 soil layers. Correct config_nsoillevels.')
    call init_soil_properties_noah(mesh, fg, dminfo, dims, configs)
@@ -491,6 +505,7 @@ end subroutine init_soil_layers_properties
  integer, pointer:: nCellsSolve,nFGSoilLevels,nSoilLevels
  integer:: num_sm,num_st
  integer,dimension(:),pointer:: landmask
+ logical:: found
 
  real(kind=RKIND),dimension(:,:),allocatable:: zhave,sm_input,st_input
 
@@ -556,6 +571,7 @@ end subroutine init_soil_layers_properties
     if(landmask(iCell) .eq. 1) then
 
        noah: do iSoil = 1 , nSoilLevels
+          found = .false.
           input: do ifgSoil = 1 , nFGSoilLevels+2-1
              if(iCell .eq. 1) call mpas_log_write('$i $i $r $r $r', &
                                                   intArgs=(/iSoil,ifgSoil/), &
@@ -580,9 +596,19 @@ end subroutine init_soil_layers_properties
                 sh2o(iSoil,iCell)   = 0._RKIND
                 smcrel(iSoil,iCell) = 0._RKIND
 
+                found = .true.
                 exit input
              endif
           enddo input
+          !layers centered below the deepest input level (3 m, where the deep soil
+          !temperature is used; only the 10-layer set goes that deep): use the
+          !deepest input values.
+          if(.not. found) then
+             tslb(iSoil,iCell)   = st_input(nFGSoilLevels+2,iCell)
+             smois(iSoil,iCell)  = sm_input(nFGSoilLevels+2,iCell)
+             sh2o(iSoil,iCell)   = 0._RKIND
+             smcrel(iSoil,iCell) = 0._RKIND
+          endif
           if(iCell.eq. 1) call mpas_log_write('')
        enddo noah
 

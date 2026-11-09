@@ -341,7 +341,7 @@
     f_qc,             &!parameter set to true to include the cloud water mixing ratio.
     f_qr,             &!parameter set to true to include the rain mixing ratio.
     f_qi,             &!parameter set to true to include the cloud ice mixing ratio.
-    f_qs,             &!parameter set to true to include the snow minxg ratio.
+    f_qs,             &!parameter set to true to include the snow mixing ratio.
     f_qg,             &!parameter set to true to include the graupel mixing ratio.
     f_qoz,            &!parameter set to true to include the ozone mixing ratio.
     f_qh
@@ -560,7 +560,16 @@
     maxmf_dd_p,       &!maximum mass flux for downdrafts                                                     [m/s]
     maxtkeprod_dd_p,  &!maximum tke prduction in column from downdrafts                                 [m2/s2/hr]
     cldtop_cooling_p, &!maximum net cooling at boundary layer cloud top                                     [K/hr]
-    ent_eff_p          !entrainment efficiency                                                                 [-]   
+    ent_eff_p,        &!entrainment efficiency
+    lwpbl_p,          &!liquid water path (resolved + bl clouds)                                            [g/m2]
+    iwpbl_p,          &!ice water path (resolved + bl clouds)                                               [g/m2]
+    swpbl_p,          &!snow water path (resolved + bl clouds)                                              [g/m2]
+    cldceil_p,        &!cloud ceiling (using resolved + bl clouds) from MYNN                                   [m]
+    wspd10_p,         &!wind speed interpolated to 10m                                                       [m/s]
+    wspd80_p,         &!wind speed interpolated to 80m                                                       [m/s]
+    wspd160_p,        &!wind speed interpolated to 160m                                                      [m/s]
+    maxcldfra_p,      &!maximum cloud fraction in the column (from MYNN)                                       [-]
+    maxcldfrabl_p      !maximum cloud fraction between surface and pblh + 1km (from MYNN)                      [-]
       
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
     dqke_p,           &!
@@ -1131,9 +1140,9 @@
 !   is set to true. the arrays below have the same definition as the corresponding "_p" arrays:
 !=================================================================================================================
 
- real(kind=RKIND),dimension(:,:),allocatable:: br_sea,ch_sea,chs_sea,chs2_sea,cpm_sea,cqs_sea,cqs2_sea,      &
-                                flhc_sea,flqc_sea,gz1oz0_sea,hfx_sea,lh_sea,mavail_sea,mol_sea,      &
-                                psih_sea,psim_sea,fh_sea,fm_sea,qfx_sea,qgh_sea,qsfc_sea,regime_sea, &
+ real(kind=RKIND),dimension(:,:),allocatable:: br_sea,ch_sea,chs_sea,chs2_sea,cpm_sea,cqs_sea,cqs2_sea,&
+                                flhc_sea,flqc_sea,gz1oz0_sea,hfx_sea,lh_sea,mavail_sea,mol_sea,        &
+                                psih_sea,psim_sea,fh_sea,fm_sea,qfx_sea,qgh_sea,qsfc_sea,regime_sea,   &
                                 rmol_sea,ust_sea,wspd_sea,znt_sea,zol_sea,tsk_sea,xland_sea
  real(kind=RKIND),dimension(:,:),allocatable:: t2m_sea,th2m_sea,q2_sea,u10_sea,v10_sea
  real(kind=RKIND),dimension(:,:),allocatable:: cd_sea,cda_sea,ck_sea,cka_sea,ustm_sea
