@@ -41,12 +41,13 @@ RUN wget -O - https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PR
  && rm -rf /var/lib/apt/lists/*
 
 # oneAPI environment. ("RUN . setvars.sh" would only affect that one build step, so set
-# what the compilers and Intel MPI need explicitly.)
+# what the compilers and Intel MPI need explicitly.) Do not put the Intel MPI include and
+# lib directories on CPATH/LIBRARY_PATH: the plain compilers would then pass configure
+# checks meant for MPI compilers (PnetCDF enables its C++/Fortran APIs with icpx/ifx and
+# fails to link). The mpi* wrappers add those paths themselves.
 ENV I_MPI_ROOT=/opt/intel/oneapi/mpi/latest
 ENV PATH="${I_MPI_ROOT}/bin:/opt/intel/oneapi/compiler/latest/bin:${PATH}"
 ENV LD_LIBRARY_PATH="${I_MPI_ROOT}/lib:${I_MPI_ROOT}/opt/mpi/libfabric/lib:/opt/intel/oneapi/compiler/latest/lib:${LD_LIBRARY_PATH}"
-ENV LIBRARY_PATH="${I_MPI_ROOT}/lib:${LIBRARY_PATH}"
-ENV CPATH="${I_MPI_ROOT}/include:${CPATH}"
 ENV FI_PROVIDER_PATH="${I_MPI_ROOT}/opt/mpi/libfabric/lib/prov"
 
 # Make the generic Intel MPI wrappers (mpicc, mpicxx, mpifort, mpif90) use the oneAPI

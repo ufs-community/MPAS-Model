@@ -25,7 +25,8 @@ WORKDIR /tmp
 RUN wget https://parallel-netcdf.github.io/Release/pnetcdf-${PNFVERSION}.tar.gz \
     && tar xzf pnetcdf-${PNFVERSION}.tar.gz \
     && cd pnetcdf-${PNFVERSION} \
-    && CC=$CC FC=$FC ./configure --prefix=${PNETCDF_PREFIX} \
+    && { CC=$CC FC=$FC ./configure --prefix=${PNETCDF_PREFIX} \
+         || { tail -n 80 config.log; exit 1; } } \
     && make -j 8 install \
     && cd /tmp \
     && rm -rf pnetcdf-${PNFVERSION} pnetcdf-${PNFVERSION}.tar.gz
