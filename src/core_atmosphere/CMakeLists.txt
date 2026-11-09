@@ -115,14 +115,11 @@ list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_WRF_SOURCES PREPEND physics/physics_wrf/)
 # physics/physics_gfs/
 # Imported GFS/UFS TKE-EDMF and latest SAMF deep/shallow convection science/helper routines.
 # MPAS wrappers remain in physics/ and are compiled as free-form Fortran.
-set(ATMOSPHERE_CORE_PHYSICS_GFS_FIXED_SOURCES
+set(ATMOSPHERE_CORE_PHYSICS_GFS_SOURCES
     gfs_tke_edmf_compat.F
     mfscuq_mod.F
     canopy_utils_mod.F
     samfaerosols.F
-)
-
-set(ATMOSPHERE_CORE_PHYSICS_GFS_FREE_SOURCES
     tridi_mod.F
     mfpbltq_mod.F
     satmedmfvdifq.F
@@ -132,19 +129,7 @@ set(ATMOSPHERE_CORE_PHYSICS_GFS_FREE_SOURCES
     progomega_calc.f90
 )
 
-list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_GFS_FIXED_SOURCES PREPEND physics/physics_gfs/)
-list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_GFS_FREE_SOURCES  PREPEND physics/physics_gfs/)
-
-set_source_files_properties(${ATMOSPHERE_CORE_PHYSICS_GFS_FIXED_SOURCES}
-    PROPERTIES Fortran_FORMAT FIXED)
-set_source_files_properties(${ATMOSPHERE_CORE_PHYSICS_GFS_FREE_SOURCES}
-    PROPERTIES Fortran_FORMAT FREE)
-
-set(ATMOSPHERE_CORE_PHYSICS_GFS_SOURCES
-    ${ATMOSPHERE_CORE_PHYSICS_GFS_FIXED_SOURCES}
-    ${ATMOSPHERE_CORE_PHYSICS_GFS_FREE_SOURCES}
-)
-
+list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_GFS_SOURCES PREPEND physics/physics_gfs/)
 
 # physics/physics_noaa/GFL/
 set(ATMOSPHERE_CORE_PHYSICS_GFL_SOURCES

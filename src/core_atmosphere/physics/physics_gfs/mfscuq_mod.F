@@ -11,17 +11,17 @@
 !! for stratocumulus-top-driven turbulence.
 !! \section mfscuq GFS mfscu General Algorithm
 !> @{
-      subroutine mfscuq(im,ix,km,kmscu,ntcw,ntrac1,delt,
-     &   cnvflg,zl,zm,q1,t1,u1,v1,plyr,pix,
-     &   thlx,thvx,thlvx,gdx,thetae,
-     &   krad,mrad,radmin,buo,wush,tkemean,vez0fun,xmfd,
+      subroutine mfscuq(im,ix,km,kmscu,ntcw,ntrac1,delt,  &
+     &   cnvflg,zl,zm,q1,t1,u1,v1,plyr,pix,               &
+     &   thlx,thvx,thlvx,gdx,thetae,                      &
+     &   krad,mrad,radmin,buo,wush,tkemean,vez0fun,xmfd,  &
      &   tcdo,qcdo,ucdo,vcdo,xlamdeq,a1)
 !
       use gfs_tke_edmf_machine , only : kind_phys
       use funcphys , only : fpvs
-      use physcons, grav => con_g, cp => con_cp
-     &,             rv => con_rv, hvap => con_hvap
-     &,             fv => con_fvirt
+      use physcons, grav => con_g, cp => con_cp      &
+     &,             rv => con_rv, hvap => con_hvap   &
+     &,             fv => con_fvirt                  &
      &,             eps => con_eps, epsm1 => con_epsm1
 !
       implicit none
@@ -32,18 +32,18 @@
 !
       logical cnvflg(im)
       real(kind=kind_phys) delt
-      real(kind=kind_phys) q1(ix,km,ntrac1),t1(ix,km),
-     &                     u1(ix,km),      v1(ix,km),
-     &                     plyr(im,km),    pix(im,km),
-     &                     thlx(im,km),
-     &                     thvx(im,km),    thlvx(im,km),
-     &                     gdx(im),
-     &                     zl(im,km),      zm(im,km),
-     &                     thetae(im,km),  radmin(im),
-     &                     buo(im,km), wush(im,km),
-     &                     tkemean(im),vez0fun(im),xmfd(im,km),
-     &                     tcdo(im,km),qcdo(im,km,ntrac1),
-     &                     ucdo(im,km),vcdo(im,km),
+      real(kind=kind_phys) q1(ix,km,ntrac1),t1(ix,km),  &
+     &                     u1(ix,km),      v1(ix,km),   &
+     &                     plyr(im,km),    pix(im,km),  &
+     &                     thlx(im,km),                 &
+     &                     thvx(im,km),    thlvx(im,km),&
+     &                     gdx(im),                     &
+     &                     zl(im,km),      zm(im,km),   &
+     &                     thetae(im,km),  radmin(im),  &
+     &                     buo(im,km), wush(im,km),     &
+     &                     tkemean(im),vez0fun(im),xmfd(im,km), &
+     &                     tcdo(im,km),qcdo(im,km,ntrac1),  &
+     &                     ucdo(im,km),vcdo(im,km),     &
      &                     xlamdeq(im,km-1)
 !
 !  local variables and arrays
@@ -52,35 +52,35 @@
       integer   i,j,indx, k, n, kk, ndc
       integer   krad1(im)
 !
-      real(kind=kind_phys) dt2,     dz,      ce0,
-     &                     cm,      cq,
-     &                     tkcrt,   cmxfac,
-     &                     gocp,    factor,  g,       tau,
-     &                     b1,      f1,      bb1,     bb2,
-     &                     a1,      a2,
-     &                     cteit,   pgcon,
-     &                     qmin,    qlmin,
-     &                     xmmx,    tem,     tem1,    tem2,
-     &                     ptem,    ptem1,   ptem2
+      real(kind=kind_phys) dt2,     dz,      ce0,    &
+     &                     cm,      cq,              &
+     &                     tkcrt,   cmxfac,          &
+     &                     gocp,    factor,  g,       tau, &
+     &                     b1,      f1,      bb1,     bb2, &
+     &                     a1,      a2,              &
+     &                     cteit,   pgcon,           &
+     &                     qmin,    qlmin,           &
+     &                     xmmx,    tem,     tem1,    tem2, &
+     &                     ptem,    ptem1,   ptem2 
 !
-      real(kind=kind_phys) elocp,   el2orc,  qs,      es,
-     &                     tld,     gamma,   qld,     thdn,
+      real(kind=kind_phys) elocp,   el2orc,  qs,      es,  &
+     &                     tld,     gamma,   qld,     thdn, &
      &                     thvd,    dq
 !
-      real(kind=kind_phys) wd2(im,km), thld(im,km),
-     &                     qtx(im,km), qtd(im,km),
-     &                     thlvd(im),  hrad(im), xlamde(im,km-1),
+      real(kind=kind_phys) wd2(im,km), thld(im,km),    &
+     &                     qtx(im,km), qtd(im,km),     &
+     &                     thlvd(im),  hrad(im), xlamde(im,km-1), &
      &                     xlamdem(im,km-1), ra1(im)
       real(kind=kind_phys) delz(im), xlamax(im), ce0t(im)
 !
-      real(kind=kind_phys) xlamavg(im),   sigma(im),
+      real(kind=kind_phys) xlamavg(im),   sigma(im),  &
      &                     scaldfunc(im), sumx(im)
 !
       logical totflg, flg(im)
 !
       real(kind=kind_phys) actei, cldtime
 !
-c  physical parameters
+!  physical parameters
       parameter(g=grav)
       parameter(gocp=g/cp)
       parameter(elocp=hvap/cp,el2orc=hvap*hvap/(rv*cp))
@@ -245,12 +245,12 @@ c  physical parameters
             tem  = 0.5 * xlamde(i,k) * dz
             factor = 1. + tem
 ! 
-            thld(i,k) = ((1.-tem)*thld(i,k+1)+tem*
+            thld(i,k) = ((1.-tem)*thld(i,k+1)+tem*    &
      &                     (thlx(i,k)+thlx(i,k+1)))/factor
 !
             tem  = 0.5 * xlamdeq(i,k) * dz
             factor = 1. + tem
-            qtd(i,k) = ((1.-tem)*qtd(i,k+1)+tem*
+            qtd(i,k) = ((1.-tem)*qtd(i,k+1)+tem*      &
      &                     (qtx(i,k)+qtx(i,k+1)))/factor
 !
             tld = thld(i,k) / pix(i,k)
@@ -317,7 +317,7 @@ c  physical parameters
           endif
         enddo
       enddo
-c
+!
       do i = 1, im
         flg(i) = cnvflg(i)
         if(flg(i)) mrad(i) = krad(i)
@@ -389,7 +389,7 @@ c
       enddo
       do k = kmscu, 1, -1
         do i = 1, im
-          if(cnvflg(i) .and.
+          if(cnvflg(i) .and.    &
      &       (k >= mrad(i) .and. k < krad(i))) then
             dz = zl(i,k+1) - zl(i,k)
             xlamavg(i) = xlamavg(i) + xlamde(i,k) * dz
@@ -407,7 +407,7 @@ c
 !
       do k = kmscu, 1, -1
         do i = 1, im
-          if(cnvflg(i) .and.
+          if(cnvflg(i) .and.   &
      &      (k >= mrad(i) .and. k < krad(i))) then
               xmfd(i,k) = ra1(i) * sqrt(wd2(i,k))
           endif
@@ -445,7 +445,7 @@ c
 !
       do k = kmscu, 1, -1
         do i = 1, im
-          if(cnvflg(i) .and.
+          if(cnvflg(i) .and.    &
      &       (k >= mrad(i) .and. k < krad(i))) then
              if (sigma(i) > ra1(i)) then
                xmfd(i,k) = sigma(i) * xmfd(i,k) / ra1(i)
@@ -481,18 +481,18 @@ c
 !
       do k = kmscu,1,-1
         do i=1,im
-          if(cnvflg(i) .and. 
+          if(cnvflg(i) .and.   & 
      &       (k >= mrad(i) .and. k < krad(i))) then
             dz = zl(i,k+1) - zl(i,k)
             tem  = 0.5 * xlamde(i,k) * dz
             factor = 1. + tem
 !
-            thld(i,k) = ((1.-tem)*thld(i,k+1)+tem*
+            thld(i,k) = ((1.-tem)*thld(i,k+1)+tem*   &
      &                     (thlx(i,k)+thlx(i,k+1)))/factor
 !
             tem  = 0.5 * xlamdeq(i,k) * dz
             factor = 1. + tem
-            qtd(i,k) = ((1.-tem)*qtd(i,k+1)+tem*
+            qtd(i,k) = ((1.-tem)*qtd(i,k+1)+tem*     &
      &                     (qtx(i,k)+qtx(i,k+1)))/factor
 !
             tld = thld(i,k) / pix(i,k)
@@ -527,9 +527,9 @@ c
               ptem = tem - pgcon
               ptem1= tem + pgcon
 !
-              ucdo(i,k) = ((1.-tem)*ucdo(i,k+1)+ptem*u1(i,k+1)
+              ucdo(i,k) = ((1.-tem)*ucdo(i,k+1)+ptem*u1(i,k+1)   &
      &                     +ptem1*u1(i,k))/factor
-              vcdo(i,k) = ((1.-tem)*vcdo(i,k+1)+ptem*v1(i,k+1)
+              vcdo(i,k) = ((1.-tem)*vcdo(i,k+1)+ptem*v1(i,k+1)   &
      &                     +ptem1*v1(i,k))/factor
             endif
           endif
@@ -547,7 +547,7 @@ c
               tem  = 0.5 * xlamdeq(i,k) * dz
               factor = 1. + tem
 ! 
-              qcdo(i,k,n) = ((1.-tem)*qcdo(i,k+1,n)+tem*
+              qcdo(i,k,n) = ((1.-tem)*qcdo(i,k+1,n)+tem*   &
      &                       (q1(i,k,n)+q1(i,k+1,n)))/factor
             endif
           endif
@@ -570,7 +570,7 @@ c
               tem  = 0.5 * xlamdeq(i,k) * dz
               factor = 1. + tem
 ! 
-              qcdo(i,k,n) = ((1.-tem)*qcdo(i,k+1,n)+tem*
+              qcdo(i,k,n) = ((1.-tem)*qcdo(i,k+1,n)+tem*    &
      &                       (q1(i,k,n)+q1(i,k+1,n)))/factor
             endif
           endif
