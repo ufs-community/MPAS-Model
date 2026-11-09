@@ -492,12 +492,14 @@ jobs:
           cat build_bl/build-info.txt build_ft/build-info.txt
 
       - name: Run MPAS -- baseline (${{ matrix.bl }})
+        id: run_bl
         working-directory: run_bl
         run: |
           ls -l
           mpiexec --allow-run-as-root -np 1 ./atmosphere_model
 
       - name: Run MPAS -- feature branch (${{ matrix.ft }})
+        id: run_ft
         working-directory: run_ft
         run: |
           ls -l
@@ -513,10 +515,48 @@ jobs:
           activate-environment: mpas-ci-env
 
       - name: Compare feature branch to baseline
+        id: cmp
         run: |
           # cmp_rt2bl.py passes when the baseline produced nothing, so check for output first.
           compgen -G "run_bl/history.*.nc" > /dev/null || { echo "::error::baseline run produced no history files"; exit 1; }
-          ${UFS_COMMUNITY}/cmp_rt2bl.py --dir_rt "$PWD/run_ft" --dir_bl "$PWD/run_bl"
+          ${UFS_COMMUNITY}/cmp_rt2bl.py --dir_rt "$PWD/run_ft" --dir_bl "$PWD/run_bl" | tee cmp.log
+
+      # One line per test for the overview table made by the `summary` job. Differences from
+      # the baseline are reported there but do not fail the job.
+      - name: Record result
+        if: ${{ !cancelled() }}
+        env:
+          RUN_BL: ${{ steps.run_bl.outcome }}
+          RUN_FT: ${{ steps.run_ft.outcome }}
+          CMP:    ${{ steps.cmp.outcome }}
+        run: |
+          # rank sorts the table: 0 = failed, 1 = differs, 2 = identical
+          if   [ "$RUN_BL" = skipped ];  then rank=0 status="❌ setup failed"         detail="inputs or run directories not ready"
+          elif [ "$RUN_BL" != success ]; then rank=0 status="❌ baseline run failed"  detail="see run_bl log"
+          elif [ "$RUN_FT" != success ]; then rank=0 status="❌ feature run failed"   detail="see run_ft log"
+          elif [ "$CMP" != success ];    then rank=0 status="❌ comparison failed"    detail="see Compare step"
+          else
+            n=$(grep -c '^Comparing' cmp.log || true)
+            diff=$(grep -c 'NOT IDENTICAL' cmp.log || true)
+            miss=$(grep -c 'MISSING' cmp.log || true)
+            if   [ "$n" -eq 0 ];                  then rank=0 status="❌ nothing compared" detail="no history/diag files"
+            elif [ $((diff + miss)) -gt 0 ];      then rank=1 status="⚠️ differs"          detail="${diff} of ${n} files differ"
+            else                                       rank=2 status="✅ identical"         detail="${n} files"
+            fi
+            [ "$miss" -gt 0 ] && detail="${detail}, ${miss} missing from the feature run"
+          fi
+          mkdir -p result
+          printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$rank" "${{ matrix.test }}" "${{ matrix.bl }}" "${{ matrix.ft }}" \
+            "${{ matrix.ics }}" "$status" "$detail" > "result/${{ matrix.test }}.tsv"
+          echo "**${{ matrix.test }}**: ${status} (${detail})" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload result
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: result-${{ matrix.test }}
+          path: result/
+          retention-days: 7
 
       - name: Collect output for artifact
         if: ${{ !cancelled() }}
@@ -535,3 +575,43 @@ jobs:
           name: mpas-${{ matrix.test }}
           path: artifact/
           if-no-files-found: warn
+
+  ###########################################################################################
+  # Overview table of all run tests, shown on the workflow run's summary page
+  ###########################################################################################
+  summary:
+    name: test summary
+    needs: run
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v8
+        continue-on-error: true  # no results at all is reported below
+        with:
+          pattern: result-*
+          path: results/
+          merge-multiple: true
+
+      - name: Write overview table
+        run: |
+          shopt -s nullglob
+          files=(results/*.tsv)
+          count() { cat "${files[@]}" /dev/null | awk -F'\t' -v r="$1" '$1 == r' | wc -l; }
+          {
+            echo "## Baseline vs. feature branch (${#files[@]} tests)"
+            echo
+            echo "✅ $(count 2) identical · ⚠️ $(count 1) differ · ❌ $(count 0) failed"
+            echo
+            if [ ${#files[@]} -gt 0 ]; then
+              echo "| Test | Baseline | Feature build | ICs | Result | Details |"
+              echo "|---|---|---|---|---|---|"
+              sort -t$'\t' -k1,1n -k2,2 "${files[@]}" |
+                while IFS=$'\t' read -r rank test bl ft ics status detail; do
+                  echo "| \`${test}\` | ${bl} | ${ft} | ${ics} | ${status} | ${detail} |"
+                done
+              echo
+              echo "Output and logs for each test are in the \`mpas-<test>\` artifacts."
+            else
+              echo "No test results were recorded; check the build and ics jobs."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
