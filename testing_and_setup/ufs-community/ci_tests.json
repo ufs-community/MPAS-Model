@@ -3,7 +3,9 @@
     "Run tests for .github/workflows/mpas_ci.yml. The plan job reads this file and makes the",
     "build_atmosphere matrix (every toolchain/build a test needs) and the run matrix (every test",
     "on every toolchain it lists).",
-    "toolchains: container image, make target and MPI launcher for each compiler suite.",
+    "toolchains: container image, make target and MPI launcher for each compiler suite;",
+    "            cpu_flag (optional) is added to the make target's compiler and linker flags so",
+    "            the build runs on any runner CPU (nvfortran otherwise tunes for the build host).",
     "builds:     atmosphere_model builds; repo/ref empty = the commit under test.",
     "tests:      case = run config in cases/, ics = IC case made by the ics job, bl/ft = builds",
     "            for the baseline and feature runs, nml_bl/nml_ft = namelist.atmosphere.<suffix>",
@@ -16,7 +18,7 @@
   "toolchains": {
     "gnu":    { "image": "dustinswales/ufs-community-mpas-ci:gnu",    "make_target": "gfortran", "mpirun": "mpiexec --allow-run-as-root -np" },
     "oneapi": { "image": "dustinswales/ufs-community-mpas-ci:oneapi", "make_target": "intel",    "mpirun": "mpiexec -np" },
-    "nvhpc":  { "image": "dustinswales/ufs-community-mpas-ci:nvhpc",  "make_target": "nvhpc",    "mpirun": "mpiexec -np" }
+    "nvhpc":  { "image": "dustinswales/ufs-community-mpas-ci:nvhpc",  "make_target": "nvhpc",    "mpirun": "mpiexec -np", "cpu_flag": "-tp=haswell" }
   },
   "builds": {
     "feature-release":       { "repo": "",                         "ref": "",             "make_flags": "" },

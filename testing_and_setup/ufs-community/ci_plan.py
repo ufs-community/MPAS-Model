@@ -37,7 +37,8 @@ if errors:
     sys.exit("ci_tests.json: " + "; ".join(errors))
 
 build_list = [{"toolchain": tc, "variant": b, "image": toolchains[tc]["image"],
-               "make_target": toolchains[tc]["make_target"], **builds[b]}
+               "make_target": toolchains[tc]["make_target"],
+               "cpu_flag": toolchains[tc].get("cpu_flag", ""), **builds[b]}
               for (tc, b) in needed if b in builds]
 
 out = {"builds": {"include": build_list}, "runs": {"include": runs}}

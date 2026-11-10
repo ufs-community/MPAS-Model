@@ -161,7 +161,7 @@ jobs:
         uses: actions/cache@v6
         with:
           path: ${{ env.BUNDLE }}
-          key: ${{ env.BUNDLE }}-v2-${{ matrix.repo != '' && steps.baseline.outputs.sha || hashFiles('src/Makefile', 'src/src/**') }}
+          key: ${{ env.BUNDLE }}-v3-${{ matrix.cpu_flag }}-${{ matrix.repo != '' && steps.baseline.outputs.sha || hashFiles('src/Makefile', 'src/src/**') }}
 
       - name: Checkout baseline (${{ matrix.repo }}@${{ matrix.ref }})
         if: matrix.repo != '' && steps.cache.outputs.cache-hit != 'true'
@@ -190,6 +190,23 @@ jobs:
             exit 1
           fi
 
+      # The build and the runs happen on different GitHub runners, whose CPUs differ (some
+      # have AVX-512, some do not). A compiler that tunes for the build host (nvfortran) can
+      # then make an executable that fails with "Illegal instruction" on the run host, so add
+      # the toolchain's fixed CPU target to the make target's flags, in this branch's Makefile
+      # and in the baselines' alike.
+      - name: Set CPU target in the Makefile (${{ matrix.cpu_flag }})
+        if: matrix.cpu_flag != '' && steps.cache.outputs.cache-hit != 'true'
+        working-directory: src
+        env:
+          TARGET: ${{ matrix.make_target }}
+          CPU_FLAG: ${{ matrix.cpu_flag }}
+        run: |
+          sed -i "/^${TARGET}:/,/^\$/ s/\"\(FFLAGS\|CFLAGS\|CXXFLAGS\|LDFLAGS\)_\(OPT\|DEBUG\) = /&${CPU_FLAG} /" Makefile
+          n=$(sed -n "/^${TARGET}:/,/^\$/p" Makefile | grep -c -- "= ${CPU_FLAG} ")
+          sed -n "/^${TARGET}:/,/^\$/p" Makefile | grep -- "${CPU_FLAG}"
+          [ "$n" -gt 0 ] || { echo "::error::could not add ${CPU_FLAG} to the ${TARGET} target in the Makefile"; exit 1; }
+
       - name: Build atmosphere_model
         if: steps.cache.outputs.cache-hit != 'true'
         working-directory: src
@@ -212,6 +229,7 @@ jobs:
             echo "source:      ${{ matrix.repo || github.repository }}@$(git -C src rev-parse HEAD)"
             echo "make:        make ${{ matrix.make_target }} CORE=atmosphere ${{ matrix.make_flags }}"
             echo "compiler:    $(mpifort --version 2>/dev/null | head -1 || mpif90 --version | head -1)"
+            echo "built on:    $(grep -m1 'model name' /proc/cpuinfo | cut -d: -f2 | xargs)${{ matrix.cpu_flag && format(' (CPU target {0})', matrix.cpu_flag) || '' }}"
             echo "image:       ${{ matrix.image }}"
           } > ${BUNDLE}/build-info.txt
           cat ${BUNDLE}/build-info.txt
