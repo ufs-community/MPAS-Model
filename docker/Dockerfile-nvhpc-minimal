@@ -3,31 +3,58 @@ FROM ubuntu:24.04
 ARG NVHPC_VERSION_MAJOR='25'
 ARG NVHPC_VERSION_MINOR='9'
 
-# Extend and update the package registry
+# Extend and update the package registry. nvc/nvc++/nvfortran use the system GNU toolchain
+# (headers, libgcc, binutils), so install it too.
 RUN apt-get update \
  && DEBIAN_FRONTEND=noninteractive apt-get --yes install --no-install-recommends \
       ca-certificates \
       curl \
       time \
       gpg \
+      binutils \
+      gcc \
+      g++ \
+      libc-dev \
+      libnuma1 \
       make \
       cmake \
       wget \
       git
- RUN curl https://developer.download.nvidia.com/hpc-sdk/ubuntu/DEB-GPG-KEY-NVIDIA-HPC-SDK \
+
+# Install the NVIDIA HPC SDK. Keep comm_libs: it holds the SDK's MPI (Open MPI / HPC-X built
+# for nvc/nvfortran), whose mpicc/mpifort/mpic++ MPAS's "make nvhpc" target uses. Only the
+# GPU communication libraries (NCCL, NVSHMEM) are removed from it, with the other unused parts.
+RUN curl https://developer.download.nvidia.com/hpc-sdk/ubuntu/DEB-GPG-KEY-NVIDIA-HPC-SDK \
       | gpg --dearmor > /usr/share/keyrings/nvidia-hpcsdk-archive-keyring.gpg \
  && echo "deb [signed-by=/usr/share/keyrings/nvidia-hpcsdk-archive-keyring.gpg] https://developer.download.nvidia.com/hpc-sdk/ubuntu/amd64 /" > /etc/apt/sources.list.d/nvhpc.list \
  && apt-get update \
  && DEBIAN_FRONTEND=noninteractive apt-get --yes install --no-install-recommends \
       nvhpc-${NVHPC_VERSION_MAJOR}-${NVHPC_VERSION_MINOR} \
  && rm -rf /var/lib/apt/lists/* \
- && for dir in comm_libs examples math_libs profilers; do \
-      rm -rf "/opt/nvidia/hpc_sdk/Linux_x86_64/${NVHPC_VERSION_MAJOR}.${NVHPC_VERSION_MINOR}/${dir}"; \
-    done
+ && sdk=/opt/nvidia/hpc_sdk/Linux_x86_64/${NVHPC_VERSION_MAJOR}.${NVHPC_VERSION_MINOR} \
+ && for dir in examples math_libs profilers; do rm -rf "${sdk}/${dir}"; done \
+ && find "${sdk}/comm_libs" -maxdepth 2 \( -name nccl -o -name nvshmem \) -prune -exec rm -rf {} + \
+ && ls -l "${sdk}/comm_libs" "${sdk}/comm_libs/mpi/bin"
 
-ENV PATH="/opt/nvidia/hpc_sdk/Linux_x86_64/${NVHPC_VERSION_MAJOR}.${NVHPC_VERSION_MINOR}/compilers/bin:${PATH}"
+ENV NVHPC_ROOT=/opt/nvidia/hpc_sdk/Linux_x86_64/${NVHPC_VERSION_MAJOR}.${NVHPC_VERSION_MINOR}
+
+# The SDK's MPI comes first on PATH, ahead of the apt Open MPI (GNU wrappers) that the
+# netcdf layer installs in /usr/bin.
+ENV PATH="${NVHPC_ROOT}/comm_libs/mpi/bin:${NVHPC_ROOT}/compilers/bin:${PATH}"
+ENV LD_LIBRARY_PATH="${NVHPC_ROOT}/comm_libs/mpi/lib:${NVHPC_ROOT}/compilers/lib:${LD_LIBRARY_PATH}"
+
+# Let Open MPI's mpiexec run as root in the container.
+ENV OMPI_ALLOW_RUN_AS_ROOT=1 OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1
 
 # Set default compiler executables
 ENV FC=nvfortran CC=nvc CXX=nvc++
 ENV MPICC=mpicc
-#ENV FC=mpifort CC=mpicc CXX=mpic++
+
+# Fail the image build here, not later in PnetCDF or MPAS, if the MPI wrappers do not use
+# the NVHPC compilers.
+RUN for w in mpicc mpic++ mpifort; do \
+      echo "$w ($(command -v $w)) -> $($w --version 2>&1 | grep -m1 .)"; \
+    done \
+ && mpifort --version 2>&1 | grep -qi nvfortran \
+ && mpicc --version 2>&1 | grep -qi nvc \
+ && mpic++ --version 2>&1 | grep -qi 'nvc++'

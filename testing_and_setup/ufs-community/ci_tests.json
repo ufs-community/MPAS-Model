@@ -10,12 +10,13 @@
     "            ('' = the case's namelist.atmosphere), toolchains = where it runs.",
     "            Stochastic physics tests build both runs with STOCHASTIC_PHYSICS=true; the",
     "            fixed seed in the case's nam_stochy makes the two runs comparable.",
-    "oneapi runs Release tests without stochastic physics for now: the intel make target has no",
-    "LAPACK_LIBS and the oneapi image has no MKL."
+    "oneapi and nvhpc run Release tests without stochastic physics for now: their make targets",
+    "have no LAPACK_LIBS (and the oneapi image has no MKL)."
   ],
   "toolchains": {
     "gnu":    { "image": "dustinswales/ufs-community-mpas-ci:gnu",    "make_target": "gfortran", "mpirun": "mpiexec --allow-run-as-root -np" },
-    "oneapi": { "image": "dustinswales/ufs-community-mpas-ci:oneapi", "make_target": "intel",    "mpirun": "mpiexec -np" }
+    "oneapi": { "image": "dustinswales/ufs-community-mpas-ci:oneapi", "make_target": "intel",    "mpirun": "mpiexec -np" },
+    "nvhpc":  { "image": "dustinswales/ufs-community-mpas-ci:nvhpc",  "make_target": "nvhpc",    "mpirun": "mpiexec -np" }
   },
   "builds": {
     "feature-release":       { "repo": "",                         "ref": "",             "make_flags": "" },
@@ -28,20 +29,20 @@
     "v8.4.2-debug":          { "repo": "MPAS-Dev/MPAS-Model",      "ref": "v8.4.2",       "make_flags": "DEBUG=true" }
   },
   "tests": [
-    { "test": "mesoscale_reference.v8.4.2.release",          "case": "mpasdev.mesoscale_reference.gfs.winter",            "ics": "conus_gfs_ncar", "bl": "v8.4.2-release",  "ft": "feature-release",       "nml_bl": "ncar", "nml_ft": "gsl", "toolchains": ["gnu", "oneapi"] },
-    { "test": "convection_permitting.v8.4.2.release",        "case": "mpasdev.convection_permitting.gfs.winter",          "ics": "conus_gfs_ncar", "bl": "v8.4.2-release",  "ft": "feature-release",       "nml_bl": "ncar", "nml_ft": "gsl", "toolchains": ["gnu", "oneapi"] },
-    { "test": "mesoscale_reference_noahmp.v8.4.2.release",   "case": "mpasdev.mesoscale_reference_noahmp.gfs.winter",     "ics": "conus_gfs_ncar", "bl": "v8.4.2-release",  "ft": "feature-release",       "nml_bl": "ncar", "nml_ft": "gsl", "toolchains": ["gnu", "oneapi"] },
-    { "test": "mesoscale_reference.develop.release",         "case": "mpasdev.mesoscale_reference.gfs.winter",            "ics": "conus_gfs_ncar", "bl": "develop-release", "ft": "feature-release",       "nml_bl": "gsl",  "nml_ft": "gsl", "toolchains": ["gnu", "oneapi"] },
-    { "test": "convection_permitting.develop.release",       "case": "mpasdev.convection_permitting.gfs.winter",          "ics": "conus_gfs_ncar", "bl": "develop-release", "ft": "feature-release",       "nml_bl": "gsl",  "nml_ft": "gsl", "toolchains": ["gnu", "oneapi"] },
-    { "test": "mesoscale_reference_noahmp.develop.release",  "case": "mpasdev.mesoscale_reference_noahmp.gfs.winter",     "ics": "conus_gfs_ncar", "bl": "develop-release", "ft": "feature-release",       "nml_bl": "gsl",  "nml_ft": "gsl", "toolchains": ["gnu", "oneapi"] },
+    { "test": "mesoscale_reference.v8.4.2.release",          "case": "mpasdev.mesoscale_reference.gfs.winter",            "ics": "conus_gfs_ncar", "bl": "v8.4.2-release",  "ft": "feature-release",       "nml_bl": "ncar", "nml_ft": "gsl", "toolchains": ["gnu", "oneapi", "nvhpc"] },
+    { "test": "convection_permitting.v8.4.2.release",        "case": "mpasdev.convection_permitting.gfs.winter",          "ics": "conus_gfs_ncar", "bl": "v8.4.2-release",  "ft": "feature-release",       "nml_bl": "ncar", "nml_ft": "gsl", "toolchains": ["gnu", "oneapi", "nvhpc"] },
+    { "test": "mesoscale_reference_noahmp.v8.4.2.release",   "case": "mpasdev.mesoscale_reference_noahmp.gfs.winter",     "ics": "conus_gfs_ncar", "bl": "v8.4.2-release",  "ft": "feature-release",       "nml_bl": "ncar", "nml_ft": "gsl", "toolchains": ["gnu", "oneapi", "nvhpc"] },
+    { "test": "mesoscale_reference.develop.release",         "case": "mpasdev.mesoscale_reference.gfs.winter",            "ics": "conus_gfs_ncar", "bl": "develop-release", "ft": "feature-release",       "nml_bl": "gsl",  "nml_ft": "gsl", "toolchains": ["gnu", "oneapi", "nvhpc"] },
+    { "test": "convection_permitting.develop.release",       "case": "mpasdev.convection_permitting.gfs.winter",          "ics": "conus_gfs_ncar", "bl": "develop-release", "ft": "feature-release",       "nml_bl": "gsl",  "nml_ft": "gsl", "toolchains": ["gnu", "oneapi", "nvhpc"] },
+    { "test": "mesoscale_reference_noahmp.develop.release",  "case": "mpasdev.mesoscale_reference_noahmp.gfs.winter",     "ics": "conus_gfs_ncar", "bl": "develop-release", "ft": "feature-release",       "nml_bl": "gsl",  "nml_ft": "gsl", "toolchains": ["gnu", "oneapi", "nvhpc"] },
     { "test": "mesoscale_reference.v8.4.2.debug",            "case": "mpasdev.mesoscale_reference.gfs.winter",            "ics": "conus_gfs_ncar", "bl": "v8.4.2-debug",    "ft": "feature-debug",         "nml_bl": "ncar", "nml_ft": "gsl", "toolchains": ["gnu"] },
     { "test": "convection_permitting.v8.4.2.debug",          "case": "mpasdev.convection_permitting.gfs.winter",          "ics": "conus_gfs_ncar", "bl": "v8.4.2-debug",    "ft": "feature-debug",         "nml_bl": "ncar", "nml_ft": "gsl", "toolchains": ["gnu"] },
     { "test": "mesoscale_reference_noahmp.v8.4.2.debug",     "case": "mpasdev.mesoscale_reference_noahmp.gfs.winter",     "ics": "conus_gfs_ncar", "bl": "v8.4.2-debug",    "ft": "feature-debug",         "nml_bl": "ncar", "nml_ft": "gsl", "toolchains": ["gnu"] },
     { "test": "mesoscale_reference.develop.debug",           "case": "mpasdev.mesoscale_reference.gfs.winter",            "ics": "conus_gfs_ncar", "bl": "develop-debug",   "ft": "feature-debug",         "nml_bl": "gsl",  "nml_ft": "gsl", "toolchains": ["gnu"] },
     { "test": "convection_permitting.develop.debug",         "case": "mpasdev.convection_permitting.gfs.winter",          "ics": "conus_gfs_ncar", "bl": "develop-debug",   "ft": "feature-debug",         "nml_bl": "gsl",  "nml_ft": "gsl", "toolchains": ["gnu"] },
     { "test": "mesoscale_reference_noahmp.develop.debug",    "case": "mpasdev.mesoscale_reference_noahmp.gfs.winter",     "ics": "conus_gfs_ncar", "bl": "develop-debug",   "ft": "feature-debug",         "nml_bl": "gsl",  "nml_ft": "gsl", "toolchains": ["gnu"] },
-    { "test": "hrrrv5.gfs.develop.release",                  "case": "ufscommunity.hrrrv5.gfs.winter",                    "ics": "conus_gfs_ruc",        "bl": "develop-release", "ft": "feature-release",       "nml_bl": "",     "nml_ft": "",    "toolchains": ["gnu", "oneapi"] },
-    { "test": "hrrrv5.rap.develop.release",                  "case": "ufscommunity.hrrrv5.rap.summer",                    "ics": "conus_raps_ruc",       "bl": "develop-release", "ft": "feature-release",       "nml_bl": "",     "nml_ft": "",    "toolchains": ["gnu", "oneapi"] },
+    { "test": "hrrrv5.gfs.develop.release",                  "case": "ufscommunity.hrrrv5.gfs.winter",                    "ics": "conus_gfs_ruc",        "bl": "develop-release", "ft": "feature-release",       "nml_bl": "",     "nml_ft": "",    "toolchains": ["gnu", "oneapi", "nvhpc"] },
+    { "test": "hrrrv5.rap.develop.release",                  "case": "ufscommunity.hrrrv5.rap.summer",                    "ics": "conus_raps_ruc",       "bl": "develop-release", "ft": "feature-release",       "nml_bl": "",     "nml_ft": "",    "toolchains": ["gnu", "oneapi", "nvhpc"] },
     { "test": "convection_permitting.stoch.develop.release", "case": "ufscommunity.convection_permitting.gfs.winter.stoch", "ics": "conus_gfs_ruc",      "bl": "develop-stoch-release", "ft": "feature-stoch-release", "nml_bl": "",     "nml_ft": "",    "toolchains": ["gnu"] },
     { "test": "hrrrv5.stoch.develop.release",                "case": "ufscommunity.hrrrv5.gfs.winter.stoch",              "ics": "conus_gfs_ruc",        "bl": "develop-stoch-release", "ft": "feature-stoch-release", "nml_bl": "",     "nml_ft": "",    "toolchains": ["gnu"] }
   ]

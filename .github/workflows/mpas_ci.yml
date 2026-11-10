@@ -49,7 +49,7 @@ permissions:
 #   conus_raps_lake_ruc    rap     2024081518  21-class MODIS with lakes
 # (ics/cases/ also has conus_rapw_ruc and conus_rapw_lake_ruc for running by hand)
 #
-# Run tests (GNU; oneapi runs the Release tests without stochastic physics)
+# Run tests (GNU; oneapi and nvhpc run the Release tests without stochastic physics)
 #                       run config (testing_and_setup/ufs-community/cases/)   ICs             baselines
 #   <physics>.<bl>.<bt>  mpasdev.<physics>.gfs.winter                         conus_gfs_ncar  v8.4.2 (NCAR namelist),
 #                        physics: mesoscale_reference, convection_permitting,                  develop (GSL namelist);
@@ -170,20 +170,24 @@ jobs:
       - name: Check MPI compiler wrappers
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
-          # make gfortran uses mpif90/mpicc/mpicxx; make intel uses mpifort/mpicc/mpic++, which
-          # must call ifx/icx/icpx with Intel MPI (see docker/Dockerfile-oneapi-minimal).
+          # make gfortran uses mpif90/mpicc/mpicxx; make intel and make nvhpc use
+          # mpifort/mpicc/mpic++, which must call the toolchain's own compilers
+          # (see docker/Dockerfile-<toolchain>-minimal).
           for w in mpif90 mpifort mpicc mpicxx mpic++; do
-            command -v $w > /dev/null && echo "$w ($(command -v $w)) -> $($w --version 2>&1 | head -1)"
+            command -v $w > /dev/null && echo "$w ($(command -v $w)) -> $($w --version 2>&1 | grep -m1 .)"
           done
-          if [ "${{ matrix.toolchain }}" = oneapi ]; then
-            bad=""
-            mpifort --version 2>&1 | grep -qi ifx  || bad="$bad mpifort"
-            mpicc   --version 2>&1 | grep -qi intel || bad="$bad mpicc"
-            mpic++  --version 2>&1 | grep -qi intel || bad="$bad mpic++"
-            if [ -n "$bad" ]; then
-              echo "::error::${bad# } not using the oneAPI compilers; rebuild the oneapi image with the updated docker/Dockerfile-oneapi-minimal"
-              exit 1
-            fi
+          case "${{ matrix.toolchain }}" in
+            oneapi) fc=ifx       cc=intel cxx=intel ;;
+            nvhpc)  fc=nvfortran cc=nvc   cxx='nvc++' ;;
+            *)      exit 0 ;;
+          esac
+          bad=""
+          mpifort --version 2>&1 | grep -qi "$fc"  || bad="$bad mpifort"
+          mpicc   --version 2>&1 | grep -qi "$cc"  || bad="$bad mpicc"
+          mpic++  --version 2>&1 | grep -qiF "$cxx" || bad="$bad mpic++"
+          if [ -n "$bad" ]; then
+            echo "::error::${bad# } not using the ${{ matrix.toolchain }} compilers; rebuild the ${{ matrix.toolchain }} image with the updated docker/Dockerfile-${{ matrix.toolchain }}-minimal"
+            exit 1
           fi
 
       - name: Build atmosphere_model
