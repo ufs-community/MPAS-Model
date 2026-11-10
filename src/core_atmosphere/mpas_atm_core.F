@@ -1708,14 +1708,15 @@ module atm_core
 
          if(debug_print .and. (iCell .lt. 10)) then
             call mpas_log_write('cellsOnCell for cell  $i $i', intArgs=(/iCell,nEdgesOnCell(iCell)/))
-            call mpas_log_write('cellsOnCell, $i $i $i $i $i $i', \
-              intArgs=(/cellsOnCell(1,iCell),cellsOnCell(2,iCell),cellsOnCell(3,iCell),cellsOnCell(4,iCell),cellsOnCell(5,iCell),cellsOnCell(6,iCell)/))
+            call mpas_log_write('cellsOnCell, $i $i $i $i $i $i', &
+              intArgs=(/cellsOnCell(1,iCell),cellsOnCell(2,iCell),cellsOnCell(3,iCell), &
+                        cellsOnCell(4,iCell),cellsOnCell(5,iCell),cellsOnCell(6,iCell)/))
             call mpas_log_write('cellsOnCellsOnCell for cell  $i $i', intArgs=(/iCell,nOuterRow/))
-            call mpas_log_write('cells, $i $i $i $i $i $i', \
-            intArgs=(/cellsOnCellsOnCell(1,iCell),cellsOnCellsOnCell(2,iCell),cellsOnCellsOnCell(3,iCell), \
+            call mpas_log_write('cells, $i $i $i $i $i $i', &
+            intArgs=(/cellsOnCellsOnCell(1,iCell),cellsOnCellsOnCell(2,iCell),cellsOnCellsOnCell(3,iCell), &
                       cellsOnCellsOnCell(4,iCell),cellsOnCellsOnCell(5,iCell),cellsOnCellsOnCell(6,iCell)/))
-            call mpas_log_write('cells, $i $i $i $i $i $i', \
-                       intArgs=(/cellsOnCellsOnCell(7,iCell),cellsOnCellsOnCell(8,iCell),cellsOnCellsOnCell(9,iCell), \
+            call mpas_log_write('cells, $i $i $i $i $i $i', &
+                       intArgs=(/cellsOnCellsOnCell(7,iCell),cellsOnCellsOnCell(8,iCell),cellsOnCellsOnCell(9,iCell), &
                        cellsOnCellsOnCell(10,iCell),cellsOnCellsOnCell(11,iCell),cellsOnCellsOnCell(12,iCell)/))
             do i=1, nOuterRow
                jCell = cellsOnCellsOnCell(i,iCell)
