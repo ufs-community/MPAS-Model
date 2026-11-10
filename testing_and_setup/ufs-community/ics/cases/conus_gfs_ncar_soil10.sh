@@ -1,5 +1,5 @@
-# make_ics case conus_gfs_noahmp10 (sourced by scripts/create_case.sh)
-# As conus_gfs_noahmp, with 10 soil layers for Noah-MP instead of 4:
+# make_ics case conus_gfs_ncar_soil10 (sourced by scripts/create_case.sh)
+# As conus_gfs_ncar, with 10 soil layers instead of 4 (for Noah-MP):
 #   dzs = 0.05 0.10 0.10 0.10 0.30 0.35 0.50 1.00 1.00 1.50 m (5 m deep), set in
 #   init_atmosphere (src/core_atmosphere/physics/mpas_atmphys_initialize_real.F)
 # when config_nsoillevels = 10. Layers centered below 3 m (the deepest GFS input

@@ -38,23 +38,25 @@ permissions:
 #                     cmp_rt2bl.py; output uploaded as mpas-<toolchain>-<test>.
 #   summary           one table of all run results on the workflow run's summary page.
 #
-# IC cases (120 km CONUS)  source  date        static land use
-#   conus_gfs              gfs     2023031015  20-class MODIS; GSL namelists (59 levels, 9 soil)
-#   conus_gfs_lake         gfs     2023031015  21-class MODIS with lakes
-#   conus_gfs_noahmp       gfs     2023031015  20-class MODIS; NCAR namelists (55 levels, 4 soil)
-#   conus_gfs_noahmp10     gfs     2023031015  as conus_gfs_noahmp, with 10 soil layers
-#   conus_raps             rap     2024081518  20-class MODIS
-#   conus_raps_lake        rap     2024081518  21-class MODIS with lakes
-# (ics/cases/ also has conus_rapw and conus_rapw_lake for running by hand)
+# IC cases (120 km CONUS). _ruc: GSL namelists (59 levels, 9 soil levels for RUC LSM);
+# _ncar: NCAR namelists from barlage/mpas_testcase (55 levels, 4 soil levels for Noah/Noah-MP).
+#   case                   source  date        static land use
+#   conus_gfs_ruc          gfs     2023031015  20-class MODIS
+#   conus_gfs_lake_ruc     gfs     2023031015  21-class MODIS with lakes
+#   conus_gfs_ncar         gfs     2023031015  20-class MODIS
+#   conus_gfs_ncar_soil10  gfs     2023031015  as conus_gfs_ncar, with 10 soil layers
+#   conus_raps_ruc         rap     2024081518  20-class MODIS
+#   conus_raps_lake_ruc    rap     2024081518  21-class MODIS with lakes
+# (ics/cases/ also has conus_rapw_ruc and conus_rapw_lake_ruc for running by hand)
 #
 # Run tests (GNU; oneapi runs the Release tests without stochastic physics)
-#                       run config (testing_and_setup/ufs-community/cases/)   ICs               baselines
-#   <physics>.<bl>.<bt>  mpasdev.<physics>.gfs.winter                         conus_gfs_noahmp  v8.4.2 (NCAR namelist),
-#                        physics: mesoscale_reference, convection_permitting,                    develop (GSL namelist);
-#                                 mesoscale_reference_noahmp                                     Release and Debug
-#   hrrrv5.gfs           ufscommunity.hrrrv5.gfs.winter                       conus_gfs         develop, Release
-#   hrrrv5.rap           ufscommunity.hrrrv5.rap.summer                       conus_raps        develop, Release
-#   <physics>.stoch      ufscommunity.<physics>.gfs.winter.stoch              conus_gfs         develop, Release
+#                       run config (testing_and_setup/ufs-community/cases/)   ICs             baselines
+#   <physics>.<bl>.<bt>  mpasdev.<physics>.gfs.winter                         conus_gfs_ncar  v8.4.2 (NCAR namelist),
+#                        physics: mesoscale_reference, convection_permitting,                  develop (GSL namelist);
+#                                 mesoscale_reference_noahmp                                   Release and Debug
+#   hrrrv5.gfs           ufscommunity.hrrrv5.gfs.winter                       conus_gfs_ruc   develop, Release
+#   hrrrv5.rap           ufscommunity.hrrrv5.rap.summer                       conus_raps_ruc  develop, Release
+#   <physics>.stoch      ufscommunity.<physics>.gfs.winter.stoch              conus_gfs_ruc   develop, Release
 #                        physics: convection_permitting, hrrrv5; the feature run uses stochastic
 #                        physics, the baseline runs without it (nam_stochy removed)
 #
@@ -311,8 +313,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { static_key: conus-120km,       case: conus_raps,      nml_dir: step1_static }
-          - { static_key: conus-120km-lakes, case: conus_raps_lake, nml_dir: step1_static_lakes }
+          - { static_key: conus-120km,       case: conus_raps_ruc,      nml_dir: step1_static }
+          - { static_key: conus-120km-lakes, case: conus_raps_lake_ruc, nml_dir: step1_static_lakes }
     name: static (${{ matrix.static_key }})
     steps:
       - uses: actions/checkout@v7
@@ -363,12 +365,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { case: conus_gfs,          source: gfs, static_key: conus-120km,       lbc_times: 17, checks: '',                          bundles: ungrib-gfs.2023031015 ungrib-sst.2023031015 }
-          - { case: conus_gfs_lake,     source: gfs, static_key: conus-120km-lakes, lbc_times: 17, checks: --lakes,                     bundles: ungrib-gfs.2023031015 ungrib-sst.2023031015 }
-          - { case: conus_gfs_noahmp,   source: gfs, static_key: conus-120km,       lbc_times: 17, checks: --noahmp,                    bundles: ungrib-gfs.2023031015 ungrib-sst.2023031015 }
-          - { case: conus_gfs_noahmp10, source: gfs, static_key: conus-120km,       lbc_times: 17, checks: --noahmp --soil-levels 10,   bundles: ungrib-gfs.2023031015 ungrib-sst.2023031015 }
-          - { case: conus_raps,         source: rap, static_key: conus-120km,       lbc_times: 2,  checks: '',                          bundles: ungrib-rap.2024081518 }
-          - { case: conus_raps_lake,    source: rap, static_key: conus-120km-lakes, lbc_times: 2,  checks: --lakes,                     bundles: ungrib-rap.2024081518 }
+          - { case: conus_gfs_ruc,          source: gfs, static_key: conus-120km,       lbc_times: 17, checks: '',                          bundles: ungrib-gfs.2023031015 ungrib-sst.2023031015 }
+          - { case: conus_gfs_lake_ruc,     source: gfs, static_key: conus-120km-lakes, lbc_times: 17, checks: --lakes,                     bundles: ungrib-gfs.2023031015 ungrib-sst.2023031015 }
+          - { case: conus_gfs_ncar,         source: gfs, static_key: conus-120km,       lbc_times: 17, checks: --noahmp,                    bundles: ungrib-gfs.2023031015 ungrib-sst.2023031015 }
+          - { case: conus_gfs_ncar_soil10,  source: gfs, static_key: conus-120km,       lbc_times: 17, checks: --noahmp --soil-levels 10,   bundles: ungrib-gfs.2023031015 ungrib-sst.2023031015 }
+          - { case: conus_raps_ruc,         source: rap, static_key: conus-120km,       lbc_times: 2,  checks: '',                          bundles: ungrib-rap.2024081518 }
+          - { case: conus_raps_lake_ruc,    source: rap, static_key: conus-120km-lakes, lbc_times: 2,  checks: --lakes,                     bundles: ungrib-rap.2024081518 }
     name: ics (${{ matrix.case }})
     steps:
       - uses: actions/checkout@v7

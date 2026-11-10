@@ -1,10 +1,10 @@
-# make_ics case conus_rapw (sourced by scripts/create_case.sh)
+# make_ics case conus_gfs_ruc (sourced by scripts/create_case.sh)
 domain=conus
 resolution=120km
 mesh=conus.120km
-source=rap
-date=2024020218
-case_dir=conus.120km.rap.2024020218
+source=gfs
+date=2023031015
+case_dir=conus.120km.gfs.2023031015
 static_key=conus-120km
 static_variant=
 static_nml_dir=step1_static
