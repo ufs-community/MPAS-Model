@@ -57,8 +57,8 @@ permissions:
 #   hrrrv5.gfs           ufscommunity.hrrrv5.gfs.winter                       conus_gfs_ruc   develop, Release
 #   hrrrv5.rap           ufscommunity.hrrrv5.rap.summer                       conus_raps_ruc  develop, Release
 #   <physics>.stoch      ufscommunity.<physics>.gfs.winter.stoch              conus_gfs_ruc   develop, Release
-#                        physics: convection_permitting, hrrrv5; the feature run uses stochastic
-#                        physics, the baseline runs without it (nam_stochy removed)
+#                        physics: convection_permitting, hrrrv5; baseline and feature run are
+#                        both built and run with stochastic physics (fixed seed in nam_stochy)
 #
 # Inputs (mesh, geographic data, ungrib intermediate files, aerosol climatology) come from
 # release INPUTS_TAG of this repository (copy them with
@@ -497,12 +497,6 @@ jobs:
           }
           setup_rundir run_bl build_bl "${{ matrix.nml_bl }}"
           setup_rundir run_ft build_ft "${{ matrix.nml_ft }}"
-          if [ "${{ matrix.stoch }}" = "true" ]; then
-            # The baseline runs without stochastic physics: drop the nam_stochy namelist and the
-            # stochastic fields from its stream lists.
-            sed -i '/^[[:space:]]*&nam_stochy/,/^[[:space:]]*\//d' run_bl/namelist.atmosphere
-            sed -i '/stoch/d' run_bl/stream_list.*
-          fi
           cat build_bl/build-info.txt build_ft/build-info.txt
 
       - name: Run MPAS -- baseline (${{ matrix.bl }})
