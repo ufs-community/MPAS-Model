@@ -6,7 +6,6 @@ on:
     branches:
       # Only build containers when pushing to noaa/develop
       - "noaa/develop"
-      - "feature/ci_refactor"
 
 jobs:
   docker:
