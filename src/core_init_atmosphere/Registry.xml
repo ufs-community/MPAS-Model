@@ -44,7 +44,7 @@
                      description="The number of prescribed pressure levels in the climatological GOCART data set"/>
                 <dim name="nMonths" definition="namelist:config_months"
                      description="The number of months in a year"/>
-                <dim name="nlcat" definition="namelist:config_landuse_data" calculation='20 + 4 * merge(1,0,config_landuse_data(1:4)=="USGS")'
+                <dim name="nlcat" definition="namelist:config_landuse_data" calculation='20 + 4 * merge(1,0,config_landuse_data(1:4)=="USGS") + merge(1,0,trim(config_landuse_data)=="MODIFIED_IGBP_MODIS_NOAH_LAKES")'
                      description="The number of landuse categories used in the land surface model"/>
                 <dim name="nscat" definition="16" definition:"namelist:config_nsoilcat"
                      description="The number of soil categories used in the land surface model"/>
@@ -183,7 +183,7 @@
                 <nml_option name="config_landuse_data"          type="character"     default_value="MODIFIED_IGBP_MODIS_NOAH"
                      units="-"
                      description="The land use classification to use (case 7 only)"
-                     possible_values="`USGS', `MODIFIED_IGBP_MODIS_NOAH', or `MODIFIED_IGBP_MODIS_NOAH_15s'"/>
+                     possible_values="`USGS', `MODIFIED_IGBP_MODIS_NOAH', `MODIFIED_IGBP_MODIS_NOAH_15s', or `MODIFIED_IGBP_MODIS_NOAH_LAKES' (21-class MODIS with lakes as category 21)"/>
 
                 <nml_option name="config_soilcat_data"          type="character"     default_value="STATSGO"
                      units="-"
@@ -506,6 +506,7 @@
                         <var name="mminlu" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
                         <var name="isice_lu" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
                         <var name="iswater_lu" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
+                        <var name="islake_lu" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
                         <var name="ivgtyp" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
                         <var name="isltyp" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
                         <var name="landusef" packages="gwd_stage_in;vertical_stage_in;met_stage_in"/>
@@ -612,6 +613,7 @@
                         <var name="mminlu"/>
                         <var name="isice_lu"/>
                         <var name="iswater_lu"/>
+                        <var name="islake_lu"/>
                         <var name="ivgtyp"/>
                         <var name="landusef"/>
                         <var name="soilf"/>
@@ -951,6 +953,9 @@
 
                 <var name="iswater_lu" type="integer" dimensions="" units="unitless" default_value="16"
                      description="Index category for water"/>
+
+                <var name="islake_lu" type="integer" dimensions="" units="unitless" default_value="-1"
+                     description="Index category for lakes (-1 if the land use dataset has no lake category)"/>
 
                 <!-- SOIL COMPOSITION fields needed for the NOAH-MP land surface scheme -->
                 <var name="soilcomp" type="real" dimensions="nSoilComps nCells" units="percent"
