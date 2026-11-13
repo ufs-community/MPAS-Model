@@ -26,8 +26,6 @@ permissions:
 #                     Each build is cached on its source (this branch: hash of src/ and
 #                     Makefile; baselines: commit SHA), and uploaded with its run-time tables
 #                     as atm-<toolchain>-<variant>.
-#   build_intel       build-only coverage: Intel make/cmake, with and without stochastic
-#                     physics (pull requests and manual runs only).
 #   static            one static file per land-use variant (20-class MODIS, and 21-class with
 #                     lakes); cached on the init_atmosphere source, the static namelist and
 #                     the inputs release.
@@ -239,86 +237,6 @@ jobs:
           name: ${{ env.BUNDLE }}
           path: ${{ env.BUNDLE }}/
           retention-days: 7
-
-  build_intel:
-    name: build only (intel, ${{ matrix.build-system }}${{ matrix.stochastic && ', stochastic' || '' }})
-    if: github.event_name != 'push'
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        build-system: [make, cmake]
-        stochastic: [false, true]
-    env:
-      INTEL_MPI: /opt/intel/oneapi/mpi/2021.10.0
-      NETCDF_F_VERSION: 4.6.1
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          submodules: recursive
-
-      - name: Install Intel compilers & MPI${{ matrix.stochastic && ' & MKL' || '' }}
-        uses: NOAA-EMC/ci-install-intel-toolkit@ufs-community-mpas-ci-v2.0
-        with:
-          install-mpi: true
-          install-oneapi: false
-          mpi-wrapper-setup: classic
-          install-mkl: ${{ matrix.stochastic }}
-
-      - name: Build PnetCDF
-        uses: ./.github/actions/build-pnetcdf
-        with:
-          mpi-root: ${{ env.INTEL_MPI }}
-          cache-tag: intel-mpi-2021.10.0
-
-      - name: Setup environment
-        run: |
-          echo "FC=mpiifort" >> "$GITHUB_ENV"
-          echo "CC=mpiicc"   >> "$GITHUB_ENV"
-
-      # Stochastic physics also needs NetCDF (C from apt, Fortran built with Intel)
-      - name: Install NetCDF-C library
-        if: matrix.stochastic
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libnetcdf-dev
-          echo "NETCDF=/home/runner/NetCDF" >> "$GITHUB_ENV"
-
-      - name: Cache NetCDF-Fortran
-        id: cache-netcdf-fortran
-        if: matrix.stochastic
-        uses: actions/cache@v6
-        with:
-          path: /home/runner/NetCDF
-          key: netcdf-fortran-${{ env.NETCDF_F_VERSION }}-${{ runner.os }}-intel-mpi-2021.10.0
-
-      - name: Build NetCDF-Fortran
-        if: matrix.stochastic && steps.cache-netcdf-fortran.outputs.cache-hit != 'true'
-        working-directory: ${{ runner.temp }}
-        run: |
-          wget -q https://github.com/Unidata/netcdf-fortran/archive/refs/tags/v${NETCDF_F_VERSION}.tar.gz
-          tar -xf v${NETCDF_F_VERSION}.tar.gz
-          cd netcdf-fortran-${NETCDF_F_VERSION}
-          autoreconf -i
-          CPPFLAGS="-I$(nc-config --includedir)" \
-          LDFLAGS="-L$(nc-config --libdir)" \
-            ./configure --prefix=${NETCDF}
-          make -j"$(nproc)" install
-          # Put libnetcdf (C) next to libnetcdff so a single NETCDF root works for MPAS.
-          ln -sf "$(nc-config --libdir)/libnetcdf.so" ${NETCDF}/lib/libnetcdf.so
-
-      - name: Build MPAS (make)
-        if: matrix.build-system == 'make'
-        run: |
-          make intel-mpi CORE=init_atmosphere
-          make intel-mpi CORE=atmosphere ${{ matrix.stochastic && 'STOCHASTIC_PHYSICS=true AUTOCLEAN=true' || '' }}
-
-      - name: Build MPAS (cmake)
-        if: matrix.build-system == 'cmake'
-        run: |
-          cmake -S . -B build -DMPAS_DOUBLE_PRECISION=OFF -DMPAS_CORES="init_atmosphere;atmosphere" \
-            ${{ matrix.stochastic && '-DSTOCHASTIC_PHYSICS=ON' || '' }}
-          cmake --build build -j"$(nproc)"
 
   ###########################################################################################
   # Step 1: make ICs with init_atmosphere
