@@ -1,0 +1,567 @@
+name: MPAS CI
+
+on: [push, pull_request, workflow_dispatch]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+#############################################################################################
+# CI for the ufs-community fork of MPAS-Dev/MPAS-A: make initial conditions with
+# init_atmosphere_model from this branch, then run atmosphere_model from this branch and from
+# a baseline codebase on those ICs and compare the output.
+#
+# The run tests, the atmosphere builds they need and the toolchains (CI containers
+# dustinswales/ufs-community-mpas-ci:gnu and :oneapi) are listed in
+# testing_and_setup/ufs-community/ci_tests.json.
+#
+# Jobs
+#   plan              make the build_atmosphere and run matrices from ci_tests.json
+#   build_init        make gfortran CORE=init_atmosphere (this branch; GNU container)
+#   build_atmosphere  make <target> CORE=atmosphere for this branch and the baselines (MPAS-Dev
+#                     v8.4.2, ufs-community noaa/develop) with each toolchain a test needs.
+#                     Each build is cached on its source (this branch: hash of src/ and
+#                     Makefile; baselines: commit SHA), and uploaded with its run-time tables
+#                     as atm-<toolchain>-<variant>.
+#   static            one static file per land-use variant (20-class MODIS, and 21-class with
+#                     lakes); cached on the init_atmosphere source, the static namelist and
+#                     the inputs release.
+#   ics               init / lbc / sfc_update files for each IC case, sanity-checked with
+#                     check_ics.py and uploaded as ics-<case>.
+#   run               baseline and feature-branch runs of atmosphere_model on the ICs from
+#                     `ics` (made with GNU and shared by all toolchains), compared with
+#                     cmp_rt2bl.py; output uploaded as mpas-<toolchain>-<test>.
+#   summary           one table of all run results on the workflow run's summary page.
+#
+# IC cases (120 km CONUS). _ruc: GSL namelists (59 levels, 9 soil levels for RUC LSM);
+# _ncar: NCAR namelists from barlage/mpas_testcase (55 levels, 4 soil levels for Noah/Noah-MP).
+#   case                   source  date        static land use
+#   conus_gfs_ruc          gfs     2023031015  20-class MODIS
+#   conus_gfs_lake_ruc     gfs     2023031015  21-class MODIS with lakes
+#   conus_gfs_ncar         gfs     2023031015  20-class MODIS
+#   conus_gfs_ncar_soil10  gfs     2023031015  as conus_gfs_ncar, with 10 soil layers
+#   conus_raps_ruc         rap     2024081518  20-class MODIS
+#   conus_raps_lake_ruc    rap     2024081518  21-class MODIS with lakes
+# (ics/cases/ also has conus_rapw_ruc and conus_rapw_lake_ruc for running by hand)
+#
+# Run tests (GNU; oneapi and nvhpc run the Release tests without stochastic physics)
+#                       run config (testing_and_setup/ufs-community/cases/)   ICs             baselines
+#   <physics>.<bl>.<bt>  mpasdev.<physics>.gfs.winter                         conus_gfs_ncar  v8.4.2 (NCAR namelist),
+#                        physics: mesoscale_reference, convection_permitting,                  develop (GSL namelist);
+#                                 mesoscale_reference_noahmp                                   Release and Debug
+#   hrrrv5.gfs           ufscommunity.hrrrv5.gfs.winter                       conus_gfs_ruc   develop, Release
+#   hrrrv5.rap           ufscommunity.hrrrv5.rap.summer                       conus_raps_ruc  develop, Release
+#   <physics>.stoch      ufscommunity.<physics>.gfs.winter.stoch              conus_gfs_ruc   develop, Release
+#                        physics: convection_permitting, hrrrv5; baseline and feature run are
+#                        both built and run with stochastic physics (fixed seed in nam_stochy)
+#
+# Inputs (mesh, geographic data, ungrib intermediate files, aerosol climatology) come from
+# release INPUTS_TAG of this repository (copy them with
+# testing_and_setup/ufs-community/ics/copy_inputs_release.sh). IC scripts and namelists are in
+# testing_and_setup/ufs-community/ics/ (from dustinswales/mpas-ic-factory).
+#############################################################################################
+
+env:
+  # TEMPORARY: read inputs from the authoritative repository's release. Switch back to
+  # ${{ github.repository }} once this repository's release has the input bundles.
+  INPUTS_REPO: ufs-community/MPAS-Model
+  INPUTS_TAG: MPAS-v8.4.2-1.20
+  ICS_DIR: testing_and_setup/ufs-community/ics
+  IMAGE: dustinswales/ufs-community-mpas-ci:gnu
+
+jobs:
+  plan:
+    name: plan builds and tests
+    runs-on: ubuntu-26.04
+    outputs:
+      builds: ${{ steps.plan.outputs.builds }}
+      runs: ${{ steps.plan.outputs.runs }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: testing_and_setup/ufs-community
+      - name: Make matrices from ci_tests.json
+        id: plan
+        run: python3 testing_and_setup/ufs-community/ci_plan.py
+
+  ###########################################################################################
+  # Builds
+  ###########################################################################################
+  build_init:
+    name: build init_atmosphere
+    runs-on: ubuntu-22.04
+    container:
+      image: dustinswales/ufs-community-mpas-ci:gnu
+    defaults:
+      run:
+        shell: bash -el {0}
+    env:
+      PNETCDF: /opt/pnetcdf
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+      - name: Build init_atmosphere_model
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          make gfortran CORE=init_atmosphere > build.log 2>&1 || { tail -80 build.log; exit 1; }
+          test -x init_atmosphere_model
+          mkdir -p bin && cp init_atmosphere_model bin/
+          {
+            echo "code commit:        ${{ github.repository }}@${{ github.sha }}"
+            echo "compiler:           $(mpif90 --version | head -1)"
+            echo "image:              $IMAGE"
+            echo "workflow run:       ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          } > bin/build-info.txt
+          cat bin/build-info.txt
+      - uses: actions/upload-artifact@v7
+        with:
+          name: init-exe
+          path: bin/
+          retention-days: 7
+
+  build_atmosphere:
+    name: build atmosphere (${{ matrix.toolchain }}, ${{ matrix.variant }})
+    needs: plan
+    runs-on: ubuntu-22.04
+    container:
+      image: ${{ matrix.image }}
+    defaults:
+      run:
+        shell: bash -el {0}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.builds) }}
+    env:
+      PNETCDF: /opt/pnetcdf
+      BUNDLE: atm-${{ matrix.toolchain }}-${{ matrix.variant }}
+    steps:
+      - name: Resolve baseline commit
+        id: baseline
+        if: matrix.repo != ''
+        run: |
+          sha=$(git ls-remote https://github.com/${{ matrix.repo }}.git "${{ matrix.ref }}" | head -1 | cut -f1)
+          [ -n "$sha" ] || { echo "::error::cannot resolve ${{ matrix.repo }}@${{ matrix.ref }}"; exit 1; }
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout this branch
+        if: matrix.repo == ''
+        uses: actions/checkout@v7
+        with:
+          path: src
+          submodules: recursive
+
+      - name: Restore build
+        id: cache
+        uses: actions/cache@v6
+        with:
+          path: ${{ env.BUNDLE }}
+          key: ${{ env.BUNDLE }}-v3-${{ matrix.cpu_flag }}-${{ matrix.repo != '' && steps.baseline.outputs.sha || hashFiles('src/Makefile', 'src/src/**') }}
+
+      - name: Checkout baseline (${{ matrix.repo }}@${{ matrix.ref }})
+        if: matrix.repo != '' && steps.cache.outputs.cache-hit != 'true'
+        run: git clone --recursive --depth 1 --branch "${{ matrix.ref }}" https://github.com/${{ matrix.repo }}.git src
+
+      - name: Check MPI compiler wrappers
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          # make gfortran uses mpif90/mpicc/mpicxx; make intel and make nvhpc use
+          # mpifort/mpicc/mpic++, which must call the toolchain's own compilers
+          # (see docker/Dockerfile-<toolchain>-minimal).
+          for w in mpif90 mpifort mpicc mpicxx mpic++; do
+            command -v $w > /dev/null && echo "$w ($(command -v $w)) -> $($w --version 2>&1 | grep -m1 .)"
+          done
+          case "${{ matrix.toolchain }}" in
+            oneapi) fc=ifx       cc=intel cxx=intel ;;
+            nvhpc)  fc=nvfortran cc=nvc   cxx='nvc++' ;;
+            *)      exit 0 ;;
+          esac
+          bad=""
+          mpifort --version 2>&1 | grep -qi "$fc"  || bad="$bad mpifort"
+          mpicc   --version 2>&1 | grep -qi "$cc"  || bad="$bad mpicc"
+          mpic++  --version 2>&1 | grep -qiF "$cxx" || bad="$bad mpic++"
+          if [ -n "$bad" ]; then
+            echo "::error::${bad# } not using the ${{ matrix.toolchain }} compilers; rebuild the ${{ matrix.toolchain }} image with the updated docker/Dockerfile-${{ matrix.toolchain }}-minimal"
+            exit 1
+          fi
+
+      # The build and the runs happen on different GitHub runners, whose CPUs differ (some
+      # have AVX-512, some do not). A compiler that tunes for the build host (nvfortran) can
+      # then make an executable that fails with "Illegal instruction" on the run host, so add
+      # the toolchain's fixed CPU target to the make target's flags, in this branch's Makefile
+      # and in the baselines' alike.
+      - name: Set CPU target in the Makefile (${{ matrix.cpu_flag }})
+        if: matrix.cpu_flag != '' && steps.cache.outputs.cache-hit != 'true'
+        working-directory: src
+        env:
+          TARGET: ${{ matrix.make_target }}
+          CPU_FLAG: ${{ matrix.cpu_flag }}
+        run: |
+          sed -i "/^${TARGET}:/,/^\$/ s/\"\(FFLAGS\|CFLAGS\|CXXFLAGS\|LDFLAGS\)_\(OPT\|DEBUG\) = /&${CPU_FLAG} /" Makefile
+          n=$(sed -n "/^${TARGET}:/,/^\$/p" Makefile | grep -c -- "= ${CPU_FLAG} ")
+          sed -n "/^${TARGET}:/,/^\$/p" Makefile | grep -- "${CPU_FLAG}"
+          [ "$n" -gt 0 ] || { echo "::error::could not add ${CPU_FLAG} to the ${TARGET} target in the Makefile"; exit 1; }
+
+      - name: Build atmosphere_model
+        if: steps.cache.outputs.cache-hit != 'true'
+        working-directory: src
+        run: |
+          git config --global --add safe.directory "$PWD"
+          make ${{ matrix.make_target }} CORE=atmosphere ${{ matrix.make_flags }}
+
+      - name: Bundle executable and run-time tables
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          phys=src/src/core_atmosphere/physics
+          mkdir -p ${BUNDLE}
+          cp src/atmosphere_model ${BUNDLE}/
+          cp ${phys}/physics_wrf/files/{*.TBL,*.DBL,*DATA} ${BUNDLE}/
+          for f in ${phys}/physics_noahmp/parameters/NoahmpTable.TBL \
+                   ${phys}/physics_noaa/TEMPO/tables/ccn_activate.bin; do
+            if [ -f "$f" ]; then cp "$f" ${BUNDLE}/; else echo "::warning::${f#src/} not in this source tree"; fi
+          done
+          {
+            echo "source:      ${{ matrix.repo || github.repository }}@$(git -C src rev-parse HEAD)"
+            echo "make:        make ${{ matrix.make_target }} CORE=atmosphere ${{ matrix.make_flags }}"
+            echo "compiler:    $(mpifort --version 2>/dev/null | head -1 || mpif90 --version | head -1)"
+            echo "built on:    $(grep -m1 'model name' /proc/cpuinfo | cut -d: -f2 | xargs)${{ matrix.cpu_flag && format(' (CPU target {0})', matrix.cpu_flag) || '' }}"
+            echo "image:       ${{ matrix.image }}"
+          } > ${BUNDLE}/build-info.txt
+          cat ${BUNDLE}/build-info.txt
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ${{ env.BUNDLE }}
+          path: ${{ env.BUNDLE }}/
+          retention-days: 7
+
+  ###########################################################################################
+  # Step 1: make ICs with init_atmosphere
+  ###########################################################################################
+  static:
+    needs: build_init
+    runs-on: ubuntu-22.04
+    container:
+      image: dustinswales/ufs-community-mpas-ci:gnu
+    defaults:
+      run:
+        shell: bash -el {0}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { static_key: conus-120km,       case: conus_raps_ruc,      nml_dir: step1_static }
+          - { static_key: conus-120km-lakes, case: conus_raps_lake_ruc, nml_dir: step1_static_lakes }
+    name: static (${{ matrix.static_key }})
+    steps:
+      - uses: actions/checkout@v7
+      - name: Restore static files
+        id: cache
+        uses: actions/cache@v6
+        with:
+          path: static/${{ matrix.static_key }}
+          key: static-v1-${{ matrix.static_key }}-${{ env.INPUTS_TAG }}-${{ hashFiles('src/core_init_atmosphere/**', 'src/framework/**', 'src/operators/**', 'src/external/**', 'src/tools/**', 'Makefile', format('testing_and_setup/ufs-community/ics/case_files/{0}/*', matrix.nml_dir), 'testing_and_setup/ufs-community/ics/scripts/create_case.sh') }}
+      - uses: actions/download-artifact@v8
+        if: steps.cache.outputs.cache-hit != 'true'
+        with:
+          name: init-exe
+          path: bin/
+      - name: Fetch mesh and geographic data
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          df -h .
+          bash "$ICS_DIR/scripts/fetch_inputs.sh" -r "$INPUTS_REPO" -t "$INPUTS_TAG" -d inputs grids geog
+          df -h .
+      - name: Create static file
+        if: steps.cache.outputs.cache-hit != 'true'
+        env:
+          MPIRUN: mpiexec --allow-run-as-root --oversubscribe -np
+        run: |
+          chmod +x bin/init_atmosphere_model
+          DESCRIBE_EXTRA=$PWD/bin/build-info.txt \
+            bash "$ICS_DIR/scripts/create_case.sh" -c ${{ matrix.case }} -e bin/init_atmosphere_model \
+              -i inputs -o out -n 4 -s static
+          mkdir -p static/${{ matrix.static_key }}
+          cp out/*/case_files/mpas.*.nc out/*/case_files/log.static static/${{ matrix.static_key }}/
+          ls -l static/${{ matrix.static_key }}
+      - uses: actions/upload-artifact@v7
+        with:
+          name: static-${{ matrix.static_key }}
+          path: static/${{ matrix.static_key }}/
+          retention-days: 7
+
+  ics:
+    needs: [build_init, static]
+    runs-on: ubuntu-22.04
+    container:
+      image: dustinswales/ufs-community-mpas-ci:gnu
+    defaults:
+      run:
+        shell: bash -el {0}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { case: conus_gfs_ruc,          source: gfs, static_key: conus-120km,       lbc_times: 17, checks: '',                          bundles: ungrib-gfs.2023031015 ungrib-sst.2023031015 }
+          - { case: conus_gfs_lake_ruc,     source: gfs, static_key: conus-120km-lakes, lbc_times: 17, checks: --lakes,                     bundles: ungrib-gfs.2023031015 ungrib-sst.2023031015 }
+          - { case: conus_gfs_ncar,         source: gfs, static_key: conus-120km,       lbc_times: 17, checks: --noahmp,                    bundles: ungrib-gfs.2023031015 ungrib-sst.2023031015 }
+          - { case: conus_gfs_ncar_soil10,  source: gfs, static_key: conus-120km,       lbc_times: 17, checks: --noahmp --soil-levels 10,   bundles: ungrib-gfs.2023031015 ungrib-sst.2023031015 }
+          - { case: conus_raps_ruc,         source: rap, static_key: conus-120km,       lbc_times: 2,  checks: '',                          bundles: ungrib-rap.2024081518 }
+          - { case: conus_raps_lake_ruc,    source: rap, static_key: conus-120km-lakes, lbc_times: 2,  checks: --lakes,                     bundles: ungrib-rap.2024081518 }
+    name: ics (${{ matrix.case }})
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: init-exe
+          path: bin/
+      - uses: actions/download-artifact@v8
+        with:
+          name: static-${{ matrix.static_key }}
+          path: static/
+      - name: Fetch inputs
+        run: |
+          df -h .
+          # shellcheck disable=SC2086
+          bash "$ICS_DIR/scripts/fetch_inputs.sh" -r "$INPUTS_REPO" -t "$INPUTS_TAG" -d inputs \
+            grids aerosols ${{ matrix.bundles }}
+          df -h .
+      - name: Create init / lbc / sfc_update files
+        env:
+          MPIRUN: mpiexec --allow-run-as-root --oversubscribe -np
+        run: |
+          chmod +x bin/init_atmosphere_model
+          DESCRIBE_EXTRA=$PWD/bin/build-info.txt \
+            bash "$ICS_DIR/scripts/create_case.sh" -c ${{ matrix.case }} -e bin/init_atmosphere_model \
+              -i inputs -o out -n 4 -S static
+          case_dir=$(basename out/*)
+          echo "CASE_DIR=$case_dir" >> "$GITHUB_ENV"
+          ls -l "out/$case_dir/case_files"
+      - name: Set up Python (netCDF4) for checks
+        uses: conda-incubator/setup-miniconda@v4
+        with:
+          python-version: '3.11'
+          auto-update-conda: true
+          auto-activate: false
+          environment-file: testing_and_setup/ufs-community/environment.yml
+          activate-environment: mpas-ci-env
+      - name: Check files
+        run: |
+          python "$ICS_DIR/check_ics.py" "out/$CASE_DIR/case_files" \
+            --source ${{ matrix.source }} --lbc-times ${{ matrix.lbc_times }} ${{ matrix.checks }}
+      - name: Upload files
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: ics-${{ matrix.case }}
+          path: out/
+          retention-days: 14
+          if-no-files-found: ignore
+
+  ###########################################################################################
+  # Step 2: run atmosphere_model (baseline and this branch) on those ICs and compare
+  ###########################################################################################
+  run:
+    needs: [plan, build_atmosphere, ics]
+    # Run every test whose own inputs exist, even if another IC case or build failed (a test
+    # whose inputs are missing fails at the download step).
+    if: ${{ !cancelled() && needs.plan.result == 'success' }}
+    runs-on: ubuntu-22.04
+    container:
+      image: ${{ matrix.image }}
+    defaults:
+      run:
+        shell: bash -el {0}
+    strategy:
+      fail-fast: false
+      # Tests are listed in testing_and_setup/ufs-community/ci_tests.json
+      matrix: ${{ fromJSON(needs.plan.outputs.runs) }}
+    name: run (${{ matrix.toolchain }}, ${{ matrix.test }})
+    env:
+      UFS_COMMUNITY: testing_and_setup/ufs-community
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Download baseline build (${{ matrix.bl }})
+        uses: actions/download-artifact@v8
+        with:
+          name: atm-${{ matrix.toolchain }}-${{ matrix.bl }}
+          path: build_bl/
+      - name: Download feature-branch build (${{ matrix.ft }})
+        uses: actions/download-artifact@v8
+        with:
+          name: atm-${{ matrix.toolchain }}-${{ matrix.ft }}
+          path: build_ft/
+      - name: Download ICs (${{ matrix.ics }})
+        uses: actions/download-artifact@v8
+        with:
+          name: ics-${{ matrix.ics }}
+          path: ics/
+
+      - name: Check shared libraries
+        run: |
+          # Fail here, with the missing libraries named, rather than when the model starts.
+          for exe in build_bl/atmosphere_model build_ft/atmosphere_model; do
+            chmod +x "$exe"
+            missing=$(ldd "$exe" | grep 'not found' || true)
+            if [ -n "$missing" ]; then
+              echo "::error::$exe is missing shared libraries:"; echo "$missing"; exit 1
+            fi
+          done
+
+      - name: Download UFS physics tables (TEMPO, Thompson, UGW)
+        run: ${UFS_COMMUNITY}/data/get_data.sh --tables-only
+
+      - name: Create and populate run directories
+        run: |
+          ics_dir=$(echo "$PWD"/ics/*/case_files)
+          tables=$PWD/${UFS_COMMUNITY}/data/tables
+          case_files=$PWD/${UFS_COMMUNITY}/cases/${{ matrix.case }}
+          # setup_rundir <run dir> <build dir> <namelist suffix>
+          setup_rundir() {
+            local rundir=$1 build=$PWD/$2 nml=$3
+            mkdir -p "$rundir" && cd "$rundir"
+            cp "$case_files"/* .
+            [ -n "$nml" ] && ln -sf namelist.atmosphere.$nml namelist.atmosphere
+            chmod +x "$build/atmosphere_model"
+            ln -sf "$build"/* .
+            ln -sf "$tables"/{tempo,thompson,ugw}/* .
+            ln -sf "$ics_dir"/*.init.*.nc         mpas.init.nc
+            ln -sf "$ics_dir"/*.lbc.*.nc          mpas.lbc.nc
+            ln -sf "$ics_dir"/*.ugwp_oro_data.nc  mpas.ugwp_oro_data.nc
+            for f in "$ics_dir"/*.sfc_update.*.nc; do [ -e "$f" ] && ln -sf "$f" mpas.sfc_update.nc; done
+            cd - > /dev/null
+          }
+          setup_rundir run_bl build_bl "${{ matrix.nml_bl }}"
+          setup_rundir run_ft build_ft "${{ matrix.nml_ft }}"
+          cat build_bl/build-info.txt build_ft/build-info.txt
+
+      - name: Run MPAS -- baseline (${{ matrix.bl }})
+        id: run_bl
+        working-directory: run_bl
+        run: |
+          ls -l
+          ulimit -s unlimited || true
+          ${{ matrix.mpirun }} 1 ./atmosphere_model
+
+      - name: Run MPAS -- feature branch (${{ matrix.ft }})
+        id: run_ft
+        working-directory: run_ft
+        run: |
+          ls -l
+          ulimit -s unlimited || true
+          ${{ matrix.mpirun }} 1 ./atmosphere_model
+
+      - name: Set up Python (nccmp) for comparison
+        uses: conda-incubator/setup-miniconda@v4
+        with:
+          python-version: '3.11'
+          auto-update-conda: true
+          auto-activate: false
+          environment-file: testing_and_setup/ufs-community/environment.yml
+          activate-environment: mpas-ci-env
+
+      - name: Compare feature branch to baseline
+        id: cmp
+        run: |
+          # cmp_rt2bl.py passes when the baseline produced nothing, so check for output first.
+          compgen -G "run_bl/history.*.nc" > /dev/null || { echo "::error::baseline run produced no history files"; exit 1; }
+          ${UFS_COMMUNITY}/cmp_rt2bl.py --dir_rt "$PWD/run_ft" --dir_bl "$PWD/run_bl" | tee cmp.log
+
+      # One line per test for the overview table made by the `summary` job. Differences from
+      # the baseline are reported there but do not fail the job.
+      - name: Record result
+        if: ${{ !cancelled() }}
+        env:
+          RUN_BL: ${{ steps.run_bl.outcome }}
+          RUN_FT: ${{ steps.run_ft.outcome }}
+          CMP:    ${{ steps.cmp.outcome }}
+        run: |
+          # rank sorts the table: 0 = failed, 1 = differs, 2 = identical
+          if   [ "$RUN_BL" = skipped ];  then rank=0 status="❌ setup failed"         detail="inputs or run directories not ready"
+          elif [ "$RUN_BL" != success ]; then rank=0 status="❌ baseline run failed"  detail="see run_bl log"
+          elif [ "$RUN_FT" != success ]; then rank=0 status="❌ feature run failed"   detail="see run_ft log"
+          elif [ "$CMP" != success ];    then rank=0 status="❌ comparison failed"    detail="see Compare step"
+          else
+            n=$(grep -c '^Comparing' cmp.log || true)
+            diff=$(grep -c 'NOT IDENTICAL' cmp.log || true)
+            miss=$(grep -c 'MISSING' cmp.log || true)
+            if   [ "$n" -eq 0 ];                  then rank=0 status="❌ nothing compared" detail="no history/diag files"
+            elif [ $((diff + miss)) -gt 0 ];      then rank=1 status="⚠️ differs"          detail="${diff} of ${n} files differ"
+            else                                       rank=2 status="✅ identical"         detail="${n} files"
+            fi
+            [ "$miss" -gt 0 ] && detail="${detail}, ${miss} missing from the feature run"
+          fi
+          mkdir -p result
+          printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$rank" "${{ matrix.toolchain }}" "${{ matrix.test }}" \
+            "${{ matrix.bl }}" "${{ matrix.ft }}" "${{ matrix.ics }}" "$status" "$detail" \
+            > "result/${{ matrix.toolchain }}.${{ matrix.test }}.tsv"
+
+      - name: Upload result
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: result-${{ matrix.toolchain }}-${{ matrix.test }}
+          path: result/
+          retention-days: 7
+
+      - name: Collect output for artifact
+        if: ${{ !cancelled() }}
+        run: |
+          for t in bl ft; do
+            out=artifact/data_${t}
+            mkdir -p ${out}
+            cp run_${t}/namelist.atmosphere ${out}/ 2>/dev/null || true
+            cp run_${t}/log.atmosphere.* run_${t}/history.*.nc run_${t}/diag.*.nc ${out}/ 2>/dev/null || true
+          done
+
+      - name: Upload output as GitHub artifact
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: mpas-${{ matrix.toolchain }}-${{ matrix.test }}
+          path: artifact/
+          if-no-files-found: warn
+
+  ###########################################################################################
+  # Overview table of all run tests, shown on the workflow run's summary page
+  ###########################################################################################
+  summary:
+    name: test summary
+    needs: run
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v8
+        continue-on-error: true  # no results at all is reported below
+        with:
+          pattern: result-*
+          path: results/
+          merge-multiple: true
+
+      - name: Write overview table
+        run: |
+          shopt -s nullglob
+          files=(results/*.tsv)
+          count() { cat "${files[@]}" /dev/null | awk -F'\t' -v r="$1" '$1 == r' | wc -l; }
+          {
+            echo "## Baseline vs. feature branch (${#files[@]} tests)"
+            echo
+            echo "✅ $(count 2) identical · ⚠️ $(count 1) differ · ❌ $(count 0) failed"
+            echo
+            if [ ${#files[@]} -gt 0 ]; then
+              echo "| Test | Toolchain | Baseline | Feature build | ICs | Result | Details |"
+              echo "|---|---|---|---|---|---|---|"
+              sort -t$'\t' -k1,1n -k3,3 -k2,2 "${files[@]}" |
+                while IFS=$'\t' read -r rank toolchain test bl ft ics status detail; do
+                  echo "| \`${test}\` | ${toolchain} | ${bl} | ${ft} | ${ics} | ${status} | ${detail} |"
+                done
+              echo
+              echo "Output and logs for each test are in the \`mpas-<toolchain>-<test>\` artifacts."
+            else
+              echo "No test results were recorded; check the build and ics jobs."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
