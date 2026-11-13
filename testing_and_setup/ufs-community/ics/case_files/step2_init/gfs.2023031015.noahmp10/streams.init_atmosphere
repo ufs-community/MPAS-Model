@@ -1,0 +1,14 @@
+<streams>
+<immutable_stream name="input"
+                  type="input"
+                  precision="single"
+                  filename_template="static.nc"
+                  input_interval="initial_only" />
+
+<immutable_stream name="output"
+                  type="output"
+                  filename_template="init.nc"
+                  packages="initial_conds"
+                  output_interval="initial_only" />
+
+</streams>
