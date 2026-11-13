@@ -615,6 +615,9 @@
 			<var name="cell_gradient_coef_x"/>
 			<var name="cell_gradient_coef_y"/>
 #endif
+#ifdef MPAS_UFS_DYCORE
+                        <var name="islake_lu"/>
+#endif
 #ifdef DO_PHYSICS
 			<var name="isltyp"/>
 			<var name="ivgtyp"/>
@@ -2979,6 +2982,11 @@
                      description="configuration of gravity wave drag over orography"
                      possible_values="`suite',`bl_ysu_gwdo',`bl_ugwp_gwdo',`off'"/>
 
+                <nml_option name="config_alpha_fd" type="real" default_value="12.0" in_defaults="false"
+                     units="-"
+                     description="alpha coefficient for turbulent orographic form drag"
+                     possible_values="Non-negative real values"/>
+
                 <nml_option name="config_ngw_scheme" type="logical" default_value="false" in_defaults="false"
                      units="-"
                      description="logical for non-stationary gravity wave drag scheme"
@@ -4973,6 +4981,9 @@
 
                 <var name="iswater_lu" type="integer" dimensions="" units="unitless" default_value="16"
                      description="Index category for water"/>
+
+                <var name="islake_lu" type="integer" dimensions="" units="unitless" default_value="-1"
+                     description="Index category for lakes (-1 if the land use dataset has no lake category)"/>
 
                 <var name="landmask" type="integer"  dimensions="nCells" units="unitless"
                      description="land-ocean mask (1=land ; 0=ocean)"/>
