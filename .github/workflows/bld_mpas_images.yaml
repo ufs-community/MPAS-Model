@@ -6,14 +6,7 @@ on:
     branches:
       # Only build containers when pushing to noaa/develop
       - "noaa/develop"
-  # Run by hand on a branch that changes docker/ (e.g. one opened as a pull request), so its CI
-  # finds images built from its own Dockerfiles.
   workflow_dispatch:
-
-# Each image is pushed as dustinswales/ufs-community-mpas-ci:<toolchain>-<docker tree>, where
-# <docker tree> is the first 12 characters of the git tree hash of docker/ (git rev-parse
-# HEAD:docker), so every version of the Dockerfiles has its own images; mpas_ci.yml uses the
-# images that match its own docker/. Pushes to noaa/develop also update :<toolchain>.
 
 jobs:
   docker:
