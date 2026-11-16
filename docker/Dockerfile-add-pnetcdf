@@ -20,11 +20,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libtool \
     && rm -rf /var/lib/apt/lists/*
 
+# Compiler flags that fix the target CPU (see Dockerfile-add-netcdf). PnetCDF is linked into
+# the MPAS executables, so it must not use instructions the CI runners lack.
+ARG CPU_FLAGS=""
+
 # Download, compile, and install PnetCDF
 WORKDIR /tmp
 RUN wget https://parallel-netcdf.github.io/Release/pnetcdf-${PNFVERSION}.tar.gz \
     && tar xzf pnetcdf-${PNFVERSION}.tar.gz \
     && cd pnetcdf-${PNFVERSION} \
+    && if [ -n "$CPU_FLAGS" ]; then \
+         export CFLAGS="-O2 $CPU_FLAGS" CXXFLAGS="-O2 $CPU_FLAGS" \
+                FFLAGS="-O2 $CPU_FLAGS" FCFLAGS="-O2 $CPU_FLAGS"; \
+       fi \
     && { CC=$CC FC=$FC ./configure --prefix=${PNETCDF_PREFIX} \
          || { tail -n 80 config.log; exit 1; } } \
     && make -j 8 install \

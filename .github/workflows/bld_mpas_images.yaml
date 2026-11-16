@@ -27,6 +27,9 @@ jobs:
           - toolchain: nvhpc
             nfversion: 4.5.4
             pnfversion: 1.12.3
+            # nvc/nvfortran tune for the CPU they run on; build the libraries for AVX2 so
+            # they run on every CI runner (as ci_tests.json's cpu_flag does for MPAS)
+            cpu_flags: -tp=haswell
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -66,6 +69,7 @@ jobs:
           build-args: |
             TOOLCHAIN=${{ matrix.toolchain }}
             NFVERSION=${{ matrix.nfversion }}
+            CPU_FLAGS=${{ matrix.cpu_flags }}
 
       - name: Build add-pnetcdf:${{ matrix.toolchain }}
         uses: docker/build-push-action@v7
@@ -75,6 +79,7 @@ jobs:
           build-args: |
             TOOLCHAIN=${{ matrix.toolchain }}
             PNFVERSION=${{ matrix.pnfversion }}
+            CPU_FLAGS=${{ matrix.cpu_flags }}
 
       - name: Build add-python:${{ matrix.toolchain }}
         uses: docker/build-push-action@v7

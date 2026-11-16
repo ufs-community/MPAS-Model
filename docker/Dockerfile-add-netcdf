@@ -20,11 +20,17 @@ RUN apt-get update \
 ARG NFVERSION
 ENV NFVERSION=$NFVERSION
 
+# Compiler flags that fix the target CPU (e.g. -tp=haswell for nvhpc, whose compilers otherwise
+# tune for the CPU of the machine building the image; the CI runs on other machines, whose
+# CPUs may lack those instructions). Empty for toolchains that build for a generic CPU.
+ARG CPU_FLAGS=""
+
 RUN curl https://downloads.unidata.ucar.edu/netcdf-fortran/$NFVERSION/netcdf-fortran-$NFVERSION.tar.gz | tar xz \
   && cd netcdf-fortran-$NFVERSION \
+  && if [ -n "$CPU_FLAGS" ]; then export FFLAGS="-O2 -fPIC $CPU_FLAGS"; fi \
   && { ./configure \
-         CFLAGS='-O2' \
-         FCFLAGS='-O2 -fPIC' \
+         CFLAGS="-O2 $CPU_FLAGS" \
+         FCFLAGS="-O2 -fPIC $CPU_FLAGS" \
          --disable-static \ 
          --prefix=/usr || \
        { cat ./config.log; exit 1; } }
