@@ -70,7 +70,6 @@ env:
   INPUTS_REPO: ufs-community/MPAS-Model
   INPUTS_TAG: MPAS-v8.4.2-1.20
   ICS_DIR: testing_and_setup/ufs-community/ics
-  IMAGE: dustinswales/ufs-community-mpas-ci:gnu
 
 jobs:
   plan:
@@ -79,22 +78,27 @@ jobs:
     outputs:
       builds: ${{ steps.plan.outputs.builds }}
       runs: ${{ steps.plan.outputs.runs }}
+      gnu_image: ${{ steps.plan.outputs.image_gnu }}
     steps:
       - uses: actions/checkout@v7
         with:
           sparse-checkout: testing_and_setup/ufs-community
       - name: Make matrices from ci_tests.json
         id: plan
-        run: python3 testing_and_setup/ufs-community/ci_plan.py
+        run: |
+          # Use the CI images built from this commit's docker/ (see bld_mpas_images.yaml)
+          export DOCKER_TREE=$(git rev-parse HEAD:docker | cut -c1-12)
+          python3 testing_and_setup/ufs-community/ci_plan.py
 
   ###########################################################################################
   # Builds
   ###########################################################################################
   build_init:
     name: build init_atmosphere
+    needs: plan
     runs-on: ubuntu-22.04
     container:
-      image: dustinswales/ufs-community-mpas-ci:gnu
+      image: ${{ needs.plan.outputs.gnu_image }}
     defaults:
       run:
         shell: bash -el {0}
@@ -113,7 +117,7 @@ jobs:
           {
             echo "code commit:        ${{ github.repository }}@${{ github.sha }}"
             echo "compiler:           $(mpif90 --version | head -1)"
-            echo "image:              $IMAGE"
+            echo "image:              ${{ needs.plan.outputs.gnu_image }}"
             echo "workflow run:       ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           } > bin/build-info.txt
           cat bin/build-info.txt
@@ -159,7 +163,8 @@ jobs:
         uses: actions/cache@v6
         with:
           path: ${{ env.BUNDLE }}
-          key: ${{ env.BUNDLE }}-v3-${{ matrix.cpu_flag }}-${{ matrix.repo != '' && steps.baseline.outputs.sha || hashFiles('src/Makefile', 'src/src/**') }}
+          # The image is part of the key, so an executable is never reused in another image.
+          key: ${{ env.BUNDLE }}-v4-${{ matrix.image }}-${{ matrix.cpu_flag }}-${{ matrix.repo != '' && steps.baseline.outputs.sha || hashFiles('src/Makefile', 'src/src/**') }}
 
       - name: Checkout baseline (${{ matrix.repo }}@${{ matrix.ref }})
         if: matrix.repo != '' && steps.cache.outputs.cache-hit != 'true'
@@ -242,10 +247,10 @@ jobs:
   # Step 1: make ICs with init_atmosphere
   ###########################################################################################
   static:
-    needs: build_init
+    needs: [plan, build_init]
     runs-on: ubuntu-22.04
     container:
-      image: dustinswales/ufs-community-mpas-ci:gnu
+      image: ${{ needs.plan.outputs.gnu_image }}
     defaults:
       run:
         shell: bash -el {0}
@@ -294,10 +299,10 @@ jobs:
           retention-days: 7
 
   ics:
-    needs: [build_init, static]
+    needs: [plan, build_init, static]
     runs-on: ubuntu-22.04
     container:
-      image: dustinswales/ufs-community-mpas-ci:gnu
+      image: ${{ needs.plan.outputs.gnu_image }}
     defaults:
       run:
         shell: bash -el {0}

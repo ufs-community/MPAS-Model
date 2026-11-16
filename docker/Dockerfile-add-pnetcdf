@@ -11,7 +11,7 @@ ENV PNFVERSION=$PNFVERSION
 # Set environment variables for PnetCDF installation
 ENV PNETCDF_PREFIX=/opt/pnetcdf
 ENV PATH="${PNETCDF_PREFIX}/bin:${PATH}"
-ENV LD_LIBRARY_PATH="${PNETCDF_PREFIX}/lib:{$LD_LIBRARY_PATH}"
+ENV LD_LIBRARY_PATH="${PNETCDF_PREFIX}/lib:${LD_LIBRARY_PATH}"
 ENV PKG_CONFIG_PATH="${PNETCDF_PREFIX}/lib/pkgconfig:${PKG_CONFIG_PATH}"
 
 # Update and install necessary build tools
@@ -31,6 +31,3 @@ RUN wget https://parallel-netcdf.github.io/Release/pnetcdf-${PNFVERSION}.tar.gz 
     && cd /tmp \
     && rm -rf pnetcdf-${PNFVERSION} pnetcdf-${PNFVERSION}.tar.gz
 
-# Add PnetCDF library path to the environment
-ENV PATH="${PNETCDF_PREFIX}/bin:${PATH}"
-ENV LD_LIBRARY_PATH="${PNETCDF_PREFIX}/lib:${LD_LIBRARY_PATH}"
