@@ -82,6 +82,8 @@ lines += [f"image_{tc}={cfg['image']}" for tc, cfg in toolchains.items()]
 if os.environ.get("GITHUB_OUTPUT"):
     with open(os.environ["GITHUB_OUTPUT"], "a") as f:
         f.write("\n".join(lines) + "\n")
+else:
+    print("\n".join(lines))
 print(f"{len(build_list)} builds, {len(runs)} runs")
 for b in build_list:
     print(f"  build  {b['toolchain']:7s} {b['variant']}")

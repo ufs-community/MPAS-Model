@@ -164,7 +164,7 @@ jobs:
         with:
           path: ${{ env.BUNDLE }}
           # The image is part of the key, so an executable is never reused in another image.
-          key: ${{ env.BUNDLE }}-v4-${{ matrix.image }}-${{ matrix.cpu_flag }}-${{ matrix.repo != '' && steps.baseline.outputs.sha || hashFiles('src/Makefile', 'src/src/**') }}
+          key: ${{ env.BUNDLE }}-v4-${{ matrix.image }}-${{ matrix.cpu_flag }}-${{ matrix.make_target }}-${{ matrix.make_flags }}-${{ matrix.repo != '' && steps.baseline.outputs.sha || hashFiles('src/Makefile', 'src/src/**') }}
 
       - name: Checkout baseline (${{ matrix.repo }}@${{ matrix.ref }})
         if: matrix.repo != '' && steps.cache.outputs.cache-hit != 'true'
