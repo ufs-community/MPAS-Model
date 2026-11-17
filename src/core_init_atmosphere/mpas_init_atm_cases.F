@@ -9172,8 +9172,7 @@ call mpas_log_write('Done with soil consistency check')
                    if (index_dust_coarse > 0  ) scalars(index_dust_coarse,k,iCell) = scalars(index_dust_coarse,k+1,iCell)
                 endif
                 if ( associated(index_unspc_fine )) then
-                   if ( index_unspc_fine > 0) scalars(index_unspc_fine,k,iCell) = conv_aer_kg2ug * vertical_interp(target_z, nfglevels_actual-1, &
-                                            sorted_arrQ14(:,1:nfglevels_actual-1), order=1, extrap=0)
+                   if (index_unspc_fine > 0   ) scalars(index_unspc_fine,k,iCell) = scalars(index_unspc_fine,k+1,iCell)
                 endif
             endif
          end do
