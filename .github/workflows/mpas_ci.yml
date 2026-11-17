@@ -358,7 +358,7 @@ jobs:
           python "$ICS_DIR/check_ics.py" "out/$CASE_DIR/case_files" \
             --source ${{ matrix.source }} --lbc-times ${{ matrix.lbc_times }} ${{ matrix.checks }}
       - name: Upload files
-        if: ${{ !cancelled() }}
+        if: ${{ success() }}
         uses: actions/upload-artifact@v7
         with:
           name: ics-${{ matrix.case }}
