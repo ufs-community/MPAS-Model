@@ -474,6 +474,10 @@ jobs:
         run: |
           # cmp_rt2bl.py passes when the baseline produced nothing, so check for output first.
           compgen -G "run_bl/history.*.nc" > /dev/null || { echo "::error::baseline run produced no history files"; exit 1; }
+          # pipefail: the job's shell (bash -el) does not set it, and without it tee would hide
+          # cmp_rt2bl.py's exit status. The script fails only when a comparison could not be
+          # made; differences from the baseline are reported in cmp.log and the summary.
+          set -o pipefail
           ${UFS_COMMUNITY}/cmp_rt2bl.py --dir_rt "$PWD/run_ft" --dir_bl "$PWD/run_bl" | tee cmp.log
 
       # One line per test for the overview table made by the `summary` job. Differences from
