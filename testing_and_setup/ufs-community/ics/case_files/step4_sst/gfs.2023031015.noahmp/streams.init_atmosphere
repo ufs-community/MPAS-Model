@@ -1,0 +1,15 @@
+<streams>
+<immutable_stream name="input"
+                  type="input"
+                  precision="single"
+                  filename_template="init.nc"
+                  input_interval="initial_only" />
+
+<immutable_stream name="surface"
+                  type="output"
+                  filename_template="sfc_update.nc"
+                  filename_interval="none"
+                  packages="sfc_update"
+                  output_interval="3:00:00" />
+
+</streams>
