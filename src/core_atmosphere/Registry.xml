@@ -619,15 +619,10 @@
                         <var name="islake_lu"/>
 #endif
 #ifdef DO_PHYSICS
-			<var name="isltyp"/>
-			<var name="ivgtyp"/>
 			<var name="mminlu"/>
 			<var name="isice_lu"/>
 			<var name="iswater_lu"/>
 			<var name="landmask"/>
-			<var name="shdmin"/>
-			<var name="shdmax"/>
-			<var name="snoalb"/>
 			<var name="albedo12m"/>
 			<var name="greenfrac"/>
 			<var name="landusef"/>
@@ -676,6 +671,11 @@
 			<var name="surface_pressure"/>
 
 #ifdef DO_PHYSICS
+			<var name="isltyp"/>
+			<var name="ivgtyp"/>
+			<var name="snoalb"/>
+			<var name="shdmin"/>
+			<var name="shdmax"/>
 			<var name="sfc_albbck"/>
 			<var name="skintemp"/>
 			<var name="snow"/>
@@ -748,6 +748,11 @@
 			<var name="surface_pressure"/>
 
 #ifdef DO_PHYSICS
+			<var name="isltyp"/>
+			<var name="ivgtyp"/>
+			<var name="snoalb"/>
+			<var name="shdmin"/>
+			<var name="shdmax"/>
 			<var name="rainprod"/>
 			<var name="evapprod"/>
 			<var name="re_cloud"/>
