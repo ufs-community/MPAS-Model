@@ -15,7 +15,8 @@
 	url = https://github.com/NOAA-GSL/GFL.git
 [submodule "src/core_atmosphere/physics/physics_noaa/SMOKE"]
 	path = src/core_atmosphere/physics/physics_noaa/SMOKE
-	url = https://github.com/NOAA-GSL/SMOKE.git
+	url = https://github.com/dustinswales/SMOKE.git
+	branch = feature/nvhpc
 [submodule "src/core_atmosphere/physics/physics_noaa/MYNN-SFC"]
 	path = src/core_atmosphere/physics/physics_noaa/MYNN-SFC
 	url = https://github.com/NCAR/MYNN-SFC.git

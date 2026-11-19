@@ -7,10 +7,12 @@ print_help() {
     echo ""
     echo "Options:"
     echo "    -v, --verbose    Turn on wget verbose output."
+    echo "    --tables-only    Download only the physics lookup tables (skip the MPAS ICs)."
     echo "    --help           Show this help message and exit."
 }
 
 verbose="-q"
+tables_only=false
 # Parse command-line arguments
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -20,6 +22,9 @@ while [[ "$#" -gt 0 ]]; do
             ;;
         -v|--verbose)
             verbose="-v"
+            ;;
+        --tables-only)
+            tables_only=true
             ;;
         *)
             echo "Unknown option: $1"
@@ -73,6 +78,10 @@ cd tables/ugw
 tar -xvf ugw_data.tar
 rm ugw_data.tar
 cd ../../
+
+if [[ "${tables_only}" == true ]]; then
+  exit 0
+fi
 
 # Get MPAS case data
 wget ${verbose} https://github.com/ufs-community/MPAS-Model/releases/download/MPAS-v8.3.1-2.13/mpas_data.tar
