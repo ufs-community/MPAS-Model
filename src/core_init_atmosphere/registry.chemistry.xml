@@ -85,6 +85,26 @@
                            description="fine smoke mixing ratio"
                            packages="mpas_smoke_in"/>
 
+	              <var name="sulphate" array_group="chemistry" units="kg kg^{-1}"
+                           description="sulphate dry"
+                           packages="mpas_smoke_in"/>
+
+                      <var name="om_ho" array_group="chemistry" units="kg kg^{-1}"
+                           description="particulate organic matter hydrophobic"
+                           packages="mpas_smoke_in"/>
+
+                      <var name="om_hi" array_group="chemistry" units="kg kg^{-1}"
+                           description="particulate organic matter hydrophilic"
+                           packages="mpas_smoke_in"/>
+
+                      <var name="bc_ho" array_group="chemistry" units="kg kg^{-1}"
+                           description="black carbon hydrophobic dry"
+                           packages="mpas_smoke_in"/>
+
+                      <var name="bc_hi" array_group="chemistry" units="kg kg^{-1}"
+                           description="black carbon hydrophilic dry"
+                           packages="mpas_smoke_in"/>
+
                       <var name="dust_fine" array_group="chemistry" units="kg kg^{-1}"
                            description="fine dust mixing ratio"
                            packages="mpas_dust_in;mpas_anthro_in"/>
@@ -92,6 +112,30 @@
                       <var name="dust_coarse" array_group="chemistry" units="kg kg^{-1}"
                            description="coarse dust mixing ratio"
                            packages="mpas_dust_in;mpas_anthro_in"/>
+
+	             <var name="dust1" array_group="chemistry" units="kg kg^{-1}"
+                           description="dust mixing ratio bin 1 (0.2 - 2.0 um)"
+                           packages="mpas_dust_in;mpas_anthro_in"/>
+
+                      <var name="dust2" array_group="chemistry" units="kg kg^{-1}"
+                           description="dust mixing ratio bin 2 (2.0 - 3.6 um)"
+                           packages="mpas_dust_in;mpas_anthro_in"/>
+
+                      <var name="dust3" array_group="chemistry" units="kg kg^{-1}"
+                           description="dust mixing ratio bin 3 (3.6 - 6.0 um)"
+                           packages="mpas_dust_in;mpas_anthro_in"/>
+
+                      <var name="dust4" array_group="chemistry" units="kg kg^{-1}"
+                           description="dust mixing ratio bin 4 (6.0 - 12.0 um)"
+                           packages="mpas_dust_in;mpas_anthro_in"/>
+
+                      <var name="dust5" array_group="chemistry" units="kg kg^{-1}"
+                           description="dust mixing ratio bin 5 (12.0 - 20.0 um)"
+                           packages="mpas_dust_in;mpas_anthro_in"/>
+
+                      <var name="unspc_fine" array_group="chemistry" units="kg kg^{-1}"
+                           description="fine anthropogenic primary aerosol mixing ration"
+                           packages="mpas_anthro_in"/>
 
                 </var_array>
         </var_struct>
@@ -106,6 +150,9 @@
 
                         <var name="lbc_dust_coarse" array_group="chemistry"  packages="mpas_dust_in" units="kg kg^{-1} s^{-1}"
                              description="Lateral boundary tendency of coarse dust mixing ratio"/>
+
+			<var name="lbc_unspc_fine" array_group="chemistry"  packages="mpas_anthro_in" units="kg kg^{-1} s^{-1}"
+                             description="Lateral boundary tendency of fine primary aerosol mixing ratio"/>
                 </var_array>
 
         </var_struct>
@@ -113,9 +160,31 @@
         <var_struct name="fg" time_levs="1">
                 <var name="smoke_fine_fg" name_in_code="smoke_fine" type="real" dimensions="nFGLevels nCells Time" units="kg^{-1}"
 		     packages="mpas_smoke_in;mpas_anthro_in" description="First guess fine smoke aerosols"/>
+	        <var name="sulphate_fg" name_in_code="sulphate" type="real" dimensions="nFGLevels nCells Time" units="kg^{-1}"
+                     packages="mpas_smoke_in;mpas_anthro_in" description="First guest sulphate aerosols"/>
+                <var name="om_ho_fg" name_in_code="om_ho" type="real" dimensions="nFGLevels nCells Time" units="kg^{-1}"
+                     packages="mpas_smoke_in;mpas_anthro_in" description="First guest om_ho aerosols"/>
+                <var name="om_hi_fg" name_in_code="om_hi" type="real" dimensions="nFGLevels nCells Time" units="kg^{-1}"
+                     packages="mpas_smoke_in;mpas_anthro_in" description="First guest om_hi  aerosols"/>
+                <var name="bc_ho_fg" name_in_code="bc_ho" type="real" dimensions="nFGLevels nCells Time" units="kg^{-1}"
+                     packages="mpas_smoke_in;mpas_anthro_in" description="First guest bc_ho  aerosols"/>
+                <var name="bc_hi_fg" name_in_code="bc_hi" type="real" dimensions="nFGLevels nCells Time" units="kg^{-1}"
+                     packages="mpas_smoke_in;mpas_anthro_in" description="First guest bc_hi  aerosols"/>
                 <var name="dust_fine_fg" name_in_code="dust_fine" type="real" dimensions="nFGLevels nCells Time" units="kg^{-1}"
 		     packages="mpas_dust_in;mpas_anthro_in" description="First guess fine dust aerosols"/>
                 <var name="dust_coarse_fg" name_in_code="dust_coarse" type="real" dimensions="nFGLevels nCells Time" units="kg^{-1}"
 		     packages="mpas_dust_in;mpas_anthro_in" description="First guess coarse dust aerosols"/>
+	        <var name="dust1_fg" name_in_code="dust1" type="real" dimensions="nFGLevels nCells Time" units="kg^{-1}"
+                     packages="mpas_dust_in;mpas_anthro_in" description="dust bin 1 (0.2 - 2.0 um)"/>
+                <var name="dust2_fg" name_in_code="dust2" type="real" dimensions="nFGLevels nCells Time" units="kg^{-1}"
+                     packages="mpas_dust_in;mpas_anthro_in" description="dust bin 1 (2.0 - 3.6 um)"/>
+                <var name="dust3_fg" name_in_code="dust3" type="real" dimensions="nFGLevels nCells Time" units="kg^{-1}"
+                     packages="mpas_dust_in;mpas_anthro_in" description="dust bin 1 (3.6 - 6.0 um)"/>
+                <var name="dust4_fg" name_in_code="dust4" type="real" dimensions="nFGLevels nCells Time" units="kg^{-1}"
+                     packages="mpas_dust_in;mpas_anthro_in" description="dust bin 1 (6.0 - 12.0 um)"/>
+                <var name="dust5_fg" name_in_code="dust5" type="real" dimensions="nFGLevels nCells Time" units="kg^{-1}"
+                     packages="mpas_dust_in;mpas_anthro_in" description="dust bin 1 (12.0 - 20.0 um)"/>
+	        <var name="unspc_fine_fg" name_in_code="unspc_fine" type="real" dimensions="nFGLevels nCells Time" units="kg^{-1}"
+                     packages="mpas_anthro_in" description="First guess fine unspeciated aerosols"/>
 
         </var_struct>
