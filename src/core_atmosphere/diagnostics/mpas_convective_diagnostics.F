@@ -58,6 +58,19 @@ module mpas_convective_diagnostics
     logical :: is_needed_prec_acc_c
     logical :: is_needed_prec_acc_nc
     logical :: is_needed_snow_acc_nc
+
+    !
+    ! Number of time steps accumulated into each time-mean field since it was last reset (i.e.,
+    ! since it was last written). The means are updated incrementally with these counts, so they
+    ! are correct whatever the ratio of the output interval to the time step, including output
+    ! intervals shorter than, or not a multiple of, the time step, and output intervals that
+    ! change during a run (output_timelevels).
+    !
+    integer :: nsteps_w_mean = 0
+    integer :: nsteps_ws10m_mean = 0
+    integer :: nsteps_u10m_mean = 0
+    integer :: nsteps_v10m_mean = 0
+
     logical :: do_any_uh, do_any_diags
     integer,pointer :: do_diag_dbz
 
@@ -358,21 +371,8 @@ module mpas_convective_diagnostics
         real (kind=RKIND), dimension(:), pointer :: prec_acc_c, prec_acc_nc, snow_acc_nc
         real (kind=RKIND) :: uph, pb, pt
         character(len=StrKIND),pointer:: config_convection_scheme
-        type (MPAS_timeinterval_type) :: dt_interval, diag_interval, extra
-        type (MPAS_time_type) :: ref_time
-        integer (kind=I8KIND) :: nsteps
-        integer :: dt_tmp, diag_tmp
 
         real (kind=RKIND), parameter :: uh_smooth = 0.1
-
-        ! - compute number of time steps between diag interval outputs
-        call mpas_set_time(ref_time, dateTimeString='0000-01-01_00:00:00', ierr=ierr)
-        call mpas_set_timeInterval(dt_interval, dt=dt)
-        diag_interval = mpas_stream_mgr_get_stream_interval(stream_mgr, 'diagnostics', MPAS_STREAM_OUTPUT, ierr)
-        call mpas_get_timeInterval(dt_interval, ref_time, S=dt_tmp)
-        call mpas_get_timeInterval(diag_interval, ref_time, S=diag_tmp)
-
-        call mpas_interval_division(ref_time, diag_interval, dt_interval, nsteps, extra)
 
         if (do_any_diags) then
             call mpas_pool_get_dimension(mesh, 'nCells', nCells)
@@ -460,31 +460,40 @@ module mpas_convective_diagnostics
                 end do
             end if
 
+            !
+            ! Time means since the last reset: mean_n = mean_(n-1) + (value_n - mean_(n-1)) / n
+            !
             if (is_needed_w_mean) then
+                nsteps_w_mean = nsteps_w_mean + 1
                 do iCell=1, nCellsSolve
                   pb = 0.8_RKIND * (pressure_base(1,iCell)+pressure_p(1,iCell)-pressure_base(nVertLevels,iCell)-pressure_p(nVertLevels,iCell))
                   pt = 0.5_RKIND * (pressure_base(1,iCell)+pressure_p(1,iCell)-pressure_base(nVertLevels,iCell)-pressure_p(nVertLevels,iCell))
                   pres = pressure_base(1:nVertLevels,iCell)+pressure_p(1:nVertLevels,iCell)
-                  w_velocity_mean(iCell) = w_velocity_mean(iCell) + (1.0_RKIND/real(nsteps)) * &
-                                           mean_pressure(w(1:nVertLevels,iCell), pres , pb, pt, nVertLevels)
+                  w_velocity_mean(iCell) = w_velocity_mean(iCell) &
+                       + (mean_pressure(w(1:nVertLevels,iCell), pres , pb, pt, nVertLevels) - w_velocity_mean(iCell)) &
+                         / real(nsteps_w_mean, RKIND)
                 enddo
             endif
 
             if (is_needed_u10m_mean) then
+                nsteps_u10m_mean = nsteps_u10m_mean + 1
                 do iCell=1,nCellsSolve
-                  u10m_mean(iCell) = u10m_mean(iCell) + u10m(iCell) * (1.0_RKIND/real(nsteps))
+                  u10m_mean(iCell) = u10m_mean(iCell) + (u10m(iCell) - u10m_mean(iCell)) / real(nsteps_u10m_mean, RKIND)
                 enddo
             endif
 
             if (is_needed_v10m_mean) then
+                nsteps_v10m_mean = nsteps_v10m_mean + 1
                 do iCell=1,nCellsSolve
-                  v10m_mean(iCell) = v10m_mean(iCell) + v10m(iCell) * (1.0_RKIND/real(nsteps))
+                  v10m_mean(iCell) = v10m_mean(iCell) + (v10m(iCell) - v10m_mean(iCell)) / real(nsteps_v10m_mean, RKIND)
                 enddo
             endif
 
             if (is_needed_ws10m_mean) then
+                nsteps_ws10m_mean = nsteps_ws10m_mean + 1
                 do iCell=1,nCellsSolve
-                  wind_speed_10m_mean(iCell) = wind_speed_10m_mean(iCell) + sqrt(u10m(iCell)**2+v10m(iCell)**2) *(1.0_RKIND/real(nsteps))
+                  wind_speed_10m_mean(iCell) = wind_speed_10m_mean(iCell) &
+                       + (sqrt(u10m(iCell)**2+v10m(iCell)**2) - wind_speed_10m_mean(iCell)) / real(nsteps_ws10m_mean, RKIND)
                 enddo
             endif
 
@@ -1085,6 +1094,7 @@ module mpas_convective_diagnostics
         if (MPAS_field_will_be_written('w_velocity_mean')) then
             call mpas_pool_get_array(diag, 'w_velocity_mean', w_velocity_mean)
             w_velocity_mean(:) = 0.
+            nsteps_w_mean = 0
         end if
         if (MPAS_field_will_be_written('wind02_max')) then
             call mpas_pool_get_array(diag, 'wind02_max',wind02_max)
@@ -1101,14 +1111,17 @@ module mpas_convective_diagnostics
         if (MPAS_field_will_be_written('wind_speed_10m_mean')) then
             call mpas_pool_get_array(diag, 'wind_speed_10m_mean', wind_speed_10m_mean)
             wind_speed_10m_mean(:) = 0.
+            nsteps_ws10m_mean = 0
         end if
         if (MPAS_field_will_be_written('u10m_mean')) then
             call mpas_pool_get_array(diag, 'u10m_mean', u10m_mean)
             u10m_mean(:) = 0.
+            nsteps_u10m_mean = 0
         end if
         if (MPAS_field_will_be_written('v10m_mean')) then
             call mpas_pool_get_array(diag, 'v10m_mean', v10m_mean)
             v10m_mean(:) = 0.
+            nsteps_v10m_mean = 0
         end if
         if (MPAS_field_will_be_written('prec_acc_nc')) then
             call mpas_pool_get_array(diag, 'prec_acc_nc', prec_acc_nc)

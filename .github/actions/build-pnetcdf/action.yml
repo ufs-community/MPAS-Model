@@ -1,0 +1,111 @@
+name: Build PnetCDF
+description: >
+  Build (and cache) recent GNU autotools and PnetCDF against a given MPI, then put both on
+  PATH / LD_LIBRARY_PATH and export PNETCDF for the rest of the job.
+
+inputs:
+  mpi-root:
+    description: MPI installation PnetCDF is configured against (passed to --with-mpi).
+    required: true
+  cache-tag:
+    description: Distinguishes PnetCDF caches built with different compilers or MPIs.
+    required: true
+  pnetcdf-ref:
+    description: Git branch or tag of Parallel-NetCDF/PnetCDF to build.
+    default: master
+  prefix:
+    description: PnetCDF install prefix.
+    default: /home/runner/PnetCDF
+  autotools-prefix:
+    description: GNU autotools install prefix.
+    default: /home/runner/AUTOTOOLS
+  m4-version:
+    default: 1.4.19
+  autoconf-version:
+    default: "2.71"
+  automake-version:
+    default: "1.17"
+  libtool-version:
+    default: 2.5.4
+
+runs:
+  using: composite
+  steps:
+    - name: Cache GNU autotools
+      id: cache-autotools
+      uses: actions/cache@v6
+      with:
+        path: ${{ inputs.autotools-prefix }}
+        key: autotools-${{ runner.os }}-m4-${{ inputs.m4-version }}-ac-${{ inputs.autoconf-version }}-am-${{ inputs.automake-version }}-lt-${{ inputs.libtool-version }}
+
+    - name: Build GNU autotools
+      if: steps.cache-autotools.outputs.cache-hit != 'true'
+      shell: bash
+      working-directory: ${{ runner.temp }}
+      env:
+        PREFIX: ${{ inputs.autotools-prefix }}
+        TOOLS: >-
+          m4:${{ inputs.m4-version }}
+          autoconf:${{ inputs.autoconf-version }}
+          automake:${{ inputs.automake-version }}
+          libtool:${{ inputs.libtool-version }}
+      run: |
+        set -euo pipefail
+        # Each tool is built with the ones before it (autoconf needs the new m4, etc.).
+        export PATH="${PREFIX}/bin:${PATH}"
+        for tool in ${TOOLS}; do
+          name=${tool%%:*} ver=${tool##*:}
+          echo "::group::${name} ${ver}"
+          wget -q "https://ftp.gnu.org/gnu/${name}/${name}-${ver}.tar.gz"
+          tar -xzf "${name}-${ver}.tar.gz"
+          ( cd "${name}-${ver}"
+            ./configure --prefix="${PREFIX}" --silent
+            make -s -j"$(nproc)" install > build.log 2>&1 || { tail -50 build.log; exit 1; } )
+          rm -rf "${name}-${ver}" "${name}-${ver}.tar.gz"
+          echo "::endgroup::"
+        done
+
+    - name: Add GNU autotools to paths
+      shell: bash
+      env:
+        PREFIX: ${{ inputs.autotools-prefix }}
+      run: |
+        echo "${PREFIX}/bin" >> "$GITHUB_PATH"
+        echo "LD_LIBRARY_PATH=${PREFIX}/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" >> "$GITHUB_ENV"
+
+    - name: Cache PnetCDF
+      id: cache-pnetcdf
+      uses: actions/cache@v6
+      with:
+        path: ${{ inputs.prefix }}
+        key: pnetcdf-${{ runner.os }}-${{ inputs.pnetcdf-ref }}-${{ inputs.cache-tag }}
+
+    - name: Build PnetCDF
+      if: steps.cache-pnetcdf.outputs.cache-hit != 'true'
+      shell: bash
+      working-directory: ${{ runner.temp }}
+      env:
+        PREFIX: ${{ inputs.prefix }}
+        MPI_ROOT: ${{ inputs.mpi-root }}
+        REF: ${{ inputs.pnetcdf-ref }}
+      run: |
+        set -euo pipefail
+        m4 --version | head -1
+        autoconf --version | head -1
+        automake --version | head -1
+        libtool --version | head -1
+        git clone -q --depth 1 --branch "${REF}" https://github.com/Parallel-NetCDF/PnetCDF.git
+        cd PnetCDF
+        autoreconf -i
+        ./configure --prefix="${PREFIX}" --with-mpi="${MPI_ROOT}"
+        make -j"$(nproc)" install
+        cd .. && rm -rf PnetCDF
+
+    - name: Add PnetCDF to paths
+      shell: bash
+      env:
+        PREFIX: ${{ inputs.prefix }}
+      run: |
+        echo "PNETCDF=${PREFIX}" >> "$GITHUB_ENV"
+        echo "${PREFIX}/bin" >> "$GITHUB_PATH"
+        echo "LD_LIBRARY_PATH=${PREFIX}/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" >> "$GITHUB_ENV"
