@@ -350,7 +350,7 @@ module init_atm_hinterp
 
          if (present(mask_array) .and. present(maskval)) then
             if (array(i,j,izz) /= msgval .and. mask_array(i,j) /= maskval &
-                .and. .not. (mask_array(i,j) == 1.0_RKIND .and. array(i,j,izz) == 1.0_RKIND)) found_valid = .true.
+                .and. .not. is_water_placeholder(maskval, mask_array(i,j), array(i,j,izz))) found_valid = .true.
          else
             if (array(i,j,izz) /= msgval) found_valid = .true. 
          end if
@@ -396,7 +396,7 @@ module init_atm_hinterp
             qdata = q_remove(q)
             if (present(mask_array) .and. present(maskval)) then
                if (array(qdata%x,qdata%y,izz) /= msgval .and. mask_array(qdata%x,qdata%y) /= maskval &
-                   .and. .not. (mask_array(qdata%x,qdata%y) == 1.0_RKIND .and. array(qdata%x,qdata%y,izz) == 1.0_RKIND)) then
+                   .and. .not. is_water_placeholder(maskval, mask_array(qdata%x,qdata%y), array(qdata%x,qdata%y,izz))) then
                   if ((real(qdata%x)-xx)*(real(qdata%x)-xx)+(real(qdata%y)-yy)*(real(qdata%y)-yy) < distance) then
                      distance = (real(qdata%x)-xx)*(real(qdata%x)-xx)+(real(qdata%y)-yy)*(real(qdata%y)-yy) 
                      search_extrap = array(qdata%x, qdata%y, izz)
@@ -495,13 +495,13 @@ module init_atm_hinterp
   
       if (present(mask_array) .and. present(maskval)) then
          if (array(ifx, ify, izz) == msgval .or. mask_array(ifx,ify) == maskval &
-             .or. (mask_array(ifx,ify) == 1.0_RKIND .and. array(ifx, ify, izz) == 1.0_RKIND)) fxfy = 0.0
+             .or. is_water_placeholder(maskval, mask_array(ifx,ify), array(ifx, ify, izz))) fxfy = 0.0
          if (array(ifx, icy, izz) == msgval .or. mask_array(ifx,icy) == maskval &
-             .or. (mask_array(ifx,icy) == 1.0_RKIND .and. array(ifx, icy, izz) == 1.0_RKIND)) fxcy = 0.0
+             .or. is_water_placeholder(maskval, mask_array(ifx,icy), array(ifx, icy, izz))) fxcy = 0.0
          if (array(icx, ify, izz) == msgval .or. mask_array(icx,ify) == maskval &
-             .or. (mask_array(icx,ify) == 1.0_RKIND .and. array(icx, ify, izz) == 1.0_RKIND)) cxfy = 0.0
+             .or. is_water_placeholder(maskval, mask_array(icx,ify), array(icx, ify, izz))) cxfy = 0.0
          if (array(icx, icy, izz) == msgval .or. mask_array(icx,icy) == maskval &
-             .or. (mask_array(icx,icy) == 1.0_RKIND .and. array(icx, icy, izz) == 1.0_RKIND)) cxcy = 0.0
+             .or. is_water_placeholder(maskval, mask_array(icx,icy), array(icx, icy, izz))) cxcy = 0.0
       else
          if (array(ifx, ify, izz) == msgval) fxfy = 0.0 
          if (array(ifx, icy, izz) == msgval) fxcy = 0.0 
@@ -596,13 +596,13 @@ module init_atm_hinterp
   
       if (present(mask_array) .and. present(maskval)) then
          if (array(ifx, ify, izz) == msgval .or. mask_array(ifx,ify) == maskval &
-             .or. (mask_array(ifx,ify) == 1.0_RKIND .and. array(ifx, ify, izz) == 1.0_RKIND)) fxfy = 0.0
+             .or. is_water_placeholder(maskval, mask_array(ifx,ify), array(ifx, ify, izz))) fxfy = 0.0
          if (array(ifx, icy, izz) == msgval .or. mask_array(ifx,icy) == maskval &
-             .or. (mask_array(ifx,icy) == 1.0_RKIND .and. array(ifx, icy, izz) == 1.0_RKIND)) fxcy = 0.0
+             .or. is_water_placeholder(maskval, mask_array(ifx,icy), array(ifx, icy, izz))) fxcy = 0.0
          if (array(icx, ify, izz) == msgval .or. mask_array(icx,ify) == maskval &
-             .or. (mask_array(icx,ify) == 1.0_RKIND .and. array(icx, ify, izz) == 1.0_RKIND)) cxfy = 0.0
+             .or. is_water_placeholder(maskval, mask_array(icx,ify), array(icx, ify, izz))) cxfy = 0.0
          if (array(icx, icy, izz) == msgval .or. mask_array(icx,icy) == maskval &
-             .or. (mask_array(icx,icy) == 1.0_RKIND .and. array(icx, icy, izz) == 1.0_RKIND)) cxcy = 0.0
+             .or. is_water_placeholder(maskval, mask_array(icx,icy), array(icx, icy, izz))) cxcy = 0.0
       else
          if (array(ifx, ify, izz) == msgval) fxfy = 0.0 
          if (array(ifx, icy, izz) == msgval) fxcy = 0.0 
@@ -847,13 +847,13 @@ module init_atm_hinterp
       ! If we have a missing value, try the next interpolation method in the sequence
       if (present(mask_array) .and. present(maskval)) then
          if (array(min_x,min_y,izz) == msgval .or. mask_array(min_x,min_y) == maskval &
-             .or. (mask_array(min_x,min_y) == 1.0_RKIND .and. array(min_x,min_y,izz) == 1.0_RKIND) .or. &
+             .or. is_water_placeholder(maskval, mask_array(min_x,min_y), array(min_x,min_y,izz)) .or. &
              array(max_x,min_y,izz) == msgval .or. mask_array(max_x,min_y) == maskval &
-             .or. (mask_array(max_x,min_y) == 1.0_RKIND .and. array(max_x,min_y,izz) == 1.0_RKIND) .or. &
+             .or. is_water_placeholder(maskval, mask_array(max_x,min_y), array(max_x,min_y,izz)) .or. &
              array(min_x,max_y,izz) == msgval .or. mask_array(min_x,max_y) == maskval &
-             .or. (mask_array(min_x,max_y) == 1.0_RKIND .and. array(min_x,max_y,izz) == 1.0_RKIND) .or. &
+             .or. is_water_placeholder(maskval, mask_array(min_x,max_y), array(min_x,max_y,izz)) .or. &
              array(max_x,max_y,izz) == msgval .or. mask_array(max_x,max_y) == maskval &
-             .or. (mask_array(max_x,max_y) == 1.0_RKIND .and. array(max_x,max_y,izz) == 1.0_RKIND)) then
+             .or. is_water_placeholder(maskval, mask_array(max_x,max_y), array(max_x,max_y,izz))) then
             four_pt = interp_sequence(xx, yy, izz, array, start_x, end_x, start_y, end_y, &
                                 start_z, end_z, msgval, interp_list, idx, maskval, mask_array)
             return
@@ -1069,5 +1069,20 @@ module init_atm_hinterp
       end if
     
    end function oned                                                       
- 
+
+
+   !-----------------------------------------------------------------------
+   !  Routine: is_water_placeholder
+   !
+   !> \brief Check if donor point is an open-water placeholder (1.0_RKIND)
+   !>        Only activates for land-masked fields requiring water exclusion
+   !>        (i.e. maskval == 0.0_RKIND).
+   !-----------------------------------------------------------------------
+   pure logical function is_water_placeholder(mval, mask, val)
+      implicit none
+      real (kind=RKIND), intent(in) :: mval, mask, val
+
+      is_water_placeholder = (mval == 0.0_RKIND .and. mask == 1.0_RKIND .and. val == 1.0_RKIND)
+   end function is_water_placeholder
+
 end module init_atm_hinterp
