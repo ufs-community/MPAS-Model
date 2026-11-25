@@ -419,13 +419,30 @@
 
     lsm_select: select case(trim(config_lsm_scheme))
 
-       case("sf_noah","sf_noahmp")
+       case("sf_noah")
        !initialize the thickness of the soil layers for the Noah scheme:
           do iCell = 1, nCells
              dzs(1,iCell) = 0.10_RKIND
              dzs(2,iCell) = 0.30_RKIND
              dzs(3,iCell) = 0.60_RKIND
              dzs(4,iCell) = 1.00_RKIND
+          enddo
+
+       case("sf_noahmp")
+       !initialize the thickness of the soil layers for the NoahMP scheme:
+          if (size(dzs,1) .ne. 10) &
+             call physics_error_fatal('NoahMP requires num_soil_layers = 10 and ten-layer input files.')
+          do iCell = 1, nCells
+             dzs(1,iCell)  = 0.05_RKIND
+             dzs(2,iCell)  = 0.10_RKIND
+             dzs(3,iCell)  = 0.10_RKIND
+             dzs(4,iCell)  = 0.10_RKIND
+             dzs(5,iCell)  = 0.30_RKIND
+             dzs(6,iCell)  = 0.35_RKIND
+             dzs(7,iCell)  = 0.50_RKIND
+             dzs(8,iCell)  = 1.00_RKIND
+             dzs(9,iCell)  = 1.00_RKIND
+             dzs(10,iCell) = 1.50_RKIND
           enddo
 
        case("sf_ruc")
