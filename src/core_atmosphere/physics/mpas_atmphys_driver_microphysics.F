@@ -487,7 +487,9 @@
          hailaware_flag=config_tempo_hailaware, &
          hailhyperaware_flag=config_tempo_hailhyperaware, &
          refl10cm_from_melting_flag=config_tempo_refl10cm_from_melting, &
-         ml_for_bl_nc_flag=config_tempo_ml_for_bl_nc, tempo_cfgs=tempo_cfgs)
+         ml_for_bl_nc_flag=config_tempo_ml_for_bl_nc, tempo_cfgs=tempo_cfgs, &
+         errflg=errflg, errmsg=errmsg)
+       if (errflg /= 0) call physics_error_fatal('--- tempo_init: '//trim(errmsg))
 
        if (config_tempo_aerosolaware) then
           call init_tempo_aerosols_forMPAS(do_restart,dminfo,mesh,state,time_lev,diag_physics)
