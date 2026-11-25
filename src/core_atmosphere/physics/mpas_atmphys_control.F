@@ -430,6 +430,8 @@
 
        case("sf_noahmp")
        !initialize the thickness of the soil layers for the NoahMP scheme:
+          if (size(dzs,1) .ne. 10) &
+             call physics_error_fatal('NoahMP requires num_soil_layers = 10 and ten-layer input files.')
           do iCell = 1, nCells
              dzs(1,iCell)  = 0.05_RKIND
              dzs(2,iCell)  = 0.10_RKIND
