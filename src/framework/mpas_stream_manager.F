@@ -3245,9 +3245,9 @@ module mpas_stream_manager
                            ! If there's a future range, schedule alarm for when it starts
                            if (next_start_hour > 0.0_RKIND) then
                                STREAM_DEBUG_WRITE('-- Stream '//trim(stream % name)//' rescheduling alarm for next timelevel range.')
-                               call mpas_set_timeInterval(time_diff, dt=next_start_hour * 3600.0_RKIND, ierr=local_ierr)
+                               call mpas_timelevel_seconds_to_interval(time_diff, next_start_hour * 3600.0_RKIND, ierr=local_ierr)
                                alarmTime_local = start_time + time_diff
-                               call mpas_set_timeInterval(alarmInterval_local, dt=next_interval_minutes * 60.0_RKIND, ierr=local_ierr)
+                               call mpas_timelevel_seconds_to_interval(alarmInterval_local, next_interval_minutes * 60.0_RKIND, ierr=local_ierr)
                                call mpas_add_clock_alarm(manager % streamClock, alarm_cursor % name, alarmTime_local, &
                                                         alarmTimeInterval=alarmInterval_local, ierr=local_ierr)
                            else
@@ -6545,7 +6545,7 @@ subroutine stream_mgr_add_variable_output_alarm_c(manager_c, streamID_c, ierr_c)
     use mpas_stream_manager, only : MPAS_stream_mgr_get_clock, MPAS_stream_mgr_add_alarm, &
                                     MPAS_stream_mgr_get_property
     use mpas_output_timelevels, only : get_output_interval_from_timelevels, &
-                                       get_next_timelevel_start
+                                       get_next_timelevel_start, mpas_timelevel_seconds_to_interval
     use mpas_stream_list, only : MPAS_stream_list_query
     use mpas_kind_types, only : StrKIND, RKIND
     use mpas_timekeeping, only : mpas_add_clock_alarm, mpas_get_clock_time, mpas_set_time, mpas_set_timeInterval, &
@@ -6613,13 +6613,13 @@ subroutine stream_mgr_add_variable_output_alarm_c(manager_c, streamID_c, ierr_c)
             return
         end if
         ! Schedule alarm for when the first range starts
-        call mpas_set_timeInterval(time_offset, dt=next_start_hour * 3600.0_RKIND, ierr=ierr_tmp)
+        call mpas_timelevel_seconds_to_interval(time_offset, next_start_hour * 3600.0_RKIND, ierr=ierr_tmp)
         alarmTime_local = start_time + time_offset
-        call mpas_set_timeInterval(alarmInterval_local, dt=next_interval_minutes * 60.0_RKIND, ierr=ierr_tmp)
+        call mpas_timelevel_seconds_to_interval(alarmInterval_local, next_interval_minutes * 60.0_RKIND, ierr=ierr_tmp)
     else
         ! Hour 0 is in a valid range - start alarm at start time
         alarmTime_local = start_time
-        call mpas_set_timeInterval(alarmInterval_local, dt=interval_minutes * 60.0_RKIND, ierr=ierr_tmp)
+        call mpas_timelevel_seconds_to_interval(alarmInterval_local, interval_minutes * 60.0_RKIND, ierr=ierr_tmp)
     end if
     ierr = ior(ierr, ierr_tmp)
 

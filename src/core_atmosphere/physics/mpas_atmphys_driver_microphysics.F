@@ -241,7 +241,7 @@
              if(.not.allocated(rthratenlw_p)) allocate(rthratenlw_p(ims:ime,kms:kme,jms:jme))
              if(.not.allocated(rthratensw_p)) allocate(rthratensw_p(ims:ime,kms:kme,jms:jme))
              if(.not.allocated(hpbl_p)) allocate(hpbl_p(ims:ime,jms:jme))
-             if(.not.allocated(xland_p)) allocate(xland_p(ims:ime,jms:jme))
+             if(.not.allocated(landmask_p)) allocate(landmask_p(ims:ime,jms:jme))
              if(.not.allocated(cldfrac_p) ) allocate(cldfrac_p(ims:ime,kms:kme,jms:jme))
              if(.not.allocated(qcbl_p) ) allocate(qcbl_p(ims:ime,kms:kme,jms:jme))
           endif
@@ -421,7 +421,7 @@
              if(allocated(rthratenlw_p)) deallocate(rthratenlw_p)
              if(allocated(rthratensw_p)) deallocate(rthratensw_p)
              if(allocated(hpbl_p)) deallocate(hpbl_p)
-             if(allocated(xland_p)) deallocate(xland_p)
+             if(allocated(landmask_p)) deallocate(landmask_p)
              if(allocated(cldfrac_p) ) deallocate(cldfrac_p)
              if(allocated(qcbl_p) ) deallocate(qcbl_p)             
           endif
@@ -631,7 +631,7 @@
     case ("mp_tempo")
        if (allocated(nwfa_p) .and. allocated(nwfa2d_p)) then
          call tempo_aerosol_surface_emissions(dt=dt_microp, nwfa=nwfa_p, nwfa2d=nwfa2d_p, &
-            ims=ims, ime=ime, jms=jms, jme=jme, kms=kms, kme=kme, kts=kts)
+            ims=ims, ime=ime, jms=jms, jme=jme, kms=kms, kme=kme, its=its, ite=ite, jts=jts, jte=jte, kts=kts)
        endif   
 
        call mpas_timer_start('mp_tempo')
@@ -651,7 +651,7 @@
             thten_bl=rthblten_p  , qvten_bl   = rqvblten_p                   , &
             qcten_bl=rqcblten_p  , qiten_bl   = rqiblten_p                   , &
             thten_lwrad=rthratenlw_p, thten_swrad=rthratensw_p               , &
-            hpbl    = hpbl_p     , xland = xland_p                           , &
+            hpbl    = hpbl_p     , land_input = landmask_p                   , &
             ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde , &
             ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme , &
             its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte , &

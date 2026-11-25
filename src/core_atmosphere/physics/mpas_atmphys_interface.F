@@ -1039,7 +1039,7 @@ end subroutine pre_microphysics
                 do j = jts, jte
                 do i = its, ite
                    hpbl_p(i,j) = hpbl(i)
-                   xland_p(i,j) = xland(i)
+                   landmask_p(i,j) = nint(xland(i))
                 enddo
                 enddo
              endif

@@ -41,10 +41,13 @@
  character(len=StrKIND),pointer:: config_lsm_scheme
  character(len=StrKIND),pointer:: config_smoke_scheme
  character(len=StrKIND),pointer:: config_dust_scheme
+ integer,pointer:: config_mynn_tkebudget,config_mynn_diags3d,config_mynn_diags2d     
  logical,pointer:: config_tempo_aerosolaware,config_tempo_hailaware,config_tempo_cldfra
  logical,pointer:: mp_kessler_in,mp_thompson_in,mp_thompson_aers_in,mp_wsm6_in,mp_nssl2m_in,nssl3m_in
  logical,pointer:: mp_tempo_in,tempo_hailaware_in,tempo_aerosolaware_in,tempo_cldfra_in
  logical,pointer:: cu_grell_freitas_in,cu_grell_freitas_li_in,cu_kain_fritsch_in,cu_ntiedtke_in
+ logical,pointer:: bl_mynnedmf_tkebudget_in,bl_mynn_diags3d_in
+ logical,pointer:: bl_mynn_diags2d_in,bl_mynn_diags2dextra_in     
  logical,pointer:: bl_mynn_in,bl_mynnedmf_in,bl_ysu_in,bl_myj_in
  logical,pointer:: lsm_noah_in,lsm_ruc_in
  logical,pointer:: sf_noahmp_in
@@ -205,12 +208,27 @@
 !--- initialization of all packages for parameterizations of surface layer and planetary boundary layer:
 
  call mpas_pool_get_config(configs,'config_pbl_scheme',config_pbl_scheme)
-
+ call mpas_pool_get_config(configs,'config_mynn_tkebudget',config_mynn_tkebudget)
+ call mpas_pool_get_config(configs,'config_mynn_diags2d',config_mynn_diags2d)
+ call mpas_pool_get_config(configs,'config_mynn_diags3d',config_mynn_diags3d)
+      
  nullify(bl_mynn_in)
  call mpas_pool_get_package(packages,'bl_mynn_inActive',bl_mynn_in)
 
  nullify(bl_mynnedmf_in)
  call mpas_pool_get_package(packages,'bl_mynnedmf_inActive',bl_mynnedmf_in)
+
+ nullify(bl_mynnedmf_tkebudget_in)
+ call mpas_pool_get_package(packages,'bl_mynnedmf_tkebudget_inActive',bl_mynnedmf_tkebudget_in)
+
+ nullify(bl_mynn_diags2d_in)
+ call mpas_pool_get_package(packages,'bl_mynn_diags2d_inActive',bl_mynn_diags2d_in)
+
+ nullify(bl_mynn_diags2dextra_in)
+ call mpas_pool_get_package(packages,'bl_mynn_diags2dextra_inActive',bl_mynn_diags2dextra_in)
+      
+ nullify(bl_mynn_diags3d_in)
+ call mpas_pool_get_package(packages,'bl_mynn_diags3d_inActive',bl_mynn_diags3d_in)
       
  nullify(bl_ysu_in)
  call mpas_pool_get_package(packages,'bl_ysu_inActive',bl_ysu_in)
@@ -220,6 +238,10 @@
 
  if(.not.associated(bl_mynn_in) .or. &
     .not.associated(bl_mynnedmf_in) .or. &
+    .not.associated(bl_mynn_diags2d_in) .or. &
+    .not.associated(bl_mynn_diags2dextra_in) .or. &  
+    .not.associated(bl_mynn_diags3d_in) .or. &
+    .not.associated(bl_mynnedmf_tkebudget_in) .or. &
     .not.associated(bl_ysu_in) .or. &
     .not.associated(bl_myj_in)) then
     call mpas_log_write('====================================================================================',messageType=MPAS_LOG_ERR)
@@ -230,13 +252,21 @@
  endif
 
  bl_mynn_in = .false.
- bl_mynnedmf_in = .false. 
+ bl_mynnedmf_in = .false.
+ bl_mynn_diags2d_in = .false.
+ bl_mynn_diags2dextra_in = .false.     
+ bl_mynn_diags3d_in = .false.
+ bl_mynnedmf_tkebudget_in = .false.
  bl_ysu_in  = .false.
  bl_myj_in = .false.
  if(config_pbl_scheme=='bl_mynn') then
     bl_mynn_in = .true.
  elseif(config_pbl_scheme == 'bl_mynnedmf') then
     bl_mynnedmf_in = .true.
+    if(config_mynn_diags2d >=1) bl_mynn_diags2d_in = .true.
+    if(config_mynn_diags2d >=2) bl_mynn_diags2dextra_in = .true.  
+    if(config_mynn_diags3d >=1) bl_mynn_diags3d_in = .true.
+    if(config_mynn_tkebudget ==1) bl_mynnedmf_tkebudget_in = .true.
  elseif(config_pbl_scheme == 'bl_ysu') then
     bl_ysu_in = .true.
  elseif(config_pbl_scheme == 'bl_myj') then
@@ -245,6 +275,10 @@
 
  call mpas_log_write('    bl_mynn_in              = $l', logicArgs=(/bl_mynn_in/))
  call mpas_log_write('    bl_mynnedmf_in          = $l', logicArgs=(/bl_mynnedmf_in/))
+ call mpas_log_write('    bl_mynn_diags2d_in      = $l', logicArgs=(/bl_mynn_diags2d_in/))
+ call mpas_log_write('    bl_mynn_diags2dextra_in = $l', logicArgs=(/bl_mynn_diags2dextra_in/))     
+ call mpas_log_write('    bl_mynn_diags3d_in      = $l', logicArgs=(/bl_mynn_diags3d_in/))
+ call mpas_log_write('    bl_mynnedmf_tkebudget_in= $l', logicArgs=(/bl_mynnedmf_tkebudget_in/))
  call mpas_log_write('    bl_ysu_in               = $l', logicArgs=(/bl_ysu_in/))
  call mpas_log_write('    bl_myj_in               = $l', logicArgs=(/bl_myj_in/))
  call mpas_log_write('')

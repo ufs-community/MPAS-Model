@@ -492,6 +492,7 @@ module mpas_convective_diagnostics
                 allocate(wspd(nVertLevels))
                 do iCell=1, nCellsSolve
                   z_agl(1:nVertLevels) = 0.5*(zgrid(1:nVertLevels,iCell)+zgrid(2:nVertlevelsP1,iCell)) - zgrid(1,iCell)
+                  z_agl(nVertLevelsP1) = zgrid(nVertlevelsP1,iCell) - zgrid(1,iCell)
                   if (column_height_value(refl10cm(:,iCell),z_agl(1:nVertLevels),1000.0_RKIND,nVertLevels) > 20.0_RKIND) then
                     do k=1,nVertLevels
                       wspd(k) = sqrt(uzonal(k,iCell)**2+umeridional(k,iCell)**2)
@@ -505,6 +506,7 @@ module mpas_convective_diagnostics
             if (is_needed_wind02_integral_max) then
                 do iCell=1, nCellsSolve
                   z_agl(1:nVertLevels) = 0.5*(zgrid(1:nVertLevels,iCell)+zgrid(2:nVertlevelsP1,iCell)) - zgrid(1,iCell)
+                  z_agl(nVertLevelsP1) = zgrid(nVertlevelsP1,iCell) - zgrid(1,iCell) 
                   if (column_height_value(refl10cm(:,iCell),z_agl(1:nVertLevels),1000.0_RKIND,nVertLevels) > 20.0_RKIND) then
                     wind02_integral_max(iCell) = max(wind02_integral_max(iCell), &
                                                      sqrt(integral_zstaggered(uzonal(:,iCell),z_agl,0.0_RKIND, 2000.0_RKIND, nVertLevels,nVertLevelsP1)**2 + &
