@@ -444,7 +444,7 @@
  logical,pointer:: do_restart
  character(len=StrKIND),pointer:: microp_scheme
  logical,pointer:: config_tempo_hailaware, config_tempo_aerosolaware, config_tempo_refl10cm_from_melting
- logical,pointer:: config_tempo_ml_for_bl_nc
+ logical,pointer:: config_tempo_ml_for_bl_nc, config_tempo_hailhyperaware
  character(len=StrKIND),pointer:: nssl_moments
 
  logical :: outputon = .false.
@@ -466,6 +466,7 @@
  call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
  call mpas_pool_get_config(configs,'config_tempo_ml_for_bl_nc',config_tempo_ml_for_bl_nc)
  call mpas_pool_get_config(configs,'config_tempo_refl10cm_from_melting',config_tempo_refl10cm_from_melting)
+ call mpas_pool_get_config(configs,'config_tempo_hailhyperaware',config_tempo_hailhyperaware)
  call mpas_pool_get_config(configs,'config_nssl_moments',nssl_moments)
  call mpas_pool_get_config(configs,'config_do_restart'   ,do_restart   )
 
@@ -484,8 +485,11 @@
     case("mp_tempo")
        call tempo_init(aerosolaware_flag=config_tempo_aerosolaware, &
          hailaware_flag=config_tempo_hailaware, &
+         hailhyperaware_flag=config_tempo_hailhyperaware, &
          refl10cm_from_melting_flag=config_tempo_refl10cm_from_melting, &
-         ml_for_bl_nc_flag=config_tempo_ml_for_bl_nc, tempo_cfgs=tempo_cfgs)
+         ml_for_bl_nc_flag=config_tempo_ml_for_bl_nc, tempo_cfgs=tempo_cfgs, &
+         errflg=errflg, errmsg=errmsg)
+       if (errflg /= 0) call physics_error_fatal('--- tempo_init: '//trim(errmsg))
 
        if (config_tempo_aerosolaware) then
           call init_tempo_aerosols_forMPAS(do_restart,dminfo,mesh,state,time_lev,diag_physics)
@@ -510,7 +514,8 @@
  end subroutine init_microphysics
 
 !=================================================================================================================
- subroutine driver_microphysics(configs,mesh,state,time_lev,diag,diag_physics,tend_physics,tend,itimestep,its,ite)
+ subroutine driver_microphysics(configs,mesh,state,time_lev,diag,diag_physics,tend_physics,tend,itimestep,its,ite, &
+                                sfc_input)
 !=================================================================================================================
 
  use mpas_constants, only : rvord
@@ -518,6 +523,7 @@
 !input arguments:
  type(mpas_pool_type),intent(in):: configs
  type(mpas_pool_type),intent(in):: mesh
+ type(mpas_pool_type),intent(in):: sfc_input
 
  integer,intent(in):: time_lev
  integer,intent(in):: itimestep
@@ -538,6 +544,11 @@
  integer:: i,j,k
  integer, pointer :: do_diag_dbz
  logical :: do_diag_dbz_flag
+
+!land-ocean mask passed to TEMPO (1=land, 2=ocean), used for the constant cloud droplet number
+!concentration when the aerosol-aware option is off:
+ real(kind=RKIND),dimension(:),pointer:: xland
+ integer,dimension(ims:ime,jms:jme):: tempo_land
 
 !CCPP-compliant flags:
  character(len=StrKIND):: errmsg
@@ -590,12 +601,24 @@
        call mpas_timer_stop('mp_kessler')
 
     case ("mp_tempo")
+       ! surface emissions are added once per model time-step, before the n_microp substeps,
+       ! so the full model time-step dt_dyn is used (not dt_microp = dt_dyn/n_microp)
        if (allocated(nwfa_p) .and. allocated(nwfa2d_p)) then
-         call tempo_aerosol_surface_emissions(dt=dt_microp, nwfa=nwfa_p, nwfa2d=nwfa2d_p, &
+         call tempo_aerosol_surface_emissions(dt=dt_dyn, nwfa=nwfa_p, nwfa2d=nwfa2d_p, &
             ims=ims, ime=ime, jms=jms, jme=jme, kms=kms, kme=kme, its=its, ite=ite, jts=jts, jte=jte, kts=kts)
        endif   
 
        call mpas_timer_start('mp_tempo')
+
+       call mpas_pool_get_array(sfc_input,'xland',xland)
+       do j = jts, jte
+       do i = its, ite
+          tempo_land(i,j) = nint(xland(i))
+          ! maximum hail diameters are the maximum over all microphysics substeps
+          max_hail_diameter_sfc_p(i,j) = 0._RKIND
+          max_hail_diameter_column_p(i,j) = 0._RKIND
+       enddo
+       enddo
 
        istep = 1
        do while (istep .le. n_microp)
@@ -607,7 +630,8 @@
             ng      = ng_p       , qb         = volg_p    , w      = w_p     , &
             nc      = nc_p       , nwfa       = nwfa_p    , nifa   = nifa_p  , &
             pii     = pi_p       , p          = pres_p    , dz     = dz_p    , &
-            qc_bl   = qcbl_p     , qcfrac_bl  = cldfrac_p                    , &          
+            qc_bl   = qcbl_p     , qcfrac_bl  = cldfrac_p                    , &
+            land_input = tempo_land                                         , &
             ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde , &
             ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme , &
             its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte , &
@@ -631,16 +655,62 @@
                tempo_driver_diags%graupel_liquid_equiv_precip(i,j)
             sr_p(i,j) = tempo_driver_diags%frozen_fraction(i,j)
             frainnc_p(i,j) = frainnc_p(i,j) + tempo_driver_diags%frz_rain_precip(i,j)
-            max_hail_diameter_sfc_p(i,j) = tempo_driver_diags%max_hail_diameter_sfc(i,j)
-            max_hail_diameter_column_p(i,j) = tempo_driver_diags%max_hail_diameter_column(i,j)
+         enddo
+         enddo
+
+         ! optional TEMPO diagnostics are only allocated when their output flags are set in tempo_cfgs
+         if (allocated(tempo_driver_diags%max_hail_diameter_sfc)) then
+            do j = jts, jte
+            do i = its, ite
+               max_hail_diameter_sfc_p(i,j) = max(max_hail_diameter_sfc_p(i,j), &
+                  tempo_driver_diags%max_hail_diameter_sfc(i,j))
+            enddo
+            enddo
+         endif
+         if (allocated(tempo_driver_diags%max_hail_diameter_column)) then
+            do j = jts, jte
+            do i = its, ite
+               max_hail_diameter_column_p(i,j) = max(max_hail_diameter_column_p(i,j), &
+                  tempo_driver_diags%max_hail_diameter_column(i,j))
+            enddo
+            enddo
+         endif
+         if (allocated(tempo_driver_diags%refl10cm)) then
+            do j = jts, jte
             do k = kts, kte
+            do i = its, ite
                refl10cm_p(i,k,j) = tempo_driver_diags%refl10cm(i,k,j)
+            enddo
+            enddo
+            enddo
+         endif
+         if (allocated(tempo_driver_diags%re_cloud)) then
+            do j = jts, jte
+            do k = kts, kte
+            do i = its, ite
                recloud_p(i,k,j) = tempo_driver_diags%re_cloud(i,k,j)
+            enddo
+            enddo
+            enddo
+         endif
+         if (allocated(tempo_driver_diags%re_ice)) then
+            do j = jts, jte
+            do k = kts, kte
+            do i = its, ite
                reice_p(i,k,j) = tempo_driver_diags%re_ice(i,k,j)
+            enddo
+            enddo
+            enddo
+         endif
+         if (allocated(tempo_driver_diags%re_snow)) then
+            do j = jts, jte
+            do k = kts, kte
+            do i = its, ite
                resnow_p(i,k,j) = tempo_driver_diags%re_snow(i,k,j)
             enddo
-         enddo
-         enddo
+            enddo
+            enddo
+         endif
        istep = istep + 1
        enddo
        call mpas_timer_stop('mp_tempo')
