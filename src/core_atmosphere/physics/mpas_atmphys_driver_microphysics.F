@@ -599,8 +599,10 @@
        call mpas_timer_stop('mp_kessler')
 
     case ("mp_tempo")
+       ! surface emissions are added once per model time-step, before the n_microp substeps,
+       ! so the full model time-step dt_dyn is used (not dt_microp = dt_dyn/n_microp)
        if (allocated(nwfa_p) .and. allocated(nwfa2d_p)) then
-         call tempo_aerosol_surface_emissions(dt=dt_microp, nwfa=nwfa_p, nwfa2d=nwfa2d_p, &
+         call tempo_aerosol_surface_emissions(dt=dt_dyn, nwfa=nwfa_p, nwfa2d=nwfa2d_p, &
             ims=ims, ime=ime, jms=jms, jme=jme, kms=kms, kme=kme, its=its, ite=ite, jts=jts, jte=jte, kts=kts)
        endif   
 
